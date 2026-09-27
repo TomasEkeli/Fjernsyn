@@ -34,6 +34,7 @@ import {
 } from '../../../peerTubeHosts.js'
 import { PlatformError } from '../errors'
 import { isHostname } from '../refs'
+import { parseSource } from './source'
 
 export const MAX_COUNT = 100
 
@@ -475,46 +476,6 @@ export function createPeerTubeClient({ fetch, now = Date.now }) {
  */
 function isApiPath(path) {
   return typeof path === 'string' && path.startsWith('/')
-}
-
-/**
- * The host and base URL (no trailing slash) of a source given as an https
- * URL with a bare host name, no port, credentials, query or fragment; `null`
- * for anything else, and for a host that is never PeerTube.
- *
- * @param {unknown} value
- * @returns {{ host: string, base: string } | null}
- */
-function parseSource(value) {
-  if (typeof value !== 'string') {
-    return null
-  }
-
-  let url
-  try {
-    url = new URL(value)
-  } catch {
-    return null
-  }
-
-  if (
-    url.protocol !== 'https:' ||
-    url.port !== '' ||
-    url.username !== '' ||
-    url.password !== '' ||
-    url.search !== '' ||
-    url.hash !== '' ||
-    !isHostname(url.hostname) ||
-    isNeverPeerTubeHost(url.hostname)
-  ) {
-    return null
-  }
-
-  // A source given with its API path (`https://sepiasearch.org/api/v1/`) is
-  // the same source
-  const path = url.pathname.replace(/\/+$/, '').replace(/\/api\/v1$/, '').replace(/\/+$/, '')
-
-  return { host: url.hostname, base: `https://${url.hostname}${path}` }
 }
 
 /**

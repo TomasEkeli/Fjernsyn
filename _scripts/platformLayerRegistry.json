@@ -26,6 +26,10 @@
       "reason": "the PeerTube download functions (peerTubeDownload, peerTubeCancel, peerTubeReveal, peerTubeDismiss, peerTubeListDownloads)"
     },
     {
+      "path": "src/renderer/components/DataSettings/DataSettings.vue",
+      "reason": "subscriptions through src/renderer/platform/subscriptionExchange.js: NewPipe import adds PeerTube channels (service 3), and PeerTube accounts as all their channels (resolved through getPlatformLayer), while PeerTube is on; YouTube CSV, JSON and OPML exports skip PeerTube stubs; NewPipe export writes them as service 3; YouTube paths unchanged"
+    },
+    {
       "path": "src/renderer/components/ExperimentalSettings/ExperimentalSettings.vue",
       "reason": "the experimental PeerTube toggle"
     },
@@ -72,6 +76,14 @@
     {
       "path": "src/renderer/store/modules/settings.js",
       "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw"
+    },
+    {
+      "path": "src/renderer/views/SearchPage/SearchPage.vue",
+      "reason": "a \"Search PeerTube\" link in the heading row, to the layer's search view for the same query, shown only while PeerTube is on (isPeerTubeEnabled); YouTube search unchanged"
+    },
+    {
+      "path": "src/renderer/views/Settings/Settings.vue",
+      "reason": "spreads in the PeerTube settings section (src/renderer/components/PeerTubeSettings/section.js), present only in Electron while PeerTube is on"
     },
     {
       "path": "static/locales/en-US.yaml",

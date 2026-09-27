@@ -1,0 +1,17 @@
+.searchSourceRow {
+  align-items: flex-end;
+}
+
+.searchSource {
+  flex: 1 1 20em;
+}
+
+.invalidSource {
+  color: var(--accent-color);
+  font-weight: bold;
+}
+
+.hint {
+  color: var(--tertiary-text-color);
+  max-inline-size: 60em;
+}

@@ -17,6 +17,7 @@ vi.mock('../helpers/utils', () => ({
 // The views are under test beside themselves; here they only need to exist
 vi.mock('../views/LayerWatch/LayerWatch.vue', () => ({ default: { name: 'LayerWatch', render: () => null } }))
 vi.mock('../views/LayerChannel/LayerChannel.vue', () => ({ default: { name: 'LayerChannel', render: () => null } }))
+vi.mock('../views/LayerSearch/LayerSearch.vue', () => ({ default: { name: 'LayerSearch', render: () => null } }))
 
 vi.mock('../i18n/index', async () => {
   const { createTestI18n } = await import('../testing/i18n')
@@ -87,6 +88,20 @@ describe('the PeerTube routes', () => {
     await router.push('/peertube/channel/blender@video.blender.org/playlists')
 
     expect(router.currentRoute.value.params).toEqual({ handle: 'blender@video.blender.org', currentTab: 'playlists' })
+  })
+
+  it('include the search page, carrying the query, and the type in the route query', async () => {
+    store.setGetter('getEnablePeerTube', true)
+    const router = createTestRouter(peerTubeRoutes)
+
+    await router.push('/peertube/search/blender%20tutorials?type=channel')
+
+    const { name, params, query, matched } = router.currentRoute.value
+    expect(name).toBe('peertubeSearch')
+    expect(params).toEqual({ query: 'blender tutorials' })
+    expect(query).toEqual({ type: 'channel' })
+    expect(matched[0].meta.title).toBe('Search Results')
+    expect(matched[0].components.default.name).toBe('LayerSearch')
   })
 
   // Each later ticket's route is covered here too

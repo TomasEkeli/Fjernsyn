@@ -14,7 +14,8 @@
  * - `/peertube/channel/:handle/:currentTab?`, name `peertubeChannel`, the
  *   handle `name@host`, the tab `videos` (the default) or `playlists`: the
  *   layer's channel view
- * - `/peertube/search/:query`, name `peertubeSearch` (to come)
+ * - `/peertube/search/:query`, name `peertubeSearch`, query `type`, `video`
+ *   (the default) or `channel`: the layer's search view
  *
  * The views are imported statically, as `router/index.js` imports upstream's.
  * A view reaches the router again through `helpers/utils`, which is the same
@@ -23,6 +24,7 @@
  */
 
 import LayerChannel from '../views/LayerChannel/LayerChannel.vue'
+import LayerSearch from '../views/LayerSearch/LayerSearch.vue'
 import LayerWatch from '../views/LayerWatch/LayerWatch.vue'
 
 /**
@@ -69,5 +71,14 @@ export const peerTubeRoutes = [
     },
     beforeEnter: peerTubeRouteGuard,
     component: LayerChannel
+  },
+  {
+    path: '/peertube/search/:query',
+    name: 'peertubeSearch',
+    meta: {
+      title: 'Search Results'
+    },
+    beforeEnter: peerTubeRouteGuard,
+    component: LayerSearch
   },
 ]
