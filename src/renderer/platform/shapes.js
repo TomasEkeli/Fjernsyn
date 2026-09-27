@@ -6,6 +6,8 @@
 // summary can be handed to an existing component as it is, and a record
 // written by the new path is readable by the old one. Fields are only ever
 // added, never renamed or removed. A record without `platform` is YouTube.
+//
+// How YouTube Local and Invidious map onto these, and where they bend: youtube/types.js.
 
 // ---------------------------------------------------------------------------
 // Refs
