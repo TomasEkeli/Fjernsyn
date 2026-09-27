@@ -2,7 +2,8 @@
 // to an instance goes through here, so the rules that hold for all of them
 // hold in one place:
 //
-// - Every request is `https://{host}/api/v1/...`, carrying the marker header
+// - Every request is `https://{host}/api/v1/...` (or, for a source given by
+//   URL such as the search source, `{base}/api/v1/...`), carrying the marker header
 //   `X-Fjernsyn-PeerTube`. A renderer fetch cannot set a User-Agent, so the
 //   main process recognises the marker, removes it and sets the prescribed
 //   User-Agent instead (design.md, amendment of 2026-09-27). The marker is
@@ -297,10 +298,47 @@ export function createPeerTubeClient({ fetch, now = Date.now }) {
    * @returns {Promise<any>}
    */
   async function get(host, path, query) {
-    if (!isHostname(host) || isNeverPeerTubeHost(host) || typeof path !== 'string' || !path.startsWith('/')) {
+    if (!isHostname(host) || isNeverPeerTubeHost(host) || !isApiPath(path)) {
       throw new PlatformError('invalid', `Not a PeerTube request: ${host} ${path}`, { host })
     }
 
+    const marker = confirmed.has(host) ? PEERTUBE_MARKER_CONFIRMED : PEERTUBE_MARKER_PROBE
+
+    return request(host, `https://${host}/api/v1${path}${buildQuery(query)}`, marker)
+  }
+
+  /**
+   * GETs `{base}/api/v1{path}` from a source given by URL, such as the search
+   * source: an index (SepiaSearch) or an instance speaking PeerTube's API
+   * without being asked for its `/api/v1/config`, since an index has none.
+   * The same rules as `get` otherwise: https only, never a host
+   * `isNeverPeerTubeHost` names, no port, `count` clamped, the host's rate
+   * limit honoured. Always marked `probe`, so main sets the User-Agent without
+   * remembering the host.
+   *
+   * @param {string} base `https://{host}`, optionally with a path it is served under;
+   *   a trailing `/api/v1` and trailing slashes are dropped
+   * @param {string} path below `/api/v1`, starting with `/`
+   * @param {Record<string, unknown>} [query]
+   * @returns {Promise<any>}
+   */
+  async function getAt(base, path, query) {
+    const source = parseSource(base)
+
+    if (!source || !isApiPath(path)) {
+      throw new PlatformError('invalid', `Not a PeerTube API source: ${base} ${path}`, { host: source?.host ?? null })
+    }
+
+    return request(source.host, `${source.base}/api/v1${path}${buildQuery(query)}`, PEERTUBE_MARKER_PROBE)
+  }
+
+  /**
+   * @param {string} host
+   * @param {string} url
+   * @param {string} marker
+   * @returns {Promise<any>}
+   */
+  async function request(host, url, marker) {
     const until = blockedUntil.get(host)
 
     if (until !== undefined) {
@@ -313,15 +351,13 @@ export function createPeerTubeClient({ fetch, now = Date.now }) {
       blockedUntil.delete(host)
     }
 
-    const url = `https://${host}/api/v1${path}${buildQuery(query)}`
-
     let response
     let text
     try {
       response = await fetch(url, {
         headers: {
           Accept: 'application/json',
-          [PEERTUBE_MARKER_HEADER]: confirmed.has(host) ? PEERTUBE_MARKER_CONFIRMED : PEERTUBE_MARKER_PROBE,
+          [PEERTUBE_MARKER_HEADER]: marker,
         },
       })
       text = await response.text()
@@ -430,7 +466,55 @@ export function createPeerTubeClient({ fetch, now = Date.now }) {
     return versionAtLeast(serverVersion, FEATURES[feature])
   }
 
-  return Object.freeze({ get, getConfig, isPeerTube, supports })
+  return Object.freeze({ get, getAt, getConfig, isPeerTube, supports })
+}
+
+/**
+ * @param {unknown} path
+ * @returns {boolean}
+ */
+function isApiPath(path) {
+  return typeof path === 'string' && path.startsWith('/')
+}
+
+/**
+ * The host and base URL (no trailing slash) of a source given as an https
+ * URL with a bare host name, no port, credentials, query or fragment; `null`
+ * for anything else, and for a host that is never PeerTube.
+ *
+ * @param {unknown} value
+ * @returns {{ host: string, base: string } | null}
+ */
+function parseSource(value) {
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  let url
+  try {
+    url = new URL(value)
+  } catch {
+    return null
+  }
+
+  if (
+    url.protocol !== 'https:' ||
+    url.port !== '' ||
+    url.username !== '' ||
+    url.password !== '' ||
+    url.search !== '' ||
+    url.hash !== '' ||
+    !isHostname(url.hostname) ||
+    isNeverPeerTubeHost(url.hostname)
+  ) {
+    return null
+  }
+
+  // A source given with its API path (`https://sepiasearch.org/api/v1/`) is
+  // the same source
+  const path = url.pathname.replace(/\/+$/, '').replace(/\/api\/v1$/, '').replace(/\/+$/, '')
+
+  return { host: url.hostname, base: `https://${url.hostname}${path}` }
 }
 
 /**

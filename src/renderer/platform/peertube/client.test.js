@@ -116,6 +116,59 @@ describe('PeerTube client', () => {
     })
   })
 
+  describe('a search source (an index or an instance, by URL)', () => {
+    it('asks the source API directly, marked as a probe, without asking for its config', async () => {
+      const fake = createFakeFetch().respond(/./, OK).respond(blenderConfig.url, blenderConfig)
+      const client = createPeerTubeClient({ fetch: fake.fetch })
+
+      await client.getAt('https://sepiasearch.org', '/search/videos', { search: 'blender', count: 500 })
+      // A confirmed instance used as a search source still gets a probe marker
+      await client.getConfig('video.blender.org')
+      await client.getAt('https://video.blender.org/', '/search/videos', { search: 'spring' })
+
+      expect(fake.requests.map(({ url, headers }) => [url, headers['x-fjernsyn-peertube']])).toEqual([
+        ['https://sepiasearch.org/api/v1/search/videos?search=blender&count=100', 'probe'],
+        ['https://video.blender.org/api/v1/config', 'probe'],
+        ['https://video.blender.org/api/v1/search/videos?search=spring', 'probe'],
+      ])
+    })
+
+    it('keeps a path the source is served under', async () => {
+      const fake = createFakeFetch().respond(/./, OK)
+      const client = createPeerTubeClient({ fetch: fake.fetch })
+
+      await client.getAt('https://index.example/peertube/', '/search/video-channels', { search: 'x' })
+
+      expect(fake.urls()).toEqual(['https://index.example/peertube/api/v1/search/video-channels?search=x'])
+    })
+
+    it.each([
+      ['http://sepiasearch.org'],
+      ['https://www.youtube.com'],
+      ['https://localhost'],
+      ['https://sepiasearch.org:8443'],
+      ['javascript:alert(1)'],
+      ['not a url'],
+      [''],
+    ])('refuses %s, without a request', async (source) => {
+      const fake = createFakeFetch().respond(/./, OK)
+      const client = createPeerTubeClient({ fetch: fake.fetch })
+
+      expect((await failure(client.getAt(source, '/search/videos'))).kind).toBe('invalid')
+      expect(fake.requests).toHaveLength(0)
+    })
+
+    it('honours the source host rate limit', async () => {
+      const time = clock()
+      const fake = createFakeFetch().respond(/./, rateLimited)
+      const client = createPeerTubeClient({ fetch: fake.fetch, now: time.now })
+
+      expect((await failure(client.getAt('https://sepiasearch.org', '/search/videos'))).kind).toBe('rateLimited')
+      expect((await failure(client.getAt('https://sepiasearch.org', '/search/videos'))).kind).toBe('rateLimited')
+      expect(fake.requests).toHaveLength(1)
+    })
+  })
+
   describe('instance config', () => {
     it('exposes the server version and not the instance JavaScript or CSS', async () => {
       // makertube.net's config carries real instance CSS

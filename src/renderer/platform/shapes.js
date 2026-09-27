@@ -215,11 +215,61 @@
  */
 
 /**
+ * What the channel page shows. `thumbnail` is the summary's avatar, the size
+ * a stored subscription stub holds; `avatarLarge` the largest, for the page
+ * header (`''` when none). For PeerTube, `banner` is the largest banner or
+ * `null`, and `description` and `support` the channel's Markdown.
+ *
  * @typedef {ChannelSummary & {
+ *   avatarLarge: string,
  *   banner: string | null,
  *   description: string,
  *   descriptionKind: 'plain' | 'markdown',
+ *   support?: string | null,
  * }} ChannelDetails
+ */
+
+/**
+ * A channel in a list of results, which the existing channel card
+ * (`FtListChannel`) renders as it is: it reads a Local API channel's field
+ * names when `dataSource` is `'local'`, so `dataSource` names the field names
+ * carried, not where the item came from. `subscribers` and `subscriberCount`
+ * are the same number; `descriptionShort` is a plain-text snippet of the
+ * description (about 200 characters, HTML-escaped, whitespace collapsed), since
+ * the card renders it with `v-safer-html`; `description` is the whole
+ * Markdown, unescaped.
+ *
+ * @typedef {ChannelSummary & {
+ *   type: 'channel',
+ *   dataSource: 'local',
+ *   subscribers: number | null,
+ *   videos: number | null,
+ *   description: string,
+ *   descriptionShort: string,
+ * }} ChannelListItem
+ */
+
+// ---------------------------------------------------------------------------
+// Playlists
+// ---------------------------------------------------------------------------
+
+/**
+ * A playlist in a list, with the field names the existing playlist card
+ * reads for a non-Invidious playlist (`title`, `thumbnail`, `channelName`,
+ * `channelId`, `playlistId`, `videoCount`).
+ *
+ * @typedef {object} PlaylistSummary
+ * @property {'playlist'} type
+ * @property {'youtube' | 'peertube'} [platform] absent for YouTube
+ * @property {string} [host] PeerTube: the origin
+ * @property {string} playlistId PeerTube: the full uuid
+ * @property {string} title
+ * @property {string} thumbnail an absolute URL, `''` when none
+ * @property {number | null} videoCount
+ * @property {string} url the canonical URL on the origin
+ * @property {string} description
+ * @property {string} channelName
+ * @property {string} channelId the channel ref
  */
 
 // ---------------------------------------------------------------------------
@@ -227,25 +277,44 @@
 // ---------------------------------------------------------------------------
 
 /**
- * Read only.
+ * A comment, read only.
+ *
+ * - `id`: the instance's own comment id (a number on PeerTube), needed only to
+ *   fetch the comment's replies; never a ref, never persisted.
+ * - `threadId`: the id of the thread's first comment (its own for a thread).
+ * - `text`, `textKind`: the text as stored, `markdown` (written on the
+ *   platform) or `html` (federated to PeerTube from Mastodon and the like).
+ *   Rendered only through the sanitising directive, Markdown with raw HTML
+ *   escaped.
+ * - `replyCount`: for a thread (from `getComments`), every reply in it; for a
+ *   reply (from `getCommentReplies`), its direct replies, which the next
+ *   `getCommentReplies` for it returns.
+ * - A deleted comment is kept, since it may have replies, with its text and
+ *   author empty.
  *
  * @typedef {object} Comment
- * @property {string} id
- * @property {string} author
- * @property {string} authorId
- * @property {string} authorThumbnail
+ * @property {number | string} id
+ * @property {number | string} threadId
  * @property {string} text
  * @property {'plain' | 'markdown' | 'html'} textKind
- * @property {number} published ms since the epoch
- * @property {number} likeCount
+ * @property {string} author the display name, `''` when none
+ * @property {string} authorAccount PeerTube: the author's account handle
+ *   `name@host`, `''` when none. An account, not a channel: never routed or
+ *   subscribed to as a channel ref
+ * @property {string} authorThumbnail an absolute URL, `''` when none
+ * @property {number} createdAt ms since the epoch
+ * @property {boolean} isDeleted
  * @property {number} replyCount
- * @property {boolean} isPinned
  */
 
 /**
  * One slice of a list. The cursor is opaque: whatever the adapter needs for
  * the next slice (an offset for PeerTube, a continuation for YouTube Local, a
  * page or token for Invidious), handed back unchanged. `null` is the end.
+ *
+ * An empty page with a non-null cursor is not the end: filtering (NSFW) can
+ * empty a page, and the adapter follows such a page with only a few more
+ * requests before handing back what it has. Ask again with the cursor.
  *
  * @template T
  * @typedef {object} Page

@@ -15,7 +15,7 @@
 //   instance gives one, a missing video `notFound` (see `./client.js`).
 
 import { PlatformError } from '../errors'
-import { PLATFORM_PEERTUBE, isHostname, isUuid } from '../refs'
+import { isPeerTubeVideoRef } from '../refs'
 import { downloadOptionsFor } from './downloads'
 import {
   absoluteUrl,
@@ -29,18 +29,6 @@ import {
   videoSummary,
 } from './normalise'
 import { playbackSourceFor } from './playback'
-
-/**
- * @param {unknown} ref
- * @returns {ref is import('../shapes').PeerTubeVideoRef}
- */
-function isPeerTubeVideoRef(ref) {
-  return typeof ref === 'object' &&
-    ref !== null &&
-    ref.platform === PLATFORM_PEERTUBE &&
-    isHostname(ref.host) &&
-    isUuid(ref.videoId)
-}
 
 /**
  * @template T

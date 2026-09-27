@@ -77,7 +77,7 @@ function hostOrNull(value) {
  * @param {unknown} url
  * @returns {string | null}
  */
-function hostOfUrl(url) {
+export function hostOfUrl(url) {
   if (typeof url !== 'string') {
     return null
   }
@@ -144,6 +144,30 @@ export function pickThumbnail(video, host) {
 }
 
 /**
+ * An actor's images with an absolute https URL each, and their widths: from
+ * the list (`avatars[]`, `banners[]`) when it has any, else the singular field
+ * of older instances (`avatar`, `banner`).
+ *
+ * @param {unknown} list
+ * @param {unknown} single
+ * @param {string} host the instance that answered
+ * @returns {Array<{ width: number, url: string }>}
+ */
+function usableImages(list, single, host) {
+  let images = []
+
+  if (Array.isArray(list) && list.length > 0) {
+    images = list
+  } else if (single) {
+    images = [single]
+  }
+
+  return images
+    .map(image => ({ width: Number(image?.width) || 0, url: absoluteUrl(host, image?.fileUrl ?? image?.path) }))
+    .filter(image => image.url)
+}
+
+/**
  * A channel's or account's avatar: the smallest at least `AVATAR_MIN_WIDTH`
  * wide, else the largest there is. `''` when there is none.
  *
@@ -152,17 +176,7 @@ export function pickThumbnail(video, host) {
  * @returns {string}
  */
 export function pickAvatar(actor, host) {
-  let avatars = []
-
-  if (Array.isArray(actor?.avatars)) {
-    avatars = actor.avatars
-  } else if (actor?.avatar) {
-    avatars = [actor.avatar]
-  }
-
-  const usable = avatars
-    .map(avatar => ({ width: Number(avatar?.width) || 0, url: absoluteUrl(host, avatar?.fileUrl ?? avatar?.path) }))
-    .filter(avatar => avatar.url)
+  const usable = usableImages(actor?.avatars, actor?.avatar, host)
     .sort((a, b) => a.width - b.width)
 
   if (usable.length === 0) {
@@ -170,6 +184,48 @@ export function pickAvatar(actor, host) {
   }
 
   return (usable.find(avatar => avatar.width >= AVATAR_MIN_WIDTH) ?? usable.at(-1)).url
+}
+
+/**
+ * The largest of an actor's images, from the list (`avatars[]`, `banners[]`)
+ * or the singular field of older instances (`avatar`, `banner`); `null` when
+ * there is none.
+ *
+ * @param {unknown} list
+ * @param {unknown} single
+ * @param {string} host the instance that answered
+ * @returns {string | null}
+ */
+function pickLargestImage(list, single, host) {
+  const usable = usableImages(list, single, host)
+
+  if (usable.length === 0) {
+    return null
+  }
+
+  return usable.reduce((best, image) => (image.width > best.width ? image : best)).url
+}
+
+/**
+ * A channel's largest avatar, for its header. `''` when there is none.
+ *
+ * @param {any} actor
+ * @param {string} host the instance that answered
+ * @returns {string}
+ */
+export function pickLargestAvatar(actor, host) {
+  return pickLargestImage(actor?.avatars, actor?.avatar, host) ?? ''
+}
+
+/**
+ * A channel's largest banner, or `null`.
+ *
+ * @param {any} actor
+ * @param {string} host the instance that answered
+ * @returns {string | null}
+ */
+export function pickBanner(actor, host) {
+  return pickLargestImage(actor?.banners, actor?.banner, host)
 }
 
 /**
@@ -201,6 +257,69 @@ export function channelSummary(channel, answeringHost) {
     url,
     subscriberCount: typeof channel.followersCount === 'number' ? channel.followersCount : null,
   }
+}
+
+/**
+ * A channel in a list (search results): a `ChannelSummary` that the existing
+ * channel card (`FtListChannel`) renders as it is. The card reads a Local
+ * API channel's fields when `dataSource` is `'local'` (`thumbnail`, `name`,
+ * `id`, `subscribers`, `videos`, `handle`, `descriptionShort`), and would
+ * otherwise read Invidious's `authorThumbnails[2]`, which PeerTube has none
+ * of; so `dataSource` says which field names the item carries, not where it
+ * came from. `null` when the channel cannot be named.
+ *
+ * @param {any} channel
+ * @param {string} answeringHost
+ * @returns {import('../shapes').ChannelListItem | null}
+ */
+export function channelListItem(channel, answeringHost) {
+  const summary = channelSummary(channel, answeringHost)
+
+  if (!summary) {
+    return null
+  }
+
+  const description = typeof channel.description === 'string' ? channel.description : ''
+
+  return {
+    type: 'channel',
+    dataSource: 'local',
+    ...summary,
+    subscribers: summary.subscriberCount,
+    videos: typeof channel.videosCount === 'number' ? channel.videosCount : null,
+    description,
+    descriptionShort: plainSnippet(description),
+  }
+}
+
+// The length a card's description snippet is cut to
+const SNIPPET_LENGTH = 200
+
+/**
+ * A short plain-text snippet of instance-supplied text, safe to hand to
+ * `v-safer-html` (which the channel card renders `descriptionShort` with, and
+ * which lets `<a href>` and `<img src style>` through): `&`, `<`, `>` and `"`
+ * escaped so no markup survives, whitespace (newlines included) collapsed to
+ * single spaces, and cut to `SNIPPET_LENGTH` characters on a word boundary
+ * with an ellipsis. Cut before escaping, so an entity is never split.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function plainSnippet(text) {
+  let snippet = text.replaceAll(/\s+/g, ' ').trim()
+
+  if (snippet.length > SNIPPET_LENGTH) {
+    const cut = snippet.slice(0, SNIPPET_LENGTH + 1)
+    const space = cut.lastIndexOf(' ')
+    snippet = `${(space > 0 ? cut.slice(0, space) : cut.slice(0, SNIPPET_LENGTH)).trimEnd()}…`
+  }
+
+  return snippet
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
 }
 
 /**

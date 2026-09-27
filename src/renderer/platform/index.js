@@ -4,7 +4,10 @@
 // replace them. See "Platforms" in docs/CONTEXT.md and ADR-0014.
 
 import { describe } from './describe'
+import { createChannelReader } from './peertube/channels'
 import { createPeerTubeClient } from './peertube/client'
+import { createCommentReader } from './peertube/comments'
+import { createSearcher } from './peertube/search'
 import { createUrlResolver, parsePeerTubeInput } from './peertube/urls'
 import { createVideoReader } from './peertube/videos'
 
@@ -105,6 +108,9 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   // Stateless: what is known of each host is the client's
   const urls = createUrlResolver({ client: peertube })
   const videos = createVideoReader({ client: peertube, config: frozenConfig })
+  const channels = createChannelReader({ client: peertube, config: frozenConfig })
+  const searcher = createSearcher({ client: peertube, config: frozenConfig })
+  const comments = createCommentReader({ client: peertube })
 
   const invidiousHost = hostOf(frozenConfig.currentInvidiousInstanceUrl)
   const excludedHosts = invidiousHost ? [invidiousHost] : []
@@ -179,15 +185,100 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
     return videos.getVideo(ref)
   }
 
+  /**
+   * A channel's details, from its origin (see `./peertube/channels.js`).
+   * PeerTube only for now: the ref is a `name@host` handle; anything else
+   * rejects as `invalid`, without a request. A channel the instance does not
+   * know is `notFound`.
+   *
+   * @param {import('./shapes').ChannelRef} ref
+   * @returns {Promise<import('./shapes').ChannelDetails>}
+   */
+  function getChannel(ref) {
+    return channels.getChannel(ref)
+  }
+
+  /**
+   * A page of a channel's videos, sorted `newest` (the default), `popular` or
+   * `oldest`, filtered by the NSFW preference. Hand the page's `cursor` back
+   * for the next page; `null` is the end.
+   *
+   * @param {import('./shapes').ChannelRef} ref
+   * @param {{ sort?: 'newest' | 'popular' | 'oldest', cursor?: unknown }} [options]
+   * @returns {Promise<import('./shapes').Page<import('./shapes').VideoSummary>>}
+   */
+  function listChannelVideos(ref, options) {
+    return channels.listChannelVideos(ref, options)
+  }
+
+  /**
+   * A page of a channel's playlists.
+   *
+   * @param {import('./shapes').ChannelRef} ref
+   * @param {{ cursor?: unknown }} [options]
+   * @returns {Promise<import('./shapes').Page<import('./shapes').PlaylistSummary>>}
+   */
+  function listChannelPlaylists(ref, options) {
+    return channels.listChannelPlaylists(ref, options)
+  }
+
+  /**
+   * A page of PeerTube search results from the configured search source
+   * (`peertubeSearchSource`: SepiaSearch by default, or any index or instance
+   * speaking PeerTube's search API; see `./peertube/search.js`). Videos are
+   * video summaries and channels channel list items, each carrying its
+   * origin host so that it plays and opens from there. Video results are
+   * filtered by the NSFW preference. A blank query is an empty page, without
+   * a request. `platform` is `'peertube'` or absent; any other rejects as
+   * `invalid`.
+   *
+   * @param {string} query
+   * @param {{ platform?: 'peertube', type?: 'video' | 'channel', cursor?: unknown }} [options]
+   * @returns {Promise<import('./shapes').Page<import('./shapes').VideoSummary | import('./shapes').ChannelListItem>>}
+   */
+  function search(query, options) {
+    return searcher.search(query, options)
+  }
+
+  /**
+   * A page of a video's comment threads, newest first, read only (see
+   * `./peertube/comments.js`). A video whose details say comments are off
+   * (`commentsEnabled: false`) is an empty page, without a request.
+   *
+   * @param {import('./shapes').VideoRef} ref
+   * @param {{ cursor?: unknown }} [options]
+   * @returns {Promise<import('./shapes').Page<import('./shapes').Comment>>}
+   */
+  function getComments(ref, options) {
+    return comments.getComments(ref, options)
+  }
+
+  /**
+   * A page of a comment's direct replies, each with its own `replyCount`, so
+   * that deeper replies load on demand in the same way.
+   *
+   * @param {import('./shapes').VideoRef} ref
+   * @param {import('./shapes').Comment} comment as `getComments` or this returned it
+   * @param {{ cursor?: unknown }} [options]
+   * @returns {Promise<import('./shapes').Page<import('./shapes').Comment>>}
+   */
+  function getCommentReplies(ref, comment, options) {
+    return comments.getCommentReplies(ref, comment, options)
+  }
+
   return Object.freeze({
     config: frozenConfig,
     describe: describeEntity,
     resolveUrl,
     getVideo,
+    getChannel,
+    listChannelVideos,
+    listChannelPlaylists,
+    search,
+    getComments,
+    getCommentReplies,
 
-    // Later tickets add the other fetching operations here, each over the
-    // same client and returning the common shapes of ./shapes.js:
-    // getChannel, listChannelVideos, listChannelPlaylists, search,
-    // getComments, getCommentReplies, fetchChannelFeed
+    // A later ticket adds fetchChannelFeed here, over the same client and
+    // returning the fetch status contract
   })
 }

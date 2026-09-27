@@ -79,6 +79,21 @@ export function peerTubeVideoRef(host, uuid) {
 }
 
 /**
+ * Whether a value is a PeerTube video ref, or a record or details carrying
+ * one (`platform`, `host`, `videoId`).
+ *
+ * @param {unknown} ref
+ * @returns {ref is import('./shapes').PeerTubeVideoRef}
+ */
+export function isPeerTubeVideoRef(ref) {
+  return typeof ref === 'object' &&
+    ref !== null &&
+    ref.platform === PLATFORM_PEERTUBE &&
+    isHostname(ref.host) &&
+    isUuid(ref.videoId)
+}
+
+/**
  * Parses a PeerTube channel handle, `name@host` or `@name@host`.
  *
  * @param {unknown} value
