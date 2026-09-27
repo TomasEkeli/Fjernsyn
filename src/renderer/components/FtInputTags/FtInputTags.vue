@@ -36,7 +36,7 @@
         @change="toggleShowTags"
       >
       <label :for="id">
-        {{ t('Settings.Distraction Free Settings.Show Added Items') }}
+        {{ t('Input Tags.Show Added Items') }}
       </label>
     </div>
     <div

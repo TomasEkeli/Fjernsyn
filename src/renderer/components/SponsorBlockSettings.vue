@@ -68,14 +68,15 @@
       </FtFlexBox>
       <FtFlexBox
         v-if="useSponsorBlock"
+        class="excludedChannels"
       >
         <FtInputTags
           :disabled="sponsorBlockExcludedChannelsDisabled"
           :disabled-msg="t('Settings.SponsorBlock Settings.Excluded Channels.Disabled Message')"
-          :label="t('Settings.SponsorBlock Settings.Excluded Channels.Excluded Channels')"
+          :label="t('SponsorBlock.Channels That Are Never Skipped')"
           :tag-name-placeholder="t('SponsorBlock.Excluded Channels Placeholder')"
           :tag-list="sponsorBlockExcludedChannels"
-          :tooltip="t('Settings.SponsorBlock Settings.Excluded Channels.Tooltip')"
+          :tooltip="t('SponsorBlock.Channels That Are Never Skipped Tooltip')"
           :validate-tag-name="checkYoutubeChannelId"
           :find-tag-info="findChannelTagInfoWrapper"
           :resolve-tag-name="resolveSubscribedChannelName"
@@ -375,3 +376,10 @@ async function verifyExcludedChannelTags() {
 }
 
 </script>
+
+<style scoped>
+/* Clear of the category dropdowns above, which it would otherwise touch */
+.excludedChannels {
+  margin-block-start: 20px;
+}
+</style>

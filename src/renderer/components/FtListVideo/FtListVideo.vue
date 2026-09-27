@@ -733,11 +733,11 @@ const dropdownOptions = computed(() => {
 
         isSponsorBlockChannelExcluded
           ? {
-              label: t('Video.Enable SponsorBlock on Channel'),
+              label: t('SponsorBlock.Resume Skipping On This Channel'),
               value: 'enableSponsorBlockOnChannel'
             }
           : {
-              label: t('Video.Disable SponsorBlock on Channel'),
+              label: t('SponsorBlock.Never Skip On This Channel'),
               value: 'disableSponsorBlockOnChannel'
             }
       )
@@ -1381,7 +1381,7 @@ function disableSponsorBlockOnChannel(channelName, channelId) {
 
   store.dispatch('updateSponsorBlockExcludedChannels', JSON.stringify(newExcludedChannels))
 
-  showToast(t('SponsorBlock Disabled on Channel', { channel: channelName }))
+  showToast(t('SponsorBlock.Segments Will Be Marked Only', { channel: channelName }))
 }
 
 /**
@@ -1391,7 +1391,7 @@ function disableSponsorBlockOnChannel(channelName, channelId) {
 function enableSponsorBlockOnChannel(channelName, channelId) {
   store.dispatch('updateSponsorBlockExcludedChannels', JSON.stringify(sponsorBlockExcludedChannels.value.filter(c => c.name !== channelId)))
 
-  showToast(t('SponsorBlock Enabled on Channel', { channel: channelName }))
+  showToast(t('SponsorBlock.Segments Will Be Skipped Again', { channel: channelName }))
 }
 
 function toggleQuickBookmarked() {

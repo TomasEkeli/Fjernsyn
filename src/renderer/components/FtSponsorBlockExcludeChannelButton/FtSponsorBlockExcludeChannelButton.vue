@@ -47,8 +47,8 @@ const excluded = computed(() => isSponsorBlockExcludedChannel(props.channelId))
 // The same words as the entry in a video's menu, which does the same thing
 const title = computed(() => {
   return excluded.value
-    ? t('Video.Enable SponsorBlock on Channel')
-    : t('Video.Disable SponsorBlock on Channel')
+    ? t('SponsorBlock.Resume Skipping On This Channel')
+    : t('SponsorBlock.Never Skip On This Channel')
 })
 
 async function toggle() {
@@ -57,8 +57,8 @@ async function toggle() {
 
   showToast(
     nowExcluded
-      ? t('SponsorBlock Disabled on Channel', { channel })
-      : t('SponsorBlock Enabled on Channel', { channel })
+      ? t('SponsorBlock.Segments Will Be Marked Only', { channel })
+      : t('SponsorBlock.Segments Will Be Skipped Again', { channel })
   )
 }
 </script>

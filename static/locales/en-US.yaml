@@ -910,10 +910,9 @@ Settings:
     Category Color: Category Color
     Excluded Channels:
       Disabled Message: Some channels were excluded using ID and weren't processed. Feature is blocked while those IDs are updating
-      Excluded Channels: Channels That Are Never Skipped
-      Tooltip: Segments in videos from these channels are shown on the seek bar but never skipped past, whatever the
-        categories above say. Enter the name of a channel you are subscribed to, or a channel ID or URL for any other
-        channel. Channels can also be added from a channel page, the video you are watching, or a video's menu.
+      Excluded Channels: Excluded Channels
+      Tooltip: Enter a channel ID to have SponsorBlock disabled. Sponsor segments in videos from this channel won't be skipped.
+        The channel ID entered must be a complete match and is case sensitive.
   Parental Control Settings:
     Parental Control Settings: Parental Control
     Hide Unsubscribe Button: Hide Unsubscribe Button
@@ -1124,8 +1123,8 @@ Video:
   Copy Invidious Channel Link: Copy Invidious Channel Link
   Hide Channel: Hide Channel
   Unhide Channel: Show Channel
-  Enable SponsorBlock on Channel: Skip SponsorBlock segments on this channel again
-  Disable SponsorBlock on Channel: Never skip SponsorBlock segments on this channel
+  Enable SponsorBlock on Channel: Enable SponsorBlock on Channel
+  Disable SponsorBlock on Channel: Disable SponsorBlock on Channel
   Views: Views
   Loop Playlist: Loop Playlist
   Shuffle Playlist: Shuffle Playlist
@@ -1341,10 +1340,28 @@ Chapters:
   Chapters: Chapters
   Key Moments: Key Moments
 
+# The fork's own wording. Upstream's keys for the same things are left as
+# upstream has them: Weblate translates those into en-GB and the rest, which
+# would put upstream's wording back over any change made to them here, while
+# keys only this file has fall back to it in every language.
 SponsorBlock:
+  Channels That Are Never Skipped: Channels that are never skipped
+  Channels That Are Never Skipped Tooltip: Segments in videos from these channels are shown on the seek bar but never
+    skipped past, whatever the categories above say. Enter the name of a channel you are subscribed to, or a channel ID
+    or URL for any other channel. Channels can also be added from a channel page, the video you are watching, or a
+    video's menu.
+  Never Skip On This Channel: Never skip SponsorBlock segments on this channel
+  Resume Skipping On This Channel: Skip SponsorBlock segments on this channel again
+  Segments Will Be Marked Only: 'Segments on {channel} are now marked, not skipped'
+  Segments Will Be Skipped Again: 'Segments on {channel} are skipped again'
   Excluded Channels Placeholder: Channel name, ID or URL
-  Excluded Channel Not Found: Could not tell which channel that is. Enter the full name of one channel you subscribe to, or a channel ID starting with UC, or a URL with one in it
+  Excluded Channel Not Found: Could not find that channel. Enter the full name of a channel you subscribe to, a channel ID starting with UC, or a URL with one in it
+  Excluded Channel Name Is Shared: More than one channel you subscribe to is called {name}. Pick the one you mean from the suggestions
   Excluded Channel Already Listed: That channel is already on the list
+
+# The fork's own, for the same reason as above
+Input Tags:
+  Show Added Items: Show added items
 
 Mini Player: Mini Player
 Comments:
@@ -1499,8 +1516,8 @@ Screenshot Error: Screenshot failed. {error}
 Screenshot Clipboard Error: Screenshot copy to clipboard failed
 Channel Hidden: '{channel} added to channel filter'
 Channel Unhidden: '{channel} removed from channel filter'
-SponsorBlock Disabled on Channel: 'Segments on {channel} are now marked, not skipped'
-SponsorBlock Enabled on Channel: 'Segments on {channel} are skipped again'
+SponsorBlock Disabled on Channel: 'SponsorBlock disabled on {channel}'
+SponsorBlock Enabled on Channel: 'SponsorBlock enabled on {channel}'
 Trimmed input must be at least N characters long: Trimmed input must be at least 1 character long | Trimmed input must be at least {length} characters long
 Tag already exists: '"{tagName}" tag already exists'
 
