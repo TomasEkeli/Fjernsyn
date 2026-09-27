@@ -240,17 +240,19 @@ function youtubeImageUrlToInvidious(url, currentInstance) {
 // ---------------------------------------------------------------------------
 
 /**
+ * An instance-supplied image URL, kept only if `https:` (as the adapter keeps
+ * every instance URL: design.md, ticket 05 amendment)
+ *
  * @param {unknown} url
  * @returns {string | null}
  */
-function httpUrlOrNull(url) {
+function httpsUrlOrNull(url) {
   if (typeof url !== 'string' || url === '') {
     return null
   }
 
   try {
-    const { protocol } = new URL(url)
-    return protocol === 'https:' || protocol === 'http:' ? url : null
+    return new URL(url).protocol === 'https:' ? url : null
   } catch {
     return null
   }
@@ -274,7 +276,7 @@ function describePeerTubeVideo(entity, { thumbnailPreference }) {
     route: { path: `/peertube/watch/${host}/${uuid}` },
     // PeerTube has one thumbnail per video, so the frame and size preferences
     // do not apply; hiding thumbnails does
-    thumbnail: thumbnailPreference === 'hidden' ? null : httpUrlOrNull(entity.thumbnail),
+    thumbnail: thumbnailPreference === 'hidden' ? null : httpsUrlOrNull(entity.thumbnail),
     shareUrl: watchUrl,
     externalPlayerUrl: watchUrl,
   }
@@ -296,7 +298,7 @@ function describePeerTubeChannel(entity) {
 
   return {
     route: { path: `/peertube/channel/${name}@${host}` },
-    thumbnail: httpUrlOrNull(entity.thumbnail),
+    thumbnail: httpsUrlOrNull(entity.thumbnail),
     shareUrl: `https://${host}/video-channels/${name}`,
     externalPlayerUrl: null,
   }

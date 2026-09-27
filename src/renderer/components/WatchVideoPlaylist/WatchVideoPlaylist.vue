@@ -203,6 +203,8 @@ import {
 } from '../../helpers/api/local'
 import { invidiousGetPlaylistInfo, fetchAllInvidiousPlaylistVideos } from '../../helpers/api/invidious'
 import { getSortedPlaylistItems, SORT_BY_VALUES } from '../../helpers/playlists'
+import { coverThumbnail } from '../../platform/cards'
+import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
 
 const props = defineProps({
   playlistId: {
@@ -338,6 +340,10 @@ const previewVideoThumbnail = computed(() => {
 
   if (index >= 0 && index < playlistItems.value.length) {
     const videoId = playlistItems.value[index].videoId
+
+    // Fjernsyn: an item of another platform (PeerTube) previews with its own thumbnail, or the placeholder
+    const platformThumbnail = coverThumbnail(playlistItems.value[index], thumbnailPlaceholder)
+    if (platformThumbnail !== null) { return platformThumbnail }
 
     if (videoId) {
       const baseUrl = backendPreference.value === 'invidious'

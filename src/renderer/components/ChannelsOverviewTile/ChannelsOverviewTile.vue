@@ -129,7 +129,7 @@
     <a
       v-if="showChannelLink"
       class="corner channelLink"
-      :href="`#/channel/${channel.id}`"
+      :href="`#${channelPath}`"
       :title="channelLinkLabel"
       :aria-label="channelLinkLabel"
       draggable="false"
@@ -151,6 +151,7 @@ import ChannelsOverviewMenuButton from '../ChannelsOverviewMenuButton/ChannelsOv
 import store from '../../store/index'
 import { invidiousImageUrlToInvidious, youtubeImageUrlToInvidious } from '../../helpers/api/invidious'
 import { calculateColorLuminance } from '../../helpers/colors'
+import { describeCard } from '../../platform/cards'
 
 const props = defineProps({
   /** @type {import('vue').PropType<import('../../helpers/channelsOverview').Channel>} */
@@ -245,7 +246,7 @@ function openChannel(event) {
   if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) { return }
 
   event.preventDefault()
-  router.push(`/channel/${props.channel.id}`)
+  router.push(channelPath.value)
 }
 
 /**
@@ -254,7 +255,7 @@ function openChannel(event) {
  */
 function goToChannel() {
   if (showChannelLink.value) {
-    router.push(`/channel/${props.channel.id}`)
+    router.push(channelPath.value)
   }
 }
 
@@ -275,6 +276,15 @@ const duplicateTitle = computed(() => {
 
 const showChannelLink = computed(() => !store.getters.getDisableChannelLinks)
 
+/**
+ * A channel of another platform (PeerTube) as the platform layer describes
+ * it, null for a YouTube one
+ */
+const platformCard = computed(() => describeCard(props.channel))
+
+/** The channel's page: a PeerTube channel's own route, a YouTube one's `/channel/UC…` */
+const channelPath = computed(() => platformCard.value?.route?.path ?? `/channel/${props.channel.id}`)
+
 /** @type {import('vue').ComputedRef<'local' | 'invidious'>} */
 const backendPreference = computed(() => store.getters.getBackendPreference)
 
@@ -290,6 +300,9 @@ const THUMBNAIL_SIZE = 176
  * Invidious instance's from before they were normalised on save.
  */
 const thumbnailUrl = computed(() => {
+  // Its stored avatar as it is: none of the YouTube and Invidious rewrites below apply
+  if (platformCard.value) { return platformCard.value.thumbnail }
+
   const original = props.channel.thumbnail
 
   if (!original) { return null }

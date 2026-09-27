@@ -142,9 +142,11 @@ group('describe', () => {
       expect(describe(video, { ...INVIDIOUS, thumbnailPreference: 'start' }, { large: true }).thumbnail).toBe(thumbnail)
     })
 
-    it('has no thumbnail when thumbnails are hidden, or when the stored one is not http', () => {
+    it('has no thumbnail when thumbnails are hidden, or when the stored one is not https', () => {
       expect(describe(video, { ...LOCAL, thumbnailPreference: 'hidden' }).thumbnail).toBeNull()
       expect(describe({ ...video, thumbnail: 'javascript:alert(1)' }, LOCAL).thumbnail).toBeNull()
+      expect(describe({ ...video, thumbnail: 'http://video.blender.org/lazy-static/thumbnails/a.jpg' }, LOCAL).thumbnail).toBeNull()
+      expect(describe({ ...video, thumbnail: 'data:image/png;base64,AAAA' }, LOCAL).thumbnail).toBeNull()
       expect(describe({ ...video, thumbnail: undefined }, LOCAL).thumbnail).toBeNull()
     })
 
@@ -173,8 +175,10 @@ group('describe', () => {
       })
     })
 
-    it('has no thumbnail when it has no avatar', () => {
+    it('has no thumbnail when it has no avatar, or one that is not https', () => {
       expect(describe({ ...stub, thumbnail: '' }, LOCAL).thumbnail).toBeNull()
+      expect(describe({ ...stub, thumbnail: 'http://video.blender.org/lazy-static/avatars/b.png' }, LOCAL).thumbnail).toBeNull()
+      expect(describe({ ...stub, thumbnail: 'javascript:alert(1)' }, LOCAL).thumbnail).toBeNull()
     })
 
     it('describes nothing for a stub whose id is not a handle', () => {

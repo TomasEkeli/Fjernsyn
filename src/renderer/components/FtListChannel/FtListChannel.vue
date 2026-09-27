@@ -10,7 +10,7 @@
     <div class="channelThumbnail">
       <component
         :is="enableChannelLinks ? 'router-link' : 'div'"
-        :to="`/channel/${id}`"
+        :to="channelLink"
         class="channelThumbnailLink"
         tabindex="-1"
         aria-hidden="true"
@@ -27,7 +27,7 @@
         <component
           :is="enableChannelLinks ? 'router-link' : 'span'"
           class="title"
-          :to="`/channel/${id}`"
+          :to="channelLink"
         >
           <h3
             class="h3Title"
@@ -42,7 +42,7 @@
             v-if="handle !== null"
             class="handle"
             dir="auto"
-            :to="`/channel/${id}`"
+            :to="channelLink"
           >
             {{ handle }}
           </component>
@@ -74,6 +74,7 @@
         :channel-id="id"
         :channel-name="name"
         :channel-thumbnail="thumbnail"
+        :channel-platform-fields="platformCard ? { platform: data.platform, host: data.host } : null"
       />
     </div>
   </div>
@@ -89,6 +90,7 @@ import store from '../../store/index'
 
 import { youtubeImageUrlToInvidious } from '../../helpers/api/invidious'
 import { formatNumber } from '../../helpers/utils'
+import { describeCard } from '../../platform/cards'
 
 const props = defineProps({
   data: {
@@ -140,6 +142,11 @@ if (process.env.SUPPORTS_LOCAL_API && props.data.dataSource === 'local') {
 } else {
   parseInvidiousData()
 }
+
+// Fjernsyn: a channel of another platform (PeerTube) routes and shows its avatar as the platform layer says
+const platformCard = describeCard(props.data)
+if (platformCard) { thumbnail = platformCard.thumbnail ?? '' }
+const channelLink = platformCard?.channelRoute ?? `/channel/${id}`
 
 const formattedSubscriberCount = computed(() => {
   if (subscriberCount != null) {

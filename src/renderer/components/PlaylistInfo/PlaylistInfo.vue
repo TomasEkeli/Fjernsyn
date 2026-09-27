@@ -8,7 +8,7 @@
     >
       <router-link
         v-if="firstVideoIdExists"
-        :to="{
+        :to="firstVideoCard?.route ?? {
           path: `/watch/${firstVideoId}`,
           query: {
             playlistId: id,
@@ -285,6 +285,7 @@ import {
   deepCopy,
 } from '../../helpers/utils'
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
+import { describeCard } from '../../platform/cards'
 
 const props = defineProps({
   id: {
@@ -444,6 +445,9 @@ const allPlaylists = computed(() => store.getters.getAllPlaylists)
 
 const firstVideoIdExists = computed(() => props.firstVideoId !== '')
 
+// Fjernsyn: a first video of another platform (PeerTube) has its own thumbnail and opens on its own; null for YouTube
+const firstVideoCard = computed(() => describeCard(props.videos.find(video => video.videoId === props.firstVideoId)))
+
 const parsedViewCount = computed(() => formatNumber(props.viewCount))
 const parsedVideoCount = computed(() => formatNumber(props.videoCount))
 
@@ -452,6 +456,8 @@ const thumbnail = computed(() => {
   if (thumbnailPreference.value === 'hidden' || !firstVideoIdExists.value) {
     return thumbnailPlaceholder
   }
+
+  if (firstVideoCard.value) { return firstVideoCard.value.thumbnail ?? thumbnailPlaceholder }
 
   let baseUrl = 'https://i.ytimg.com'
   if (backendPreference.value === 'invidious') {
@@ -740,7 +746,7 @@ async function exportAsListOfUrls() {
   const exportFileName = getExportFilename(props.title, 'txt')
 
   const data = props.sortedVideos.map((video) => {
-    return `https://www.youtube.com/watch?v=${video.videoId}`
+    return describeCard(video)?.shareUrl ?? `https://www.youtube.com/watch?v=${video.videoId}`
   }).join('\n') + '\n'
 
   // See DataSettings.vue `promptAndWriteToFile`
