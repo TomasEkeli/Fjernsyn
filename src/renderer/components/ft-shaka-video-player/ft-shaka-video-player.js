@@ -3650,7 +3650,10 @@ export default defineComponent({
               const highestBandwidth = Math.max(...variants.map(variant => variant.audioBandwidth))
               variants = variants.filter(variant => variant.audioBandwidth === highestBandwidth)
 
-              player.selectVariantTrack(variants[0])
+              // None in src= mode, as a PeerTube progressive audio file plays
+              if (variants.length > 0) {
+                player.selectVariantTrack(variants[0])
+              }
             }
           }
         } catch (error) {
@@ -3850,13 +3853,14 @@ export default defineComponent({
               dimension = legacyFormat.height > legacyFormat.width ? legacyFormat.width : legacyFormat.height
             }
           } else if (oldFormat !== 'legacy') {
+            // None active in src= mode, as a PeerTube progressive audio file plays
             const track = player.getVariantTracks().find(track => track.active)
 
-            if (typeof track.audioBandwidth === 'number') {
+            if (typeof track?.audioBandwidth === 'number') {
               audioBandwidth = track.audioBandwidth
             }
 
-            if (track.label) {
+            if (track?.label) {
               label = track.label
             }
           }
@@ -3919,7 +3923,10 @@ export default defineComponent({
                   }, null)
                 }
 
-                player.selectVariantTrack(chosenVariant)
+                // None in src= mode, as a PeerTube progressive audio file plays
+                if (chosenVariant) {
+                  player.selectVariantTrack(chosenVariant)
+                }
               }
             }
           } catch (error) {
