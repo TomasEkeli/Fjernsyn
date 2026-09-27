@@ -16,6 +16,7 @@ import Hashtag from '../views/Hashtag/Hashtag.vue'
 import Post from '../views/Post.vue'
 // THROWAWAY: the platform layer spike (ticket 03), removed by ticket 07
 import PeerTubeSpike from '../views/PeerTubeSpike/PeerTubeSpike.vue'
+import { peerTubeRoutes } from '../platform/routes'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -157,7 +158,8 @@ const router = createRouter({
         title: 'PeerTube spike'
       },
       component: PeerTubeSpike
-    }
+    },
+    ...peerTubeRoutes
   ],
   scrollBehavior(to, from, savedPosition) {
     return new Promise((resolve, reject) => {

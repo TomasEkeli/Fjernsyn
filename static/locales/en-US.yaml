@@ -1363,6 +1363,14 @@ SponsorBlock:
 Input Tags:
   Show Added Items: Show added items
 
+# The fork's own, for the same reason as above
+PeerTube:
+  Settings:
+    Enable PeerTube: PeerTube (experimental)
+    Enable PeerTube Tooltip: Opens PeerTube links in Fjernsyn, lets you follow PeerTube channels in your profiles and
+      search PeerTube. No PeerTube account is needed or used.
+  Switched off: PeerTube is switched off. Switch it on in Experimental settings.
+
 Mini Player: Mini Player
 Comments:
   Comments: Comments

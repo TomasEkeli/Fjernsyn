@@ -33,6 +33,14 @@
         :tooltip="$t('Tooltips.Experimental Settings.Regulated Streaming')"
         @change="handleRegulatedStreaming"
       />
+      <FtToggleSwitch
+        tooltip-position="top"
+        :label="$t('PeerTube.Settings.Enable PeerTube')"
+        compact
+        :default-value="enablePeerTube"
+        :tooltip="$t('PeerTube.Settings.Enable PeerTube Tooltip')"
+        @change="handleEnablePeerTube"
+      />
     </FtFlexBox>
     <FtPrompt
       v-if="showRestartPrompt"
@@ -78,6 +86,16 @@ const regulatedStreaming = computed(() => store.getters.getEnableRegulatedStream
  */
 function handleRegulatedStreaming(value) {
   store.dispatch('updateEnableRegulatedStreaming', value)
+}
+
+/** @type {import('vue').ComputedRef<boolean>} */
+const enablePeerTube = computed(() => store.getters.getEnablePeerTube)
+
+/**
+ * @param {boolean} value
+ */
+function handleEnablePeerTube(value) {
+  store.dispatch('updateEnablePeerTube', value)
 }
 
 onMounted(async () => {

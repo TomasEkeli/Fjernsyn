@@ -194,6 +194,10 @@ const state = {
   disableChannelLinks: false,
   displayVideoPlayButton: false,
   enableRegulatedStreaming: false,
+  // PeerTube through the platform layer (experimental): the switch, the search source, NSFW results
+  enablePeerTube: false,
+  peerTubeSearchSource: 'https://sepiasearch.org',
+  peerTubeShowNsfw: false,
   enableSearchSuggestions: true,
   enableSubtitlesByDefault: false,
   enterFullscreenOnDisplayRotate: false,

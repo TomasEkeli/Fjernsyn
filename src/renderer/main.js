@@ -5,6 +5,7 @@ import store from './store/index'
 import App from './App.vue'
 import { showExternalPlayerUnsupportedActionToast, showToast } from './helpers/utils'
 import { setupYtDlpOutcomeToasts } from './helpers/ytdlp'
+import { installPlatformLayer } from './platform/vue'
 import { library } from './fontawesome-minimal'
 // import the styles
 import '@fortawesome/fontawesome-svg-core/styles.css'
@@ -272,6 +273,7 @@ library.add(
 registerSwiper()
 
 const app = createApp(App)
+installPlatformLayer(app, store)
 
 app.config.performance = process.env.NODE_ENV === 'development'
 

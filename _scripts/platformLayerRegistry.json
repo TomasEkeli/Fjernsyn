@@ -14,12 +14,28 @@
       "reason": "onBeforeSendHeaders hands every request to the PeerTube User-Agent helper (src/main/peertubeRequests.js) first"
     },
     {
+      "path": "src/renderer/components/ExperimentalSettings/ExperimentalSettings.vue",
+      "reason": "the experimental PeerTube toggle"
+    },
+    {
       "path": "src/renderer/components/ft-shaka-video-player/ft-shaka-video-player.js",
       "reason": "optional `platform` prop: no SponsorBlock and no YouTube HLS seek rule for other platforms; lowest variant when none is at or below the preferred quality"
     },
     {
+      "path": "src/renderer/main.js",
+      "reason": "installs the platform layer (src/renderer/platform/vue.js) on the app"
+    },
+    {
       "path": "src/renderer/router/index.js",
-      "reason": "the PeerTube spike route (throwaway)"
+      "reason": "the PeerTube spike route (throwaway); the PeerTube routes spread in from src/renderer/platform/routes.js"
+    },
+    {
+      "path": "src/renderer/store/modules/settings.js",
+      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw"
+    },
+    {
+      "path": "static/locales/en-US.yaml",
+      "reason": "the fork-only PeerTube strings"
     }
   ],
   "shadowed": {}
