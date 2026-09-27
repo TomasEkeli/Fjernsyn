@@ -16,6 +16,7 @@ vi.mock('../helpers/utils', () => ({
 
 // The views are under test beside themselves; here they only need to exist
 vi.mock('../views/LayerWatch/LayerWatch.vue', () => ({ default: { name: 'LayerWatch', render: () => null } }))
+vi.mock('../views/LayerChannel/LayerChannel.vue', () => ({ default: { name: 'LayerChannel', render: () => null } }))
 
 vi.mock('../i18n/index', async () => {
   const { createTestI18n } = await import('../testing/i18n')
@@ -69,6 +70,23 @@ describe('the PeerTube routes', () => {
     expect(query).toEqual({ timestamp: '12' })
     expect(matched[0].meta.title).toBe('Watch')
     expect(matched[0].components.default.name).toBe('LayerWatch')
+  })
+
+  it('include the channel page, carrying the handle, on its videos unless a tab is named', async () => {
+    store.setGetter('getEnablePeerTube', true)
+    const router = createTestRouter(peerTubeRoutes)
+
+    await router.push('/peertube/channel/blender@video.blender.org')
+
+    const { name, params, matched } = router.currentRoute.value
+    expect(name).toBe('peertubeChannel')
+    expect(params).toEqual({ handle: 'blender@video.blender.org' })
+    expect(matched[0].meta.title).toBe('Channel')
+    expect(matched[0].components.default.name).toBe('LayerChannel')
+
+    await router.push('/peertube/channel/blender@video.blender.org/playlists')
+
+    expect(router.currentRoute.value.params).toEqual({ handle: 'blender@video.blender.org', currentTab: 'playlists' })
   })
 
   // Each later ticket's route is covered here too

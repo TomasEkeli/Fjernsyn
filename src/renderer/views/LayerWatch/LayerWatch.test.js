@@ -7,7 +7,7 @@ import { RouterView } from 'vue-router'
 import { copyToClipboard, formatScheduledTime, openExternalLink } from '../../helpers/utils'
 import { describe as describeEntity } from '../../platform/describe'
 import { PlatformError } from '../../platform/errors'
-import { PLATFORM_LAYER_KEY } from '../../platform/vue'
+import { PLATFORM_LAYER_KEY, isPeerTubeEnabled } from '../../platform/vue'
 import store from '../../store/index'
 import { createTestI18n } from '../../testing/i18n'
 import { createTestRouter } from '../../testing/router'
@@ -15,7 +15,7 @@ import LayerWatch from './LayerWatch.vue'
 
 // The player cannot run in a simulated DOM. The stand-in declares the props
 // and events the watch view uses, and plays back what a test tells it
-const player = vi.hoisted(() => ({ hasLoaded: false, currentTime: 0, seekedTo: [] }))
+const player = vi.hoisted(() => ({ hasLoaded: false, currentTime: 0, seekedTo: [], paused: false }))
 
 vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', async () => {
   const { defineComponent, h } = await import('vue')
@@ -55,7 +55,8 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
           get hasLoaded() { return player.hasLoaded },
           getCurrentTime: () => player.currentTime,
           setCurrentTime: (seconds) => { player.seekedTo.push(seconds) },
-          pause: () => {},
+          pause: () => { player.paused = true },
+          isPaused: () => player.paused,
           destroyPlayer: async () => ({ startNextVideoInFullscreen: false, startNextVideoInFullwindow: false, startNextVideoInPip: false }),
         })
         return () => h('div', { class: 'fakePlayer' })
@@ -79,6 +80,13 @@ const SETTINGS = vi.hoisted(() => ({
   getDisableChannelLinks: false,
   getHidePlaylists: false,
   getHideSharingActions: false,
+  getExternalPlayer: '',
+  // The subscribe button's
+  getHideUnsubscribeButton: false,
+  getHideChannelSubscriptions: false,
+  getUnsubscriptionPopupStatus: false,
+  getProfileList: [{ _id: 'allChannels', name: 'All Channels', bgColor: '#000000', textColor: '#FFFFFF', subscriptions: [] }],
+  getActiveProfile: { _id: 'allChannels', name: 'All Channels', bgColor: '#000000', textColor: '#FFFFFF', subscriptions: [] },
 }))
 
 vi.mock('../../store/index', async () => {
@@ -99,6 +107,13 @@ vi.mock('../../helpers/utils', async (importOriginal) => ({
   copyToClipboard: vi.fn(),
   openExternalLink: vi.fn(),
   showToast: vi.fn(),
+}))
+
+// Whether PeerTube is switched on is the store's, which the wiring reads; the
+// view is mounted without the wiring
+vi.mock('../../platform/vue', async (importOriginal) => ({
+  ...(await importOriginal()),
+  isPeerTubeEnabled: vi.fn(() => true),
 }))
 
 const HOST = 'video.blender.org'
@@ -208,9 +223,10 @@ beforeEach(() => {
   }
   store.dispatched.length = 0
 
-  Object.assign(player, { hasLoaded: false, currentTime: 0, seekedTo: [] })
+  Object.assign(player, { hasLoaded: false, currentTime: 0, seekedTo: [], paused: false })
 
   layer.getVideo.mockReset()
+  isPeerTubeEnabled.mockReset().mockReturnValue(true)
   copyToClipboard.mockClear()
   openExternalLink.mockClear()
 
@@ -356,6 +372,25 @@ describe('the layer watch page, for a playable video', () => {
     expect(router.currentRoute.value.params.handle).toBe(HANDLE)
   })
 
+  it('subscribes to the video\'s channel, storing its PeerTube stub with the small avatar', async () => {
+    const { wrapper } = await openWatchPage(playableVideo())
+
+    await wrapper.find('.subscribeButton').trigger('click')
+    await flushPromises()
+
+    expect(dispatched('addChannelToProfiles')).toEqual([{
+      channel: { id: HANDLE, name: 'Blender', thumbnail: AVATAR, platform: 'peertube', host: HOST },
+      profileIds: ['allChannels'],
+    }])
+  })
+
+  it('offers no subscribing while PeerTube is switched off', async () => {
+    isPeerTubeEnabled.mockReturnValue(false)
+    const { wrapper } = await openWatchPage(playableVideo())
+
+    expect(wrapper.find('.subscribeButton').exists()).toBe(false)
+  })
+
   it('copies and opens the canonical PeerTube URL', async () => {
     const { wrapper } = await openWatchPage(playableVideo())
 
@@ -406,6 +441,39 @@ describe('the layer watch page, for a playable video', () => {
 
     const [{ videos: [video] }] = dispatched('showAddToPlaylistPromptForManyVideos')
     expect(video.description).toBe(PLAIN_HOSTILE_DESCRIPTION)
+  })
+})
+
+describe('the external player', () => {
+  beforeEach(() => {
+    window.ftElectron = { openInExternalPlayer: vi.fn() }
+    store.state.fakeGetterValues.getExternalPlayer = 'mpv'
+  })
+
+  afterEach(() => {
+    delete window.ftElectron
+  })
+
+  it('starts from where playback is, and pauses the player here', async () => {
+    const { wrapper } = await openWatchPage(playableVideo())
+    Object.assign(player, { hasLoaded: true, currentTime: 42.5 })
+
+    await findButton(wrapper, 'Open in mpv').trigger('click')
+
+    expect(window.ftElectron.openInExternalPlayer).toHaveBeenCalledWith({
+      videoUrl: `https://${HOST}/videos/watch/${UUID}`,
+      startTime: 42.5,
+      playbackRate: 1,
+    })
+    expect(player.paused).toBe(true)
+  })
+
+  it('starts from the beginning before the player has loaded', async () => {
+    const { wrapper } = await openWatchPage(playableVideo())
+
+    await findButton(wrapper, 'Open in mpv').trigger('click')
+
+    expect(window.ftElectron.openInExternalPlayer.mock.calls[0][0].startTime).toBe(0)
   })
 })
 

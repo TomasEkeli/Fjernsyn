@@ -14,6 +14,10 @@
       "reason": "the PeerTube download IPC channels (PEERTUBE_DOWNLOAD, _CANCEL, _REVEAL, _DISMISS, _LIST_DOWNLOADS)"
     },
     {
+      "path": "src/main/externalPlayer.js",
+      "reason": "accepts an optional `videoUrl`, validated as a PeerTube watch URL by src/main/peertubeExternalPlayer.js, when there is no valid YouTube `videoId`; handed to the player without playlist arguments"
+    },
+    {
       "path": "src/main/index.js",
       "reason": "onBeforeSendHeaders hands every request to the PeerTube User-Agent helper (src/main/peertubeRequests.js) first; registers the PeerTube download handlers (src/main/peertubeDownloads/ipc.js) next to the yt-dlp ones"
     },
@@ -24,6 +28,34 @@
     {
       "path": "src/renderer/components/ExperimentalSettings/ExperimentalSettings.vue",
       "reason": "the experimental PeerTube toggle"
+    },
+    {
+      "path": "src/renderer/components/FtListChannel/FtListChannel.vue",
+      "reason": "a PeerTube channel links to its PeerTube route and shows its avatar, through src/renderer/platform/cards.js, and subscribes as its PeerTube stub (`channelPlatformFields`); YouTube channels unchanged"
+    },
+    {
+      "path": "src/renderer/components/FtListPlaylist/FtListPlaylist.vue",
+      "reason": "a user playlist's cover is a PeerTube first video's own thumbnail (src/renderer/platform/cards.js `coverThumbnail`)"
+    },
+    {
+      "path": "src/renderer/components/FtListVideo/FtListVideo.vue",
+      "reason": "hooks gated on a PeerTube record (src/renderer/platform/cards.js): watch and channel routes, thumbnail, canonical share entries in place of YouTube and Invidious ones, external player `videoUrl` with no playlist, no DeArrow, no SponsorBlock channel entry; the history entry, playlist item and quick bookmark it writes keep `platform`, `host` and `thumbnail` (and a plain-text description) through `platformRecordFields`"
+    },
+    {
+      "path": "src/renderer/components/FtPlaylistSelector/FtPlaylistSelector.vue",
+      "reason": "a playlist's cover is a PeerTube first video's own thumbnail (src/renderer/platform/cards.js `coverThumbnail`)"
+    },
+    {
+      "path": "src/renderer/components/FtSubscribeButton/FtSubscribeButton.vue",
+      "reason": "optional `channelPlatformFields` prop, spread into the stored channel stub (`platform`, `host` for PeerTube); YouTube callers pass nothing and store exactly `{ id, name, thumbnail }`"
+    },
+    {
+      "path": "src/renderer/components/PlaylistInfo/PlaylistInfo.vue",
+      "reason": "a PeerTube first video gives the cover its own thumbnail and the cover link its own watch route; the URL list export takes a PeerTube video's canonical URL"
+    },
+    {
+      "path": "src/renderer/components/WatchVideoPlaylist/WatchVideoPlaylist.vue",
+      "reason": "the next-video preview of a PeerTube item is its own thumbnail, or the placeholder"
     },
     {
       "path": "src/renderer/components/ft-shaka-video-player/ft-shaka-video-player.js",

@@ -86,9 +86,17 @@
         />
         <!--
           The view's own actions (audio only), and later the download button
-          (ticket 16) and the external player button (ticket 12)
+          (ticket 16)
         -->
         <slot name="actions" />
+        <FtIconButton
+          v-if="USING_ELECTRON && externalPlayer && externalPlayerUrl"
+          :title="t('Video.External Player.OpenInTemplate', { externalPlayer })"
+          :icon="['fas', 'external-link-alt']"
+          theme="secondary"
+          class="externalPlayerButton"
+          @click="openInExternalPlayer"
+        />
         <template v-if="!hideSharingActions && shareUrl">
           <FtIconButton
             :title="t('PeerTube.Watch.Copy link')"
@@ -148,6 +156,7 @@ import FtIconButton from '../FtIconButton/FtIconButton.vue'
 import { toStoredPlainText } from '../LayerMarkdown/plainText'
 
 import store from '../../store/index'
+import { PLATFORM_PEERTUBE } from '../../platform/refs'
 import { usePlatformLayer } from '../../platform/vue'
 import {
   copyToClipboard,
@@ -170,9 +179,20 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  /**
+   * Where playback is, in seconds, for the external player to start from
+   * (as WatchVideoInfo's `getTimestamp`); without it, the beginning
+   * @type {import('vue').PropType<(() => number | null) | null>}
+   */
+  getTimestamp: {
+    type: Function,
+    default: null
+  },
 })
 
-const emit = defineEmits(['save-watched-progress'])
+const emit = defineEmits(['save-watched-progress', 'pause-player'])
+
+const USING_ELECTRON = process.env.IS_ELECTRON
 
 const { locale, t } = useI18n()
 const layer = usePlatformLayer()
@@ -184,6 +204,9 @@ const hideSharingActions = computed(() => store.getters.getHideSharingActions)
 const enableChannelLinks = computed(() => !store.getters.getDisableChannelLinks)
 const showPlaylists = computed(() => !store.getters.getHidePlaylists && !props.video.isUpcoming)
 const watchedProgressSavingInSemiAutoMode = computed(() => store.getters.getWatchedProgressSavingMode === 'semi-auto')
+/** @type {import('vue').ComputedRef<string>} */
+const externalPlayer = computed(() => store.getters.getExternalPlayer)
+const defaultPlayback = computed(() => store.getters.getDefaultPlayback)
 
 /** Where the channel's page is, as the layer says for the channel's platform */
 const channelRoute = computed(() => {
@@ -197,6 +220,14 @@ const channelRoute = computed(() => {
 
 /** The canonical URL on the video's own platform, to share and open */
 const shareUrl = computed(() => props.video.url || layer.describe(props.video).shareUrl)
+
+/**
+ * What the external player is handed; main checks it is a PeerTube watch URL.
+ * Only for a PeerTube video: main accepts no other URL.
+ */
+const externalPlayerUrl = computed(() => {
+  return props.video.platform === PLATFORM_PEERTUBE ? layer.describe(props.video).externalPlayerUrl : null
+})
 
 const publishedLabel = computed(() => {
   switch (props.video.liveStatus) {
@@ -255,6 +286,17 @@ function copyLink() {
 
 function openLink() {
   openExternalLink(shareUrl.value)
+}
+
+/** As WatchVideoInfo's `handleExternalPlayer`, less the playlist, which a PeerTube video never plays in yet */
+function openInExternalPlayer() {
+  emit('pause-player')
+
+  window.ftElectron.openInExternalPlayer({
+    videoUrl: externalPlayerUrl.value,
+    startTime: props.getTimestamp?.() ?? 0,
+    playbackRate: defaultPlayback.value,
+  })
 }
 
 /**

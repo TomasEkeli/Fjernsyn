@@ -96,9 +96,17 @@
         <LayerVideoInfo
           :video="video"
           :can-save-watched-progress="canSaveWatchProgress"
+          :get-timestamp="currentPosition"
           class="watchVideo"
           @save-watched-progress="handleWatchProgressManualSave"
+          @pause-player="pausePlayer"
         >
+          <template
+            v-if="video.channel"
+            #subscribe
+          >
+            <LayerSubscribeButton :channel="video.channel" />
+          </template>
           <template #actions>
             <FtIconButton
               v-if="canUseFormat('audio')"
@@ -149,6 +157,7 @@ import FtButton from '../../components/FtButton/FtButton.vue'
 import FtIconButton from '../../components/FtIconButton/FtIconButton.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
 import FtShakaVideoPlayer from '../../components/ft-shaka-video-player/ft-shaka-video-player.vue'
+import LayerSubscribeButton from '../../components/LayerSubscribeButton/LayerSubscribeButton.vue'
 import LayerVideoDescription from '../../components/LayerVideoDescription/LayerVideoDescription.vue'
 import LayerVideoInfo from '../../components/LayerVideoInfo/LayerVideoInfo.vue'
 import WatchVideoChapters from '../../components/WatchVideoChapters/WatchVideoChapters.vue'
@@ -459,6 +468,13 @@ async function load() {
 /** Where playback is, or `null` when the player has not loaded */
 function currentPosition() {
   return player.value?.hasLoaded ? player.value.getCurrentTime() : null
+}
+
+/** As Watch.js `pausePlayer`: before the video goes to the external player */
+function pausePlayer() {
+  if (player.value && !player.value.isPaused()) {
+    player.value.pause()
+  }
 }
 
 /**

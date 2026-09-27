@@ -11,7 +11,9 @@
  *
  * - `/peertube/watch/:host/:uuid`, name `peertubeWatch`, query `timestamp`
  *   as for YouTube: the layer's watch view
- * - `/peertube/channel/:handle/:currentTab?`, name `peertubeChannel` (to come)
+ * - `/peertube/channel/:handle/:currentTab?`, name `peertubeChannel`, the
+ *   handle `name@host`, the tab `videos` (the default) or `playlists`: the
+ *   layer's channel view
  * - `/peertube/search/:query`, name `peertubeSearch` (to come)
  *
  * The views are imported statically, as `router/index.js` imports upstream's.
@@ -20,6 +22,7 @@
  * on it reads the router while the modules are still being evaluated.
  */
 
+import LayerChannel from '../views/LayerChannel/LayerChannel.vue'
 import LayerWatch from '../views/LayerWatch/LayerWatch.vue'
 
 /**
@@ -57,5 +60,14 @@ export const peerTubeRoutes = [
     },
     beforeEnter: peerTubeRouteGuard,
     component: LayerWatch
+  },
+  {
+    path: '/peertube/channel/:handle/:currentTab?',
+    name: 'peertubeChannel',
+    meta: {
+      title: 'Channel'
+    },
+    beforeEnter: peerTubeRouteGuard,
+    component: LayerChannel
   },
 ]

@@ -130,6 +130,12 @@ const props = defineProps({
   subscriptionCountText: {
     type: String,
     default: ''
+  },
+  // Fjernsyn: what a channel of another platform stores beside id, name and
+  // thumbnail (`platform`, `host`); YouTube passes nothing
+  channelPlatformFields: {
+    type: Object,
+    default: null
   }
 })
 
@@ -228,6 +234,7 @@ function handleSubscription(profile) {
 
     store.dispatch('addChannelToProfiles', {
       channel: {
+        ...props.channelPlatformFields,
         id: props.channelId,
         name: props.channelName,
         thumbnail: props.channelThumbnail

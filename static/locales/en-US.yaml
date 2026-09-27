@@ -1374,6 +1374,10 @@ PeerTube:
     Download cancelled: 'Cancelled "{title}". Nothing was kept, press download again to start over'
     Status:
       Cancelled: Cancelled. Nothing was kept, press download again to start over
+  Card:
+    Copy channel link: Copy channel link
+    Open channel in browser: Open channel in browser
+    Channel link copied: Channel link copied
   Watch:
     Refused:
       Private: This video is private on {host}.
@@ -1401,6 +1405,13 @@ PeerTube:
     Category: Category
     Licence: Licence
     Language: Language
+  Channel:
+    Not found: This channel does not exist on {host}, or no longer does.
+    Unavailable: Could not reach {host}.
+    Rate limited: '{host} is limiting requests, try again in a moment.'
+    Could not load: This channel could not be loaded.
+    Followers: 1 follower | {count} followers
+    Playlist opens in browser: Opens on {host}, in your browser
 
 Mini Player: Mini Player
 Comments:

@@ -1,0 +1,54 @@
+.layerPlaylistList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.layerPlaylist {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.playlistLink {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.playlistThumbnail {
+  inline-size: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.playlistThumbnail.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-color);
+  color: var(--tertiary-text-color);
+  font-size: 32px;
+}
+
+.playlistTitle {
+  font-size: 15px;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.playlistLink:hover .playlistTitle,
+.playlistLink:focus-visible .playlistTitle {
+  text-decoration: underline;
+}
+
+.videoCount {
+  font-size: 13px;
+  color: var(--tertiary-text-color);
+}
