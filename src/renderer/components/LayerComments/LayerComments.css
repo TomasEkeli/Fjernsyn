@@ -1,0 +1,55 @@
+/* The look of upstream's CommentSection (CommentSection.css) */
+
+.card {
+  padding-block: 0;
+  padding-inline: 16px;
+}
+
+.getCommentsTitle,
+.commentsTitle,
+.getMoreComments {
+  margin: 0;
+}
+
+.getCommentsTitle {
+  padding-block: 8px;
+  text-align: center;
+  text-decoration: underline;
+  cursor: pointer;
+  color: var(--title-color);
+}
+
+.noCommentMsg {
+  margin: 0;
+  padding-block: 1em;
+  text-align: center;
+}
+
+.commentsTitle {
+  padding-block: 1em;
+  display: inline-block;
+}
+
+.hideComments {
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+  color: var(--title-color);
+}
+
+.getMoreComments {
+  padding-block-end: 1em;
+  text-align: center;
+  text-decoration: underline;
+  cursor: pointer;
+  color: var(--title-color);
+}
+
+.commentsError {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0 1em;
+  padding-block: 0.5em;
+}

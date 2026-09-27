@@ -81,6 +81,11 @@ const SETTINGS = vi.hoisted(() => ({
   getHidePlaylists: false,
   getHideSharingActions: false,
   getExternalPlayer: '',
+  // The comments'
+  getHideComments: false,
+  getHideCommentPhotos: false,
+  getCommentAutoLoadEnabled: false,
+  getGeneralAutoLoadMorePaginatedItemsEnabled: false,
   // The subscribe button's
   getHideUnsubscribeButton: false,
   getHideChannelSubscriptions: false,
@@ -214,6 +219,8 @@ function liveVideo(liveStatus, overrides = {}) {
 
 const layer = {
   getVideo: vi.fn(),
+  getComments: vi.fn(),
+  getCommentReplies: vi.fn(),
   describe: (entity, options) => describeEntity(entity, {}, options),
 }
 
@@ -226,6 +233,8 @@ beforeEach(() => {
   Object.assign(player, { hasLoaded: false, currentTime: 0, seekedTo: [], paused: false })
 
   layer.getVideo.mockReset()
+  layer.getComments.mockReset()
+  layer.getCommentReplies.mockReset()
   isPeerTubeEnabled.mockReset().mockReturnValue(true)
   copyToClipboard.mockClear()
   openExternalLink.mockClear()
@@ -888,5 +897,79 @@ describe('chapters and theatre mode', () => {
     await flushPromises()
 
     expect(findPlayer(wrapper).props('currentPlaybackRate')).toBe(1.5)
+  })
+})
+
+describe('comments', () => {
+  it('are offered below the description, and load from the video\'s ref when asked', async () => {
+    layer.getComments.mockResolvedValue({
+      items: [{ id: 1, threadId: 1, text: 'Lovely *film*', textKind: 'markdown', author: 'Alice', authorAccount: `alice@${HOST}`, authorThumbnail: '', createdAt: Date.now(), isDeleted: false, replyCount: 0 }],
+      cursor: null,
+    })
+    const { wrapper } = await openWatchPage(playableVideo())
+    expect(layer.getComments).not.toHaveBeenCalled()
+
+    await wrapper.find('.getCommentsTitle').trigger('click')
+    await flushPromises()
+
+    expect(layer.getComments).toHaveBeenCalledWith({ platform: 'peertube', host: HOST, videoId: UUID }, { cursor: null })
+    expect(wrapper.find('.comment .commentText em').text()).toBe('film')
+  })
+
+  it('say they are turned off when the video has them off', async () => {
+    const { wrapper } = await openWatchPage(playableVideo({ commentsEnabled: false }))
+
+    expect(wrapper.text()).toContain('Comments are turned off')
+    expect(wrapper.find('.getCommentsTitle').exists()).toBe(false)
+  })
+
+  it('are not shown for a live that is live, as the old watch page does not show them', async () => {
+    const live = playableVideo({ liveNow: true, liveStatus: 'live', lengthSeconds: undefined }, { isLive: true })
+    const { wrapper } = await openWatchPage(live)
+
+    expect(wrapper.find('.getCommentsTitle').exists()).toBe(false)
+  })
+
+  it('are not shown when comments are hidden', async () => {
+    store.setGetter('getHideComments', true)
+    const { wrapper } = await openWatchPage(playableVideo())
+
+    expect(wrapper.find('.getCommentsTitle').exists()).toBe(false)
+  })
+})
+
+describe('the download button', () => {
+  const OPTIONS = [
+    { id: '1080', label: '1080p', resolution: 1080, height: 1080, sizeBytes: 1_000_000, url: `https://${HOST}/download/web-videos/${UUID}-1080.mp4`, kind: 'muxed' },
+  ]
+
+  beforeEach(() => {
+    window.ftElectron = { peerTubeDownload: vi.fn() }
+  })
+
+  afterEach(() => {
+    delete window.ftElectron
+  })
+
+  it('is among the video\'s actions when it has download options, and downloads the best', async () => {
+    const { wrapper } = await openWatchPage(playableVideo({ downloadOptions: OPTIONS }))
+
+    await wrapper.find('.layerDownloadButton button').trigger('click')
+
+    expect(window.ftElectron.peerTubeDownload).toHaveBeenCalledWith({
+      key: `peertube:${HOST}:${UUID}`,
+      url: OPTIONS[0].url,
+      title: 'Sprite Fright',
+      label: '1080p',
+      resolution: 1080,
+      audioOnly: false,
+      videoUrl: `https://${HOST}/w/3TuSBHAVmMRmg5pb1CjRNa`,
+    })
+  })
+
+  it('is not there without download options', async () => {
+    const { wrapper } = await openWatchPage(playableVideo({ downloadOptions: [] }))
+
+    expect(wrapper.find('.layerDownloadButton').exists()).toBe(false)
   })
 })

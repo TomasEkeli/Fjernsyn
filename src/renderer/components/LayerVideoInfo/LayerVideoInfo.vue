@@ -84,10 +84,7 @@
           :icon="['fas', 'bars-progress']"
           @click="emit('save-watched-progress')"
         />
-        <!--
-          The view's own actions (audio only), and later the download button
-          (ticket 16)
-        -->
+        <!-- The view's own actions: audio only, and the download button (LayerDownloadButton) -->
         <slot name="actions" />
         <FtIconButton
           v-if="USING_ELECTRON && externalPlayer && externalPlayerUrl"

@@ -115,12 +115,22 @@
               theme="secondary"
               @click="toggleAudioOnly"
             />
+            <LayerDownloadButton :video="video" />
           </template>
         </LayerVideoInfo>
         <LayerVideoDescription
           v-if="!hideVideoDescription"
           :description="video.description"
           :kind="video.descriptionKind"
+          :base-url="video.host ? `https://${video.host}` : ''"
+          class="watchVideo"
+        />
+        <!-- As the old watch page: no comments for a live that is live -->
+        <LayerComments
+          v-if="!isLive && videoRef"
+          :key="video.videoId"
+          :video-ref="videoRef"
+          :comments-enabled="video.commentsEnabled !== false"
           :base-url="video.host ? `https://${video.host}` : ''"
           class="watchVideo"
         />
@@ -157,6 +167,8 @@ import FtButton from '../../components/FtButton/FtButton.vue'
 import FtIconButton from '../../components/FtIconButton/FtIconButton.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
 import FtShakaVideoPlayer from '../../components/ft-shaka-video-player/ft-shaka-video-player.vue'
+import LayerComments from '../../components/LayerComments/LayerComments.vue'
+import LayerDownloadButton from '../../components/LayerDownloadButton/LayerDownloadButton.vue'
 import LayerSubscribeButton from '../../components/LayerSubscribeButton/LayerSubscribeButton.vue'
 import LayerVideoDescription from '../../components/LayerVideoDescription/LayerVideoDescription.vue'
 import LayerVideoInfo from '../../components/LayerVideoInfo/LayerVideoInfo.vue'
@@ -232,6 +244,9 @@ const source = computed(() => {
 })
 
 const isLive = computed(() => video.value?.liveStatus === 'live' || source.value?.isLive === true)
+
+/** The video as the layer names it, for its comments */
+const videoRef = computed(() => (video.value ? peerTubeVideoRef(video.value.host, video.value.videoId) : null))
 
 const chapters = computed(() => source.value?.chapters ?? [])
 // Hidden chapters are hidden from the player's progress bar too, as Watch.js
