@@ -2109,6 +2109,13 @@ export default defineComponent({
         })
       }
 
+      // Nothing at or below the preferred quality, which a PeerTube live
+      // without transcoding does with its one variant: take the lowest there is
+      // rather than selecting nothing, which throws
+      if (matches.length === 0) {
+        matches = [...variants].sort((a, b) => isPortrait ? a.width - b.width : a.height - b.height).slice(0, 1)
+      }
+
       matches.sort((a, b) => isPortrait ? b.width - a.width : b.height - a.height)
 
       let chosenVariant
