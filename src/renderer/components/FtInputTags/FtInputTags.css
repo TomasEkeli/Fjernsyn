@@ -37,6 +37,16 @@
   user-select: text;
 }
 
+.channelLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.channelLink:hover,
+.channelLink:focus-visible {
+  text-decoration: underline;
+}
+
 .checkbox-container {
   display: flex;
   align-items: center;

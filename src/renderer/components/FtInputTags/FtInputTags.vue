@@ -63,7 +63,17 @@
                 loading="lazy"
               >
             </RouterLink>
+            <!-- The name goes to the channel as well, so an entry can be
+            checked without first working out whose id it is -->
+            <RouterLink
+              v-if="!tag.invalid"
+              :to="tag.iconHref || `/channel/${tag.name}`"
+              class="name channelLink"
+            >
+              <bdi>{{ (tag.preferredName) ? tag.preferredName : tag.name }}</bdi>
+            </RouterLink>
             <bdi
+              v-else
               class="name"
             >
               {{ (tag.preferredName) ? tag.preferredName : tag.name }}
