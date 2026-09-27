@@ -147,6 +147,20 @@ A click downloads the best quality available. Right-click or hold to choose a lo
 
 ![The download button's menu, offering best quality, each resolution from 2160p down to 360p, and audio only](_screenshots/download-menu.webp)
 
+### PeerTube
+
+[PeerTube](https://joinpeertube.org/) is video hosting spread across thousands of independent servers, called instances. Fjernsyn can watch, follow and search PeerTube videos beside YouTube's, with no account. It is experimental and off by default: switch it on under Experimental in the settings.
+
+Paste a PeerTube video or channel link into the search bar, or a channel handle such as `blender_studio@video.blender.org`, and it opens in Fjernsyn. `fjernsyn://` links work the same way.
+
+The watch page plays the instance's own streams at the qualities it offers, with captions, chapters and the storyboard on the seek bar. Audio only is there when the instance serves the sound on its own. Live streams play, and a scheduled one says when it starts if the instance gives a time. Comments load, and their replies on request. The download button fetches the instance's own files, and the external player button works as it does for YouTube.
+
+Subscribed PeerTube channels share the feed with YouTube's, sorted by when each video was published, and sit in profiles and on the Channels page like any other channel. PeerTube videos go into history and your playlists, and resume where you left off. A playlist does not yet play on through them, and a channel's own PeerTube playlists open in the browser. Importing NewPipe subscriptions brings their PeerTube channels along, and an account in the list becomes all of its channels. The NewPipe export keeps them; the YouTube formats leave them out.
+
+Search goes through [SepiaSearch](https://sepiasearch.org/), an index of many instances, by default. SepiaSearch does not moderate what it indexes. In the PeerTube settings you can point search at another index or your own instance, and choose whether to show not safe for work (NSFW) videos. The search bar still searches YouTube, and a Search PeerTube link beside the results runs the same search on PeerTube. Kind of hard to see, but this is very early yet.g
+
+There is no login yet, so you cannot comment, rate or subscribe with an account on an instance, and private videos stay closed.
+
 ## Languages
 
 I spend no effort on translations. They come from FreeTube, so picking another language translates what the two apps share and leaves what Fjernsyn adds in English. Some translated text will probably say FreeTube where it means this app.
