@@ -115,7 +115,7 @@ import { MAIN_PROFILE_ID } from '../../constants'
 import {
   exclusionSuggestions,
   parseExcludedChannels,
-  resolveSubscribedChannelId,
+  resolveSubscribedChannel,
   suggestionsMatching
 } from '../../sponsorBlockExcludedChannels'
 
@@ -266,6 +266,11 @@ function handleUpdateDeArrowThumbnailGeneratorUrl(value) {
 }
 
 function handleInvalidChannel() {
+  if (ambiguousChannelName !== null) {
+    showToast(t('SponsorBlock.Excluded Channel Name Is Shared', { name: ambiguousChannelName }))
+    return
+  }
+
   showToast(t('SponsorBlock.Excluded Channel Not Found'))
 }
 
@@ -287,6 +292,14 @@ function cleanupUrl(url) {
 }
 
 /**
+ * The name typed last, when more than one subscribed channel has it, so that
+ * the rejection which follows can say why. FtInputTags rejects the text right
+ * after asking for its channel, in the same call.
+ * @type {string | null}
+ */
+let ambiguousChannelName = null
+
+/**
  * A name typed in stands for the subscribed channel of that name, so a channel
  * can be added without first finding its id. Only the user's own subscriptions
  * are searched, and nothing goes to the network for it.
@@ -294,7 +307,11 @@ function cleanupUrl(url) {
  * @returns {string | null} the channel id, or null to read the text as an id or URL
  */
 function resolveSubscribedChannelName(text) {
-  return resolveSubscribedChannelId(subscribedChannels.value, text)
+  const resolved = resolveSubscribedChannel(subscribedChannels.value, text)
+
+  ambiguousChannelName = resolved !== null && 'ambiguous' in resolved ? resolved.name : null
+
+  return resolved !== null && 'id' in resolved ? resolved.id : null
 }
 
 /**

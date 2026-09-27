@@ -15,7 +15,8 @@ import {
   isExcludedChannel,
   mergeMarkOnlyChannels,
   parseExcludedChannels,
-  resolveSubscribedChannelId,
+  resolveSubscribedChannel,
+  subscribedChannelLabels,
   subscribedChannelsNamed,
   suggestionsMatching,
   withChannelExcluded,
@@ -120,44 +121,61 @@ const C = 'UCcccccccccccccccccccccc'
 
 // Finding a subscribed channel from its name
 {
+  const D = 'UCdddddddddddddddddddddd'
   const subscriptions = [
     { id: A, name: 'Alpha Channel' },
     { id: B, name: 'AC/DC' },
     { id: C, name: 'Twins' },
-    { id: 'UCdddddddddddddddddddddd', name: 'twins' },
+    { id: D, name: 'twins' },
     { id: 'UCeeeeeeeeeeeeeeeeeeeeee', name: 'Cafe\u0301' },
     { id: 'UCffffffffffffffffffffff' },
   ]
 
-  check('a name finds its channel', resolveSubscribedChannelId(subscriptions, 'Alpha Channel') === A)
-  check('case and surrounding space do not matter', resolveSubscribedChannelId(subscriptions, '  alpha channel ') === A)
-  check('a slash in a name is part of the name, not a URL', resolveSubscribedChannelId(subscriptions, 'AC/DC') === B)
-  check('composed and decomposed accents match', resolveSubscribedChannelId(subscriptions, 'Caf\u00e9') === 'UCeeeeeeeeeeeeeeeeeeeeee')
-  check('only a whole name matches', resolveSubscribedChannelId(subscriptions, 'Alpha') === null)
-  check('a name two channels share finds neither', resolveSubscribedChannelId(subscriptions, 'Twins') === null)
-  check('but both are reported as matching', subscribedChannelsNamed(subscriptions, 'TWINS').length === 2)
-  check('an id is not a name', resolveSubscribedChannelId(subscriptions, A) === null)
-  check('empty text finds nothing', resolveSubscribedChannelId(subscriptions, '   ') === null)
+  const resolved = (text) => resolveSubscribedChannel(subscriptions, text)?.id ?? null
+
+  check('a name finds its channel', resolved('Alpha Channel') === A)
+  check('case and surrounding space do not matter', resolved('  alpha channel ') === A)
+  check('a slash in a name is part of the name, not a URL', resolved('AC/DC') === B)
+  check('composed and decomposed accents match', resolved('Caf\u00e9') === 'UCeeeeeeeeeeeeeeeeeeeeee')
+  check('only a whole name matches', resolveSubscribedChannel(subscriptions, 'Alpha') === null)
+  check('a name two channels share is ambiguous', same(resolveSubscribedChannel(subscriptions, 'Twins'), { ambiguous: true, name: 'Twins' }))
+  check('whatever its case, and says the name as a channel has it', same(resolveSubscribedChannel(subscriptions, 'TWINS'), { ambiguous: true, name: 'Twins' }))
+  check('but the label with the id finds the one meant', resolved(`twins (${D})`) === D && resolved(`Twins (${C})`) === C)
+  check('both are reported as matching the name', subscribedChannelsNamed(subscriptions, 'TWINS').length === 2)
+  check('an id is not a name', resolveSubscribedChannel(subscriptions, A) === null)
+  check('empty text finds nothing', resolveSubscribedChannel(subscriptions, '   ') === null)
   check('a channel with no stored name is never matched', subscribedChannelsNamed(subscriptions, 'undefined').length === 0)
 }
 
-// Suggestions as the name is typed
+// Labels, and suggestions as the name is typed
 {
+  const D = 'UCdddddddddddddddddddddd'
+  const E = 'UCeeeeeeeeeeeeeeeeeeeeee'
   const subscriptions = [
     { id: A, name: 'beta' },
     { id: B, name: 'Alpha' },
     { id: C, name: 'Gamma' },
-    { id: 'UCdddddddddddddddddddddd', name: 'Twins' },
-    { id: 'UCeeeeeeeeeeeeeeeeeeeeee', name: 'twins' },
+    { id: D, name: 'Twins' },
+    { id: E, name: 'twins' },
     { id: 'UCffffffffffffffffffffff', name: '  ' },
   ]
 
-  const suggestions = exclusionSuggestions(subscriptions, [{ name: C }], collator)
+  check('a name only one channel has is its label', same(
+    subscribedChannelLabels(subscriptions, collator).slice(0, 3),
+    [{ id: B, label: 'Alpha' }, { id: A, label: 'beta' }, { id: C, label: 'Gamma' }]
+  ))
+  check('a shared name is told apart by the id', same(
+    subscribedChannelLabels(subscriptions, collator).slice(3).map(entry => entry.label),
+    [`Twins (${D})`, `twins (${E})`]
+  ))
+  check('a channel with a blank name has no label', subscribedChannelLabels(subscriptions).length === 5)
 
-  check('subscribed channels are offered in name order', same(suggestions, ['Alpha', 'beta']))
+  const suggestions = exclusionSuggestions(subscriptions, [{ name: C }, { name: E }], collator)
+
+  check('subscribed channels are offered in label order', same(suggestions, ['Alpha', 'beta', `Twins (${D})`]))
   check('a channel already on the list is not offered', !suggestions.includes('Gamma'))
-  check('a name two channels share is not offered', !suggestions.some(name => name.toLowerCase() === 'twins'))
-  check('every offered name resolves to its channel', suggestions.every(name => resolveSubscribedChannelId(subscriptions, name) !== null))
+  check('one of two sharing a name is still offered once the other is on the list', suggestions.includes(`Twins (${D})`))
+  check('every offered label resolves to its channel', suggestions.every(label => resolveSubscribedChannel(subscriptions, label)?.id))
 }
 
 // Narrowing the suggestions to what has been typed
