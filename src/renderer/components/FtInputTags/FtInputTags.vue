@@ -22,6 +22,8 @@
       :force-action-button-icon-name="['fas', 'arrow-right']"
       :data-list="dataList"
       @click="updateTags"
+      @input="emit('input', $event)"
+      @clear="emit('input', '')"
     />
     <div
       v-if="tagList.length >= 1"
@@ -144,7 +146,8 @@ const props = defineProps({
     type: Function,
     default: (_) => ({ preferredName: '', icon: '' }),
   },
-  // Suggestions offered as the input is typed into
+  // Suggestions offered as the input is typed into, which the parent can narrow
+  // to the text it is sent through the input event
   dataList: {
     type: Array,
     default: () => []
@@ -157,7 +160,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['already-exists', 'change', 'error-find-tag-info', 'invalid-name', 'toggle-show-tags'])
+const emit = defineEmits(['already-exists', 'change', 'error-find-tag-info', 'input', 'invalid-name', 'toggle-show-tags'])
 
 const { t } = useI18n()
 

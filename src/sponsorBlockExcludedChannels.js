@@ -193,3 +193,46 @@ export function exclusionSuggestions(subscriptions, list, collator = new Intl.Co
     .map(entry => entry.name)
     .sort(collator.compare)
 }
+
+/**
+ * The few suggestions worth showing for what has been typed so far. With
+ * hundreds of subscriptions, one typed letter matches most of them, and the
+ * input would list every one.
+ *
+ * Matching is by lower cased substring, as the input's own filtering is, so
+ * that it keeps every name given here. Names starting with the text come first,
+ * then names with a word starting with it, then the rest, each in the order
+ * given.
+ * @param {string[]} names
+ * @param {string} text
+ * @param {number} [limit]
+ * @returns {string[]}
+ */
+export function suggestionsMatching(names, text, limit = 10) {
+  const wanted = text.toLowerCase()
+
+  if (wanted.trim() === '') {
+    return []
+  }
+
+  const ranked = [[], [], []]
+
+  for (const name of names) {
+    const lower = name.toLowerCase()
+    const index = lower.indexOf(wanted)
+
+    if (index === -1) {
+      continue
+    }
+
+    if (index === 0) {
+      ranked[0].push(name)
+    } else if (/[\s\p{P}]/u.test(lower[index - 1])) {
+      ranked[1].push(name)
+    } else {
+      ranked[2].push(name)
+    }
+  }
+
+  return ranked.flat().slice(0, limit)
+}

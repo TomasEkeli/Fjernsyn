@@ -17,6 +17,7 @@ import {
   parseExcludedChannels,
   resolveSubscribedChannelId,
   subscribedChannelsNamed,
+  suggestionsMatching,
   withChannelExcluded,
   withoutChannel,
 } from '../src/sponsorBlockExcludedChannels.js'
@@ -149,6 +150,21 @@ const C = 'UCcccccccccccccccccccccc'
   check('a channel already on the list is not offered', !suggestions.includes('Gamma'))
   check('a name two channels share is not offered', !suggestions.some(name => name.toLowerCase() === 'twins'))
   check('every offered name resolves to its channel', suggestions.every(name => resolveSubscribedChannelId(subscriptions, name) !== null))
+}
+
+// Narrowing the suggestions to what has been typed
+{
+  const names = ['Alpha', 'Beta Alpha', 'Calphabet', 'Delta', 'alpaca', 'Gamma (Alpha)']
+
+  check('names starting with the text come first, then word starts, then the rest', same(
+    suggestionsMatching(names, 'alp'),
+    ['Alpha', 'alpaca', 'Beta Alpha', 'Gamma (Alpha)', 'Calphabet']
+  ))
+  check('case does not matter', same(suggestionsMatching(names, 'DELTA'), ['Delta']))
+  check('no more than the limit', suggestionsMatching(names, 'a', 3).length === 3)
+  check('nothing typed suggests nothing', same(suggestionsMatching(names, '  '), []))
+  check('every suggestion passes the input\'s own filter', suggestionsMatching(names, 'lph')
+    .every(name => name.toLowerCase().includes('lph')))
 }
 
 if (failures > 0) {

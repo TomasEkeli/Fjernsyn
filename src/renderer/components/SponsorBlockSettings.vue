@@ -87,6 +87,7 @@
           @change="handleSponsorBlockExcludedChannels"
           @already-exists="handleChannelsExists"
           @toggle-show-tags="handleSponsorBlockShowExcludedChannels"
+          @input="excludedChannelText = $event"
         />
       </FtFlexBox>
     </template>
@@ -113,7 +114,8 @@ import { MAIN_PROFILE_ID } from '../../constants'
 import {
   exclusionSuggestions,
   parseExcludedChannels,
-  resolveSubscribedChannelId
+  resolveSubscribedChannelId,
+  suggestionsMatching
 } from '../../sponsorBlockExcludedChannels'
 
 const { t } = useI18n()
@@ -175,8 +177,14 @@ const currentInvidiousInstanceUrl = computed(() => store.getters.getCurrentInvid
 /** @type {import('vue').ComputedRef<{ id: string, name?: string, thumbnail?: string }[]>} */
 const subscribedChannels = computed(() => store.getters.profileById(MAIN_PROFILE_ID)?.subscriptions ?? [])
 
-const subscribedChannelSuggestions = computed(() => {
+const excludedChannelText = ref('')
+
+const excludableChannelNames = computed(() => {
   return exclusionSuggestions(subscribedChannels.value, sponsorBlockExcludedChannels.value)
+})
+
+const subscribedChannelSuggestions = computed(() => {
+  return suggestionsMatching(excludableChannelNames.value, excludedChannelText.value)
 })
 
 // Looking channels up only means anything while the list is on screen, and it
