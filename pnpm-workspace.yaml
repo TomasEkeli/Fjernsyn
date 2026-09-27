@@ -7,6 +7,10 @@ allowBuilds:
   lefthook: true # Installing git hooks
   unrs-resolver: false # Works around an npm specific optional dependencies bug, so we don't need it with pnpm
 
+# A day, in minutes. pnpm 11 (CI) has this as its default and refuses a
+# frozen lockfile with anything newer; pnpm 10 has no default, and would lock
+# in releases CI then rejects
+minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - "youtubei.js"
 
