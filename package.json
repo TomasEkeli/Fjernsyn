@@ -58,6 +58,8 @@
     "check-channels-overview": "node _scripts/checkChannelsOverview.mjs",
     "check-profile-suggestions": "node _scripts/checkProfileSuggestions.mjs",
     "check-sponsorblock-excluded-channels": "node _scripts/checkSponsorBlockExcludedChannels.mjs",
+    "check-platform-layer-registry": "node _scripts/checkPlatformLayerRegistry.mjs",
+    "report-platform-layer-upstream": "node _scripts/reportPlatformLayerUpstream.mjs",
     "test": "vitest run"
   },
   "dependencies": {
