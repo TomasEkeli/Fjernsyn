@@ -3,7 +3,11 @@
   "touched": [
     {
       "path": "package.json",
-      "reason": "the platform layer registry check and upstream report scripts"
+      "reason": "the registry check and upstream report scripts; dev dependencies for renderer tests (jsdom, Vue test utils, the single file component plugin)"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "reason": "lockfile entries for the renderer test dev dependencies"
     }
   ],
   "shadowed": {}
