@@ -1340,21 +1340,28 @@ Chapters:
   Chapters: Chapters
   Key Moments: Key Moments
 
+# The fork's own wording. Upstream's keys for the same things are left as
+# upstream has them: Weblate translates those into en-GB and the rest, which
+# would put upstream's wording back over any change made to them here, while
+# keys only this file has fall back to it in every language.
 SponsorBlock:
+  Channels That Are Never Skipped: Channels that are never skipped
+  Channels That Are Never Skipped Tooltip: Segments in videos from these channels are shown on the seek bar but never
+    skipped past, whatever the categories above say. Enter the name of a channel you are subscribed to, or a channel ID
+    or URL for any other channel. Channels can also be added from a channel page, the video you are watching, or a
+    video's menu.
   Never Skip On This Channel: Never skip SponsorBlock segments on this channel
   Resume Skipping On This Channel: Skip SponsorBlock segments on this channel again
-  Segments Will Be Marked Only: Segments on {channelName} are now marked, not skipped
-  Segments Will Be Skipped Again: Segments on {channelName} are skipped again
-  Channels That Are Never Skipped: Channels that are never skipped
-  Channels That Are Never Skipped Explanation: Segments on these channels are shown
-    on the seek bar but never skipped past, whatever the categories above say. Add
-    and remove channels from a channel page, or from the video you are watching.
-  No Channels Are On The List: No channels are on the list.
-  Select Channels To Remove: Select channels to remove
-  Select All: Select all
-  Select None: Select none
-  Remove Selected: Remove selected
-  Remove All: Remove all
+  Segments Will Be Marked Only: 'Segments on {channel} are now marked, not skipped'
+  Segments Will Be Skipped Again: 'Segments on {channel} are skipped again'
+  Excluded Channels Placeholder: Channel name, ID or URL
+  Excluded Channel Not Found: Could not find that channel. Enter the full name of a channel you subscribe to, a channel ID starting with UC, or a URL with one in it
+  Excluded Channel Name Is Shared: More than one channel you subscribe to is called {name}. Pick the one you mean from the suggestions
+  Excluded Channel Already Listed: That channel is already on the list
+
+# The fork's own, for the same reason as above
+Input Tags:
+  Show Added Items: Show added items
 
 Mini Player: Mini Player
 Comments:

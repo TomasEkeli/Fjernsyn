@@ -20,7 +20,10 @@
       :select-on-focus="true"
       :action-button-label="t('Settings.Distraction Free Settings.Add')"
       :force-action-button-icon-name="['fas', 'arrow-right']"
+      :data-list="dataList"
       @click="updateTags"
+      @input="emit('input', $event)"
+      @clear="emit('input', '')"
     />
     <div
       v-if="tagList.length >= 1"
@@ -33,7 +36,7 @@
         @change="toggleShowTags"
       >
       <label :for="id">
-        {{ t('Settings.Distraction Free Settings.Show Added Items') }}
+        {{ t('Input Tags.Show Added Items') }}
       </label>
     </div>
     <div
@@ -60,7 +63,17 @@
                 loading="lazy"
               >
             </RouterLink>
+            <!-- The name goes to the channel as well, so an entry can be
+            checked without first working out whose id it is -->
+            <RouterLink
+              v-if="!tag.invalid"
+              :to="tag.iconHref || `/channel/${tag.name}`"
+              class="name channelLink"
+            >
+              <bdi>{{ (tag.preferredName) ? tag.preferredName : tag.name }}</bdi>
+            </RouterLink>
             <bdi
+              v-else
               class="name"
             >
               {{ (tag.preferredName) ? tag.preferredName : tag.name }}
@@ -91,7 +104,7 @@
 
 <script setup>
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { useId, useTemplateRef, ref } from 'vue'
+import { nextTick, useId, useTemplateRef, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import FtInput from '../FtInput/FtInput.vue'
@@ -142,10 +155,22 @@ const props = defineProps({
   findTagInfo: {
     type: Function,
     default: (_) => ({ preferredName: '', icon: '' }),
+  },
+  // Suggestions offered as the input is typed into, which the parent can narrow
+  // to the text it is sent through the input event
+  dataList: {
+    type: Array,
+    default: () => []
+  },
+  // For channel tags: the channel id that the typed text stands for, such as a
+  // subscribed channel's name, or null to read the text as an id or URL
+  resolveTagName: {
+    type: Function,
+    default: null
   }
 })
 
-const emit = defineEmits(['already-exists', 'change', 'error-find-tag-info', 'invalid-name', 'toggle-show-tags'])
+const emit = defineEmits(['already-exists', 'change', 'error-find-tag-info', 'input', 'invalid-name', 'toggle-show-tags'])
 
 const { t } = useI18n()
 
@@ -189,6 +214,11 @@ async function updateTags(text) {
     tagNameInput.value.clear()
   } finally {
     isUpdating.value = false
+
+    // The input is disabled while the tag is added, which takes the focus off
+    // it, so give it back for the next tag to be typed straight away
+    await nextTick()
+    tagNameInput.value?.focus()
   }
 }
 
@@ -197,7 +227,7 @@ async function updateTags(text) {
  */
 async function updateChannelTags(text) {
   // get text without spaces after last '/' in url, if any
-  const name = text.split('/').at(-1).trim()
+  const name = props.resolveTagName?.(text.trim()) ?? text.split('/').at(-1).trim()
 
   if (!props.validateTagName(name)) {
     emit('invalid-name')

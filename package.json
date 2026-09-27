@@ -57,6 +57,7 @@
     "check-subscription-recovery-groups": "node _scripts/checkSubscriptionRecoveryGroups.mjs",
     "check-channels-overview": "node _scripts/checkChannelsOverview.mjs",
     "check-profile-suggestions": "node _scripts/checkProfileSuggestions.mjs",
+    "check-sponsorblock-excluded-channels": "node _scripts/checkSponsorBlockExcludedChannels.mjs",
     "test": "vitest run"
   },
   "dependencies": {

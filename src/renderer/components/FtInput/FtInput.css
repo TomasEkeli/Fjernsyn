@@ -3,6 +3,13 @@
   position: relative;
 }
 
+/* The label's tooltip opens downwards over the input, so it has to sit above
+   the suggestions list, which opens under the input */
+.selectLabel {
+  position: relative;
+  z-index: 11;
+}
+
 body[dir='rtl'] .ft-input-component.search.showClearTextButton .inputAction {
   inset-inline-end: -30px;
 }

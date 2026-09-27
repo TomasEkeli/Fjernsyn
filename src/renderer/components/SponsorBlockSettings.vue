@@ -44,25 +44,6 @@
           @blur="handleUpdateSponsorBlockUrl"
         />
       </FtFlexBox>
-      <FtFlexBox>
-        <FtInputTags
-          :disabled="sponsorBlockExcludedChannelsDisabled"
-          :disabled-msg="t('Settings.SponsorBlock Settings.Excluded Channels.Disabled Message')"
-          :label="t('Settings.SponsorBlock Settings.Excluded Channels.Excluded Channels')"
-          :tag-name-placeholder="t('Settings.Distraction Free Settings.Hide Channels Placeholder')"
-          :tag-list="sponsorBlockExcludedChannels"
-          :tooltip="t('Settings.SponsorBlock Settings.Excluded Channels.Tooltip')"
-          :validate-tag-name="checkYoutubeChannelId"
-          :find-tag-info="findChannelTagInfoWrapper"
-          :are-channel-tags="true"
-          :show-tags="sponsorBlockShowExcludedChannels"
-          @invalid-name="handleInvalidChannel"
-          @error-find-tag-info="handleChannelAPIError"
-          @change="handleSponsorBlockExcludedChannels"
-          @already-exists="handleChannelsExists"
-          @toggle-show-tags="handleSponsorBlockShowExcludedChannels"
-        />
-      </FtFlexBox>
       <FtFlexBox
         v-if="useDeArrowThumbnails"
       >
@@ -85,63 +66,31 @@
           :category-name="category"
         />
       </FtFlexBox>
-
-      <details
+      <FtFlexBox
         v-if="useSponsorBlock"
-        class="markOnlyDetails"
+        class="excludedChannels"
       >
-        <summary class="markOnlySummary">
-          <h3 class="markOnlyTitle">
-            {{ $t('SponsorBlock.Channels That Are Never Skipped') }}
-            <span class="markOnlyCount">
-              • {{ markOnlyChannels.length }}
-            </span>
-
-            <FontAwesomeIcon
-              class="markOnlyChevron"
-              :icon="['fas', 'chevron-right']"
-            />
-          </h3>
-        </summary>
-
-        <p class="markOnlyExplanation">
-          {{ $t('SponsorBlock.Channels That Are Never Skipped Explanation') }}
-        </p>
-
-        <p
-          v-if="markOnlyChannels.length === 0"
-          class="markOnlyEmpty"
-        >
-          {{ $t('SponsorBlock.No Channels Are On The List') }}
-        </p>
-
-        <template v-else>
-          <FtCheckboxList
-            v-model="selectedChannelIds"
-            :title="$t('SponsorBlock.Select Channels To Remove')"
-            :labels="markOnlyChannelNames"
-            :values="markOnlyChannelIds"
-          />
-
-          <FtFlexBox class="markOnlyActions">
-            <FtButton
-              :label="allSelected ? $t('SponsorBlock.Select None') : $t('SponsorBlock.Select All')"
-              @click="toggleSelectAll"
-            />
-            <FtButton
-              :label="$t('SponsorBlock.Remove Selected')"
-              :disabled="selectedChannelIds.length === 0"
-              @click="removeSelected"
-            />
-            <FtButton
-              :label="$t('SponsorBlock.Remove All')"
-              background-color="var(--destructive-color)"
-              text-color="var(--destructive-text-color)"
-              @click="removeAll"
-            />
-          </FtFlexBox>
-        </template>
-      </details>
+        <FtInputTags
+          :disabled="sponsorBlockExcludedChannelsDisabled"
+          :disabled-msg="t('Settings.SponsorBlock Settings.Excluded Channels.Disabled Message')"
+          :label="t('SponsorBlock.Channels That Are Never Skipped')"
+          :tag-name-placeholder="t('SponsorBlock.Excluded Channels Placeholder')"
+          :tag-list="sponsorBlockExcludedChannels"
+          :tooltip="t('SponsorBlock.Channels That Are Never Skipped Tooltip')"
+          :validate-tag-name="checkYoutubeChannelId"
+          :find-tag-info="findChannelTagInfoWrapper"
+          :resolve-tag-name="resolveSubscribedChannelName"
+          :data-list="subscribedChannelSuggestions"
+          :are-channel-tags="true"
+          :show-tags="sponsorBlockShowExcludedChannels"
+          @invalid-name="handleInvalidChannel"
+          @error-find-tag-info="handleChannelAPIError"
+          @change="handleSponsorBlockExcludedChannels"
+          @already-exists="handleChannelsExists"
+          @toggle-show-tags="handleSponsorBlockShowExcludedChannels"
+          @input="excludedChannelText = $event"
+        />
+      </FtFlexBox>
     </template>
   </FtSettingsSection>
 </template>
@@ -149,22 +98,26 @@
 <script setup>
 import { computed, ref, useTemplateRef, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 import FtSettingsSection from './FtSettingsSection/FtSettingsSection.vue'
 import FtToggleSwitch from './FtToggleSwitch/FtToggleSwitch.vue'
 import FtInput from './FtInput/FtInput.vue'
-import FtButton from './FtButton/FtButton.vue'
-import FtCheckboxList from './FtCheckboxList/FtCheckboxList.vue'
 import FtFlexBox from './ft-flex-box/ft-flex-box.vue'
 import FtSponsorBlockCategory from './FtSponsorBlockCategory/FtSponsorBlockCategory.vue'
 import FtInputTags from './FtInputTags/FtInputTags.vue'
 
 import store from '../store/index'
 
-import { removeSponsorBlockMarkOnlyChannels } from '../helpers/sponsorblock'
 import { showToast } from '../helpers/utils'
 import { checkYoutubeChannelId, findChannelTagInfo } from '../helpers/channels.js'
+import { youtubeImageUrlToInvidious } from '../helpers/api/invidious'
+import { MAIN_PROFILE_ID } from '../../constants'
+import {
+  exclusionSuggestions,
+  parseExcludedChannels,
+  resolveSubscribedChannel,
+  suggestionsMatching
+} from '../../sponsorBlockExcludedChannels'
 
 const { t } = useI18n()
 
@@ -203,7 +156,7 @@ const sponsorBlockUrlInputRef = useTemplateRef('sponsorBlockUrlInput')
 const deArrowThumbnailGeneratorUrlRef = useTemplateRef('deArrowThumbnailGeneratorUrl')
 
 /** @type {import('vue').ComputedRef<any[]>} */
-const sponsorBlockExcludedChannels = computed(() => JSON.parse(store.getters.getSponsorBlockExcludedChannels))
+const sponsorBlockExcludedChannels = computed(() => parseExcludedChannels(store.getters.getSponsorBlockExcludedChannels))
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const sponsorBlockShowExcludedChannels = computed(() => store.getters.getSponsorBlockShowExcludedChannels)
@@ -219,8 +172,34 @@ const backendOptions = computed(() => ({
   fallback: backendFallback.value
 }))
 
+/** @type {import('vue').ComputedRef<string>} */
+const currentInvidiousInstanceUrl = computed(() => store.getters.getCurrentInvidiousInstanceUrl)
+
+/** @type {import('vue').ComputedRef<{ id: string, name?: string, thumbnail?: string }[]>} */
+const subscribedChannels = computed(() => store.getters.profileById(MAIN_PROFILE_ID)?.subscriptions ?? [])
+
+const excludedChannelText = ref('')
+
+const excludableChannelNames = computed(() => {
+  return exclusionSuggestions(subscribedChannels.value, sponsorBlockExcludedChannels.value)
+})
+
+const subscribedChannelSuggestions = computed(() => {
+  return suggestionsMatching(excludableChannelNames.value, excludedChannelText.value)
+})
+
+// Looking channels up only means anything while the list is on screen, and it
+// is only on screen while SponsorBlock is on
 onMounted(() => {
-  verifySponsorBlockExcludedChannels()
+  if (useSponsorBlock.value) {
+    verifySponsorBlockExcludedChannels()
+  }
+})
+
+watch(useSponsorBlock, (enabled) => {
+  if (enabled) {
+    verifySponsorBlockExcludedChannels()
+  }
 })
 
 /**
@@ -287,7 +266,12 @@ function handleUpdateDeArrowThumbnailGeneratorUrl(value) {
 }
 
 function handleInvalidChannel() {
-  showToast(t('Settings.Distraction Free Settings.Hide Channels Invalid'))
+  if (ambiguousChannelName !== null) {
+    showToast(t('SponsorBlock.Excluded Channel Name Is Shared', { name: ambiguousChannelName }))
+    return
+  }
+
+  showToast(t('SponsorBlock.Excluded Channel Not Found'))
 }
 
 function handleChannelAPIError() {
@@ -295,7 +279,7 @@ function handleChannelAPIError() {
 }
 
 function handleChannelsExists() {
-  showToast(t('Settings.Distraction Free Settings.Hide Channels Already Exists'))
+  showToast(t('SponsorBlock.Excluded Channel Already Listed'))
 }
 
 /**
@@ -307,51 +291,77 @@ function cleanupUrl(url) {
     .replace(/\/api$/, '')
 }
 
-/** @type {import('vue').ComputedRef<{ id: string, name: string }[]>} */
-const markOnlyChannels = computed(() => store.getters.getSponsorBlockMarkOnlyChannels)
+/**
+ * The name typed last, when more than one subscribed channel has it, so that
+ * the rejection which follows can say why. FtInputTags rejects the text right
+ * after asking for its channel, in the same call.
+ * @type {string | null}
+ */
+let ambiguousChannelName = null
 
-const markOnlyChannelIds = computed(() => markOnlyChannels.value.map(channel => channel.id))
+/**
+ * A name typed in stands for the subscribed channel of that name, so a channel
+ * can be added without first finding its id. Only the user's own subscriptions
+ * are searched, and nothing goes to the network for it.
+ * @param {string} text
+ * @returns {string | null} the channel id, or null to read the text as an id or URL
+ */
+function resolveSubscribedChannelName(text) {
+  const resolved = resolveSubscribedChannel(subscribedChannels.value, text)
 
-const markOnlyChannelNames = computed(() => markOnlyChannels.value.map(channel => channel.name))
+  ambiguousChannelName = resolved !== null && 'ambiguous' in resolved ? resolved.name : null
 
-/** @type {import('vue').Ref<string[]>} */
-const selectedChannelIds = ref([])
-
-// A selection only means anything while the channels it names are still listed,
-// so drop any that leave, whether they left from here or from a channel page.
-watch(markOnlyChannelIds, (ids) => {
-  selectedChannelIds.value = selectedChannelIds.value.filter(id => ids.includes(id))
-})
-
-const allSelected = computed(() => {
-  return markOnlyChannels.value.length > 0 &&
-    selectedChannelIds.value.length === markOnlyChannels.value.length
-})
-
-function toggleSelectAll() {
-  selectedChannelIds.value = allSelected.value ? [] : [...markOnlyChannelIds.value]
+  return resolved !== null && 'id' in resolved ? resolved.id : null
 }
 
-function removeSelected() {
-  if (selectedChannelIds.value.length === 0) {
-    return
+/**
+ * A subscribed channel's stored thumbnail, pointed at the Invidious instance
+ * when that is the backend, as the rest of the app shows it.
+ * @param {string} thumbnail
+ */
+function subscribedChannelIcon(thumbnail) {
+  if (backendPreference.value === 'invidious') {
+    return youtubeImageUrlToInvidious(thumbnail, currentInvidiousInstanceUrl.value)
   }
 
-  removeSponsorBlockMarkOnlyChannels(selectedChannelIds.value)
-}
-
-function removeAll() {
-  removeSponsorBlockMarkOnlyChannels(markOnlyChannelIds.value)
+  return thumbnail.startsWith('//') ? `https:${thumbnail}` : thumbnail
 }
 
 /**
  * @param {string} text
  */
 async function findChannelTagInfoWrapper(text) {
+  // What the subscriptions already know about a channel saves asking YouTube
+  const subscribed = subscribedChannels.value.find(channel => channel.id === text)
+
+  if (subscribed?.name && subscribed.thumbnail) {
+    return {
+      preferredName: subscribed.name,
+      icon: subscribedChannelIcon(subscribed.thumbnail),
+      iconHref: `/channel/${subscribed.id}`
+    }
+  }
+
   return await findChannelTagInfo(text, backendOptions.value)
 }
 
+// Turning SponsorBlock off and on again while a pass is still looking channels
+// up would start a second pass, and the two would write over each other
+let verifyingExcludedChannels = false
+
 async function verifySponsorBlockExcludedChannels() {
+  if (verifyingExcludedChannels) return
+  verifyingExcludedChannels = true
+
+  try {
+    await verifyExcludedChannelTags()
+  } finally {
+    verifyingExcludedChannels = false
+    sponsorBlockExcludedChannelsDisabled.value = false
+  }
+}
+
+async function verifyExcludedChannelTags() {
   const excludedChannelsCpy = [...sponsorBlockExcludedChannels.value]
 
   for (let i = 0; i < excludedChannelsCpy.length; i++) {
@@ -364,66 +374,29 @@ async function verifySponsorBlockExcludedChannels() {
     if ((tag.preferredName === '' || !tag.icon) && checkYoutubeChannelId(tag.name)) {
       sponsorBlockExcludedChannelsDisabled.value = true
 
-      const { preferredName, icon, iconHref, invalidId } = await findChannelTagInfoWrapper(tag.name)
+      const { preferredName, icon, iconHref, invalidId, err } = await findChannelTagInfoWrapper(tag.name)
+
+      // A lookup that failed says nothing about the channel, and writing its
+      // empty answer back would lose the name the entry was added with
+      if (err) continue
+
       if (invalidId) {
         excludedChannelsCpy[i] = { name: tag.name, invalid: invalidId }
       } else {
-        excludedChannelsCpy[i] = { name: tag.name, preferredName, icon, iconHref }
+        excludedChannelsCpy[i] = { name: tag.name, preferredName: preferredName || tag.preferredName, icon, iconHref }
       }
 
       // update on every tag in case it closes
       handleSponsorBlockExcludedChannels(excludedChannelsCpy)
     }
   }
-
-  sponsorBlockExcludedChannelsDisabled.value = false
 }
+
 </script>
 
 <style scoped>
-.markOnlyDetails {
-  inline-size: 100%;
-  margin-block-start: 10px;
-}
-
-.markOnlySummary {
-  cursor: pointer;
-  list-style: none;
-}
-
-.markOnlyTitle {
-  margin-block: 0;
-}
-
-.markOnlyCount {
-  font-size: 15px;
-  font-weight: normal;
-  opacity: 0.7;
-}
-
-.markOnlyChevron {
-  vertical-align: middle;
-}
-
-.markOnlyDetails[open] .markOnlyChevron {
-  transform: translateX(4px) rotate(90deg);
-}
-
-.markOnlyDetails[open]:dir(rtl) .markOnlyChevron {
-  transform: translateX(-4px) rotate(90deg);
-}
-
-.markOnlyExplanation,
-.markOnlyEmpty {
-  opacity: 0.7;
-}
-
-.markOnlyActions {
-  margin-block-start: 10px;
-}
-
-.markOnlyActions :deep(button:disabled) {
-  cursor: not-allowed;
-  opacity: 0.5;
+/* Clear of the category dropdowns above, which it would otherwise touch */
+.excludedChannels {
+  margin-block-start: 20px;
 }
 </style>

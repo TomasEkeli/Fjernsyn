@@ -1,6 +1,7 @@
 import * as db from '../index'
 
 import { mergeChannelPageVideoDetails } from '../../subscriptionVideoDetails'
+import { mergeMarkOnlyChannels, parseExcludedChannels } from '../../sponsorBlockExcludedChannels'
 
 class Settings {
   static async find() {
@@ -57,6 +58,23 @@ class Settings {
     if (screenshotAskPath) {
       await this.upsert('screenshotMode', screenshotAskPath.value ? 'prompt_folder' : 'default_folder')
       await db.settings.removeAsync({ _id: 'screenshotAskPath' })
+    }
+
+    // The fork kept its own list of channels SponsorBlock marks but never skips,
+    // until upstream added one that does the same. This is a one time migration
+    // that carries the fork's entries over to upstream's list and drops its own.
+    const sponsorBlockMarkOnlyChannels = await db.settings.findOneAsync({ _id: 'sponsorBlockMarkOnlyChannels' })
+
+    if (sponsorBlockMarkOnlyChannels) {
+      const sponsorBlockExcludedChannels = await db.settings.findOneAsync({ _id: 'sponsorBlockExcludedChannels' })
+
+      const merged = mergeMarkOnlyChannels(
+        parseExcludedChannels(sponsorBlockExcludedChannels?.value),
+        sponsorBlockMarkOnlyChannels.value
+      )
+
+      await this.upsert('sponsorBlockExcludedChannels', JSON.stringify(merged))
+      await db.settings.removeAsync({ _id: 'sponsorBlockMarkOnlyChannels' })
     }
 
     return db.settings.findAsync({ _id: { $ne: 'bounds' } })

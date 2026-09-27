@@ -351,14 +351,6 @@ const state = {
     color: 'Purple',
     skip: 'doNothing'
   },
-  // Channels whose segments are marked on the seek bar but never skipped past,
-  // whatever the categories above say. Some channels make their sponsor reads
-  // part of the show, and those are worth watching rather than jumping over.
-  //
-  // A list of `{ id, name }`: the id is what the player matches on, the name is
-  // only there so the settings list can say whose channel an entry is without
-  // going to the network for it.
-  sponsorBlockMarkOnlyChannels: [],
   thumbnailPreference: '',
   blurThumbnails: false,
   useProxy: false,
