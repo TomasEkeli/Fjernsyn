@@ -13,7 +13,11 @@ export function createMemoryFileSystem() {
 
     mkdir: async () => {},
 
-    openWrite: async (filePath) => {
+    openWrite: async (filePath, { exclusive = false } = {}) => {
+      if (exclusive && files.has(filePath)) {
+        throw Object.assign(new Error(`EEXIST: ${filePath}`), { code: 'EEXIST' })
+      }
+
       const chunks = []
       files.set(filePath, { data: new Uint8Array(0), mode: 0o644 })
 
@@ -56,6 +60,19 @@ export function createMemoryFileSystem() {
 
     rm: async (filePath) => {
       files.delete(filePath)
+    },
+
+    exists: async (filePath) => files.has(filePath),
+
+    link: async (from, to) => {
+      const file = files.get(from)
+      if (!file) {
+        throw Object.assign(new Error(`ENOENT: ${from}`), { code: 'ENOENT' })
+      }
+      if (files.has(to)) {
+        throw Object.assign(new Error(`EEXIST: ${to}`), { code: 'EEXIST' })
+      }
+      files.set(to, file)
     },
 
     chmod: async (filePath, mode) => {

@@ -10,8 +10,16 @@
       "reason": "lockfile entries for the renderer test dev dependencies"
     },
     {
+      "path": "src/constants.js",
+      "reason": "the PeerTube download IPC channels (PEERTUBE_DOWNLOAD, _CANCEL, _REVEAL, _DISMISS, _LIST_DOWNLOADS)"
+    },
+    {
       "path": "src/main/index.js",
-      "reason": "onBeforeSendHeaders hands every request to the PeerTube User-Agent helper (src/main/peertubeRequests.js) first"
+      "reason": "onBeforeSendHeaders hands every request to the PeerTube User-Agent helper (src/main/peertubeRequests.js) first; registers the PeerTube download handlers (src/main/peertubeDownloads/ipc.js) next to the yt-dlp ones"
+    },
+    {
+      "path": "src/preload/interface.js",
+      "reason": "the PeerTube download functions (peerTubeDownload, peerTubeCancel, peerTubeReveal, peerTubeDismiss, peerTubeListDownloads)"
     },
     {
       "path": "src/renderer/components/ExperimentalSettings/ExperimentalSettings.vue",

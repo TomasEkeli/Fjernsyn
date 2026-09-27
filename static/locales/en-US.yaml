@@ -1370,6 +1370,10 @@ PeerTube:
     Enable PeerTube Tooltip: Opens PeerTube links in Fjernsyn, lets you follow PeerTube channels in your profiles and
       search PeerTube. No PeerTube account is needed or used.
   Switched off: PeerTube is switched off. Switch it on in Experimental settings.
+  Downloads:
+    Download cancelled: 'Cancelled "{title}". Nothing was kept, press download again to start over'
+    Status:
+      Cancelled: Cancelled. Nothing was kept, press download again to start over
 
 Mini Player: Mini Player
 Comments:

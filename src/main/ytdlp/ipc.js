@@ -279,7 +279,7 @@ export function registerYtDlpHandlers({ chooseDefaultFolder }) {
  * @param {string} channel
  * @param {object} payload
  */
-function sendToAllFreeTube(preferred, channel, payload) {
+export function sendToAllFreeTube(preferred, channel, payload) {
   const windows = BrowserWindow.getAllWindows()
     .map(window => window.webContents)
     .filter(webContents => !webContents.isDestroyed() && isFreeTubeUrl(webContents.getURL()))

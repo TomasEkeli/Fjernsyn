@@ -290,6 +290,50 @@ export default {
   },
 
   /**
+   * The fork's PeerTube downloads. Outcomes arrive through
+   * handleYtDlpDownloadOutcome, keyed `peertube:<host>:<uuid>`.
+   *
+   * @param {{ key: string, url: string, title: string, label: string, resolution?: number | null, audioOnly?: boolean, videoUrl?: string | null }} request
+   */
+  peerTubeDownload: (request) => {
+    // require the user to have interacted with the page recently
+    if (navigator.userActivation.isActive) {
+      ipcRenderer.send(IpcChannels.PEERTUBE_DOWNLOAD, request)
+    }
+  },
+
+  /**
+   * @param {string} key
+   */
+  peerTubeCancel: (key) => {
+    // require the user to have interacted with the page recently
+    if (navigator.userActivation.isActive) {
+      ipcRenderer.send(IpcChannels.PEERTUBE_CANCEL, key)
+    }
+  },
+
+  /**
+   * @param {string} key
+   */
+  peerTubeReveal: (key) => {
+    ipcRenderer.send(IpcChannels.PEERTUBE_REVEAL, key)
+  },
+
+  /**
+   * @param {string} key
+   */
+  peerTubeDismiss: (key) => {
+    ipcRenderer.send(IpcChannels.PEERTUBE_DISMISS, key)
+  },
+
+  /**
+   * @returns {Promise<{ downloads: import('../main/ytdlp/downloadService').DownloadSnapshot[], finished: Record<string, string> }>}
+   */
+  peerTubeListDownloads: () => {
+    return ipcRenderer.invoke(IpcChannels.PEERTUBE_LIST_DOWNLOADS)
+  },
+
+  /**
    * @param {number} factor
    */
   setZoomFactor: (factor) => {

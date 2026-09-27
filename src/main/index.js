@@ -30,6 +30,7 @@ import contextMenu from 'electron-context-menu'
 
 import packageDetails from '../../package.json'
 import { handleOpenInExternalPlayer } from './externalPlayer'
+import { registerPeerTubeDownloadHandlers } from './peertubeDownloads/ipc'
 import { createPeerTubeRequestHeaders, peerTubeUserAgent } from './peertubeRequests'
 import { generatePoToken } from './poTokenGenerator'
 import { buildProxyUrl, isFreeTubeUrl } from './utils'
@@ -1669,6 +1670,7 @@ function runApp() {
   ipcMain.on(IpcChannels.OPEN_IN_EXTERNAL_PLAYER, handleOpenInExternalPlayer)
 
   registerYtDlpHandlers({ chooseDefaultFolder })
+  registerPeerTubeDownloadHandlers({ userAgent: peerTubeUserAgent(packageDetails.version) })
 
   ipcMain.handle(IpcChannels.GET_REPLACE_HTTP_CACHE, (event) => {
     if (isFreeTubeUrl(event.senderFrame.url)) {
