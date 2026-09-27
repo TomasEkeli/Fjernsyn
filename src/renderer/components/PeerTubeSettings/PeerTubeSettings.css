@@ -1,9 +1,6 @@
-.searchSourceRow {
-  align-items: flex-end;
-}
-
-.searchSource {
-  flex: 1 1 20em;
+/* As the password section's row (PasswordSettings.css): the input at its own width, the button centred beside it */
+.resetSearchSource {
+  align-self: center;
 }
 
 /*

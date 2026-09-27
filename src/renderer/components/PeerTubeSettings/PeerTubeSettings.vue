@@ -2,7 +2,7 @@
   <FtSettingsSection
     :title="t('PeerTube.Settings.PeerTube Settings')"
   >
-    <FtFlexBox class="searchSourceRow">
+    <FtFlexBox class="settingsFlexStart460px">
       <FtInput
         class="searchSource"
         :placeholder="t('PeerTube.Settings.Search source')"
