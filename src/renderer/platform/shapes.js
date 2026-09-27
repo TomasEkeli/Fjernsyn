@@ -79,35 +79,40 @@
  */
 
 /**
+ * A chapter as the Watch view and the player read them.
+ *
  * @typedef {object} Chapter
  * @property {string} title
+ * @property {string} timestamp `m:ss` or `h:mm:ss`, as `formatDurationAsTimestamp`
  * @property {number} startSeconds
+ * @property {number} endSeconds the next chapter's start, the last one's the video's end
  */
 
 /**
- * @typedef {object} CaptionTrack
- * @property {string} url a WebVTT file
- * @property {string} language BCP 47 code
- * @property {string} label
- * @property {boolean} [isAutomatic]
- */
-
-/**
- * A WebVTT thumbnails track, as the player's storyboard input takes it.
+ * A caption track, as the player's `captions` prop takes them. Ordered by the
+ * display language first (see `sortCaptions` in `peertube/playback.js`).
  *
- * @typedef {object} Storyboard
- * @property {string} url usually a `data:` URI the adapter built from a sprite
+ * @typedef {object} CaptionTrack
+ * @property {string} url a WebVTT file, absolute
+ * @property {string} language BCP 47 code
+ * @property {string} label the language's name, as the instance gives it
+ * @property {string} mimeType `text/vtt`
+ * @property {boolean} [isAutomatic] generated rather than written
  */
 
 /**
- * One file a PeerTube video offers to download. Never yt-dlp.
+ * One file a PeerTube video offers to download. Never yt-dlp. The file ids in
+ * a `generated` URL are used for that URL only, never persisted.
  *
  * @typedef {object} DownloadOption
- * @property {string} label e.g. `1080p`, or the audio-only label
+ * @property {string} id unique among one video's options: the resolution, or `audio`
+ * @property {string} label data, not translated: `1080p`, or `Audio only`
  * @property {number} resolution 0 for audio only
- * @property {number | null} size bytes, where known
- * @property {string} url the file, or the `/download/videos/generate/...` URL muxing split audio
- * @property {boolean} audioOnly
+ * @property {number | null} height pixels; `null` for audio only
+ * @property {number | null} sizeBytes where known; for `generated`, video and audio together
+ * @property {string} url absolute: the file's own download URL, or the
+ *   `/download/videos/generate/{uuid}?videoFileIds=...` URL muxing split audio
+ * @property {'muxed' | 'generated' | 'audio'} kind
  */
 
 /**
@@ -126,18 +131,24 @@
 
 /**
  * What the player needs to play from a manifest (HLS or DASH), PeerTube's and
- * the YouTube DASH and live paths alike.
+ * the YouTube DASH and live paths alike. The watch view's format ring is
+ * adaptive (the manifest), then legacy if any, then audio if any.
  *
  * @typedef {object} ManifestPlaybackSource
  * @property {'manifest'} transport
- * @property {string | null} manifestUrl `null` when only legacy formats exist
- * @property {string} manifestMimeType e.g. `application/x-mpegurl`
+ * @property {string | null} manifestUrl `null` when only legacy formats or audio exist
+ * @property {string | null} manifestMimeType e.g. `application/x-mpegurl`; `null` without a manifest
  * @property {LegacyFormat[]} legacyFormats
- * @property {{ manifestUrl: string, mimeType: string } | null} audio an audio-only source, where there is one
+ * @property {{ manifestUrl: string, mimeType: string } | null} audio an audio-only source, where
+ *   there is one: the manifest itself when its audio is a separate rendition, or
+ *   an audio-only file as `video/mp4`
  * @property {CaptionTrack[]} captions
- * @property {Chapter[]} chapters
- * @property {Storyboard | null} storyboard
- * @property {boolean} isLive
+ * @property {Chapter[]} chapters for the chapter list
+ * @property {string | null} chaptersSrc the chapters as a `data:text/vtt,` URI, for the
+ *   player's `chaptersSrc` (built as the Watch view builds its own); `null` without chapters
+ * @property {string | null} storyboard a WebVTT thumbnails track as a
+ *   `data:text/vtt;charset=utf-8,` URI, for the player's `storyboardSrc`
+ * @property {boolean} isLive a live that is live now
  */
 
 /**
@@ -156,7 +167,9 @@
  */
 
 /**
- * A summary plus what the watch page shows.
+ * A summary plus what the watch page shows. Captions, chapters and the
+ * storyboard are in the playback source, which is `null` when there is
+ * nothing to play (a waiting or ended live, a video without files).
  *
  * @typedef {VideoSummary & {
  *   description: string,
@@ -167,13 +180,20 @@
  *   category: string | null,
  *   licence: string | null,
  *   language: string | null,
- *   chapters: Chapter[],
- *   captions: CaptionTrack[],
- *   storyboard: Storyboard | null,
- *   playback: PlaybackSource | null,
+ *   url: string,
+ *   channel: ChannelSummary | null,
+ *   authorThumbnail: string,
+ *   commentsEnabled: boolean,
+ *   downloadEnabled: boolean,
+ *   liveStatus: 'live' | 'waiting' | 'ended' | null,
+ *   playbackSource: PlaybackSource | null,
  *   downloadOptions: DownloadOption[],
- *   state: 'available' | 'waiting' | 'ended' | null,
  * }} VideoDetails
+ *
+ * - `url`: the canonical URL on the origin, to share and open
+ * - `authorThumbnail`: the channel's avatar, else its owner account's, `''` when neither
+ * - `liveStatus`: `null` for a video that is not a live; a waiting live's
+ *   scheduled start, where known, is the summary's `premiereDate`
  */
 
 // ---------------------------------------------------------------------------
@@ -191,6 +211,7 @@
  * @property {string} thumbnail the avatar URL, `''` when none, never `null`
  * @property {string | null} [handle] YouTube `@handle` or PeerTube `name@host`
  * @property {number | null} [subscriberCount] followers, for PeerTube
+ * @property {string} [url] PeerTube: the channel's canonical URL on its origin
  */
 
 /**

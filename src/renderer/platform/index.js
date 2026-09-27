@@ -6,6 +6,7 @@
 import { describe } from './describe'
 import { createPeerTubeClient } from './peertube/client'
 import { createUrlResolver, parsePeerTubeInput } from './peertube/urls'
+import { createVideoReader } from './peertube/videos'
 
 // The wiring builds one client for the session with this and hands it to
 // every rebuild of the layer, so that what is known of each host survives
@@ -103,6 +104,7 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   const peertube = peertubeClient ?? createPeerTubeClient({ fetch, now })
   // Stateless: what is known of each host is the client's
   const urls = createUrlResolver({ client: peertube })
+  const videos = createVideoReader({ client: peertube, config: frozenConfig })
 
   const invidiousHost = hostOf(frozenConfig.currentInvidiousInstanceUrl)
   const excludedHosts = invidiousHost ? [invidiousHost] : []
@@ -162,14 +164,30 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
     return candidate ? urls.resolve(candidate) : null
   }
 
+  /**
+   * A video's details, its playback source and its download options (see
+   * `./peertube/videos.js`). PeerTube only, until phase 2 teaches the layer
+   * YouTube: any other ref rejects as `invalid`, without a request.
+   *
+   * Rejects with a `PlatformError`: `refused` (with a `reason` where the
+   * instance gives one), `notFound`, `rateLimited`, `unavailable`, `invalid`.
+   *
+   * @param {import('./shapes').VideoRef} ref
+   * @returns {Promise<import('./shapes').VideoDetails>}
+   */
+  function getVideo(ref) {
+    return videos.getVideo(ref)
+  }
+
   return Object.freeze({
     config: frozenConfig,
     describe: describeEntity,
     resolveUrl,
+    getVideo,
 
-    // Later tickets add the fetching operations here, each over the same
-    // client and returning the common shapes of ./shapes.js:
-    // getVideo, getChannel, listChannelVideos, listChannelPlaylists, search,
+    // Later tickets add the other fetching operations here, each over the
+    // same client and returning the common shapes of ./shapes.js:
+    // getChannel, listChannelVideos, listChannelPlaylists, search,
     // getComments, getCommentReplies, fetchChannelFeed
   })
 }

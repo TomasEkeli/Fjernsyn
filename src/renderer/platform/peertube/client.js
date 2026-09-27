@@ -62,11 +62,44 @@ export const FEATURES = Object.freeze({
 /** @typedef {keyof typeof FEATURES} Feature */
 
 // PeerTube's error `code`s that say why a video is refused. Anonymous refusals
-// of private, internal and blocked videos carry no code, so they have no reason.
+// of private, internal and blocked videos carry no code, so they have no reason
+// unless their `detail` names exactly one (see `refusalReason`).
 /** @type {Record<string, import('../errors').RefusalReason>} */
 const REFUSAL_CODES = {
   video_requires_password: 'password',
   incorrect_video_password: 'password',
+}
+
+/** @type {Array<[import('../errors').RefusalReason, RegExp]>} */
+const REFUSAL_WORDS = [
+  ['password', /\bpassword\b/i],
+  ['private', /\bprivate\b/i],
+  ['internal', /\binternal\b/i],
+  ['blocked', /\b(?:blocked|blacklisted)\b/i],
+]
+
+/**
+ * Why a 401 or 403 refused: by the body's `code`, else by its `detail` when
+ * that names exactly one reason ("private/internal/blocked" names three, so
+ * it says nothing), else `null`.
+ *
+ * @param {any} body
+ * @returns {import('../errors').RefusalReason | null}
+ */
+function refusalReason(body) {
+  const byCode = REFUSAL_CODES[body?.code]
+
+  if (byCode) {
+    return byCode
+  }
+
+  if (typeof body?.detail !== 'string') {
+    return null
+  }
+
+  const named = REFUSAL_WORDS.filter(([, pattern]) => pattern.test(body.detail)).map(([reason]) => reason)
+
+  return named.length === 1 ? named[0] : null
 }
 
 /**
@@ -411,7 +444,7 @@ function errorForStatus(host, status, body) {
   const message = `${host}: ${detail}`
 
   if (status === 401 || status === 403) {
-    const reason = REFUSAL_CODES[body?.code] ?? null
+    const reason = refusalReason(body)
     return new PlatformError('refused', message, { status, reason, host })
   }
 
