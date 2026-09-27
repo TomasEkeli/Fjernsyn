@@ -12,8 +12,11 @@
  * @property {boolean} [hang] after the chunks, wait for an abort rather than end
  * @property {(chunk: Uint8Array, index: number) => void} [onChunk] called as each chunk is handed over
  *
- * A redirect is scripted as a 3xx status with a `location` header; like
- * `fetch` with `redirect: 'manual'` in Electron, it is handed back as it is.
+ * A redirect is scripted as a 3xx status with a `location` header, and is
+ * handed back as it is. That is the contract of the fetch main gives the
+ * service, `netFetch.js`, and what this fake models; it is not what
+ * Electron's `net.fetch` does, which cancels a redirect it is asked not to
+ * follow and rejects with "Redirect was cancelled".
  */
 
 /**

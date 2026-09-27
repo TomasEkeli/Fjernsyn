@@ -8,6 +8,7 @@ import { sendToAllFreeTube } from '../ytdlp/ipc'
 import { nodeFileSystem } from '../ytdlp/nodeFileSystem'
 import { createSettingsReader } from '../ytdlp/settings'
 import { createPeerTubeDownloadService } from './downloadService'
+import { createNetFetch } from './netFetch'
 import { isValidDownloadKey, validateDownloadRequest } from './request'
 
 export { isValidDownloadKey, validateDownloadRequest } from './request'
@@ -30,8 +31,10 @@ export function registerPeerTubeDownloadHandlers({ userAgent, downloadService: g
   const readSetting = createSettingsReader(id => settings._findOne(id))
 
   const downloadService = givenService ?? createPeerTubeDownloadService({
-    // Electron's own fetch, so that the file comes through FreeTube's proxy
-    fetch: (url, init) => net.fetch(url, init),
+    // On Electron's `net`, so that the file comes through FreeTube's proxy
+    // on the default session. Not `net.fetch`, which cancels a redirect it
+    // is asked not to follow instead of handing it back: see `netFetch.js`
+    fetch: createNetFetch(net),
     fileSystem: nodeFileSystem,
     readSetting,
     defaultDownloadFolder: () => app.getPath('downloads'),

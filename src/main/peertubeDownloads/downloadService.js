@@ -90,7 +90,7 @@ function statusReason(status, statusText) {
 
 /**
  * @param {object} deps
- * @param {(url: string, init: RequestInit) => Promise<Response>} deps.fetch Electron's `net.fetch` in production, which goes through the session's proxy
+ * @param {(url: string, init: RequestInit) => Promise<Response>} deps.fetch `netFetch.js` in production, on Electron's `net`, which goes through the session's proxy and hands a redirect back as a 3xx
  * @param {import('../ytdlp/nodeFileSystem').FileSystem} deps.fileSystem
  * @param {(id: 'ytDlpDownloadFolder') => Promise<string>} deps.readSetting
  * @param {() => string} deps.defaultDownloadFolder the system Downloads folder
