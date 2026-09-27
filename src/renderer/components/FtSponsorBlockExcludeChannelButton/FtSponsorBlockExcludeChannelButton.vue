@@ -3,7 +3,7 @@
     v-if="visible"
     :title="title"
     :icon="['fas', 'eye-slash']"
-    :theme="markOnly ? 'base' : 'primary'"
+    :theme="excluded ? 'base' : 'primary'"
     @click="toggle"
   />
 </template>
@@ -17,8 +17,8 @@ import FtIconButton from '../FtIconButton/FtIconButton.vue'
 import store from '../../store/index'
 
 import {
-  isSponsorBlockMarkOnlyChannel,
-  toggleSponsorBlockMarkOnlyChannel
+  isSponsorBlockExcludedChannel,
+  toggleSponsorBlockExcludedChannel
 } from '../../helpers/sponsorblock'
 import { showToast } from '../../helpers/utils'
 
@@ -42,22 +42,23 @@ const useSponsorBlock = computed(() => store.getters.getUseSponsorBlock)
 // an entry under until we know whose channel this is.
 const visible = computed(() => useSponsorBlock.value && props.channelId !== '')
 
-const markOnly = computed(() => isSponsorBlockMarkOnlyChannel(props.channelId))
+const excluded = computed(() => isSponsorBlockExcludedChannel(props.channelId))
 
+// The same words as the entry in a video's menu, which does the same thing
 const title = computed(() => {
-  return markOnly.value
-    ? t('SponsorBlock.Resume Skipping On This Channel')
-    : t('SponsorBlock.Never Skip On This Channel')
+  return excluded.value
+    ? t('Video.Enable SponsorBlock on Channel')
+    : t('Video.Disable SponsorBlock on Channel')
 })
 
 async function toggle() {
-  const channelName = props.channelName || props.channelId
-  const nowMarkOnly = await toggleSponsorBlockMarkOnlyChannel(props.channelId, channelName)
+  const nowExcluded = await toggleSponsorBlockExcludedChannel(props.channelId, props.channelName)
+  const channel = props.channelName || props.channelId
 
   showToast(
-    nowMarkOnly
-      ? t('SponsorBlock.Segments Will Be Marked Only', { channelName })
-      : t('SponsorBlock.Segments Will Be Skipped Again', { channelName })
+    nowExcluded
+      ? t('SponsorBlock Disabled on Channel', { channel })
+      : t('SponsorBlock Enabled on Channel', { channel })
   )
 }
 </script>

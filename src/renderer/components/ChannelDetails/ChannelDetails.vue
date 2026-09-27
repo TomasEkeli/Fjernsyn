@@ -49,7 +49,7 @@
         </div>
 
         <div class="infoActionsContainer">
-          <FtSponsorBlockMarkOnlyButton
+          <FtSponsorBlockExcludeChannelButton
             v-if="!hasErrorMessage"
             :channel-id="id"
             :channel-name="name"
@@ -265,7 +265,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import FtCard from '../ft-card/ft-card.vue'
 import FtFlexBox from '../ft-flex-box/ft-flex-box.vue'
 import FtShareButton from '../FtShareButton/FtShareButton.vue'
-import FtSponsorBlockMarkOnlyButton from '../FtSponsorBlockMarkOnlyButton/FtSponsorBlockMarkOnlyButton.vue'
+import FtSponsorBlockExcludeChannelButton from '../FtSponsorBlockExcludeChannelButton/FtSponsorBlockExcludeChannelButton.vue'
 import FtSubscribeButton from '../FtSubscribeButton/FtSubscribeButton.vue'
 import FtInput from '../FtInput/FtInput.vue'
 

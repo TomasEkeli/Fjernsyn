@@ -910,9 +910,10 @@ Settings:
     Category Color: Category Color
     Excluded Channels:
       Disabled Message: Some channels were excluded using ID and weren't processed. Feature is blocked while those IDs are updating
-      Excluded Channels: Excluded Channels
-      Tooltip: Enter a channel ID to have SponsorBlock disabled. Sponsor segments in videos from this channel won't be skipped.
-        The channel ID entered must be a complete match and is case sensitive.
+      Excluded Channels: Channels That Are Never Skipped
+      Tooltip: Segments in videos from these channels are shown on the seek bar but never skipped past, whatever the
+        categories above say. Enter a channel ID or URL; it must be a complete match and is case sensitive. Channels
+        can also be added from a channel page, the video you are watching, or a video's menu.
   Parental Control Settings:
     Parental Control Settings: Parental Control
     Hide Unsubscribe Button: Hide Unsubscribe Button
@@ -1123,8 +1124,8 @@ Video:
   Copy Invidious Channel Link: Copy Invidious Channel Link
   Hide Channel: Hide Channel
   Unhide Channel: Show Channel
-  Enable SponsorBlock on Channel: Enable SponsorBlock on Channel
-  Disable SponsorBlock on Channel: Disable SponsorBlock on Channel
+  Enable SponsorBlock on Channel: Skip SponsorBlock segments on this channel again
+  Disable SponsorBlock on Channel: Never skip SponsorBlock segments on this channel
   Views: Views
   Loop Playlist: Loop Playlist
   Shuffle Playlist: Shuffle Playlist
@@ -1341,20 +1342,7 @@ Chapters:
   Key Moments: Key Moments
 
 SponsorBlock:
-  Never Skip On This Channel: Never skip SponsorBlock segments on this channel
-  Resume Skipping On This Channel: Skip SponsorBlock segments on this channel again
-  Segments Will Be Marked Only: Segments on {channelName} are now marked, not skipped
-  Segments Will Be Skipped Again: Segments on {channelName} are skipped again
-  Channels That Are Never Skipped: Channels that are never skipped
-  Channels That Are Never Skipped Explanation: Segments on these channels are shown
-    on the seek bar but never skipped past, whatever the categories above say. Add
-    and remove channels from a channel page, or from the video you are watching.
-  No Channels Are On The List: No channels are on the list.
-  Select Channels To Remove: Select channels to remove
-  Select All: Select all
-  Select None: Select none
-  Remove Selected: Remove selected
-  Remove All: Remove all
+  Excluded Channel Already Listed: That channel is already on the list
 
 Mini Player: Mini Player
 Comments:
@@ -1509,8 +1497,8 @@ Screenshot Error: Screenshot failed. {error}
 Screenshot Clipboard Error: Screenshot copy to clipboard failed
 Channel Hidden: '{channel} added to channel filter'
 Channel Unhidden: '{channel} removed from channel filter'
-SponsorBlock Disabled on Channel: 'SponsorBlock disabled on {channel}'
-SponsorBlock Enabled on Channel: 'SponsorBlock enabled on {channel}'
+SponsorBlock Disabled on Channel: 'Segments on {channel} are now marked, not skipped'
+SponsorBlock Enabled on Channel: 'Segments on {channel} are skipped again'
 Trimmed input must be at least N characters long: Trimmed input must be at least 1 character long | Trimmed input must be at least {length} characters long
 Tag already exists: '"{tagName}" tag already exists'
 

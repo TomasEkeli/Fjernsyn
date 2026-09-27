@@ -1,72 +1,53 @@
 import store from '../store/index'
-import { deepCopy } from './utils'
+import {
+  isExcludedChannel,
+  parseExcludedChannels,
+  withChannelExcluded,
+  withoutChannel
+} from '../../sponsorBlockExcludedChannels'
 
 /**
- * The entries already on the list come out of the store as Vue's reactive
- * proxies, and a proxy cannot cross the IPC boundary to the settings database:
- * the structured clone throws, the updater swallows it, and the setting is
- * never committed. So everything on its way to the store goes through a plain
- * copy first.
- * @param {{ id: string, name: string }[]} channels
- * @returns {Promise<void>} resolves once the write has been tried, whether or
- * not it landed
+ * The channels whose segments are marked on the seek bar but never skipped.
+ * Reads the setting through the store getter, so callers that ask inside a
+ * computed stay reactive to the list changing.
  */
-function storeMarkOnlyChannels(channels) {
-  return store.dispatch('updateSponsorBlockMarkOnlyChannels', deepCopy(channels))
+export function getSponsorBlockExcludedChannels() {
+  return parseExcludedChannels(store.getters.getSponsorBlockExcludedChannels)
 }
 
 /**
- * Whether this channel's segments are only ever marked, never skipped.
- * Reads the setting through the store getter, so callers that ask inside a
- * computed stay reactive to the list changing.
  * @param {string} channelId
  * @returns {boolean}
  */
-export function isSponsorBlockMarkOnlyChannel(channelId) {
-  if (!channelId) {
-    return false
-  }
-
-  return store.getters.getSponsorBlockMarkOnlyChannels
-    .some(channel => channel.id === channelId)
+export function isSponsorBlockExcludedChannel(channelId) {
+  return isExcludedChannel(getSponsorBlockExcludedChannels(), channelId)
 }
 
 /**
- * Add the channel to the never-skip list, or take it off again if it is already
- * on it. The name is stored alongside the id purely so the settings list has
- * something to show.
+ * Put the channel on the excluded list, or take it off again if it is already
+ * on it.
  * @param {string} channelId
- * @param {string} channelName
+ * @param {string} channelName stored so the settings list has a name to show
+ * before the channel has been looked up
  * @returns {Promise<boolean>} whether the channel is on the list afterwards.
  * Read back from the store rather than assumed, because the updater reports a
  * failed write by logging it and leaving the setting alone, so the only honest
  * answer is the one the store gives once the write has been tried.
  */
-export async function toggleSponsorBlockMarkOnlyChannel(channelId, channelName) {
+export async function toggleSponsorBlockExcludedChannel(channelId, channelName) {
   if (!channelId) {
     return false
   }
 
-  const channels = store.getters.getSponsorBlockMarkOnlyChannels
+  const list = getSponsorBlockExcludedChannels()
 
-  if (channels.some(channel => channel.id === channelId)) {
-    await storeMarkOnlyChannels(channels.filter(channel => channel.id !== channelId))
-  } else {
-    await storeMarkOnlyChannels([...channels, { id: channelId, name: channelName || channelId }])
-  }
+  const newList = isExcludedChannel(list, channelId)
+    ? withoutChannel(list, channelId)
+    : withChannelExcluded(list, channelId, channelName)
 
-  return isSponsorBlockMarkOnlyChannel(channelId)
-}
+  await store.dispatch('updateSponsorBlockExcludedChannels', JSON.stringify(newList))
 
-/**
- * @param {string[]} channelIds
- */
-export function removeSponsorBlockMarkOnlyChannels(channelIds) {
-  const removing = new Set(channelIds)
-
-  storeMarkOnlyChannels(
-    store.getters.getSponsorBlockMarkOnlyChannels.filter(channel => !removing.has(channel.id))
-  )
+  return isSponsorBlockExcludedChannel(channelId)
 }
 
 async function getVideoHash(videoId) {
