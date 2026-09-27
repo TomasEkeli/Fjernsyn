@@ -1374,6 +1374,33 @@ PeerTube:
     Download cancelled: 'Cancelled "{title}". Nothing was kept, press download again to start over'
     Status:
       Cancelled: Cancelled. Nothing was kept, press download again to start over
+  Watch:
+    Refused:
+      Private: This video is private on {host}.
+      Internal: This video is only shown to people signed in on {host}.
+      Password: This video needs a password, which Fjernsyn cannot give yet.
+      Blocked: '{host} has blocked this video.'
+      Other: '{host} refused to show this video.'
+    Not found: This video does not exist on {host}, or no longer does.
+    Unavailable: Could not reach {host}.
+    Rate limited: '{host} is limiting requests, try again in a moment.'
+    Could not load: This video could not be loaded.
+    Cannot play: Fjernsyn cannot play this video.
+    Live waiting: This live has not started yet.
+    Live starts: 'Starts {time}'
+    Live ended: This live has ended.
+    Scheduled for: Scheduled for
+    Audio only: Audio only
+    Play video: Play video
+    Copy link: Copy link
+    Link copied: Link copied
+    Open in browser: Open in browser
+    Likes: 1 like | {count} likes
+    Dislikes: 1 dislike | {count} dislikes
+    Tags: Tags
+    Category: Category
+    Licence: Licence
+    Language: Language
 
 Mini Player: Mini Player
 Comments:

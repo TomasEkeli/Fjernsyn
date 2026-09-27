@@ -6,14 +6,21 @@
  * experimental setting is off. Stored PeerTube records still render in lists
  * either way; only these pages are unreachable.
  *
- * The views arrive in later tickets, each adding its route here with the
- * guard, at these paths (hash router; see `.scratch/platform-layer/design.md`):
+ * The routes, as each view arrives (hash router; see
+ * `.scratch/platform-layer/design.md`):
  *
  * - `/peertube/watch/:host/:uuid`, name `peertubeWatch`, query `timestamp`
- *   as for YouTube
- * - `/peertube/channel/:handle/:currentTab?`, name `peertubeChannel`
- * - `/peertube/search/:query`, name `peertubeSearch`
+ *   as for YouTube: the layer's watch view
+ * - `/peertube/channel/:handle/:currentTab?`, name `peertubeChannel` (to come)
+ * - `/peertube/search/:query`, name `peertubeSearch` (to come)
+ *
+ * The views are imported statically, as `router/index.js` imports upstream's.
+ * A view reaches the router again through `helpers/utils`, which is the same
+ * cycle every upstream view closes, and harmless for the same reason: nothing
+ * on it reads the router while the modules are still being evaluated.
  */
+
+import LayerWatch from '../views/LayerWatch/LayerWatch.vue'
 
 /**
  * `beforeEnter` for every PeerTube route.
@@ -41,4 +48,14 @@ export async function peerTubeRouteGuard() {
 }
 
 /** @type {import('vue-router').RouteRecordRaw[]} */
-export const peerTubeRoutes = []
+export const peerTubeRoutes = [
+  {
+    path: '/peertube/watch/:host/:uuid',
+    name: 'peertubeWatch',
+    meta: {
+      title: 'Watch'
+    },
+    beforeEnter: peerTubeRouteGuard,
+    component: LayerWatch
+  },
+]

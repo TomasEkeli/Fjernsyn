@@ -14,6 +14,9 @@ vi.mock('../helpers/utils', () => ({
   getVideoParamsFromUrl: () => ({ videoId: null, timestamp: null, playlistId: null }),
 }))
 
+// The views are under test beside themselves; here they only need to exist
+vi.mock('../views/LayerWatch/LayerWatch.vue', () => ({ default: { name: 'LayerWatch', render: () => null } }))
+
 vi.mock('../i18n/index', async () => {
   const { createTestI18n } = await import('../testing/i18n')
   return { default: createTestI18n() }
@@ -54,7 +57,21 @@ describe('the PeerTube route guard', () => {
 })
 
 describe('the PeerTube routes', () => {
-  // Empty until the views arrive; each later ticket's route is covered here
+  it('include the watch page, carrying the host and uuid', async () => {
+    store.setGetter('getEnablePeerTube', true)
+    const router = createTestRouter(peerTubeRoutes)
+
+    await router.push('/peertube/watch/video.blender.org/b29290cc-dc51-4a12-bcb2-2aa5fece7605?timestamp=12')
+
+    const { name, params, query, matched } = router.currentRoute.value
+    expect(name).toBe('peertubeWatch')
+    expect(params).toEqual({ host: 'video.blender.org', uuid: 'b29290cc-dc51-4a12-bcb2-2aa5fece7605' })
+    expect(query).toEqual({ timestamp: '12' })
+    expect(matched[0].meta.title).toBe('Watch')
+    expect(matched[0].components.default.name).toBe('LayerWatch')
+  })
+
+  // Each later ticket's route is covered here too
   it('are each refused, saying why, while PeerTube is switched off', async () => {
     const router = createTestRouter([{ path: '/subscriptions', name: 'subscriptions' }, ...peerTubeRoutes])
 

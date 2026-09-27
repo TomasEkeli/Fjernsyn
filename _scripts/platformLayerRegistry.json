@@ -35,7 +35,7 @@
     },
     {
       "path": "src/renderer/router/index.js",
-      "reason": "the PeerTube spike route (throwaway); the PeerTube routes spread in from src/renderer/platform/routes.js"
+      "reason": "the PeerTube routes (the layer's watch view, and the channel and search views to come) spread in from src/renderer/platform/routes.js"
     },
     {
       "path": "src/renderer/store/modules/settings.js",

@@ -1,0 +1,140 @@
+/* The layout of WatchVideoInfo.css, which this mirrors for the layer's watch view */
+.layerVideoInfo {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 8px;
+}
+
+.videoTitle {
+  display: block;
+  font-size: 22px;
+  font-weight: normal;
+  margin-block: 0;
+  margin-inline: 0;
+  overflow-wrap: break-word;
+}
+
+.videoMetrics,
+.videoButtons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.videoMetrics {
+  font-size: 14px;
+  color: var(--tertiary-text-color);
+}
+
+.likeSection {
+  display: flex;
+  gap: 12px;
+  margin-inline-start: auto;
+  margin-block-start: 4px;
+}
+
+.likeCount {
+  display: flex;
+  gap: 3px;
+}
+
+.videoViews {
+  white-space: nowrap;
+}
+
+.profileRow {
+  display: flex;
+  align-items: center;
+}
+
+.channelThumbnail {
+  border-radius: 50%;
+  cursor: pointer;
+  margin-inline-end: 10px;
+  inline-size: 56px;
+}
+
+.channelName {
+  color: inherit;
+  cursor: pointer;
+  display: block;
+  margin-inline-start: 6px;
+  margin-block-end: 3px;
+  position: relative;
+  text-decoration: inherit;
+  inset-block-start: -2px;
+}
+
+.initialCursor {
+  cursor: initial;
+}
+
+.videoOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.videoFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.videoFact {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.videoFact dt {
+  color: var(--tertiary-text-color);
+}
+
+.videoFact dd {
+  margin: 0;
+}
+
+.videoTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.videoTag {
+  background-color: var(--secondary-card-bg-color);
+  border-radius: 5px;
+  padding-block: 2px;
+  padding-inline: 6px;
+  font-size: 13px;
+}
+
+@media screen and (width <= 730px) {
+  .videoButtons {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-block-start: 10px;
+  }
+}
+
+@media screen and (width <= 680px) {
+  .likeSection {
+    margin-inline-start: 0;
+  }
+}
+
+@media screen and (width <= 460px) {
+  .datePublishedAndViewCount {
+    display: flex;
+    justify-content: left;
+    flex-direction: column;
+  }
+
+  .seperator {
+    display: none;
+  }
+}
