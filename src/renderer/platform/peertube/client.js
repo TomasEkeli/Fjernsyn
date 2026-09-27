@@ -387,30 +387,72 @@ export function createPeerTubeClient({ fetch, now = Date.now }) {
     return body
   }
 
+  /** @type {Map<string, Promise<InstanceConfig>>} fresh asks for a config still in flight */
+  const freshConfigs = new Map()
+
+  /**
+   * @param {string} host
+   * @returns {Promise<InstanceConfig>}
+   */
+  function askConfig(host) {
+    return get(host, '/config').then((body) => {
+      const config = readConfig(host, body)
+
+      if (!config) {
+        throw new PlatformError('unavailable', `${host} did not answer as a PeerTube instance`, { status: 200, host })
+      }
+
+      confirmed.add(host)
+      return config
+    })
+  }
+
   /**
    * The instance's config, once per host per session. A failure is not
    * remembered, so the next call asks again.
    *
+   * With `fresh`, the host is asked now whatever it answered before, for a
+   * decision that must not rest on an old yes (a disappearance, ADR-0012).
+   * Fresh asks for one host at the same time share one request. A fresh
+   * answer replaces the remembered one; a fresh failure forgets it.
+   *
    * @param {string} host
+   * @param {object} [options]
+   * @param {boolean} [options.fresh]
    * @returns {Promise<InstanceConfig>}
    */
-  function getConfig(host) {
+  function getConfig(host, { fresh = false } = {}) {
+    if (fresh) {
+      let inFlight = freshConfigs.get(host)
+
+      if (!inFlight) {
+        inFlight = askConfig(host)
+        freshConfigs.set(host, inFlight)
+        configs.set(host, inFlight)
+        inFlight.then(
+          () => freshConfigs.delete(host),
+          () => {
+            freshConfigs.delete(host)
+            if (configs.get(host) === inFlight) {
+              configs.delete(host)
+            }
+          }
+        )
+      }
+
+      return inFlight
+    }
+
     let pending = configs.get(host)
 
     if (!pending) {
-      pending = get(host, '/config').then((body) => {
-        const config = readConfig(host, body)
-
-        if (!config) {
-          throw new PlatformError('unavailable', `${host} did not answer as a PeerTube instance`, { status: 200, host })
-        }
-
-        confirmed.add(host)
-        return config
-      })
-
+      pending = askConfig(host)
       configs.set(host, pending)
-      pending.catch(() => configs.delete(host))
+      pending.catch(() => {
+        if (configs.get(host) === pending) {
+          configs.delete(host)
+        }
+      })
     }
 
     return pending
@@ -494,7 +536,9 @@ function errorForStatus(host, status, body) {
   }
 
   if (status === 404 || status === 410) {
-    return new PlatformError('notFound', message, { status, host })
+    // The body is kept so that a caller can tell PeerTube's own not-found
+    // from a proxy's or a parked domain's (`./feed.js`)
+    return new PlatformError('notFound', message, { status, host, body })
   }
 
   if (status >= 400 && status < 500) {

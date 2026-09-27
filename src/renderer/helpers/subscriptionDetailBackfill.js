@@ -13,6 +13,7 @@ import {
 } from './subscriptionWorker'
 import { traceBackfill } from './subscriptionTrace'
 import { durationIsMissing } from '../../subscriptionVideoDetails'
+import { platformOf, PLATFORM_PEERTUBE } from '../platform/refs'
 
 /**
  * Filling in the details RSS leaves out, for the part of the feed being looked
@@ -102,6 +103,9 @@ export function channelsNeedingDetails(visibleEntries, feed = 'videos') {
     const channelId = entry?.authorId
 
     if (channelId == null) { continue }
+    // A PeerTube list already carries the duration and the live flags, and a
+    // PeerTube handle means nothing to the YouTube channel pages asked here
+    if (platformOf(entry) === PLATFORM_PEERTUBE) { continue }
     if (needed.has(channelId)) { continue }
     if (failed.has(channelId) || completed.has(channelId)) { continue }
 

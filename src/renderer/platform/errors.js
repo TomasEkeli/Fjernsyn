@@ -27,9 +27,11 @@ export class PlatformError extends Error {
    * @param {number | null} [details.retryAfterMs] how long to wait, for `rateLimited`
    * @param {RefusalReason | null} [details.reason] why, for `refused`, where the platform says
    * @param {string | null} [details.host] the instance asked
+   * @param {unknown} [details.body] the answer's parsed JSON body, for an
+   *   HTTP error answer; `undefined` when it had none that parsed
    * @param {unknown} [details.cause]
    */
-  constructor(kind, message, { status = null, retryAfterMs = null, reason = null, host = null, cause } = {}) {
+  constructor(kind, message, { status = null, retryAfterMs = null, reason = null, host = null, body, cause } = {}) {
     if (!KINDS.has(kind)) {
       throw new TypeError(`Unknown platform error kind: ${kind}`)
     }
@@ -47,5 +49,10 @@ export class PlatformError extends Error {
     this.reason = reason
     /** @type {string | null} */
     this.host = host
+
+    if (body !== undefined) {
+      /** @type {unknown} */
+      this.body = body
+    }
   }
 }

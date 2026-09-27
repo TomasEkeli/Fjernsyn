@@ -295,6 +295,40 @@ function upcoming(id, daysAhead, overrides = {}) {
   check('splitting leaves the input list alone', idsOf(entries) === 'a,b')
 }
 
+// PeerTube entries, as the platform layer's feed hands them to the cache:
+// `published` in ms, `liveNow`, `isUpcoming` and `premiereDate` (a Date) only
+// when scheduled
+{
+  const peerTube = (id, daysAgo, overrides = {}) => video(id, daysAgo, {
+    platform: 'peertube',
+    host: 'video.example',
+    authorId: 'channel@video.example',
+    liveNow: false,
+    isUpcoming: false,
+    ...overrides
+  })
+
+  const youtube = [video('yt-today', 0), video('yt-old', 5)]
+  const uploads = [peerTube('pt-yesterday', 1), peerTube('pt-older', 3)]
+  const lives = [
+    peerTube('pt-live', 0.5, { liveNow: true }),
+    peerTube('pt-scheduled', 2, { isUpcoming: true, premiereDate: new Date(NOW + 2 * DAY) }),
+    peerTube('pt-waiting', 4, { isUpcoming: true })
+  ]
+
+  const { stream, upcoming: shelf } = splitUpcomingEntries(mergeSubscriptionFeedEntries([youtube, uploads, lives]), NOW)
+
+  check(
+    `PeerTube uploads interleave with YouTube's by date (${idsOf(stream)})`,
+    idsOf(stream) === 'yt-today,pt-live,pt-yesterday,pt-older,pt-waiting,yt-old'
+  )
+  check(`a scheduled PeerTube live is on the shelf (${idsOf(shelf)})`, idsOf(shelf) === 'pt-scheduled')
+  check(
+    'at its scheduled time',
+    subscriptionEntryScheduledAt(lives[1]) === NOW + 2 * DAY
+  )
+}
+
 if (failures > 0) {
   console.log(`\n${failures} check(s) failed`)
   process.exit(1)

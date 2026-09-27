@@ -7,6 +7,7 @@ import { describe } from './describe'
 import { createChannelReader } from './peertube/channels'
 import { createPeerTubeClient } from './peertube/client'
 import { createCommentReader } from './peertube/comments'
+import { createFeedReader } from './peertube/feed'
 import { createSearcher } from './peertube/search'
 import { createUrlResolver, parsePeerTubeInput } from './peertube/urls'
 import { createVideoReader } from './peertube/videos'
@@ -111,6 +112,7 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   const channels = createChannelReader({ client: peertube, config: frozenConfig })
   const searcher = createSearcher({ client: peertube, config: frozenConfig })
   const comments = createCommentReader({ client: peertube })
+  const feeds = createFeedReader({ client: peertube, config: frozenConfig })
 
   const invidiousHost = hostOf(frozenConfig.currentInvidiousInstanceUrl)
   const excludedHosts = invidiousHost ? [invidiousHost] : []
@@ -284,6 +286,33 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
     return comments.getCommentReplies(ref, comment, options)
   }
 
+  /**
+   * One subscribed channel's entries for one subscription feed (`videos`,
+   * `live`, `shorts`, `posts`), in the refresh's fetch status contract (see
+   * `./peertube/feed.js`): `{ status, entries }`, with `status` one of the
+   * values in `src/subscriptionFetchStatusValues.js`. Never rejects.
+   *
+   * - `ok`: `entries` are video summaries, cache entries as they are (an
+   *   empty list is a real answer); `shorts` and `posts` are always an empty
+   *   answer, without a request.
+   * - `unavailable`: a 404 on the channel from its origin, still a PeerTube
+   *   instance. `entries: []`, and a claim only: the caller passes it through
+   *   `resolveGoneVerdict` as an authoritative claim (ADR-0012), which is the
+   *   only place a channel may be declared gone.
+   * - `rateLimited` (a 429; the host's `Retry-After` is honoured) and
+   *   `failed` (anything else): `entries: null`, so nothing is written.
+   *
+   * PeerTube only: the ref is a stored PeerTube stub or its `name@host`
+   * handle; anything else is `failed`, without a request.
+   *
+   * @param {unknown} channelRef
+   * @param {string} feed
+   * @returns {Promise<import('./peertube/feed').ChannelFeedResult>}
+   */
+  function fetchChannelFeed(channelRef, feed) {
+    return feeds.fetchChannelFeed(channelRef, feed)
+  }
+
   return Object.freeze({
     config: frozenConfig,
     describe: describeEntity,
@@ -296,8 +325,6 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
     search,
     getComments,
     getCommentReplies,
-
-    // A later ticket adds fetchChannelFeed here, over the same client and
-    // returning the fetch status contract
+    fetchChannelFeed,
   })
 }

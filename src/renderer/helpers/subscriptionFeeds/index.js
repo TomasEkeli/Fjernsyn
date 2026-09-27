@@ -4,6 +4,9 @@ import { videosFeed } from './videos'
 import { shortsFeed } from './shorts'
 import { liveFeed } from './live'
 import { postsFeed } from './posts'
+import { withPlatformDispatch } from './peertube'
+
+export { subscriptionChannelIsFetched } from './peertube'
 
 /**
  * Every subscription feed, and what each one needs to be fetched and shown.
@@ -42,12 +45,18 @@ import { postsFeed } from './posts'
  * @property {(entries: any[]) => any[]} postProcess filter and sort for display
  */
 
-/** @type {Record<string, SubscriptionFeedDescriptor>} */
+/**
+ * Each feed's descriptor, its `fetchChannel` dispatching on the channel's
+ * platform: a PeerTube stub to the platform layer, a YouTube one to the
+ * feed's own fetchers exactly as before. See `./peertube.js`.
+ *
+ * @type {Record<string, SubscriptionFeedDescriptor>}
+ */
 const DESCRIPTORS = {
-  videos: videosFeed,
-  shorts: shortsFeed,
-  live: liveFeed,
-  posts: postsFeed
+  videos: withPlatformDispatch(videosFeed),
+  shorts: withPlatformDispatch(shortsFeed),
+  live: withPlatformDispatch(liveFeed),
+  posts: withPlatformDispatch(postsFeed)
 }
 
 /**

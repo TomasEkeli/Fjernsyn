@@ -4,6 +4,7 @@ import store from '../store/index'
 
 import {
   enabledSubscriptionFeeds,
+  subscriptionChannelIsFetched,
   subscriptionFeedDescriptor,
   SUBSCRIPTION_FEEDS
 } from '../helpers/subscriptionFeeds'
@@ -111,6 +112,21 @@ export function useSubscriptionFeed() {
   const activeSubscriptionList = computed(() => store.getters.getActiveProfile.subscriptions)
 
   /**
+   * The channels a refresh of one kind asks about: all of them, less the
+   * PeerTube ones while PeerTube is off or for a kind PeerTube has nothing in
+   * (shorts, posts). Those still show what the cache holds for them, but a
+   * kind cannot be waiting on a channel nobody is going to fetch, or one never
+   * fetched would leave it incomplete for good and every visit here would
+   * refresh every other channel to fill the gap.
+   *
+   * @param {string} feed
+   * @returns {object[]}
+   */
+  function fetchedSubscriptionsFor(feed) {
+    return activeSubscriptionList.value.filter(channel => subscriptionChannelIsFetched(channel, feed))
+  }
+
+  /**
    * A refresh is in flight for at least one of the kinds on screen.
    *
    * Any rather than all, because the stream is one thing: a refresh that is
@@ -203,21 +219,29 @@ export function useSubscriptionFeed() {
    *
    * False for a kind nobody has fetched, and false again when a fetch left any
    * channel out, so it answers whether that kind is complete rather than
-   * whether anyone has tried.
+   * whether anyone has tried. Asked of the channels a refresh of that kind
+   * fetches (`fetchedSubscriptionsFor`), which is every channel of a profile
+   * with no PeerTube ones in it.
+   *
+   * A kind with nothing to fetch for a profile that has channels (PeerTube
+   * ones only, and PeerTube off or the kind one PeerTube has nothing in) is
+   * complete as it stands: no refresh could add to it. A profile with no
+   * channels at all is not, as it never was.
    *
    * @param {string} feed
    * @returns {boolean}
    */
   function feedIsComplete(feed) {
-    const entries = cacheEntriesByFeed.value.get(feed) ?? []
+    const channels = fetchedSubscriptionsFor(feed)
 
-    if (entries.length === 0 || entries.length < activeSubscriptionList.value.length) {
-      return false
+    if (channels.length === 0) {
+      return activeSubscriptionList.value.length > 0
     }
 
-    const { entriesKey } = subscriptionFeedDescriptor(feed)
+    const { cacheGetter, entriesKey } = subscriptionFeedDescriptor(feed)
+    const cache = store.getters[cacheGetter]
 
-    return entries.every(cacheEntry => cacheEntry[entriesKey] != null)
+    return channels.every(channel => cache[channel.id]?.[entriesKey] != null)
   }
 
   /**

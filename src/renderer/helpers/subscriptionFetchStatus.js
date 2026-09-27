@@ -4,6 +4,12 @@ import i18n from '../i18n/index'
 
 import { traceGoneVerdict } from './subscriptionTrace'
 import { copyToClipboard, showToast } from './utils'
+import {
+  FETCH_FAILED,
+  FETCH_OK,
+  FETCH_RATE_LIMITED,
+  FETCH_UNAVAILABLE
+} from '../../subscriptionFetchStatusValues'
 
 /**
  * Outcomes of fetching one channel's feed.
@@ -14,23 +20,28 @@ import { copyToClipboard, showToast } from './utils'
  * decide whether a refresh was worth retrying.
  */
 
-/** Got an answer. The entries are trustworthy, even if there are none. */
-export const FETCH_OK = 'ok'
-
-/** Blocked, HTTP 403 or 429. Retryable, and must never overwrite the cache. */
-export const FETCH_RATE_LIMITED = 'rateLimited'
+// The values live in an import-free module of their own, because the platform
+// layer returns the same contract and must not import this one. What each
+// means here:
+//
+// - `FETCH_OK`: got an answer. The entries are trustworthy, even if there are
+//   none.
+// - `FETCH_RATE_LIMITED`: blocked, HTTP 403 or 429 (for PeerTube, a 429).
+//   Retryable, and must never overwrite the cache.
+// - `FETCH_UNAVAILABLE`: the channel is gone, as `resolveGoneVerdict` decided
+//   and nothing else may. Not retryable, and caching emptiness for it is
+//   correct.
+// - `FETCH_FAILED`: threw, or returned something unparseable, and every
+//   fallback was exhausted. Retryable, and must never overwrite the cache.
+export { FETCH_FAILED, FETCH_OK, FETCH_RATE_LIMITED, FETCH_UNAVAILABLE }
 
 /**
- * The channel is gone: its playlist feed and its channel feed both 404.
- * Not retryable, and caching emptiness for it is correct.
+ * Not asked at all, on purpose: a PeerTube channel while PeerTube is switched
+ * off. Never the platform layer's answer, only the dispatch's. Not retryable,
+ * and with `entries: null` it writes nothing, so the channel's cached entries
+ * stay as they were and it neither counts as a failure nor enters recovery.
  */
-export const FETCH_UNAVAILABLE = 'unavailable'
-
-/**
- * Threw, or returned something unparseable, and every fallback was exhausted.
- * Retryable, and must never overwrite the cache.
- */
-export const FETCH_FAILED = 'failed'
+export const FETCH_SKIPPED = 'skipped'
 
 /** @param {string} status */
 export function isRetryableFetchStatus(status) {
@@ -93,6 +104,46 @@ export function clearUnavailableChannels(feed) {
 /** @type {Map<string, FetchErrorCollector>} */
 const collectors = new Map()
 
+/**
+ * Per feed, how many gone claims each origin has made since the feed's last
+ * refresh began: that refresh and the recovery after it. Kept apart from the
+ * collector, which closes before recovery starts.
+ *
+ * @type {Map<string, Map<string, number>>}
+ */
+const originGoneClaims = new Map()
+
+/**
+ * How many channels one origin may claim gone in one refresh and still be
+ * believed. A PeerTube instance is its own service, so the refresh-wide
+ * anomaly limit, sized for YouTube's one service, is far too loose for it:
+ * one dead channel on an instance is ordinary, a second in the same refresh
+ * is more likely the instance misbehaving than two deletions at once.
+ */
+const ORIGIN_GONE_LIMIT = 1
+
+/**
+ * Counts one gone claim from an origin, and says whether it is still within
+ * that origin's limit.
+ *
+ * @param {string} feed
+ * @param {string} origin
+ * @returns {boolean}
+ */
+function noteOriginGoneClaim(feed, origin) {
+  let claims = originGoneClaims.get(feed)
+
+  if (claims == null) {
+    claims = new Map()
+    originGoneClaims.set(feed, claims)
+  }
+
+  const count = (claims.get(origin) ?? 0) + 1
+  claims.set(origin, count)
+
+  return count <= ORIGIN_GONE_LIMIT
+}
+
 /** How many individual failures reach the console during one refresh. */
 const MAX_LOGGED_ERRORS_PER_RUN = 5
 
@@ -111,6 +162,8 @@ const MAX_REPORTED_ITEMS = 40
  * @param {number} total how many channels this refresh will attempt
  */
 export function beginFetchErrorCollection(feed, total) {
+  originGoneClaims.delete(feed)
+
   collectors.set(feed, {
     total,
     errors: [],
@@ -171,14 +224,25 @@ function goneAnomalyLimit(collector) {
  *   needs no second opinion. Still counted against the anomaly limit, because a
  *   flood of explicit terminations is no more believable than a flood of 404s.
  * @param {() => Promise<'gone' | 'alive' | 'unknown'>} [options.corroborate]
+ * @param {string | null} [options.origin] the independent service that made
+ *   the claim, where there are many (a PeerTube channel's instance). Past
+ *   `ORIGIN_GONE_LIMIT` claims from one origin since the feed's refresh began,
+ *   recovery included, that origin's claims are failures to retry. YouTube's
+ *   callers pass none, and nothing changes for them.
  * @returns {Promise<{ status: string, entries: any[] | null }>}
  */
-export async function resolveGoneVerdict(feed, channel, { source, authoritative = false, corroborate }) {
+export async function resolveGoneVerdict(feed, channel, { source, authoritative = false, corroborate, origin = null }) {
   const collector = collectors.get(feed)
+  const originBelieved = origin == null || noteOriginGoneClaim(feed, origin)
 
   // No refresh open, so this is a one-off fetch with no run to be anomalous
   // within. Keep the old behaviour for it.
   if (collector == null) {
+    if (!originBelieved) {
+      traceGoneVerdict(feed, channel.id, { source, verdict: 'origin-breaker' })
+      return { status: FETCH_FAILED, entries: null }
+    }
+
     if (authoritative) {
       reportChannelUnavailable(feed, channel)
       return { status: FETCH_UNAVAILABLE, entries: [] }
@@ -218,6 +282,11 @@ export async function resolveGoneVerdict(feed, channel, { source, authoritative 
     return { status: FETCH_FAILED, entries: null }
   }
 
+  if (!originBelieved) {
+    traceGoneVerdict(feed, channel.id, { source, verdict: 'origin-breaker', suspected: collector.suspectedGone })
+    return { status: FETCH_FAILED, entries: null }
+  }
+
   if (authoritative) {
     traceGoneVerdict(feed, channel.id, { source, verdict: 'gone', suspected: collector.suspectedGone })
     reportChannelUnavailable(feed, channel)
@@ -253,13 +322,19 @@ export async function resolveGoneVerdict(feed, channel, { source, authoritative 
  * @param {object} details
  * @param {{ id: string, name?: string }} details.channel
  * @param {unknown} details.error
- * @param {'local' | 'invidious'} details.api
+ * @param {'local' | 'invidious' | 'peertube'} details.api
  */
 export function reportFetchError(feed, { channel, error, api }) {
   const collector = collectors.get(feed)
 
   if (collector == null) {
     console.error(error)
+
+    // Both toasts name a YouTube backend, which would be wrong for an
+    // instance. A PeerTube channel that stays unreachable is still counted in
+    // the summary that follows its recovery.
+    if (api === 'peertube') { return }
+
     const message = api === 'invidious'
       ? i18n.global.t('Invidious API Error (Click to copy)')
       : i18n.global.t('Local API Error (Click to copy)')

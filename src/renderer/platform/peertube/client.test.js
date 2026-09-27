@@ -195,6 +195,45 @@ describe('PeerTube client', () => {
       expect(fake.urls()).toEqual(['https://video.blender.org/api/v1/config', 'https://tilvids.com/api/v1/config'])
     })
 
+    it('asks afresh when asked for a fresh answer, sharing one request between fresh asks at once', async () => {
+      const fake = createFakeFetch([blenderConfig])
+      const client = createPeerTubeClient({ fetch: fake.fetch })
+
+      await client.getConfig('video.blender.org')
+      await Promise.all([
+        client.getConfig('video.blender.org', { fresh: true }),
+        client.getConfig('video.blender.org', { fresh: true }),
+      ])
+      await client.getConfig('video.blender.org', { fresh: true })
+
+      expect(fake.urls()).toEqual(Array(3).fill('https://video.blender.org/api/v1/config'))
+    })
+
+    it('forgets the remembered answer when a fresh ask fails', async () => {
+      const fake = createFakeFetch([blenderConfig])
+      const client = createPeerTubeClient({ fetch: fake.fetch })
+
+      await client.getConfig('video.blender.org')
+      fake.respond('https://video.blender.org/api/v1/config', { status: 503, body: 'down' })
+
+      expect((await failure(client.getConfig('video.blender.org', { fresh: true }))).kind).toBe('unavailable')
+
+      fake.respond('https://video.blender.org/api/v1/config', blenderConfig)
+      await client.getConfig('video.blender.org')
+
+      // The old yes was not handed out after the fresh no: the host was asked
+      expect(fake.urls()).toHaveLength(3)
+    })
+
+    it('keeps the body of a 404, so a caller can tell whose not-found it is', async () => {
+      const fake = createFakeFetch([blenderConfig]).respond(/\/videos\//, blenderNotFound)
+      const client = createPeerTubeClient({ fetch: fake.fetch })
+
+      const error = await failure(client.get('video.blender.org', '/videos/0d5c6a3e-9a7b-4f1e-8c2d-3b4a5e6f7a8b'))
+
+      expect(error).toMatchObject({ kind: 'notFound', status: 404, body: blenderNotFound.body })
+    })
+
     it('asks again after a failure', async () => {
       const fake = createFakeFetch().respond('https://tilvids.com/api/v1/config', new TypeError('Failed to fetch'))
       const client = createPeerTubeClient({ fetch: fake.fetch })

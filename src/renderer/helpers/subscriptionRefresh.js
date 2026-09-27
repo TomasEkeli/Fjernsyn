@@ -4,6 +4,7 @@ import store from '../store/index'
 
 import {
   fetchedSubscriptionFeeds,
+  subscriptionChannelIsFetched,
   subscriptionFeedDescriptor,
   subscriptionFeedUsesRss,
   SUBSCRIPTION_FEEDS
@@ -185,7 +186,12 @@ function startFeedRefresh(feed, reason) {
   if (existing != null) { return existing.promise }
 
   const descriptor = subscriptionFeedDescriptor(feed)
+  // Every channel but a PeerTube one while PeerTube is off, or for a feed
+  // PeerTube has nothing in (shorts, posts). That one is not asked, so it is
+  // neither a failure nor a recovery candidate, and what the cache holds for
+  // it stays and still shows.
   const channels = store.getters.getActiveProfile.subscriptions
+    .filter(channel => subscriptionChannelIsFetched(channel, feed))
   const state = states[feed]
 
   if (channels.length === 0) {

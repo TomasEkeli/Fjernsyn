@@ -69,6 +69,14 @@ export function carryOverKnownVideoDetails(previousVideos, incomingVideos) {
   }
 
   for (const incoming of incomingVideos) {
+    // A PeerTube entry comes from the channel's own list, which carries the
+    // duration and the live and scheduled flags, so it is complete as it is.
+    // Carrying a flag over would be wrong rather than idle: a scheduled live
+    // that has started loses its schedule, and handing that back would keep it
+    // counted as an upcoming premiere. (Spelled out rather than imported, so
+    // that this module stays import-free for the datastore.)
+    if (incoming?.platform === 'peertube') { continue }
+
     const previous = byVideoId.get(incoming.videoId)
 
     if (previous == null) { continue }
