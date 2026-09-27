@@ -14,6 +14,8 @@ import Channel from '../views/Channel/Channel.vue'
 import Watch from '../views/Watch/Watch.vue'
 import Hashtag from '../views/Hashtag/Hashtag.vue'
 import Post from '../views/Post.vue'
+// THROWAWAY: the platform layer spike (ticket 03), removed by ticket 07
+import PeerTubeSpike from '../views/PeerTubeSpike/PeerTubeSpike.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -146,6 +148,15 @@ const router = createRouter({
         title: 'Post',
       },
       component: Post
+    },
+    // THROWAWAY: the platform layer spike's route (ticket 03), removed by ticket 07.
+    {
+      path: '/peertube-spike/:host?/:uuid?',
+      name: 'peertubeSpike',
+      meta: {
+        title: 'PeerTube spike'
+      },
+      component: PeerTubeSpike
     }
   ],
   scrollBehavior(to, from, savedPosition) {

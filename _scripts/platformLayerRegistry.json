@@ -12,6 +12,10 @@
     {
       "path": "src/renderer/components/ft-shaka-video-player/ft-shaka-video-player.js",
       "reason": "optional `platform` prop: no SponsorBlock and no YouTube HLS seek rule for other platforms; lowest variant when none is at or below the preferred quality"
+    },
+    {
+      "path": "src/renderer/router/index.js",
+      "reason": "the PeerTube spike route (throwaway)"
     }
   ],
   "shadowed": {}
