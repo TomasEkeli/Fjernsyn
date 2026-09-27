@@ -14,11 +14,14 @@ import { createTestRouter } from '../../testing/router'
 import LayerWatch from './LayerWatch.vue'
 
 // The player cannot run in a simulated DOM. The stand-in declares the props
-// and events the watch view uses, and plays back what a test tells it
-const player = vi.hoisted(() => ({ hasLoaded: false, currentTime: 0, seekedTo: [], paused: false }))
+// and events the watch view uses, and plays back what a test tells it. `events`
+// is the order in which its position was read, it was destroyed and it was
+// unmounted; `destroyGate`, when a test sets it, holds destruction open until
+// it resolves
+const player = vi.hoisted(() => ({ hasLoaded: false, currentTime: 0, seekedTo: [], paused: false, events: [], destroyGate: undefined }))
 
 vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', async () => {
-  const { defineComponent, h } = await import('vue')
+  const { defineComponent, h, onBeforeUnmount } = await import('vue')
 
   return {
     default: defineComponent({
@@ -53,12 +56,20 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
       setup(_props, { expose }) {
         expose({
           get hasLoaded() { return player.hasLoaded },
-          getCurrentTime: () => player.currentTime,
+          getCurrentTime: () => {
+            player.events.push('position read')
+            return player.currentTime
+          },
           setCurrentTime: (seconds) => { player.seekedTo.push(seconds) },
           pause: () => { player.paused = true },
           isPaused: () => player.paused,
-          destroyPlayer: async () => ({ startNextVideoInFullscreen: false, startNextVideoInFullwindow: false, startNextVideoInPip: false }),
+          destroyPlayer: async () => {
+            await player.destroyGate
+            player.events.push('destroyed')
+            return { startNextVideoInFullscreen: false, startNextVideoInFullwindow: false, startNextVideoInPip: false }
+          },
         })
+        onBeforeUnmount(() => { player.events.push('unmounted') })
         return () => h('div', { class: 'fakePlayer' })
       },
     }),
@@ -230,7 +241,7 @@ beforeEach(() => {
   }
   store.dispatched.length = 0
 
-  Object.assign(player, { hasLoaded: false, currentTime: 0, seekedTo: [], paused: false })
+  Object.assign(player, { hasLoaded: false, currentTime: 0, seekedTo: [], paused: false, events: [], destroyGate: undefined })
 
   layer.getVideo.mockReset()
   layer.getComments.mockReset()
@@ -543,8 +554,50 @@ describe('the format ring', () => {
     expect(findPlayer(wrapper).props()).toMatchObject({ format: 'dash', manifestSrc: MANIFEST })
   })
 
+  it('saves the position and destroys the player before the message replaces it, once nothing plays', async () => {
+    const { wrapper } = await openWatchPage(playableVideo({}, { legacyFormats: [], audio: null }))
+    Object.assign(player, { hasLoaded: true, currentTime: 42.5 })
+    let finishDestroying
+    player.destroyGate = new Promise(resolve => { finishDestroying = resolve })
+
+    findPlayer(wrapper).vm.$emit('error', new Error('adaptive failed'))
+    await flushPromises()
+
+    // Still being destroyed: the message waits for it
+    expect(findPlayer(wrapper).exists()).toBe(true)
+    expect(dispatched('updateWatchProgress')).toEqual([{ videoId: UUID, watchProgress: 42.5 }])
+
+    finishDestroying()
+    await flushPromises()
+
+    expect(player.events).toEqual(['position read', 'destroyed', 'unmounted'])
+    expect(findPlayer(wrapper).exists()).toBe(false)
+    expect(wrapper.text()).toContain('Fjernsyn cannot play this video.')
+  })
+
+  it('plays a video opened while the failed player is still being destroyed', async () => {
+    const { wrapper, router } = await openWatchPage(ref => playableVideo({ videoId: ref.videoId }, { legacyFormats: [], audio: null }))
+    let finishDestroying
+    player.destroyGate = new Promise(resolve => { finishDestroying = resolve })
+
+    findPlayer(wrapper).vm.$emit('error', new Error('adaptive failed'))
+    await flushPromises()
+
+    // Leaving destroys the player again, and that finishes first
+    player.destroyGate = undefined
+    await router.push(`/peertube/watch/${HOST}/${OTHER_UUID}`)
+    await flushPromises()
+
+    finishDestroying()
+    await flushPromises()
+
+    expect(findPlayer(wrapper).props()).toMatchObject({ videoId: OTHER_UUID, format: 'dash' })
+    expect(wrapper.text()).not.toContain('Fjernsyn cannot play this video.')
+  })
+
   it('offers to try again once nothing plays, asking the layer afresh', async () => {
     const { wrapper } = await openWatchPage(playableVideo({}, { legacyFormats: [], audio: null }))
+    const failedPlayer = findPlayer(wrapper).vm
     findPlayer(wrapper).vm.$emit('error', new Error('adaptive failed'))
     await flushPromises()
 
@@ -552,6 +605,8 @@ describe('the format ring', () => {
     await flushPromises()
 
     expect(layer.getVideo).toHaveBeenCalledTimes(2)
+    // A fresh player, not the one destroyed
+    expect(findPlayer(wrapper).vm).not.toBe(failedPlayer)
     expect(findPlayer(wrapper).props('format')).toBe('dash')
   })
 

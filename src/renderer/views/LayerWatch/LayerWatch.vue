@@ -508,7 +508,7 @@ function switchFormat(format) {
  *
  * @param {shaka.util.Error} error
  */
-function handlePlayerError(error) {
+async function handlePlayerError(error) {
   // As Watch.js: the connection was lost, and the player keeps trying and
   // resumes by itself when it returns, so the format is not at fault
   if (error?.code === shaka.util.Error.Code.HTTP_ERROR &&
@@ -523,9 +523,24 @@ function handlePlayerError(error) {
 
   if (next) {
     switchFormat(next)
-  } else {
-    // The player goes away with the message, so its position is taken now
-    handleWatchProgressAutoSaveWhenProgressEnabled()
+    return
+  }
+
+  // The player goes away with the message, so its position is taken now. It
+  // is destroyed before that too: unmounted by the message, it would be left
+  // running, as a live that goes on refreshing its playlist
+  handleWatchProgressAutoSaveWhenProgressEnabled()
+
+  const thisLoad = loadsStarted
+
+  try {
+    await destroyPlayer()
+  } catch (destroyError) {
+    console.error(destroyError)
+  }
+
+  // Unless another video has started loading meanwhile
+  if (thisLoad === loadsStarted) {
     playbackFailed.value = true
   }
 }
