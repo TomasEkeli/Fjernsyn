@@ -204,6 +204,7 @@ import {
 import { invidiousGetPlaylistInfo, fetchAllInvidiousPlaylistVideos } from '../../helpers/api/invidious'
 import { getSortedPlaylistItems, SORT_BY_VALUES } from '../../helpers/playlists'
 import { coverThumbnail } from '../../platform/cards'
+import { isYouTubeRecord } from '../../platform/records'
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
 
 const props = defineProps({
@@ -290,15 +291,18 @@ const currentVideo = computed(() => playlistItems.value[currentVideoIndexZeroBas
 
 const playlistVideoCount = computed(() => playlistItems.value.length)
 
+// Fjernsyn: the items this (YouTube) watch page plays through, in place of `playlistItems` wherever it navigates; an item of another platform (PeerTube) is listed and opens on its own
+const playableItems = computed(() => playlistItems.value.filter(isYouTubeRecord))
+
 const playlistUnavailableVideoCount = computed(() => playlistTotalVideoCount.value - playlistVideoCount.value)
 
 const videoIndexInPlaylistItems = computed(() => {
-  const items = shuffleEnabled.value ? randomizedPlaylistItems.value : playlistItems.value
+  const items = shuffleEnabled.value ? randomizedPlaylistItems.value : playableItems.value
   return findIndexOfCurrentVideoInPlaylist(items)
 })
 
 const videoIsLastPlaylistItem = computed(() => {
-  return videoIndexInPlaylistItems.value === (playlistItems.value.length - 1)
+  return videoIndexInPlaylistItems.value === (playableItems.value.length - 1)
 })
 
 const videoIsNotPlaylistItem = computed(() => videoIndexInPlaylistItems.value === -1)
@@ -557,7 +561,7 @@ function playNextVideo() {
   const videoIndex = videoIndexInPlaylistItems.value
   const targetVideoIndex = (videoIsNotPlaylistItem.value || videoIsLastPlaylistItem.value) ? 0 : videoIndex + 1
 
-  const targetList = shuffleEnabled.value ? randomizedPlaylistItems.value : playlistItems.value
+  const targetList = shuffleEnabled.value ? randomizedPlaylistItems.value : playableItems.value
 
   const targetPlaylistItem = targetList[targetVideoIndex]
 
@@ -620,9 +624,9 @@ function playPreviousVideo() {
   }
 
   // Wrap around to the end of the playlist only if there are no remaining earlier videos
-  const targetVideoIndex = (videoIndex === 0 || videoIsNotPlaylistItem.value) ? playlistItems.value.length - 1 : videoIndex - 1
+  const targetVideoIndex = (videoIndex === 0 || videoIsNotPlaylistItem.value) ? playableItems.value.length - 1 : videoIndex - 1
 
-  const targetList = shuffleEnabled.value ? randomizedPlaylistItems.value : playlistItems.value
+  const targetList = shuffleEnabled.value ? randomizedPlaylistItems.value : playableItems.value
 
   const targetPlaylistItem = targetList[targetVideoIndex]
 
@@ -759,7 +763,8 @@ function parseUserPlaylist(playlist) {
     // grab 2nd video if the 1st one is current & deleted
     // or the prior video in the list before the current video's deletion
     const targetVideoIndex = currentVideoIndexZeroBased.value - 1
-    prevVideoBeforeDeletion = targetVideoIndex >= 0 ? playlistItems.value[targetVideoIndex] : null
+    // Fjernsyn: the nearest item at or before it that this page plays (a YouTube one), or "previous" would not find it and wrap to the end
+    prevVideoBeforeDeletion = targetVideoIndex >= 0 ? (playlistItems.value.slice(0, targetVideoIndex + 1).findLast(isYouTubeRecord) ?? null) : null
   }
 
   playlistItems.value = getSortedPlaylistItems(playlist.videos, sortOrder.value, locale.value, reversePlaylist.value)
@@ -769,12 +774,14 @@ function parseUserPlaylist(playlist) {
 
 function shufflePlaylistItems() {
   // Prevents the array from affecting the original object
-  const items = playlistItems.value.slice()
+  const items = playableItems.value.slice()
 
   let cachedCurrentVideos
 
-  if (currentVideo.value != null) {
-    cachedCurrentVideos = items.splice(currentVideoIndexZeroBased.value, 1)
+  // Fjernsyn: found among the playable items, never spliced at -1 (which would move the last item first)
+  const currentIndex = findIndexOfCurrentVideoInPlaylist(items)
+  if (currentVideo.value != null && currentIndex !== -1) {
+    cachedCurrentVideos = items.splice(currentIndex, 1)
     // There is no else case
     // If current video is absent in (removed from) the playlist, nothing should be changed
   }
@@ -863,7 +870,7 @@ const videoIsLastInInPlaylistItems = computed(() => {
   if (shuffleEnabled.value) {
     return videoIndexInPlaylistItems.value === randomizedPlaylistItems.value.length - 1
   } else {
-    return videoIndexInPlaylistItems.value === playlistItems.value.length - 1
+    return videoIndexInPlaylistItems.value === playableItems.value.length - 1
   }
 })
 

@@ -2,6 +2,7 @@ import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
+import { showToast } from '../../helpers/utils'
 import store from '../../store/index'
 import { mountWithApp } from '../../testing/mount'
 import { createTestRouter } from '../../testing/router'
@@ -55,6 +56,11 @@ vi.mock('../../i18n/index', async () => {
   return { default: createTestI18n() }
 })
 
+vi.mock('../../helpers/utils', async (importOriginal) => ({
+  ...(await importOriginal()),
+  showToast: vi.fn(),
+}))
+
 vi.mock('../../platform/vue', async () => {
   const { describe } = await import('../../platform/describe')
   const { default: store } = await import('../../store/index')
@@ -66,11 +72,15 @@ vi.mock('../../platform/vue', async () => {
   }
 })
 
-async function mountPlaylist() {
+/**
+ * @param {object} [current] the item the watch page shows
+ * @param {import('vue-router').Router} [router]
+ */
+async function mountPlaylist(current = PLAYLIST.videos[0], router = createTestRouter()) {
   const wrapper = mountWithApp(WatchVideoPlaylist, {
     store,
-    router: createTestRouter(),
-    props: { playlistId: 'mixed', playlistType: 'user', videoId: YOUTUBE_ID, playlistItemId: 'i1', watchViewLoading: false },
+    router,
+    props: { playlistId: 'mixed', playlistType: 'user', videoId: current.videoId, playlistItemId: current.playlistItemId, watchViewLoading: false },
     stubs: { FtListVideoNumbered: true },
   })
   await flushPromises()
@@ -132,5 +142,228 @@ describe('WatchVideoPlaylist, the progress bar preview', () => {
 
     expect(wrapper.find('.previewVideoTitle').text()).toBe('Never Gonna Give You Up')
     expect(previewSrc(wrapper)).toBe(`https://i.ytimg.com/vi/${YOUTUBE_ID}/default.jpg`)
+  })
+})
+
+const PEERTUBE_ITEM = PLAYLIST.videos[1]
+
+/** @param {string} videoId @param {string} playlistItemId */
+function youTubeItem(videoId, playlistItemId) {
+  return { videoId, title: videoId, author: 'Someone', authorId: 'UCxxxxxxxxxxxxxxxxxxxxxx', lengthSeconds: 60, playlistItemId, timeAdded: 1 }
+}
+
+const FIRST = youTubeItem('aaaaaaaaaaa', 'y1')
+const SECOND = youTubeItem('bbbbbbbbbbb', 'y2')
+const THIRD = youTubeItem('ccccccccccc', 'y3')
+
+/** @param {object[]} videos */
+function usePlaylist(videos) {
+  store.setGetter('getPlaylist', (id) => (id === 'mixed' ? { _id: 'mixed', playlistName: 'Mixed', videos } : undefined))
+}
+
+/**
+ * Runs one of the playlist's own navigations, as the watch page and the media keys do
+ *
+ * @param {object[]} videos
+ * @param {object} current
+ * @param {(wrapper: import('@vue/test-utils').VueWrapper) => unknown} navigate
+ * @returns {Promise<string | null>} the playlist item it opened, or `null` if it stayed
+ */
+async function navigateFrom(videos, current, navigate) {
+  usePlaylist(videos)
+  const router = createTestRouter()
+  const wrapper = await mountPlaylist(current, router)
+
+  await navigate(wrapper)
+  await flushPromises()
+
+  const route = router.currentRoute.value
+  if (route.path === '/') { return null }
+
+  expect(route.query).toMatchObject({ playlistId: 'mixed', playlistType: 'user' })
+  expect(route.path).toBe(`/watch/${videos.find(video => video.playlistItemId === route.query.playlistItemId).videoId}`)
+  return route.query.playlistItemId
+}
+
+/**
+ * Mounts the playlist on `current`, then takes `current` out of it, as the
+ * watch page sees a video removed from the playlist while it plays
+ *
+ * @param {object[]} videos
+ * @param {object} current
+ */
+async function mountAndDelete(videos, current) {
+  usePlaylist(videos)
+  const router = createTestRouter()
+  const wrapper = await mountPlaylist(current, router)
+
+  usePlaylist(videos.filter(video => video !== current))
+  await flushPromises()
+
+  return { wrapper, router }
+}
+
+/** @param {import('vue-router').Router} router */
+const openedItem = router => router.currentRoute.value.path === '/' ? null : router.currentRoute.value.query.playlistItemId
+
+/** @param {import('@vue/test-utils').VueWrapper} wrapper */
+const shuffled = wrapper => wrapper.vm.randomizedPlaylistItems.map(item => item.playlistItemId)
+
+const next = wrapper => wrapper.vm.playNextVideo()
+const previous = wrapper => wrapper.vm.playPreviousVideo()
+
+async function toggle(wrapper, label) {
+  await wrapper.find(`[aria-label="${label}"]`).trigger('click')
+}
+
+describe('WatchVideoPlaylist, playing through a mixed playlist on the YouTube watch page', () => {
+  const MIXED = [FIRST, PEERTUBE_ITEM, SECOND, { ...PEERTUBE_ITEM, playlistItemId: 'p2' }]
+
+  it('steps over a PeerTube item to the next YouTube one', async () => {
+    expect(await navigateFrom(MIXED, FIRST, next)).toBe('y2')
+  })
+
+  it('steps back over a PeerTube item to the previous YouTube one', async () => {
+    expect(await navigateFrom(MIXED, SECOND, previous)).toBe('y1')
+  })
+
+  it('ends the playlist at the last YouTube item, with only PeerTube items after it', async () => {
+    expect(await navigateFrom(MIXED, SECOND, next)).toBeNull()
+    expect(showToast).toHaveBeenCalledWith('The playlist has ended.  Enable loop to continue playing')
+  })
+
+  it('says the playlist will end at the last YouTube item', async () => {
+    usePlaylist(MIXED)
+    const wrapper = await mountPlaylist(SECOND)
+
+    expect(wrapper.vm.shouldStopDueToPlaylistEnd).toBe(true)
+  })
+
+  it('loops from the last YouTube item to the first', async () => {
+    expect(await navigateFrom(MIXED, SECOND, async (wrapper) => {
+      await toggle(wrapper, 'Loop Playlist')
+      next(wrapper)
+    })).toBe('y1')
+  })
+
+  it('wraps back from the first YouTube item to the last', async () => {
+    expect(await navigateFrom([PEERTUBE_ITEM, FIRST, SECOND, { ...PEERTUBE_ITEM, playlistItemId: 'p2' }], FIRST, previous)).toBe('y2')
+  })
+
+  it('shuffles the YouTube items only', async () => {
+    // The shuffle that, over every item, would put the PeerTube item next
+    vi.spyOn(Math, 'random').mockReturnValue(0.99)
+
+    expect(await navigateFrom([FIRST, PEERTUBE_ITEM, SECOND], FIRST, async (wrapper) => {
+      await toggle(wrapper, 'Shuffle Playlist')
+      next(wrapper)
+    })).toBe('y2')
+  })
+
+  it('steps back from a deleted video to the nearest YouTube item before it, over a PeerTube one, without wrapping', async () => {
+    const { wrapper, router } = await mountAndDelete([FIRST, PEERTUBE_ITEM, SECOND, THIRD], SECOND)
+
+    previous(wrapper)
+    await flushPromises()
+
+    expect(openedItem(router)).toBe('y1')
+  })
+
+  it('goes on from a deleted video to the next YouTube item after it', async () => {
+    const { wrapper, router } = await mountAndDelete([FIRST, PEERTUBE_ITEM, SECOND, THIRD], SECOND)
+
+    next(wrapper)
+    await flushPromises()
+
+    expect(openedItem(router)).toBe('y3')
+  })
+
+  it('shuffles with the current video first, once, and no PeerTube item', async () => {
+    usePlaylist([FIRST, PEERTUBE_ITEM, SECOND, THIRD])
+    const wrapper = await mountPlaylist(SECOND)
+
+    await toggle(wrapper, 'Shuffle Playlist')
+
+    const order = shuffled(wrapper)
+    expect(order[0]).toBe('y2')
+    expect(order.toSorted()).toEqual(['y1', 'y2', 'y3'])
+  })
+
+  it('still lists every item, the PeerTube ones included', async () => {
+    usePlaylist(MIXED)
+    const wrapper = await mountPlaylist(FIRST)
+
+    expect(wrapper.findAll('.playlistItem')).toHaveLength(4)
+  })
+})
+
+describe('WatchVideoPlaylist, playing through a YouTube-only playlist (as today)', () => {
+  const YOUTUBE_ONLY = [FIRST, SECOND, THIRD]
+
+  it('plays the next item', async () => {
+    expect(await navigateFrom(YOUTUBE_ONLY, FIRST, next)).toBe('y2')
+  })
+
+  it('plays the previous item, wrapping from the first to the last', async () => {
+    expect(await navigateFrom(YOUTUBE_ONLY, SECOND, previous)).toBe('y1')
+    expect(await navigateFrom(YOUTUBE_ONLY, FIRST, previous)).toBe('y3')
+  })
+
+  it('ends at the last item, or loops to the first', async () => {
+    expect(await navigateFrom(YOUTUBE_ONLY, THIRD, next)).toBeNull()
+    expect(await navigateFrom(YOUTUBE_ONLY, THIRD, async (wrapper) => {
+      await toggle(wrapper, 'Loop Playlist')
+      next(wrapper)
+    })).toBe('y1')
+  })
+
+  it('shuffles every item', async () => {
+    // Over [second, third] a random number of 0 swaps them
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+
+    expect(await navigateFrom(YOUTUBE_ONLY, FIRST, async (wrapper) => {
+      await toggle(wrapper, 'Shuffle Playlist')
+      next(wrapper)
+    })).toBe('y3')
+  })
+
+  it('steps back from a deleted video to the item before it', async () => {
+    const { wrapper, router } = await mountAndDelete(YOUTUBE_ONLY, SECOND)
+
+    previous(wrapper)
+    await flushPromises()
+
+    expect(openedItem(router)).toBe('y1')
+  })
+
+  it('goes on from a deleted video to the item after it', async () => {
+    const { wrapper, router } = await mountAndDelete(YOUTUBE_ONLY, SECOND)
+
+    next(wrapper)
+    await flushPromises()
+
+    expect(openedItem(router)).toBe('y3')
+  })
+
+  it('wraps back to the last item from a deleted first video', async () => {
+    const { wrapper, router } = await mountAndDelete(YOUTUBE_ONLY, FIRST)
+
+    previous(wrapper)
+    await flushPromises()
+
+    expect(openedItem(router)).toBe('y3')
+  })
+
+  it.each([0, 0.5, 0.99])('shuffles with the current video first, once (random %s)', async (random) => {
+    vi.spyOn(Math, 'random').mockReturnValue(random)
+    usePlaylist(YOUTUBE_ONLY)
+    const wrapper = await mountPlaylist(SECOND)
+
+    await toggle(wrapper, 'Shuffle Playlist')
+
+    const order = shuffled(wrapper)
+    expect(order[0]).toBe('y2')
+    expect(order).toHaveLength(3)
+    expect(new Set(order).size).toBe(3)
   })
 })

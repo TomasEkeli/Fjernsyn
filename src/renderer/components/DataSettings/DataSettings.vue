@@ -134,6 +134,7 @@ import {
 import { processToBeAddedPlaylistVideo } from '../../helpers/playlists'
 import { isYouTubeChannelStub, peerTubeChannelsFromNewPipe, peerTubeStubToNewPipeEntry, resolveNewPipeAccounts } from '../../platform/subscriptionExchange'
 import { getPlatformLayer } from '../../platform/vue'
+import { importedPlaylistVideo, isYouTubeRecord, splitImportedPlatformFields } from '../../platform/records'
 
 const IMPORT_DIRECTORY_ID = 'data-settings-import'
 const START_IN_DIRECTORY = 'downloads'
@@ -896,7 +897,9 @@ async function importFreeTubeWatchHistory(textDecode) {
   const historyItems = new Map(deepCopy(Object.entries(historyCacheById.value)))
 
   textDecode.forEach((history) => {
-    const historyData = JSON.parse(history)
+    // Fjernsyn: a PeerTube entry's platform fields are validated apart; a YouTube entry is read as it always was (platform/records.js)
+    const { record: historyData, fields: platformFields } = splitImportedPlatformFields(JSON.parse(history))
+    if (platformFields === null) { showToast(t('Settings.Data Settings.History object has insufficient data, skipping item')); return }
     // We would technically already be done by the time the data is parsed,
     // however we want to limit the possibility of malicious data being sent
     // to the app, so we'll only grab the data we need here.
@@ -920,6 +923,7 @@ async function importFreeTubeWatchHistory(textDecode) {
     } else {
       // FreeTube history export does not have this data if the video was marked as watched manually, setting default value
       historyObject.description = historyObject.description ?? ''
+      Object.assign(historyObject, platformFields)
 
       historyItems.set(historyObject.videoId, historyObject)
     }
@@ -1061,7 +1065,8 @@ async function exportFreeTubeWatchHistory() {
 }
 
 async function exportYouTubeWatchHistory() {
-  const historyData = historyCacheSorted.value.map((entry) => {
+  // Fjernsyn: a PeerTube entry has no YouTube URL, so it is left out
+  const historyData = historyCacheSorted.value.filter(isYouTubeRecord).map((entry) => {
     return {
       header: 'YouTube',
       title: `Watched ${entry.title}`,
@@ -1199,7 +1204,10 @@ async function importPlaylists() {
         showToast(message)
       } else if (key === 'videos') {
         const videoArray = []
-        playlistData.videos.forEach((video) => {
+        playlistData.videos.forEach((importedVideo) => {
+          // Fjernsyn: a PeerTube item keeps its validated platform fields, or is skipped; a YouTube item is itself
+          const video = importedPlaylistVideo(importedVideo)
+          if (video === null) { return }
           const videoPropertyKeys = Object.keys(video)
           const videoObjectHasAllRequiredKeys = requiredVideoKeys.every((k) => videoPropertyKeys.includes(k))
 

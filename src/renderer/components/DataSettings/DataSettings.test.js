@@ -8,8 +8,9 @@ import { mountWithApp } from '../../testing/mount'
 import FtPrompt from '../FtPrompt/FtPrompt.vue'
 import DataSettings from './DataSettings.vue'
 
-// Upstream's data settings, for what the fork adds to the subscription import
-// and export: PeerTube channel stubs. The YouTube output is pinned string for
+// Upstream's data settings, for what the fork adds to the subscription,
+// history and playlist imports and exports: PeerTube channel stubs, history
+// entries and playlist items. The YouTube output is pinned string for
 // string as the unmodified code wrote it.
 
 vi.mock('../../store/index', async () => {
@@ -19,6 +20,9 @@ vi.mock('../../store/index', async () => {
       getters: {
         getProfileList: [],
         getEnablePeerTube: true,
+        getHistoryCacheById: {},
+        getHistoryCacheSorted: [],
+        getAllPlaylists: [],
       },
     }),
   }
@@ -88,6 +92,9 @@ beforeEach(() => {
   store.committed.length = 0
   store.setGetter('getProfileList', [mainProfile([YOUTUBE_BLENDER, PEERTUBE_BLENDER, YOUTUBE_QUOTED])])
   store.setGetter('getEnablePeerTube', true)
+  store.setGetter('getHistoryCacheById', {})
+  store.setGetter('getHistoryCacheSorted', [])
+  store.setGetter('getAllPlaylists', [])
   vi.mocked(showToast).mockClear()
   vi.mocked(writeFileWithPicker).mockClear()
   vi.mocked(readFileWithPicker).mockReset()
@@ -408,5 +415,291 @@ describe('the NewPipe subscription import', () => {
     }))
 
     expect(toasts()).toEqual(['All subscriptions have been successfully imported'])
+  })
+})
+
+// History and playlists: a PeerTube video keeps `platform`, `host` and its
+// thumbnails through the Fjernsyn export and import, and never reaches a
+// YouTube-format file
+
+const PT_HOST = 'video.blender.org'
+const PT_UUID = 'b29290cc-dc51-4a12-bcb2-2aa5fece7605'
+const PT_THUMBNAIL = 'https://video.blender.org/lazy-static/previews/sprite-fright.jpg'
+const PT_AVATAR = 'https://video.blender.org/lazy-static/avatars/blender.png'
+
+const YOUTUBE_HISTORY_ENTRY = {
+  videoId: 'dQw4w9WgXcQ',
+  title: 'Never Gonna Give You Up',
+  author: 'Rick Astley',
+  authorId: 'UCuAXFkgsw1L7xaCfnd5JJOw',
+  published: 1256450400000,
+  description: 'The video',
+  viewCount: 1600000000,
+  lengthSeconds: 213,
+  watchProgress: 12,
+  timeWatched: 1790000000000,
+  isLive: false,
+  type: 'video',
+  lastViewedPlaylistId: 'PLabc',
+  lastViewedPlaylistType: '',
+  lastViewedPlaylistItemId: null,
+}
+
+const PEERTUBE_HISTORY_ENTRY = {
+  videoId: PT_UUID,
+  title: 'Sprite Fright',
+  author: 'Blender',
+  authorId: 'blender@video.blender.org',
+  published: 1635465600000,
+  description: 'A film',
+  viewCount: 1234,
+  lengthSeconds: 629,
+  watchProgress: 100,
+  timeWatched: 1790000001000,
+  isLive: false,
+  type: 'video',
+  platform: 'peertube',
+  host: PT_HOST,
+  thumbnail: PT_THUMBNAIL,
+  authorThumbnail: PT_AVATAR,
+}
+
+async function exportHistory(option) {
+  const wrapper = mountDataSettings()
+  await button(wrapper, 'Export History').trigger('click')
+  wrapper.findComponent(FtPrompt).vm.$emit('click', option)
+  await flushPromises()
+
+  expect(writeFileWithPicker).toHaveBeenCalledTimes(1)
+  const [fileName, content] = vi.mocked(writeFileWithPicker).mock.calls[0]
+  return { fileName, content }
+}
+
+async function importFrom(label, filename, content) {
+  vi.mocked(readFileWithPicker).mockResolvedValue({ filename, content })
+  const wrapper = mountDataSettings()
+  await button(wrapper, label).trigger('click')
+  await flushPromises()
+}
+
+/** @returns {object[]} the entries the last history import wrote */
+function importedHistory() {
+  const overwrites = store.dispatched.filter(action => action.type === 'overwriteHistory')
+  expect(overwrites).toHaveLength(1)
+  return [...overwrites[0].payload.values()]
+}
+
+function historyDb(...entries) {
+  return entries.map(entry => JSON.stringify(entry)).join('\n') + '\n'
+}
+
+describe('the Fjernsyn history export and import', () => {
+  it('writes every entry as a line of JSON, a PeerTube entry with all its fields', async () => {
+    store.setGetter('getHistoryCacheSorted', [PEERTUBE_HISTORY_ENTRY, YOUTUBE_HISTORY_ENTRY])
+
+    const { fileName, content } = await exportHistory('freetube')
+
+    expect(fileName).toBe('fjernsyn-watch-history-2026-09-27.db')
+    expect(content).toBe(historyDb(PEERTUBE_HISTORY_ENTRY, YOUTUBE_HISTORY_ENTRY))
+  })
+
+  it('round-trips a PeerTube entry and a YouTube one, field for field', async () => {
+    store.setGetter('getHistoryCacheSorted', [PEERTUBE_HISTORY_ENTRY, YOUTUBE_HISTORY_ENTRY])
+    const { content } = await exportHistory('freetube')
+
+    await importFrom('Import History', 'fjernsyn-watch-history-2026-09-27.db', content)
+
+    expect(importedHistory()).toEqual([PEERTUBE_HISTORY_ENTRY, YOUTUBE_HISTORY_ENTRY])
+    expect(toasts()).toEqual(['All watched history has been successfully exported', 'All watched history has been successfully imported'])
+  })
+
+  it('imports a YouTube entry as it always has: unknown keys are named and left out', async () => {
+    const withExtras = { ...YOUTUBE_HISTORY_ENTRY, thumbnail: 'https://i.ytimg.com/vi/x/mqdefault.jpg', host: PT_HOST }
+    const { description, ...withoutDescription } = YOUTUBE_HISTORY_ENTRY
+
+    await importFrom('Import History', 'history.db', historyDb(withExtras, { ...withoutDescription, videoId: 'aaaaaaaaaaa', paid: false }))
+
+    expect(importedHistory()).toEqual([YOUTUBE_HISTORY_ENTRY, { ...withoutDescription, videoId: 'aaaaaaaaaaa', description: '' }])
+    expect(toasts()).toEqual([
+      'Unknown data key: thumbnail',
+      'Unknown data key: host',
+      'All watched history has been successfully imported',
+    ])
+  })
+
+  it('names every key of a YouTube entry it does not know, platform: youtube included, as it always has', async () => {
+    const entry = { ...YOUTUBE_HISTORY_ENTRY, platform: 'youtube', someFutureKey: 1, authorThumbnail: 'https://yt3.ggpht.com/a' }
+
+    await importFrom('Import History', 'history.db', historyDb(entry))
+
+    expect(importedHistory()).toEqual([YOUTUBE_HISTORY_ENTRY])
+    expect(toasts()).toEqual([
+      'Unknown data key: platform',
+      'Unknown data key: someFutureKey',
+      'Unknown data key: authorThumbnail',
+      'All watched history has been successfully imported',
+    ])
+  })
+
+  it('stores a PeerTube entry\'s uuid in lower case', async () => {
+    await importFrom('Import History', 'history.db', historyDb({ ...PEERTUBE_HISTORY_ENTRY, videoId: PT_UUID.toUpperCase() }))
+
+    expect(importedHistory()).toEqual([PEERTUBE_HISTORY_ENTRY])
+  })
+
+  it('skips a PeerTube entry whose channel is not a PeerTube handle, and says so', async () => {
+    await importFrom('Import History', 'history.db', historyDb(
+      { ...PEERTUBE_HISTORY_ENTRY, authorId: 'UCuAXFkgsw1L7xaCfnd5JJOw' },
+      YOUTUBE_HISTORY_ENTRY,
+    ))
+
+    expect(importedHistory()).toEqual([YOUTUBE_HISTORY_ENTRY])
+    expect(toasts()).toEqual([
+      'History object has insufficient data, skipping item',
+      'All watched history has been successfully imported',
+    ])
+  })
+
+  it('drops a PeerTube entry\'s malformed thumbnails, keeping the entry', async () => {
+    const malformed = { ...PEERTUBE_HISTORY_ENTRY, thumbnail: 'http://video.blender.org/a.jpg', authorThumbnail: 'javascript:alert(1)' }
+
+    await importFrom('Import History', 'history.db', historyDb(malformed))
+
+    const { thumbnail, authorThumbnail, ...rest } = PEERTUBE_HISTORY_ENTRY
+    expect(importedHistory()).toEqual([rest])
+  })
+
+  it('skips a PeerTube entry without a valid host or uuid, and says so', async () => {
+    await importFrom('Import History', 'history.db', historyDb(
+      { ...PEERTUBE_HISTORY_ENTRY, host: 'https://video.blender.org' },
+      { ...PEERTUBE_HISTORY_ENTRY, videoId: 'dQw4w9WgXcQ' },
+      YOUTUBE_HISTORY_ENTRY,
+    ))
+
+    expect(importedHistory()).toEqual([YOUTUBE_HISTORY_ENTRY])
+    expect(toasts()).toEqual([
+      'History object has insufficient data, skipping item',
+      'History object has insufficient data, skipping item',
+      'All watched history has been successfully imported',
+    ])
+  })
+})
+
+describe('the YouTube-format history export', () => {
+  it('writes the YouTube entries only, as it always has', async () => {
+    store.setGetter('getHistoryCacheSorted', [PEERTUBE_HISTORY_ENTRY, YOUTUBE_HISTORY_ENTRY])
+
+    const { fileName, content } = await exportHistory('youtube')
+
+    expect(fileName).toBe('youtube-watch-history-2026-09-27.json')
+    expect(content).toBe(
+      '[{"header":"YouTube","title":"Watched Never Gonna Give You Up",' +
+      '"titleUrl":"https://www.youtube.com/watch?v=dQw4w9WgXcQ",' +
+      '"subtitles":[{"name":"Rick Astley","url":"https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw"}],' +
+      '"time":"2026-09-21T14:13:20.000Z","products":["YouTube"],"activityControls":["YouTube watch history"]}]'
+    )
+  })
+})
+
+const YOUTUBE_PLAYLIST_ITEM = {
+  videoId: 'dQw4w9WgXcQ',
+  title: 'Never Gonna Give You Up',
+  author: 'Rick Astley',
+  authorId: 'UCuAXFkgsw1L7xaCfnd5JJOw',
+  lengthSeconds: 213,
+  published: 1256450400000,
+  timeAdded: 1790000000000,
+  playlistItemId: 'item-yt',
+  type: 'video',
+}
+
+const PEERTUBE_PLAYLIST_ITEM = {
+  videoId: PT_UUID,
+  title: 'Sprite Fright',
+  author: 'Blender',
+  authorId: 'blender@video.blender.org',
+  lengthSeconds: 629,
+  published: 1635465600000,
+  timeAdded: 1790000001000,
+  playlistItemId: 'item-pt',
+  type: 'video',
+  platform: 'peertube',
+  host: PT_HOST,
+  thumbnail: PT_THUMBNAIL,
+}
+
+function playlist(videos, extra = {}) {
+  return { playlistName: 'Mixed', protected: false, description: '', videos, _id: 'mixed', createdAt: 1, lastUpdatedAt: 2, ...extra }
+}
+
+function playlistDb(...playlists) {
+  return playlists.map(entry => JSON.stringify(entry)).join('\n') + '\n'
+}
+
+/** @returns {object[]} the playlists the last import added */
+function addedPlaylists() {
+  return store.dispatched.filter(action => action.type === 'addPlaylists').flatMap(action => action.payload)
+}
+
+describe('the Fjernsyn playlist import', () => {
+  it('keeps a PeerTube item\'s fields, and a YouTube item whole, in a new playlist', async () => {
+    await importFrom('Import Playlists', 'playlists.db', playlistDb(playlist([YOUTUBE_PLAYLIST_ITEM, PEERTUBE_PLAYLIST_ITEM])))
+
+    expect(addedPlaylists()).toEqual([
+      { playlistName: 'Mixed', description: '', videos: [YOUTUBE_PLAYLIST_ITEM, PEERTUBE_PLAYLIST_ITEM], _id: 'mixed', createdAt: 1 },
+    ])
+    expect(toasts()).toEqual(['All playlists has been successfully imported'])
+  })
+
+  it('keeps a YouTube item exactly as it was in the file, whatever it carries', async () => {
+    const withExtras = { ...YOUTUBE_PLAYLIST_ITEM, thumbnail: 'http://anything', host: 'x' }
+
+    await importFrom('Import Playlists', 'playlists.db', playlistDb(playlist([withExtras])))
+
+    expect(addedPlaylists()[0].videos).toEqual([withExtras])
+  })
+
+  it('drops a PeerTube item\'s malformed thumbnail, and skips an item without a valid host', async () => {
+    await importFrom('Import Playlists', 'playlists.db', playlistDb(playlist([
+      { ...PEERTUBE_PLAYLIST_ITEM, thumbnail: 'http://video.blender.org/a.jpg' },
+      { ...PEERTUBE_PLAYLIST_ITEM, playlistItemId: 'bad', host: 'not a host' },
+    ])))
+
+    const { thumbnail, ...withoutThumbnail } = PEERTUBE_PLAYLIST_ITEM
+    expect(addedPlaylists()[0].videos).toEqual([withoutThumbnail])
+  })
+
+  it('stores a PeerTube item\'s uuid in lower case, and skips an item whose channel is not a PeerTube handle', async () => {
+    await importFrom('Import Playlists', 'playlists.db', playlistDb(playlist([
+      { ...PEERTUBE_PLAYLIST_ITEM, videoId: PT_UUID.toUpperCase() },
+      { ...PEERTUBE_PLAYLIST_ITEM, playlistItemId: 'bad', authorId: 'blender' },
+    ])))
+
+    expect(addedPlaylists()[0].videos).toEqual([PEERTUBE_PLAYLIST_ITEM])
+  })
+
+  it('adds a PeerTube item with its fields to a playlist that already exists', async () => {
+    store.setGetter('getAllPlaylists', [playlist([YOUTUBE_PLAYLIST_ITEM])])
+
+    await importFrom('Import Playlists', 'playlists.db', playlistDb(playlist([YOUTUBE_PLAYLIST_ITEM, PEERTUBE_PLAYLIST_ITEM])))
+
+    const updates = store.dispatched.filter(action => action.type === 'updatePlaylist')
+    expect(updates).toHaveLength(1)
+    expect(updates[0].payload.videos).toEqual([YOUTUBE_PLAYLIST_ITEM, PEERTUBE_PLAYLIST_ITEM])
+  })
+
+  it('round-trips a mixed playlist through the Fjernsyn export', async () => {
+    const stored = playlist([YOUTUBE_PLAYLIST_ITEM, PEERTUBE_PLAYLIST_ITEM])
+    store.setGetter('getAllPlaylists', [stored])
+    const wrapper = mountDataSettings()
+    await button(wrapper, 'Export Playlists').trigger('click')
+    await flushPromises()
+    const [, content] = vi.mocked(writeFileWithPicker).mock.calls[0]
+    expect(content).toBe(playlistDb(stored))
+
+    store.setGetter('getAllPlaylists', [])
+    await importFrom('Import Playlists', 'playlists.db', content)
+
+    expect(addedPlaylists()[0].videos).toEqual(stored.videos)
   })
 })

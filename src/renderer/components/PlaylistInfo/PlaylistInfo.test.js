@@ -116,12 +116,39 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
+/**
+ * @param {import('@vue/test-utils').VueWrapper} wrapper
+ * @param {string} option
+ */
+async function exportAs(wrapper, option) {
+  await wrapper.findAllComponents(FtIconButton).find(button => button.props('title') === 'Export This Playlist').vm.$emit('click')
+  wrapper.findComponent(FtPrompt).vm.$emit('click', option)
+  await flushPromises()
+
+  expect(writeFileWithPicker).toHaveBeenCalledTimes(1)
+  return writeFileWithPicker.mock.calls[0][1]
+}
+
 describe('PlaylistInfo, a playlist whose first video is a PeerTube one', () => {
-  it("has that video's thumbnail as its cover, linking to its own watch page", () => {
+  it("has that video's thumbnail as its cover, and plays from the first YouTube video in the playlist", () => {
     const cover = mountInfo([PEERTUBE_VIDEO, YOUTUBE_VIDEO]).find('.playlistThumbnail')
 
     expect(cover.find('img').attributes('src')).toBe(THUMBNAIL)
+    expect(cover.find('a').attributes('href')).toBe(`/watch/${YOUTUBE_ID}?playlistId=mixed&playlistType=user&playlistItemId=i2`)
+  })
+
+  it('opens the first video on its own watch page when the playlist has no YouTube video', () => {
+    const second = { ...PEERTUBE_VIDEO, videoId: 'c39390cc-dc51-4a12-bcb2-2aa5fece7605', playlistItemId: 'i3' }
+    const cover = mountInfo([PEERTUBE_VIDEO, second]).find('.playlistThumbnail')
+
     expect(cover.find('a').attributes('href')).toBe(`/peertube/watch/${HOST}/${UUID}`)
+  })
+
+  it('exports the YouTube videos only to the YouTube CSV', async () => {
+    const youTubeVideo = { ...YOUTUBE_VIDEO, timeAdded: Date.UTC(2026, 8, 27, 12, 0, 0, 123) }
+    const content = await exportAs(mountInfo([{ ...PEERTUBE_VIDEO, timeAdded: 1 }, youTubeVideo]), 'youtube')
+
+    expect(content).toBe(`Video ID,Playlist video creation timestamp\n${YOUTUBE_ID},2026-09-27T12:00:00+00:00\n\n\n\n\n\n`)
   })
 
   it('exports each video as a URL on its own platform', async () => {
@@ -142,5 +169,18 @@ describe('PlaylistInfo, a playlist whose first video is a YouTube one (as today)
 
     expect(cover.find('img').attributes('src')).toBe(`https://i.ytimg.com/vi/${YOUTUBE_ID}/mqdefault.jpg`)
     expect(cover.find('a').attributes('href')).toBe(`/watch/${YOUTUBE_ID}?playlistId=mixed&playlistType=user&playlistItemId=i2`)
+  })
+})
+
+describe('PlaylistInfo, a YouTube-only playlist (as today)', () => {
+  it('exports every video to the YouTube CSV', async () => {
+    const second = { ...YOUTUBE_VIDEO, videoId: 'aaaaaaaaaaa', playlistItemId: 'i4', timeAdded: Date.UTC(2026, 0, 2, 3, 4, 5) }
+    const content = await exportAs(mountInfo([{ ...YOUTUBE_VIDEO, timeAdded: Date.UTC(2026, 8, 27, 12, 0, 0, 123) }, second]), 'youtube')
+
+    expect(content).toBe(
+      'Video ID,Playlist video creation timestamp\n' +
+      `${YOUTUBE_ID},2026-09-27T12:00:00+00:00\n` +
+      'aaaaaaaaaaa,2026-01-02T03:04:05+00:00\n\n\n\n\n\n'
+    )
   })
 })

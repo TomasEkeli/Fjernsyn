@@ -8,7 +8,7 @@
     >
       <router-link
         v-if="firstVideoIdExists"
-        :to="firstVideoCard?.route ?? {
+        :to="firstVideoRoute ?? {
           path: `/watch/${firstVideoId}`,
           query: {
             playlistId: id,
@@ -286,6 +286,7 @@ import {
 } from '../../helpers/utils'
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
 import { describeCard } from '../../platform/cards'
+import { isYouTubeRecord } from '../../platform/records'
 
 const props = defineProps({
   id: {
@@ -481,6 +482,15 @@ const thumbnail = computed(() => {
 
 const isUserPlaylist = computed(() => props.infoSource === 'user')
 const videoPlaylistType = computed(() => isUserPlaylist.value ? 'user' : '')
+
+// Fjernsyn: past a first video of another platform (PeerTube), the playlist plays from its first YouTube video, or with none the first video opens on its own; null for a YouTube first video
+const firstVideoRoute = computed(() => {
+  if (firstVideoCard.value === null) { return null }
+  const video = props.videos.find(isYouTubeRecord)
+  return video === undefined
+    ? firstVideoCard.value.route
+    : { path: `/watch/${video.videoId}`, query: { playlistId: props.id, playlistType: videoPlaylistType.value, playlistItemId: video.playlistItemId } }
+})
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const userPlaylistAnyVideoWatched = computed(() => {
@@ -710,7 +720,8 @@ async function exportAsFreeTubeDatabase() {
 async function exportAsYouTubeCsv() {
   const exportFileName = getExportFilename(props.title, 'csv')
 
-  const videoData = props.sortedVideos.map((video) => {
+  // Fjernsyn: a PeerTube item has no YouTube id, so it is left out
+  const videoData = props.sortedVideos.filter(isYouTubeRecord).map((video) => {
     // Remove milliseconds and replace "Z" with +00:00 to match YouTube's exports
     const timestamp = new Date(video.timeAdded).toISOString().slice(0, -5) + '+00:00'
 
