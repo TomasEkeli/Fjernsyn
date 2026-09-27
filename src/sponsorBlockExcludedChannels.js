@@ -28,8 +28,9 @@
 
 /**
  * The setting as a list, whatever state it is in. A value that does not parse,
- * or parses to something other than a list, counts as an empty list, so that
- * a damaged setting cannot take the settings page or the player down with it.
+ * or parses to something other than a list, counts as an empty list, and an
+ * entry with no channel id in it is dropped, so that a damaged setting cannot
+ * take the settings page, the player or the loading of settings down with it.
  * @param {string | undefined | null} json
  * @returns {ExcludedChannel[]}
  */
@@ -38,12 +39,21 @@ export function parseExcludedChannels(json) {
     return []
   }
 
+  let parsed
+
   try {
-    const parsed = JSON.parse(json)
-    return Array.isArray(parsed) ? parsed : []
+    parsed = JSON.parse(json)
   } catch {
     return []
   }
+
+  if (!Array.isArray(parsed)) {
+    return []
+  }
+
+  return parsed.filter(channel => {
+    return channel !== null && typeof channel === 'object' && typeof channel.name === 'string'
+  })
 }
 
 /**

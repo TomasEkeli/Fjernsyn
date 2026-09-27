@@ -49,6 +49,14 @@ const C = 'UCcccccccccccccccccccccc'
   check('a value that does not parse is an empty list', same(parseExcludedChannels('[{'), []))
   check('a value that is not a list is an empty list', same(parseExcludedChannels('{"name":"x"}'), []))
   check('no value is an empty list', same(parseExcludedChannels(undefined), []))
+  check('entries with no channel id in them are dropped', same(
+    parseExcludedChannels(JSON.stringify([null, 'x', { preferredName: 'No id' }, { name: 7 }, ...stored])),
+    stored
+  ))
+  check('so a damaged list can still take the old entries', same(
+    mergeMarkOnlyChannels(parseExcludedChannels('[null]'), [{ id: B, name: 'Beta' }]),
+    [{ name: B, preferredName: 'Beta' }]
+  ))
 }
 
 // Membership

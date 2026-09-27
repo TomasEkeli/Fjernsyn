@@ -327,7 +327,23 @@ async function findChannelTagInfoWrapper(text) {
   return await findChannelTagInfo(text, backendOptions.value)
 }
 
+// Turning SponsorBlock off and on again while a pass is still looking channels
+// up would start a second pass, and the two would write over each other
+let verifyingExcludedChannels = false
+
 async function verifySponsorBlockExcludedChannels() {
+  if (verifyingExcludedChannels) return
+  verifyingExcludedChannels = true
+
+  try {
+    await verifyExcludedChannelTags()
+  } finally {
+    verifyingExcludedChannels = false
+    sponsorBlockExcludedChannelsDisabled.value = false
+  }
+}
+
+async function verifyExcludedChannelTags() {
   const excludedChannelsCpy = [...sponsorBlockExcludedChannels.value]
 
   for (let i = 0; i < excludedChannelsCpy.length; i++) {
@@ -340,19 +356,22 @@ async function verifySponsorBlockExcludedChannels() {
     if ((tag.preferredName === '' || !tag.icon) && checkYoutubeChannelId(tag.name)) {
       sponsorBlockExcludedChannelsDisabled.value = true
 
-      const { preferredName, icon, iconHref, invalidId } = await findChannelTagInfoWrapper(tag.name)
+      const { preferredName, icon, iconHref, invalidId, err } = await findChannelTagInfoWrapper(tag.name)
+
+      // A lookup that failed says nothing about the channel, and writing its
+      // empty answer back would lose the name the entry was added with
+      if (err) continue
+
       if (invalidId) {
         excludedChannelsCpy[i] = { name: tag.name, invalid: invalidId }
       } else {
-        excludedChannelsCpy[i] = { name: tag.name, preferredName, icon, iconHref }
+        excludedChannelsCpy[i] = { name: tag.name, preferredName: preferredName || tag.preferredName, icon, iconHref }
       }
 
       // update on every tag in case it closes
       handleSponsorBlockExcludedChannels(excludedChannelsCpy)
     }
   }
-
-  sponsorBlockExcludedChannelsDisabled.value = false
 }
 
 </script>

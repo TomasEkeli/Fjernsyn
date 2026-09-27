@@ -1343,7 +1343,7 @@ Chapters:
 
 SponsorBlock:
   Excluded Channels Placeholder: Channel name, ID or URL
-  Excluded Channel Not Found: No subscribed channel has that exact name, and it is not a channel ID or URL
+  Excluded Channel Not Found: Could not tell which channel that is. Enter the full name of one channel you subscribe to, or a channel ID starting with UC, or a URL with one in it
   Excluded Channel Already Listed: That channel is already on the list
 
 Mini Player: Mini Player
