@@ -94,7 +94,7 @@
 
 <script setup>
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { useId, useTemplateRef, ref } from 'vue'
+import { nextTick, useId, useTemplateRef, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import FtInput from '../FtInput/FtInput.vue'
@@ -204,6 +204,11 @@ async function updateTags(text) {
     tagNameInput.value.clear()
   } finally {
     isUpdating.value = false
+
+    // The input is disabled while the tag is added, which takes the focus off
+    // it, so give it back for the next tag to be typed straight away
+    await nextTick()
+    tagNameInput.value?.focus()
   }
 }
 
