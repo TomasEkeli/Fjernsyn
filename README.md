@@ -54,7 +54,7 @@ A small pin on the control bar keeps the player's controls from fading, and the 
 
 ### SponsorBlock
 
-Some channels read their sponsors as part of the show. You can change SponsorBlock skipping per channel, for those where the ads are actually fun and cool. The switch is on the channel page and on the video you are watching. SponsorBlock settings list the channels you have changed, and you can remove any of them there.
+Some channels read their sponsors as part of the show. You can stop SponsorBlock skipping on a channel, for those where the ads are actually fun and cool. Its segments are still marked on the seek bar. The switch is on the channel page, on the video you are watching and in a video's menu. SponsorBlock settings list the channels you have changed, and you can add a channel there by typing the name of one you subscribe to, or remove any of them.
 
 ### Subscriptions
 
