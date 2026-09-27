@@ -149,8 +149,9 @@ export function cleanCommentHtml(html, baseUrl = '') {
   return document.body.innerHTML
 }
 
-// `<br>`, `<br/>`, `<br />`, in any case and with any spaces
-const BR_TAG = /<\s*br\s*\/?\s*>/gi
+// `<br>`, `<br/>`, `<br />`, in any case and with spaces before and after the
+// slash; no two parts can match the same spaces, so it stays linear
+const BR_TAG = /<br\s*(?:\/\s*)?>/gi
 
 /**
  * A PeerTube comment's Markdown with each `<br>` tag made a newline.

@@ -71,7 +71,9 @@ const NO_HARD_LINK_CODES = new Set(['EPERM', 'ENOTSUP', 'EOPNOTSUPP', 'EXDEV', '
 function discardBody(response) {
   try {
     const body = /** @type {any} */ (response.body)
-    const cancelled = body?.cancel?.() ?? body?.return?.()
+    // A web stream is cancelled; a Node stream (Electron's IncomingMessage,
+    // from netFetch.js) is destroyed, which also lets go of its request
+    const cancelled = body?.cancel?.() ?? body?.return?.() ?? body?.destroy?.()
     cancelled?.catch?.(() => {})
   } catch {}
 }
@@ -230,6 +232,7 @@ export function createPeerTubeDownloadService(deps) {
       const { response, finalUrl } = await fetchFollowingRedirects(url, signal, orAbort)
 
       if (!response.ok) {
+        discardBody(response)
         throw new Error(statusReason(response.status, response.statusText))
       }
 

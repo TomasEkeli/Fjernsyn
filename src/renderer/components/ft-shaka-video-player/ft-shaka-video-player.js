@@ -3651,7 +3651,7 @@ export default defineComponent({
               variants = variants.filter(variant => variant.audioBandwidth === highestBandwidth)
 
               // None in src= mode, as a PeerTube progressive audio file plays
-              if (variants.length > 0) {
+              if (variants.length > 0 || player.getLoadMode() !== shaka.Player.LoadMode.SRC_EQUALS) {
                 player.selectVariantTrack(variants[0])
               }
             }
@@ -3924,7 +3924,7 @@ export default defineComponent({
                 }
 
                 // None in src= mode, as a PeerTube progressive audio file plays
-                if (chosenVariant) {
+                if (chosenVariant || player.getLoadMode() !== shaka.Player.LoadMode.SRC_EQUALS) {
                   player.selectVariantTrack(chosenVariant)
                 }
               }
