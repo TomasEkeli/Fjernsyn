@@ -73,11 +73,13 @@
           :disabled="sponsorBlockExcludedChannelsDisabled"
           :disabled-msg="t('Settings.SponsorBlock Settings.Excluded Channels.Disabled Message')"
           :label="t('Settings.SponsorBlock Settings.Excluded Channels.Excluded Channels')"
-          :tag-name-placeholder="t('Settings.Distraction Free Settings.Hide Channels Placeholder')"
+          :tag-name-placeholder="t('SponsorBlock.Excluded Channels Placeholder')"
           :tag-list="sponsorBlockExcludedChannels"
           :tooltip="t('Settings.SponsorBlock Settings.Excluded Channels.Tooltip')"
           :validate-tag-name="checkYoutubeChannelId"
           :find-tag-info="findChannelTagInfoWrapper"
+          :resolve-tag-name="resolveSubscribedChannelName"
+          :data-list="subscribedChannelSuggestions"
           :are-channel-tags="true"
           :show-tags="sponsorBlockShowExcludedChannels"
           @invalid-name="handleInvalidChannel"
@@ -108,7 +110,11 @@ import { showToast } from '../helpers/utils'
 import { checkYoutubeChannelId, findChannelTagInfo } from '../helpers/channels.js'
 import { youtubeImageUrlToInvidious } from '../helpers/api/invidious'
 import { MAIN_PROFILE_ID } from '../../constants'
-import { parseExcludedChannels } from '../../sponsorBlockExcludedChannels'
+import {
+  exclusionSuggestions,
+  parseExcludedChannels,
+  resolveSubscribedChannelId
+} from '../../sponsorBlockExcludedChannels'
 
 const { t } = useI18n()
 
@@ -168,6 +174,10 @@ const currentInvidiousInstanceUrl = computed(() => store.getters.getCurrentInvid
 
 /** @type {import('vue').ComputedRef<{ id: string, name?: string, thumbnail?: string }[]>} */
 const subscribedChannels = computed(() => store.getters.profileById(MAIN_PROFILE_ID)?.subscriptions ?? [])
+
+const subscribedChannelSuggestions = computed(() => {
+  return exclusionSuggestions(subscribedChannels.value, sponsorBlockExcludedChannels.value)
+})
 
 // Looking channels up only means anything while the list is on screen, and it
 // is only on screen while SponsorBlock is on
@@ -247,7 +257,7 @@ function handleUpdateDeArrowThumbnailGeneratorUrl(value) {
 }
 
 function handleInvalidChannel() {
-  showToast(t('Settings.Distraction Free Settings.Hide Channels Invalid'))
+  showToast(t('SponsorBlock.Excluded Channel Not Found'))
 }
 
 function handleChannelAPIError() {
@@ -265,6 +275,17 @@ function cleanupUrl(url) {
   return url
     .replace(/\/+$/, '')
     .replace(/\/api$/, '')
+}
+
+/**
+ * A name typed in stands for the subscribed channel of that name, so a channel
+ * can be added without first finding its id. Only the user's own subscriptions
+ * are searched, and nothing goes to the network for it.
+ * @param {string} text
+ * @returns {string | null} the channel id, or null to read the text as an id or URL
+ */
+function resolveSubscribedChannelName(text) {
+  return resolveSubscribedChannelId(subscribedChannels.value, text)
 }
 
 /**

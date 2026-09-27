@@ -23,6 +23,10 @@
  */
 
 /**
+ * @typedef {{ id: string, name?: string, thumbnail?: string }} SubscribedChannel
+ */
+
+/**
  * The setting as a list, whatever state it is in. A value that does not parse,
  * or parses to something other than a list, counts as an empty list, so that
  * a damaged setting cannot take the settings page or the player down with it.
@@ -111,4 +115,81 @@ export function mergeMarkOnlyChannels(list, markOnlyChannels) {
   }
 
   return merged
+}
+
+/**
+ * @param {string} name
+ */
+function comparable(name) {
+  return name.normalize('NFC').trim().toLocaleLowerCase()
+}
+
+/**
+ * The subscribed channels called exactly this, ignoring case. More than one
+ * means the name alone cannot say which channel was meant.
+ * @param {SubscribedChannel[]} subscriptions
+ * @param {string} text
+ * @returns {SubscribedChannel[]}
+ */
+export function subscribedChannelsNamed(subscriptions, text) {
+  const wanted = comparable(text)
+
+  if (wanted === '') {
+    return []
+  }
+
+  return subscriptions.filter(channel => {
+    return typeof channel.name === 'string' && comparable(channel.name) === wanted
+  })
+}
+
+/**
+ * The channel id that typed text stands for, when it is the name of exactly one
+ * subscribed channel. Anything else is for the caller to read as an id or a
+ * URL, as it would have without this.
+ * @param {SubscribedChannel[]} subscriptions
+ * @param {string} text
+ * @returns {string | null}
+ */
+export function resolveSubscribedChannelId(subscriptions, text) {
+  const matches = subscribedChannelsNamed(subscriptions, text)
+  return matches.length === 1 ? matches[0].id : null
+}
+
+/**
+ * Names of the subscribed channels not already on the list, for the input to
+ * suggest as it is typed into. A name two channels share is left out, since
+ * picking it could not say which of them was meant.
+ * @param {SubscribedChannel[]} subscriptions
+ * @param {ExcludedChannel[]} list
+ * @param {Intl.Collator} [collator]
+ * @returns {string[]}
+ */
+export function exclusionSuggestions(subscriptions, list, collator = new Intl.Collator()) {
+  /** @type {Map<string, { name: string, count: number, excluded: boolean }>} */
+  const byName = new Map()
+
+  for (const channel of subscriptions) {
+    if (typeof channel.name !== 'string' || channel.name.trim() === '') {
+      continue
+    }
+
+    const key = comparable(channel.name)
+    const entry = byName.get(key)
+
+    if (entry) {
+      entry.count++
+    } else {
+      byName.set(key, {
+        name: channel.name.trim(),
+        count: 1,
+        excluded: isExcludedChannel(list, channel.id)
+      })
+    }
+  }
+
+  return [...byName.values()]
+    .filter(entry => entry.count === 1 && !entry.excluded)
+    .map(entry => entry.name)
+    .sort(collator.compare)
 }

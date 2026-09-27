@@ -1,7 +1,7 @@
 /**
  * Checks the rules behind the SponsorBlock excluded channels list: reading the
- * setting, putting a channel on it and taking it off, and carrying the fork's
- * old never-skip list over.
+ * setting, putting a channel on it and taking it off, carrying the fork's old
+ * never-skip list over, and finding a subscribed channel from its name.
  *
  * A channel on the list that should not be, or one missing from it, shows only
  * as a sponsor read that is or is not jumped past, which is easy to put down
@@ -11,9 +11,12 @@
  */
 
 import {
+  exclusionSuggestions,
   isExcludedChannel,
   mergeMarkOnlyChannels,
   parseExcludedChannels,
+  resolveSubscribedChannelId,
+  subscribedChannelsNamed,
   withChannelExcluded,
   withoutChannel,
 } from '../src/sponsorBlockExcludedChannels.js'
@@ -30,6 +33,8 @@ function check(name, condition) {
 }
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
+
+const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true })
 
 const A = 'UCaaaaaaaaaaaaaaaaaaaaaa'
 const B = 'UCbbbbbbbbbbbbbbbbbbbbbb'
@@ -102,6 +107,48 @@ const C = 'UCcccccccccccccccccccccc'
     mergeMarkOnlyChannels([], [{ id: B, name: 'Beta' }, { id: B, name: 'Beta' }]),
     [{ name: B, preferredName: 'Beta' }]
   ))
+}
+
+// Finding a subscribed channel from its name
+{
+  const subscriptions = [
+    { id: A, name: 'Alpha Channel' },
+    { id: B, name: 'AC/DC' },
+    { id: C, name: 'Twins' },
+    { id: 'UCdddddddddddddddddddddd', name: 'twins' },
+    { id: 'UCeeeeeeeeeeeeeeeeeeeeee', name: 'Cafe\u0301' },
+    { id: 'UCffffffffffffffffffffff' },
+  ]
+
+  check('a name finds its channel', resolveSubscribedChannelId(subscriptions, 'Alpha Channel') === A)
+  check('case and surrounding space do not matter', resolveSubscribedChannelId(subscriptions, '  alpha channel ') === A)
+  check('a slash in a name is part of the name, not a URL', resolveSubscribedChannelId(subscriptions, 'AC/DC') === B)
+  check('composed and decomposed accents match', resolveSubscribedChannelId(subscriptions, 'Caf\u00e9') === 'UCeeeeeeeeeeeeeeeeeeeeee')
+  check('only a whole name matches', resolveSubscribedChannelId(subscriptions, 'Alpha') === null)
+  check('a name two channels share finds neither', resolveSubscribedChannelId(subscriptions, 'Twins') === null)
+  check('but both are reported as matching', subscribedChannelsNamed(subscriptions, 'TWINS').length === 2)
+  check('an id is not a name', resolveSubscribedChannelId(subscriptions, A) === null)
+  check('empty text finds nothing', resolveSubscribedChannelId(subscriptions, '   ') === null)
+  check('a channel with no stored name is never matched', subscribedChannelsNamed(subscriptions, 'undefined').length === 0)
+}
+
+// Suggestions as the name is typed
+{
+  const subscriptions = [
+    { id: A, name: 'beta' },
+    { id: B, name: 'Alpha' },
+    { id: C, name: 'Gamma' },
+    { id: 'UCdddddddddddddddddddddd', name: 'Twins' },
+    { id: 'UCeeeeeeeeeeeeeeeeeeeeee', name: 'twins' },
+    { id: 'UCffffffffffffffffffffff', name: '  ' },
+  ]
+
+  const suggestions = exclusionSuggestions(subscriptions, [{ name: C }], collator)
+
+  check('subscribed channels are offered in name order', same(suggestions, ['Alpha', 'beta']))
+  check('a channel already on the list is not offered', !suggestions.includes('Gamma'))
+  check('a name two channels share is not offered', !suggestions.some(name => name.toLowerCase() === 'twins'))
+  check('every offered name resolves to its channel', suggestions.every(name => resolveSubscribedChannelId(subscriptions, name) !== null))
 }
 
 if (failures > 0) {

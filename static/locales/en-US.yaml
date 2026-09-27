@@ -912,8 +912,8 @@ Settings:
       Disabled Message: Some channels were excluded using ID and weren't processed. Feature is blocked while those IDs are updating
       Excluded Channels: Channels That Are Never Skipped
       Tooltip: Segments in videos from these channels are shown on the seek bar but never skipped past, whatever the
-        categories above say. Enter a channel ID or URL; it must be a complete match and is case sensitive. Channels
-        can also be added from a channel page, the video you are watching, or a video's menu.
+        categories above say. Enter the name of a channel you are subscribed to, or a channel ID or URL for any other
+        channel. Channels can also be added from a channel page, the video you are watching, or a video's menu.
   Parental Control Settings:
     Parental Control Settings: Parental Control
     Hide Unsubscribe Button: Hide Unsubscribe Button
@@ -1342,6 +1342,8 @@ Chapters:
   Key Moments: Key Moments
 
 SponsorBlock:
+  Excluded Channels Placeholder: Channel name, ID or URL
+  Excluded Channel Not Found: No subscribed channel has that exact name, and it is not a channel ID or URL
   Excluded Channel Already Listed: That channel is already on the list
 
 Mini Player: Mini Player

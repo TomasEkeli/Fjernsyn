@@ -20,6 +20,7 @@
       :select-on-focus="true"
       :action-button-label="t('Settings.Distraction Free Settings.Add')"
       :force-action-button-icon-name="['fas', 'arrow-right']"
+      :data-list="dataList"
       @click="updateTags"
     />
     <div
@@ -142,6 +143,17 @@ const props = defineProps({
   findTagInfo: {
     type: Function,
     default: (_) => ({ preferredName: '', icon: '' }),
+  },
+  // Suggestions offered as the input is typed into
+  dataList: {
+    type: Array,
+    default: () => []
+  },
+  // For channel tags: the channel id that the typed text stands for, such as a
+  // subscribed channel's name, or null to read the text as an id or URL
+  resolveTagName: {
+    type: Function,
+    default: null
   }
 })
 
@@ -197,7 +209,7 @@ async function updateTags(text) {
  */
 async function updateChannelTags(text) {
   // get text without spaces after last '/' in url, if any
-  const name = text.split('/').at(-1).trim()
+  const name = props.resolveTagName?.(text.trim()) ?? text.split('/').at(-1).trim()
 
   if (!props.validateTagName(name)) {
     emit('invalid-name')
