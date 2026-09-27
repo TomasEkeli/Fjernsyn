@@ -1,0 +1,80 @@
+.card {
+  inline-size: 85%;
+  margin-block: 0 60px;
+  margin-inline: auto;
+}
+
+/* As on upstream's search page: the heading carries the density switch */
+.headingRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+  justify-content: space-between;
+}
+
+.headingIcon {
+  color: var(--primary-color);
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  padding-block: 0 0.3em;
+  margin-block-end: 10px;
+}
+
+.tab {
+  padding: 15px;
+  font-size: 15px;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  color: var(--tertiary-text-color);
+  border-block-end: 3px solid transparent;
+}
+
+.tab:focus-visible,
+.tab:hover:not(.selectedTab) {
+  font-weight: bold;
+  border-block-end: 3px solid var(--tertiary-text-color);
+}
+
+.selectedTab {
+  color: var(--primary-text-color);
+  border-block-end: 3px solid var(--primary-color);
+  font-weight: bold;
+  box-sizing: border-box;
+}
+
+.message {
+  color: var(--tertiary-text-color);
+}
+
+.pageError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.getNextPage {
+  background-color: var(--search-bar-color);
+  inline-size: 100%;
+  block-size: 45px;
+  line-height: 45px;
+  text-align: center;
+  cursor: pointer;
+  margin-block-start: 16px;
+}
+
+.getNextPage:hover,
+.getNextPage:focus {
+  background-color: var(--side-nav-hover-color);
+  color: var(--side-nav-hover-text-color);
+}
+
+@media only screen and (width <= 680px) {
+  .card {
+    inline-size: 90%;
+  }
+}

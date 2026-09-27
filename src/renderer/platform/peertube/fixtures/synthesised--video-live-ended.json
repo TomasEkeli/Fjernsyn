@@ -1,0 +1,272 @@
+{
+  "synthesised": true,
+  "note": "A non-permanent live that ended without a replay (state 5). None could be found live: PeerTube lists never include state 5 (videos-id-list-query-builder.ts whereStateAvailable) and the candidates checked were all state 4. Derived from peertube.livespotting.com--video-live.json (recorded) with state set to {id: 5, label: \"Livestream ended\"} (labels from server/core/initializers/constants.ts VIDEO_STATES), streamingPlaylists emptied (the live HLS is deleted when a live ends without replay) and viewers 0. Everything else is the recorded live.",
+  "recordedAt": "2026-09-27T14:30:18.857Z",
+  "url": "https://peertube.livespotting.com/api/v1/videos/92941053-f746-431a-99fa-23301f673285",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "48",
+    "x-ratelimit-reset": "1790519061"
+  },
+  "body": {
+    "id": 57,
+    "uuid": "92941053-f746-431a-99fa-23301f673285",
+    "shortUUID": "j6NP7hxtTUtvgzANzGNUD4",
+    "url": "https://peertube.livespotting.com/videos/watch/92941053-f746-431a-99fa-23301f673285",
+    "name": "Live mit der Webcam am Stuttgarter Fernsehturm",
+    "category": {
+      "id": 6,
+      "label": "Travels"
+    },
+    "licence": {
+      "id": 9,
+      "label": "All Rights Reserved"
+    },
+    "language": {
+      "id": "de",
+      "label": "German"
+    },
+    "privacy": {
+      "id": 1,
+      "label": "Public"
+    },
+    "nsfw": false,
+    "nsfwFlags": 0,
+    "nsfwSummary": null,
+    "truncatedDescription": "Die HD Live Webcam auf dem Fernsehturm Stuttgart bietet einen Panoramablick über die Landeshauptstadt Baden-Württembergs und die umliegende Region. Von ihrer exponierten Position auf dem Gipfel des Hohen Bopser (485 Meter) aus erfasst die Kamera d...",
+    "description": "Die HD Live Webcam auf dem Fernsehturm Stuttgart bietet einen Panoramablick über die Landeshauptstadt Baden-Württembergs und die umliegende Region. Von ihrer exponierten Position auf dem Gipfel des Hohen Bopser (485 Meter) aus erfasst die Kamera das Stadtzentrum, den Stuttgarter Talkessel, das Neckartal und reicht bei guter Sicht bis zur Schwäbischen Alb.\r\nDie Schwenk-Neige-Kamera ermöglicht eine faszinierende Rundumsicht auf zahlreiche Wahrzeichen der Stadt. Zu sehen sind unter anderem der Schlossplatz mit dem Alten und Neuen Schloss, die Stiftskirche, das Stuttgarter Rathaus, der Königsbau und der Hauptbahnhof mit seinem markanten Uhrturm. In Bad Cannstatt erstreckt sich der Blick über das Neckarstadion, während weiter südlich der Flughafen Stuttgart auf den Fildern sichtbar wird.\r\nDer Fernsehturm Stuttgart, mit einer Gesamthöhe von 217 Metern, ist ein architektonisches Meisterwerk und das erste Bauwerk weltweit, das in moderner Stahlbetonweise errichtet wurde. Er wurde in den 1950er Jahren als Sendeturm konzipiert und gilt heute als Wahrzeichen der Stadt. Die Aussichtsplattform auf 150 Metern Höhe bietet eine spektakuläre Weitsicht und ist ganzjährig für Besucher geöffnet.\r\n",
+    "isLocal": true,
+    "duration": 0,
+    "aspectRatio": 1.7778,
+    "views": 48,
+    "viewers": 0,
+    "downloads": 1,
+    "likes": 0,
+    "dislikes": 0,
+    "thumbnailPath": "/lazy-static/thumbnails/db2bbf87-ba00-4937-a306-0111bc30cc60.jpg",
+    "previewPath": "/lazy-static/thumbnails/910c880d-92ce-4faa-a75d-d65de86fecf0.jpg",
+    "thumbnails": [
+      {
+        "height": 157,
+        "width": 280,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://peertube.livespotting.com/lazy-static/thumbnails/db2bbf87-ba00-4937-a306-0111bc30cc60.jpg"
+      },
+      {
+        "height": 480,
+        "width": 850,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://peertube.livespotting.com/lazy-static/thumbnails/d5087965-1672-4046-a52f-e7d8ad5201c4.jpg"
+      },
+      {
+        "height": 720,
+        "width": 1280,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://peertube.livespotting.com/lazy-static/thumbnails/4b324bee-698a-485d-a7e5-2c7fd08bb6f0.jpg"
+      },
+      {
+        "height": 1400,
+        "width": 1400,
+        "aspectRatio": "1:1",
+        "fileUrl": "https://peertube.livespotting.com/lazy-static/thumbnails/28912910-0610-4f07-a88b-d66d0be8d8e9.jpg"
+      },
+      {
+        "height": 1080,
+        "width": 1920,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://peertube.livespotting.com/lazy-static/thumbnails/910c880d-92ce-4faa-a75d-d65de86fecf0.jpg"
+      }
+    ],
+    "embedPath": "/videos/embed/j6NP7hxtTUtvgzANzGNUD4",
+    "createdAt": "2026-02-05T09:32:45.602Z",
+    "updatedAt": "2026-09-27T02:01:17.246Z",
+    "publishedAt": "2026-09-27T02:01:17.246Z",
+    "originallyPublishedAt": null,
+    "isLive": true,
+    "account": {
+      "url": "https://peertube.livespotting.com/accounts/stuttgart_marketing",
+      "name": "stuttgart_marketing",
+      "host": "peertube.livespotting.com",
+      "avatars": [
+        {
+          "height": 48,
+          "width": 48,
+          "path": "/lazy-static/avatars/bad208d3-fb38-47b8-b671-123ff4b291b4.png",
+          "fileUrl": "https://peertube.livespotting.com/lazy-static/avatars/bad208d3-fb38-47b8-b671-123ff4b291b4.png",
+          "createdAt": "2026-02-06T08:40:17.678Z",
+          "updatedAt": "2026-02-06T08:40:17.678Z"
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "path": "/lazy-static/avatars/a4a8ed2f-04b3-4107-935d-d25a1fc0aa69.png",
+          "fileUrl": "https://peertube.livespotting.com/lazy-static/avatars/a4a8ed2f-04b3-4107-935d-d25a1fc0aa69.png",
+          "createdAt": "2026-02-06T08:40:17.678Z",
+          "updatedAt": "2026-02-06T08:40:17.678Z"
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "path": "/lazy-static/avatars/ab60971f-f23b-4640-820f-a5c64da37c52.png",
+          "fileUrl": "https://peertube.livespotting.com/lazy-static/avatars/ab60971f-f23b-4640-820f-a5c64da37c52.png",
+          "createdAt": "2026-02-06T08:40:17.677Z",
+          "updatedAt": "2026-02-06T08:40:17.677Z"
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "path": "/lazy-static/avatars/c5bf8b4c-d0f5-47c4-aecc-8f468b048bf7.png",
+          "fileUrl": "https://peertube.livespotting.com/lazy-static/avatars/c5bf8b4c-d0f5-47c4-aecc-8f468b048bf7.png",
+          "createdAt": "2026-02-06T08:40:17.675Z",
+          "updatedAt": "2026-02-06T08:40:17.675Z"
+        }
+      ],
+      "id": 3600,
+      "hostRedundancyAllowed": false,
+      "followingCount": 0,
+      "followersCount": 0,
+      "createdAt": "2026-02-04T09:07:04.550Z",
+      "displayName": "stuttgart_marketing",
+      "description": "**Stuttgart erleben: Zwischen Weinbergen und Hightech** 🚗🍇\n\nHerzlich willkommen auf dem offiziellen PeerTube-Kanal von Stuttgart Tourismus! Entdecken Sie die Landeshauptstadt Baden-Württembergs – dort, wo automobile Weltklasse auf idyllische Weinkultur und urbane Dynamik trifft.\n\n**Was Sie hier erwartet:**\n\n**Automobil & Innovation:** Tauchen Sie ein in die Welt von Mercedes-Benz und Porsche.\n\n**Genuss & Panorama:** Erleben Sie Weinberge direkt im Stadtgebiet und kulinarische Highlights von Maultaschen bis zum regionalen Wein.\n\n**Kultur & Architektur:** Entdecken Sie prachtvolle Schlösser, das berühmte Staatsballett und Wahrzeichen wie den Fernsehturm oder die Weissenhofsiedlung.\n\n**Events & Lifestyle:** Eindrücke vom Cannstatter Volksfest, dem Stuttgarter Weindorf oder dem stimmungsvollen Weihnachtsmarkt.\n\nOb Städtetrip, Kulturreise oder Ausflugsplanung: Abonnieren Sie uns für exklusive Einblicke aus dem Herzen des Südens! ✨\n\n**https://www.stuttgart-tourist.de**",
+      "updatedAt": "2026-02-06T08:43:43.014Z",
+      "userId": 24
+    },
+    "channel": {
+      "url": "https://peertube.livespotting.com/video-channels/stuttgartmarketing",
+      "name": "stuttgartmarketing",
+      "host": "peertube.livespotting.com",
+      "avatars": [
+        {
+          "height": 48,
+          "width": 48,
+          "path": "/lazy-static/avatars/aed13787-0151-4527-9b67-c3ff070022b6.png",
+          "fileUrl": "https://peertube.livespotting.com/lazy-static/avatars/aed13787-0151-4527-9b67-c3ff070022b6.png",
+          "createdAt": "2026-02-06T08:46:57.018Z",
+          "updatedAt": "2026-02-06T08:46:57.018Z"
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "path": "/lazy-static/avatars/079204bf-a94c-4617-8c6a-25069b3d297c.png",
+          "fileUrl": "https://peertube.livespotting.com/lazy-static/avatars/079204bf-a94c-4617-8c6a-25069b3d297c.png",
+          "createdAt": "2026-02-06T08:46:57.017Z",
+          "updatedAt": "2026-02-06T08:46:57.017Z"
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "path": "/lazy-static/avatars/31cb9f77-d555-4c89-b072-2638f24701ce.png",
+          "fileUrl": "https://peertube.livespotting.com/lazy-static/avatars/31cb9f77-d555-4c89-b072-2638f24701ce.png",
+          "createdAt": "2026-02-06T08:46:57.016Z",
+          "updatedAt": "2026-02-06T08:46:57.016Z"
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "path": "/lazy-static/avatars/861cf027-a165-4d77-9a27-5f6204478aed.png",
+          "fileUrl": "https://peertube.livespotting.com/lazy-static/avatars/861cf027-a165-4d77-9a27-5f6204478aed.png",
+          "createdAt": "2026-02-06T08:46:57.014Z",
+          "updatedAt": "2026-02-06T08:46:57.014Z"
+        }
+      ],
+      "id": 31,
+      "hostRedundancyAllowed": false,
+      "followingCount": 0,
+      "followersCount": 0,
+      "createdAt": "2026-02-04T09:07:04.557Z",
+      "banners": [],
+      "displayName": "stuttgartmarketing",
+      "description": "**Stuttgart von oben: Live-Panoramen vom Fernsehturm** 🗼\n\nWillkommen auf unserem Live-Kanal! Erleben Sie die Landeshauptstadt aus einer der spektakulärsten Perspektiven der Welt. Unsere HD-Webcam auf dem Gipfel des Hohen Bopser (485m) bietet Ihnen einen unvergleichlichen Rundumblick über die Region.\n\n**Das erwartet Sie in diesem Kanal:**\n\n**Stadtwahrzeichen live:** Schwenken Sie mit uns über den Stuttgarter Talkessel. Entdecken Sie den Schlossplatz, die Stiftskirche und den markanten Uhrturm des Hauptbahnhofs direkt aus der Vogelperspektive.\n\n**Vom Neckar bis zur Alb:** Genießen Sie die Weitsicht über das Neckarstadion in Bad Cannstatt und den Flughafen bis hin zur Schwäbischen Alb.\n\n**Einzigartige Architektur:** Unser „Hauptdarsteller“, der 217m hohe Fernsehturm, ist als weltweit erster seiner Art in Stahlbetonweise ein echtes Meisterwerk der 1950er Jahre.\n\nAbonnieren Sie uns für tägliche Panoramablicke und exklusive Einblicke über die Dächer Stuttgarts! ✨",
+      "support": "Wir bauen 2026 eine öffentliche, europäische Video-Infrastruktur auf Basis von PeerTube (ActivityPub) aus – ohne Tracking und ohne Datenvermarktung.\n\nDafür suchen wir einen Presenting-Partner, der Server, Bandbreite, Monitoring und Betrieb mitfinanziert („Präsentiert von …\" sichtbar auf unserer Instanz).\n\nWir bauen 2026 eine öffentliche, europäische Video-Infrastruktur auf Basis von PeerTube (ActivityPub) aus – **ohne Tracking und ohne Datenvermarktung**.\n\nDafür suchen wir einen **Presenting-Partner**, der Server, Bandbreite, Monitoring und Betrieb mitfinanziert („Präsentiert von …\" sichtbar auf unserer Instanz).\n\nInteresse?\n\n- Details im Blog: [Presenting-Partner 2026 – PeerTube im Fediverse](https://livespotting.com/de/blog/presenting-partner-peertube-fediverse/)\n- Kontakt: [support@livespotting.com](mailto:support@livespotting.com)\n- Telefon: [ +49 431 55683420](tel:+4943155683420)",
+      "publicEmail": null,
+      "isLocal": true,
+      "updatedAt": "2026-02-06T08:49:03.329Z",
+      "ownerAccount": {
+        "url": "https://peertube.livespotting.com/accounts/stuttgart_marketing",
+        "name": "stuttgart_marketing",
+        "host": "peertube.livespotting.com",
+        "avatars": [
+          {
+            "height": 48,
+            "width": 48,
+            "path": "/lazy-static/avatars/bad208d3-fb38-47b8-b671-123ff4b291b4.png",
+            "fileUrl": "https://peertube.livespotting.com/lazy-static/avatars/bad208d3-fb38-47b8-b671-123ff4b291b4.png",
+            "createdAt": "2026-02-06T08:40:17.678Z",
+            "updatedAt": "2026-02-06T08:40:17.678Z"
+          },
+          {
+            "height": 120,
+            "width": 120,
+            "path": "/lazy-static/avatars/a4a8ed2f-04b3-4107-935d-d25a1fc0aa69.png",
+            "fileUrl": "https://peertube.livespotting.com/lazy-static/avatars/a4a8ed2f-04b3-4107-935d-d25a1fc0aa69.png",
+            "createdAt": "2026-02-06T08:40:17.678Z",
+            "updatedAt": "2026-02-06T08:40:17.678Z"
+          },
+          {
+            "height": 600,
+            "width": 600,
+            "path": "/lazy-static/avatars/ab60971f-f23b-4640-820f-a5c64da37c52.png",
+            "fileUrl": "https://peertube.livespotting.com/lazy-static/avatars/ab60971f-f23b-4640-820f-a5c64da37c52.png",
+            "createdAt": "2026-02-06T08:40:17.677Z",
+            "updatedAt": "2026-02-06T08:40:17.677Z"
+          },
+          {
+            "height": 1500,
+            "width": 1500,
+            "path": "/lazy-static/avatars/c5bf8b4c-d0f5-47c4-aecc-8f468b048bf7.png",
+            "fileUrl": "https://peertube.livespotting.com/lazy-static/avatars/c5bf8b4c-d0f5-47c4-aecc-8f468b048bf7.png",
+            "createdAt": "2026-02-06T08:40:17.675Z",
+            "updatedAt": "2026-02-06T08:40:17.675Z"
+          }
+        ],
+        "id": 3600,
+        "hostRedundancyAllowed": false,
+        "followingCount": 0,
+        "followersCount": 0,
+        "createdAt": "2026-02-04T09:07:04.550Z",
+        "displayName": "stuttgart_marketing",
+        "description": "**Stuttgart erleben: Zwischen Weinbergen und Hightech** 🚗🍇\n\nHerzlich willkommen auf dem offiziellen PeerTube-Kanal von Stuttgart Tourismus! Entdecken Sie die Landeshauptstadt Baden-Württembergs – dort, wo automobile Weltklasse auf idyllische Weinkultur und urbane Dynamik trifft.\n\n**Was Sie hier erwartet:**\n\n**Automobil & Innovation:** Tauchen Sie ein in die Welt von Mercedes-Benz und Porsche.\n\n**Genuss & Panorama:** Erleben Sie Weinberge direkt im Stadtgebiet und kulinarische Highlights von Maultaschen bis zum regionalen Wein.\n\n**Kultur & Architektur:** Entdecken Sie prachtvolle Schlösser, das berühmte Staatsballett und Wahrzeichen wie den Fernsehturm oder die Weissenhofsiedlung.\n\n**Events & Lifestyle:** Eindrücke vom Cannstatter Volksfest, dem Stuttgarter Weindorf oder dem stimmungsvollen Weihnachtsmarkt.\n\nOb Städtetrip, Kulturreise oder Ausflugsplanung: Abonnieren Sie uns für exklusive Einblicke aus dem Herzen des Südens! ✨\n\n**https://www.stuttgart-tourist.de**",
+        "updatedAt": "2026-02-06T08:43:43.014Z",
+        "userId": 24
+      }
+    },
+    "comments": 0,
+    "pluginData": {
+      "livechat-active": true
+    },
+    "blacklisted": false,
+    "blacklistedReason": null,
+    "streamingPlaylists": [],
+    "files": [],
+    "liveSchedules": [],
+    "support": "Wir bauen 2026 eine öffentliche, europäische Video-Infrastruktur auf Basis von PeerTube (ActivityPub) aus – ohne Tracking und ohne Datenvermarktung.\r\n\r\nDafür suchen wir einen Presenting-Partner, der Server, Bandbreite, Monitoring und Betrieb mitfinanziert („Präsentiert von …\" sichtbar auf unserer Instanz).\r\n\r\nWir bauen 2026 eine öffentliche, europäische Video-Infrastruktur auf Basis von PeerTube (ActivityPub) aus – **ohne Tracking und ohne Datenvermarktung**.\r\n\r\nDafür suchen wir einen **Presenting-Partner**, der Server, Bandbreite, Monitoring und Betrieb mitfinanziert („Präsentiert von …\" sichtbar auf unserer Instanz).\r\n\r\nInteresse?\r\n\r\n- Details im Blog: [Presenting-Partner 2026 – PeerTube im Fediverse](https://livespotting.com/de/blog/presenting-partner-peertube-fediverse/)\r\n- Kontakt: [support@livespotting.com](mailto:support@livespotting.com)\r\n- Telefon: [ +49 431 55683420](tel:+4943155683420)",
+    "tags": [
+      "Baden-Württemberg",
+      "Fernsehturm",
+      "HD Live Webcam",
+      "Panorama Webcam",
+      "Stuttgart"
+    ],
+    "commentsPolicy": {
+      "id": 1,
+      "label": "Enabled"
+    },
+    "downloadEnabled": true,
+    "waitTranscoding": true,
+    "inputFileUpdatedAt": null,
+    "state": {
+      "id": 5,
+      "label": "Livestream ended"
+    },
+    "trackerUrls": [
+      "https://peertube.livespotting.com/tracker/announce",
+      "wss://peertube.livespotting.com:443/tracker/socket"
+    ],
+    "embedPrivacyPolicy": {
+      "id": 1,
+      "label": "All allowed"
+    }
+  }
+}

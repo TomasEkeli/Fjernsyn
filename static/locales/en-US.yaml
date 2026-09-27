@@ -1363,6 +1363,93 @@ SponsorBlock:
 Input Tags:
   Show Added Items: Show added items
 
+# The fork's own, for the same reason as above
+PeerTube:
+  Settings:
+    Enable PeerTube: PeerTube (experimental)
+    Enable PeerTube Tooltip: Opens PeerTube links in Fjernsyn, lets you follow PeerTube channels in your profiles and
+      search PeerTube. No PeerTube account is needed or used.
+    PeerTube Settings: PeerTube Settings
+    Search source: Search source
+    Search source hint: SepiaSearch is an index of videos from many PeerTube instances, and it does not moderate
+      what it indexes. Any instance or index that speaks the PeerTube search API works here, such as a moderated
+      index or your own instance.
+    Search source invalid: 'The search source has to be an https address, such as https://sepiasearch.org'
+    Search source not PeerTube: '{host} is not a PeerTube search source. Use a PeerTube instance or index, such as
+      https://sepiasearch.org'
+    Reset to SepiaSearch: Reset to SepiaSearch
+    Show NSFW content: Show NSFW content
+    Show NSFW content Tooltip: Shows videos their instance marks as not safe for work, in search and on channels.
+      While this is off they are left out.
+  Switched off: PeerTube is switched off. Switch it on in Experimental settings.
+  Import:
+    Channels imported: 1 PeerTube channel imported | {count} PeerTube channels imported
+    Skipped: 1 PeerTube subscription could not be imported | {count} PeerTube subscriptions could not be imported
+    Switched off: '1 PeerTube subscription was not imported: PeerTube is switched off. Switch it on in Experimental
+      settings and import again | {count} PeerTube subscriptions were not imported: PeerTube is switched off. Switch
+      it on in Experimental settings and import again'
+  Downloads:
+    Download cancelled: 'Cancelled "{title}". Nothing was kept, press download again to start over'
+    Status:
+      Cancelled: Cancelled. Nothing was kept, press download again to start over
+    Download: Download. Right-click or hold for another resolution, or audio only
+    Download again tooltip: Right-click or hold to download again, in any resolution or audio only
+    Option with size: '{option} ({size})'
+    Audio only: Audio only
+    Download again: 'Download again: {option}'
+  Comments:
+    Deleted: This comment has been deleted
+    Could not load: The comments could not be loaded.
+    Could not load replies: The replies could not be loaded.
+  Card:
+    Copy channel link: Copy channel link
+    Open channel in browser: Open channel in browser
+    Channel link copied: Channel link copied
+  Links:
+    Could not reach: Could not reach {host} to open this PeerTube link. Try again in a moment
+  Watch:
+    Refused:
+      Private: This video is private on {host}.
+      Internal: This video is only shown to people signed in on {host}.
+      Password: This video needs a password, which Fjernsyn cannot give yet.
+      Blocked: '{host} has blocked this video.'
+      Other: '{host} refused to show this video.'
+    Not found: This video does not exist on {host}, or no longer does.
+    Unavailable: Could not reach {host}.
+    Rate limited: '{host} is limiting requests, try again in a moment.'
+    Could not load: This video could not be loaded.
+    Cannot play: Fjernsyn cannot play this video.
+    Live waiting: This live has not started yet.
+    Live starts: 'Starts {time}'
+    Live ended: This live has ended.
+    Scheduled for: Scheduled for
+    Audio only: Audio only
+    Play video: Play video
+    Copy link: Copy link
+    Link copied: Link copied
+    Open in browser: Open in browser
+    Likes: 1 like | {count} likes
+    Dislikes: 1 dislike | {count} dislikes
+    Tags: Tags
+    Category: Category
+    Licence: Licence
+    Language: Language
+  Channel:
+    Not found: This channel does not exist on {host}, or no longer does.
+    Unavailable: Could not reach {host}.
+    Rate limited: '{host} is limiting requests, try again in a moment.'
+    Could not load: This channel could not be loaded.
+    Followers: 1 follower | {count} followers
+    Playlist opens in browser: Opens on {host}, in your browser
+  Search:
+    Search PeerTube: Search PeerTube
+    Results for: PeerTube results for “{query}” via {host}
+    No results: No results for “{query}”.
+    Unavailable: Could not reach {host}.
+    Rate limited: '{host} is limiting requests, try again in a moment.'
+    Invalid source: Fjernsyn cannot search {source}. Check the search source in the PeerTube settings.
+    Could not search: The search could not be completed.
+
 Mini Player: Mini Player
 Comments:
   Comments: Comments

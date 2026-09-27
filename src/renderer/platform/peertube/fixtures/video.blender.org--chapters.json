@@ -1,0 +1,14 @@
+{
+  "recordedAt": "2026-09-27T14:25:31.795Z",
+  "url": "https://video.blender.org/api/v1/videos/b29290cc-dc51-4a12-bcb2-2aa5fece7605/chapters",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "48",
+    "x-ratelimit-reset": "1790519142"
+  },
+  "body": {
+    "chapters": []
+  }
+}

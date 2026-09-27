@@ -1,0 +1,651 @@
+{
+  "recordedAt": "2026-09-27T14:25:40.707Z",
+  "url": "https://video.blender.org/api/v1/video-channels/blender_studio@video.blender.org/videos?start=0&count=5&sort=publishedAt",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "40",
+    "x-ratelimit-reset": "1790519142"
+  },
+  "body": {
+    "total": 152,
+    "data": [
+      {
+        "id": 60,
+        "uuid": "de6b370c-7bf9-4ed9-81b7-a514177f4b65",
+        "shortUUID": "tsZ1x6uHsmjxXnL2yXGm3R",
+        "url": "https://video.blender.org/videos/watch/de6b370c-7bf9-4ed9-81b7-a514177f4b65",
+        "name": "Cycles Demoreel 2016",
+        "category": {
+          "id": 10,
+          "label": "Entertainment"
+        },
+        "licence": {
+          "id": 1,
+          "label": "Attribution"
+        },
+        "language": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "nsfw": false,
+        "nsfwFlags": 0,
+        "nsfwSummary": null,
+        "truncatedDescription": "Cycles is a render engine, used by Blender, the free/open 3D creation suite. http://www.blender.org\r\n\r\nEdit by Alexander Mitzkus (https://twitter.com/zuggamasta)\r\nMusic by Sonnfried & Rodewald (https://soundcloud.com/sonnfried-rodewald/gravity-fre...",
+        "description": "Cycles is a render engine, used by Blender, the free/open 3D creation suite. http://www.blender.org\r\n\r\nEdit by Alexander Mitzkus (https://twitter.com/zuggamasta)\r\nMusic by Sonnfried & Rodewald (https://soundcloud.com/sonnfried-rodewald/gravity-fre...",
+        "isLocal": true,
+        "duration": 104,
+        "aspectRatio": null,
+        "views": 203,
+        "viewers": 0,
+        "downloads": 1,
+        "likes": 0,
+        "dislikes": 0,
+        "thumbnailPath": "/lazy-static/thumbnails/de6b370c-7bf9-4ed9-81b7-a514177f4b65.jpg",
+        "previewPath": "/lazy-static/thumbnails/de6b370c-7bf9-4ed9-81b7-a514177f4b65.jpg",
+        "thumbnails": [
+          {
+            "height": 110,
+            "width": 200,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://video.blender.org/lazy-static/thumbnails/de6b370c-7bf9-4ed9-81b7-a514177f4b65.jpg"
+          }
+        ],
+        "embedPath": "/videos/embed/tsZ1x6uHsmjxXnL2yXGm3R",
+        "createdAt": "2018-10-25T13:26:11.599Z",
+        "updatedAt": "2026-09-09T13:56:20.748Z",
+        "publishedAt": "2018-10-27T07:52:33.191Z",
+        "originallyPublishedAt": null,
+        "isLive": false,
+        "account": {
+          "id": 6,
+          "displayName": "Blender",
+          "name": "blender",
+          "url": "https://video.blender.org/accounts/blender",
+          "host": "video.blender.org",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "createdAt": "2026-05-24T11:32:01.734Z",
+              "updatedAt": "2026-05-24T11:32:01.734Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "createdAt": "2026-05-24T11:32:01.730Z",
+              "updatedAt": "2026-05-24T11:32:01.730Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "createdAt": "2026-05-24T11:32:01.724Z",
+              "updatedAt": "2026-05-24T11:32:01.724Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "createdAt": "2026-05-24T11:32:01.719Z",
+              "updatedAt": "2026-05-24T11:32:01.719Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 4570,
+          "name": "blender_studio",
+          "displayName": "Blender Studio",
+          "url": "https://video.blender.org/video-channels/blender_studio",
+          "host": "video.blender.org",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/2b80b2de-7091-475e-bec0-868775dc7db1.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/2b80b2de-7091-475e-bec0-868775dc7db1.webp",
+              "createdAt": "2026-06-03T15:42:47.900Z",
+              "updatedAt": "2026-06-03T15:42:47.900Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp",
+              "createdAt": "2026-06-03T15:42:47.895Z",
+              "updatedAt": "2026-06-03T15:42:47.895Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/e112a9c2-4a18-4024-9e59-87870753e704.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/e112a9c2-4a18-4024-9e59-87870753e704.webp",
+              "createdAt": "2026-06-03T15:42:47.890Z",
+              "updatedAt": "2026-06-03T15:42:47.890Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/cf1a28ef-a26f-4c8b-b46c-e00ea90dce5f.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/cf1a28ef-a26f-4c8b-b46c-e00ea90dce5f.webp",
+              "createdAt": "2026-06-03T15:42:47.884Z",
+              "updatedAt": "2026-06-03T15:42:47.884Z"
+            }
+          ]
+        },
+        "comments": 0
+      },
+      {
+        "id": 61,
+        "uuid": "ce372fcc-c7f4-47a4-b656-e07b6119490f",
+        "shortUUID": "rsWaK4jBqxCTZ63bpErKrR",
+        "url": "https://video.blender.org/videos/watch/ce372fcc-c7f4-47a4-b656-e07b6119490f",
+        "name": "Cycles Demoreel 2015",
+        "category": {
+          "id": 10,
+          "label": "Entertainment"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "nsfw": false,
+        "nsfwFlags": 0,
+        "nsfwSummary": null,
+        "truncatedDescription": "Cycles is a render engine, used by Blender, the free/open 3D creation suite. http://www.blender.org\r\n\r\nEdit by Alexander Mitzkus (http://www.zuggamasta.de)\r\nMusic by Sonnfried & Rodewald (https://soundcloud.com/sonnfried-rodewald/night-run)\r\nProdu...",
+        "description": "Cycles is a render engine, used by Blender, the free/open 3D creation suite. http://www.blender.org\r\n\r\nEdit by Alexander Mitzkus (http://www.zuggamasta.de)\r\nMusic by Sonnfried & Rodewald (https://soundcloud.com/sonnfried-rodewald/night-run)\r\nProdu...",
+        "isLocal": true,
+        "duration": 85,
+        "aspectRatio": null,
+        "views": 150,
+        "viewers": 0,
+        "downloads": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "thumbnailPath": "/lazy-static/thumbnails/ce372fcc-c7f4-47a4-b656-e07b6119490f.jpg",
+        "previewPath": "/lazy-static/thumbnails/ce372fcc-c7f4-47a4-b656-e07b6119490f.jpg",
+        "thumbnails": [
+          {
+            "height": 110,
+            "width": 200,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://video.blender.org/lazy-static/thumbnails/ce372fcc-c7f4-47a4-b656-e07b6119490f.jpg"
+          }
+        ],
+        "embedPath": "/videos/embed/rsWaK4jBqxCTZ63bpErKrR",
+        "createdAt": "2018-10-25T13:26:45.486Z",
+        "updatedAt": "2026-09-11T03:26:20.720Z",
+        "publishedAt": "2018-10-27T07:59:43.448Z",
+        "originallyPublishedAt": null,
+        "isLive": false,
+        "account": {
+          "id": 6,
+          "displayName": "Blender",
+          "name": "blender",
+          "url": "https://video.blender.org/accounts/blender",
+          "host": "video.blender.org",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "createdAt": "2026-05-24T11:32:01.734Z",
+              "updatedAt": "2026-05-24T11:32:01.734Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "createdAt": "2026-05-24T11:32:01.730Z",
+              "updatedAt": "2026-05-24T11:32:01.730Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "createdAt": "2026-05-24T11:32:01.724Z",
+              "updatedAt": "2026-05-24T11:32:01.724Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "createdAt": "2026-05-24T11:32:01.719Z",
+              "updatedAt": "2026-05-24T11:32:01.719Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 4570,
+          "name": "blender_studio",
+          "displayName": "Blender Studio",
+          "url": "https://video.blender.org/video-channels/blender_studio",
+          "host": "video.blender.org",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/2b80b2de-7091-475e-bec0-868775dc7db1.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/2b80b2de-7091-475e-bec0-868775dc7db1.webp",
+              "createdAt": "2026-06-03T15:42:47.900Z",
+              "updatedAt": "2026-06-03T15:42:47.900Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp",
+              "createdAt": "2026-06-03T15:42:47.895Z",
+              "updatedAt": "2026-06-03T15:42:47.895Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/e112a9c2-4a18-4024-9e59-87870753e704.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/e112a9c2-4a18-4024-9e59-87870753e704.webp",
+              "createdAt": "2026-06-03T15:42:47.890Z",
+              "updatedAt": "2026-06-03T15:42:47.890Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/cf1a28ef-a26f-4c8b-b46c-e00ea90dce5f.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/cf1a28ef-a26f-4c8b-b46c-e00ea90dce5f.webp",
+              "createdAt": "2026-06-03T15:42:47.884Z",
+              "updatedAt": "2026-06-03T15:42:47.884Z"
+            }
+          ]
+        },
+        "comments": 0
+      },
+      {
+        "id": 62,
+        "uuid": "35a0adab-40e2-4080-a8e8-a8b28afd4180",
+        "shortUUID": "7C5YZTLVudL4FLN4JmVvnA",
+        "url": "https://video.blender.org/videos/watch/35a0adab-40e2-4080-a8e8-a8b28afd4180",
+        "name": "Cycles Demoreel 2014",
+        "category": {
+          "id": 10,
+          "label": "Entertainment"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "nsfw": false,
+        "nsfwFlags": 0,
+        "nsfwSummary": null,
+        "truncatedDescription": "Support an open animation feature film! http://cloud.blender.org/gooseberry/\r\n\r\nCycles is a render engine, used by Blender, the free/open 3D creation suite. http://www.blender.org\r\n\r\nEdit by Alexander Mitzkus (http://www.zuggamasta.de)\r\nMusic by J...",
+        "description": "Support an open animation feature film! http://cloud.blender.org/gooseberry/\r\n\r\nCycles is a render engine, used by Blender, the free/open 3D creation suite. http://www.blender.org\r\n\r\nEdit by Alexander Mitzkus (http://www.zuggamasta.de)\r\nMusic by J...",
+        "isLocal": true,
+        "duration": 94,
+        "aspectRatio": null,
+        "views": 121,
+        "viewers": 0,
+        "downloads": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "thumbnailPath": "/lazy-static/thumbnails/35a0adab-40e2-4080-a8e8-a8b28afd4180.jpg",
+        "previewPath": "/lazy-static/thumbnails/35a0adab-40e2-4080-a8e8-a8b28afd4180.jpg",
+        "thumbnails": [
+          {
+            "height": 110,
+            "width": 200,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://video.blender.org/lazy-static/thumbnails/35a0adab-40e2-4080-a8e8-a8b28afd4180.jpg"
+          }
+        ],
+        "embedPath": "/videos/embed/7C5YZTLVudL4FLN4JmVvnA",
+        "createdAt": "2018-10-25T13:27:17.547Z",
+        "updatedAt": "2026-09-14T09:56:20.715Z",
+        "publishedAt": "2018-10-27T08:05:51.393Z",
+        "originallyPublishedAt": null,
+        "isLive": false,
+        "account": {
+          "id": 6,
+          "displayName": "Blender",
+          "name": "blender",
+          "url": "https://video.blender.org/accounts/blender",
+          "host": "video.blender.org",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "createdAt": "2026-05-24T11:32:01.734Z",
+              "updatedAt": "2026-05-24T11:32:01.734Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "createdAt": "2026-05-24T11:32:01.730Z",
+              "updatedAt": "2026-05-24T11:32:01.730Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "createdAt": "2026-05-24T11:32:01.724Z",
+              "updatedAt": "2026-05-24T11:32:01.724Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "createdAt": "2026-05-24T11:32:01.719Z",
+              "updatedAt": "2026-05-24T11:32:01.719Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 4570,
+          "name": "blender_studio",
+          "displayName": "Blender Studio",
+          "url": "https://video.blender.org/video-channels/blender_studio",
+          "host": "video.blender.org",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/2b80b2de-7091-475e-bec0-868775dc7db1.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/2b80b2de-7091-475e-bec0-868775dc7db1.webp",
+              "createdAt": "2026-06-03T15:42:47.900Z",
+              "updatedAt": "2026-06-03T15:42:47.900Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp",
+              "createdAt": "2026-06-03T15:42:47.895Z",
+              "updatedAt": "2026-06-03T15:42:47.895Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/e112a9c2-4a18-4024-9e59-87870753e704.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/e112a9c2-4a18-4024-9e59-87870753e704.webp",
+              "createdAt": "2026-06-03T15:42:47.890Z",
+              "updatedAt": "2026-06-03T15:42:47.890Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/cf1a28ef-a26f-4c8b-b46c-e00ea90dce5f.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/cf1a28ef-a26f-4c8b-b46c-e00ea90dce5f.webp",
+              "createdAt": "2026-06-03T15:42:47.884Z",
+              "updatedAt": "2026-06-03T15:42:47.884Z"
+            }
+          ]
+        },
+        "comments": 0
+      },
+      {
+        "id": 63,
+        "uuid": "18bc2c1e-c3e1-428d-b77f-4b52b38ede2c",
+        "shortUUID": "449XZe6o4DRQgVWWB9Z7gE",
+        "url": "https://video.blender.org/videos/watch/18bc2c1e-c3e1-428d-b77f-4b52b38ede2c",
+        "name": "Blender Demo Reel 2013",
+        "category": {
+          "id": 10,
+          "label": "Entertainment"
+        },
+        "licence": {
+          "id": 1,
+          "label": "Attribution"
+        },
+        "language": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "nsfw": false,
+        "nsfwFlags": 0,
+        "nsfwSummary": null,
+        "truncatedDescription": "Music by Jan Morgenstern. Released under CC-BY-NC-ND License.\r\n\r\nContributors (in order of apparence, with duplicate removed):\r\nBabioles - Mathieu Auvray\r\nTank Online Trailer - Trailers Studio\r\nPotato - Animal.ee\r\nMineral water - Alexander Lubkov\r...",
+        "description": "Music by Jan Morgenstern. Released under CC-BY-NC-ND License.\r\n\r\nContributors (in order of apparence, with duplicate removed):\r\nBabioles - Mathieu Auvray\r\nTank Online Trailer - Trailers Studio\r\nPotato - Animal.ee\r\nMineral water - Alexander Lubkov\r...",
+        "isLocal": true,
+        "duration": 200,
+        "aspectRatio": null,
+        "views": 169,
+        "viewers": 0,
+        "downloads": 2,
+        "likes": 0,
+        "dislikes": 0,
+        "thumbnailPath": "/lazy-static/thumbnails/18bc2c1e-c3e1-428d-b77f-4b52b38ede2c.jpg",
+        "previewPath": "/lazy-static/thumbnails/18bc2c1e-c3e1-428d-b77f-4b52b38ede2c.jpg",
+        "thumbnails": [
+          {
+            "height": 110,
+            "width": 200,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://video.blender.org/lazy-static/thumbnails/18bc2c1e-c3e1-428d-b77f-4b52b38ede2c.jpg"
+          }
+        ],
+        "embedPath": "/videos/embed/449XZe6o4DRQgVWWB9Z7gE",
+        "createdAt": "2018-10-25T13:27:49.069Z",
+        "updatedAt": "2026-09-13T14:26:21.102Z",
+        "publishedAt": "2018-10-27T08:15:08.402Z",
+        "originallyPublishedAt": null,
+        "isLive": false,
+        "account": {
+          "id": 6,
+          "displayName": "Blender",
+          "name": "blender",
+          "url": "https://video.blender.org/accounts/blender",
+          "host": "video.blender.org",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "createdAt": "2026-05-24T11:32:01.734Z",
+              "updatedAt": "2026-05-24T11:32:01.734Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "createdAt": "2026-05-24T11:32:01.730Z",
+              "updatedAt": "2026-05-24T11:32:01.730Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "createdAt": "2026-05-24T11:32:01.724Z",
+              "updatedAt": "2026-05-24T11:32:01.724Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "createdAt": "2026-05-24T11:32:01.719Z",
+              "updatedAt": "2026-05-24T11:32:01.719Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 4570,
+          "name": "blender_studio",
+          "displayName": "Blender Studio",
+          "url": "https://video.blender.org/video-channels/blender_studio",
+          "host": "video.blender.org",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/2b80b2de-7091-475e-bec0-868775dc7db1.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/2b80b2de-7091-475e-bec0-868775dc7db1.webp",
+              "createdAt": "2026-06-03T15:42:47.900Z",
+              "updatedAt": "2026-06-03T15:42:47.900Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp",
+              "createdAt": "2026-06-03T15:42:47.895Z",
+              "updatedAt": "2026-06-03T15:42:47.895Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/e112a9c2-4a18-4024-9e59-87870753e704.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/e112a9c2-4a18-4024-9e59-87870753e704.webp",
+              "createdAt": "2026-06-03T15:42:47.890Z",
+              "updatedAt": "2026-06-03T15:42:47.890Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/cf1a28ef-a26f-4c8b-b46c-e00ea90dce5f.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/cf1a28ef-a26f-4c8b-b46c-e00ea90dce5f.webp",
+              "createdAt": "2026-06-03T15:42:47.884Z",
+              "updatedAt": "2026-06-03T15:42:47.884Z"
+            }
+          ]
+        },
+        "comments": 0
+      },
+      {
+        "id": 64,
+        "uuid": "68f0fbb4-ffad-425d-ac53-ea732db97053",
+        "shortUUID": "dXAKaXN56wcv3yofV7P5yK",
+        "url": "https://video.blender.org/videos/watch/68f0fbb4-ffad-425d-ac53-ea732db97053",
+        "name": "Blender Siggraph 2011 reel (Revised)",
+        "category": {
+          "id": 10,
+          "label": "Entertainment"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "nsfw": false,
+        "nsfwFlags": 0,
+        "nsfwSummary": null,
+        "truncatedDescription": "Highlights of Blender work from artists and studios all over the world. Music \"Bigger than us\" by White Lies. Edited by Mike Pan. Reel can be used as Creative Commons, BY-NC-ND. http://creativecommons.org/licenses/by-nc-nd/3.0/\r\n\r\n(Reuploaded beca...",
+        "description": "Highlights of Blender work from artists and studios all over the world. Music \"Bigger than us\" by White Lies. Edited by Mike Pan. Reel can be used as Creative Commons, BY-NC-ND. http://creativecommons.org/licenses/by-nc-nd/3.0/\r\n\r\n(Reuploaded beca...",
+        "isLocal": true,
+        "duration": 283,
+        "aspectRatio": null,
+        "views": 200,
+        "viewers": 0,
+        "downloads": 1,
+        "likes": 0,
+        "dislikes": 0,
+        "thumbnailPath": "/lazy-static/thumbnails/68f0fbb4-ffad-425d-ac53-ea732db97053.jpg",
+        "previewPath": "/lazy-static/thumbnails/68f0fbb4-ffad-425d-ac53-ea732db97053.jpg",
+        "thumbnails": [
+          {
+            "height": 110,
+            "width": 200,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://video.blender.org/lazy-static/thumbnails/68f0fbb4-ffad-425d-ac53-ea732db97053.jpg"
+          }
+        ],
+        "embedPath": "/videos/embed/dXAKaXN56wcv3yofV7P5yK",
+        "createdAt": "2018-10-25T13:28:16.447Z",
+        "updatedAt": "2026-09-14T20:26:20.716Z",
+        "publishedAt": "2018-10-27T08:34:40.854Z",
+        "originallyPublishedAt": null,
+        "isLive": false,
+        "account": {
+          "id": 6,
+          "displayName": "Blender",
+          "name": "blender",
+          "url": "https://video.blender.org/accounts/blender",
+          "host": "video.blender.org",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "createdAt": "2026-05-24T11:32:01.734Z",
+              "updatedAt": "2026-05-24T11:32:01.734Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "createdAt": "2026-05-24T11:32:01.730Z",
+              "updatedAt": "2026-05-24T11:32:01.730Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "createdAt": "2026-05-24T11:32:01.724Z",
+              "updatedAt": "2026-05-24T11:32:01.724Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "createdAt": "2026-05-24T11:32:01.719Z",
+              "updatedAt": "2026-05-24T11:32:01.719Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 4570,
+          "name": "blender_studio",
+          "displayName": "Blender Studio",
+          "url": "https://video.blender.org/video-channels/blender_studio",
+          "host": "video.blender.org",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/2b80b2de-7091-475e-bec0-868775dc7db1.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/2b80b2de-7091-475e-bec0-868775dc7db1.webp",
+              "createdAt": "2026-06-03T15:42:47.900Z",
+              "updatedAt": "2026-06-03T15:42:47.900Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp",
+              "createdAt": "2026-06-03T15:42:47.895Z",
+              "updatedAt": "2026-06-03T15:42:47.895Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/e112a9c2-4a18-4024-9e59-87870753e704.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/e112a9c2-4a18-4024-9e59-87870753e704.webp",
+              "createdAt": "2026-06-03T15:42:47.890Z",
+              "updatedAt": "2026-06-03T15:42:47.890Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/cf1a28ef-a26f-4c8b-b46c-e00ea90dce5f.webp",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/cf1a28ef-a26f-4c8b-b46c-e00ea90dce5f.webp",
+              "createdAt": "2026-06-03T15:42:47.884Z",
+              "updatedAt": "2026-06-03T15:42:47.884Z"
+            }
+          ]
+        },
+        "comments": 0
+      }
+    ]
+  }
+}

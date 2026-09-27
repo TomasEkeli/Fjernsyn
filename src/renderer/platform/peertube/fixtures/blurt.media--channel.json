@@ -1,0 +1,106 @@
+{
+  "recordedAt": "2026-09-27T14:28:55.190Z",
+  "url": "https://blurt.media/api/v1/video-channels/surfgrrl@blurt.media",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "45",
+    "x-ratelimit-reset": "1790519342"
+  },
+  "body": {
+    "url": "https://blurt.media/video-channels/surfgrrl",
+    "name": "surfgrrl",
+    "host": "blurt.media",
+    "avatars": [
+      {
+        "width": 48,
+        "path": "/lazy-static/avatars/811bc59d-1f4b-4b0f-a2ee-c239b548f8eb.jpg",
+        "createdAt": "2025-01-14T23:04:51.412Z",
+        "updatedAt": "2025-01-14T23:04:51.412Z"
+      },
+      {
+        "width": 120,
+        "path": "/lazy-static/avatars/732606b4-5910-4fe3-922d-80ac921c13e3.jpg",
+        "createdAt": "2025-01-14T23:04:51.411Z",
+        "updatedAt": "2025-01-14T23:04:51.411Z"
+      },
+      {
+        "width": 600,
+        "path": "/lazy-static/avatars/fc692eb8-50a4-422e-a45a-eb0767ceb8ec.jpg",
+        "createdAt": "2025-01-14T23:04:51.409Z",
+        "updatedAt": "2025-01-14T23:04:51.409Z"
+      },
+      {
+        "width": 1500,
+        "path": "/lazy-static/avatars/5d96d7cb-adff-4ada-9477-cd2d9c63082f.jpg",
+        "createdAt": "2025-01-14T23:04:51.408Z",
+        "updatedAt": "2025-01-14T23:04:51.408Z"
+      }
+    ],
+    "id": 25,
+    "hostRedundancyAllowed": false,
+    "followingCount": 0,
+    "followersCount": 13,
+    "createdAt": "2025-01-14T22:59:51.136Z",
+    "banners": [
+      {
+        "width": 600,
+        "path": "/lazy-static/banners/4769cb5b-365c-4497-96eb-25b8ca511861.jpg",
+        "createdAt": "2025-01-14T23:04:41.619Z",
+        "updatedAt": "2025-01-14T23:04:41.619Z"
+      },
+      {
+        "width": 1920,
+        "path": "/lazy-static/banners/795db3ec-4d3c-4acb-9ecd-7a85950cc90e.jpg",
+        "createdAt": "2025-01-14T23:04:41.618Z",
+        "updatedAt": "2025-01-14T23:04:41.618Z"
+      }
+    ],
+    "displayName": "SurfGrrl",
+    "description": "I'm here to chew bubble gum and shred waves, but I'm all out of bubble gum. ",
+    "support": null,
+    "isLocal": true,
+    "updatedAt": "2026-09-03T17:33:57.970Z",
+    "ownerAccount": {
+      "url": "https://blurt.media/accounts/surf.grrl",
+      "name": "surf.grrl",
+      "host": "blurt.media",
+      "avatars": [
+        {
+          "width": 48,
+          "path": "/lazy-static/avatars/d6956c2e-7b6a-4179-8616-5645d0ae7ba9.jpg",
+          "createdAt": "2025-01-14T23:05:08.610Z",
+          "updatedAt": "2025-01-14T23:05:08.610Z"
+        },
+        {
+          "width": 120,
+          "path": "/lazy-static/avatars/5f702786-2b77-4924-af16-ba05f0f77bf5.jpg",
+          "createdAt": "2025-01-14T23:05:08.609Z",
+          "updatedAt": "2025-01-14T23:05:08.609Z"
+        },
+        {
+          "width": 600,
+          "path": "/lazy-static/avatars/d68c18dd-96e6-4704-8b0a-19b16d051d36.jpg",
+          "createdAt": "2025-01-14T23:05:08.609Z",
+          "updatedAt": "2025-01-14T23:05:08.609Z"
+        },
+        {
+          "width": 1500,
+          "path": "/lazy-static/avatars/93244dad-2253-4a49-a0f3-752ecae975cb.jpg",
+          "createdAt": "2025-01-14T23:05:08.607Z",
+          "updatedAt": "2025-01-14T23:05:08.607Z"
+        }
+      ],
+      "id": 26,
+      "hostRedundancyAllowed": false,
+      "followingCount": 3,
+      "followersCount": 0,
+      "createdAt": "2025-01-14T22:59:51.133Z",
+      "displayName": "SurfGrrl",
+      "description": "I'm here to chew bubble gum and shred waves, but I'm all out of bubble gum. ",
+      "updatedAt": "2025-01-14T23:02:05.564Z",
+      "userId": 20
+    }
+  }
+}

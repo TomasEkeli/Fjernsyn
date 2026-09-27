@@ -1,0 +1,49 @@
+.layerMarkdown {
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.layerMarkdown :deep(p),
+.layerMarkdown :deep(ul),
+.layerMarkdown :deep(ol),
+.layerMarkdown :deep(blockquote),
+.layerMarkdown :deep(pre) {
+  margin-block: 0 0.75em;
+}
+
+.layerMarkdown :deep(> :last-child) {
+  margin-block-end: 0;
+}
+
+.layerMarkdown :deep(h1),
+.layerMarkdown :deep(h2),
+.layerMarkdown :deep(h3),
+.layerMarkdown :deep(h4),
+.layerMarkdown :deep(h5),
+.layerMarkdown :deep(h6) {
+  font-size: 1.1em;
+  margin-block: 0.75em 0.5em;
+}
+
+.layerMarkdown :deep(blockquote) {
+  border-inline-start: 3px solid var(--tertiary-text-color);
+  margin-inline: 0;
+  padding-inline-start: 10px;
+}
+
+.layerMarkdown :deep(pre),
+.layerMarkdown :deep(code) {
+  background-color: var(--secondary-card-bg-color);
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.layerMarkdown :deep(pre) {
+  overflow-x: auto;
+  padding: 8px;
+}
+
+.layerMarkdown :deep(a) {
+  color: var(--link-color, var(--accent-color));
+}

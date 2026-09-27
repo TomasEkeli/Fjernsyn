@@ -100,6 +100,7 @@ import store from '../../store/index'
 
 import { showToast } from '../../helpers/utils'
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
+import { coverThumbnail } from '../../platform/cards'
 
 const props = defineProps({
   data: {
@@ -213,7 +214,8 @@ function parseUserData() {
       ? currentInvidiousInstanceUrl.value
       : 'https://i.ytimg.com'
 
-    thumbnail = `${origin}/vi/${props.data.videos[0].videoId}/mqdefault.jpg`
+    // Fjernsyn: coverThumbnail is a first video of another platform's own thumbnail, null for YouTube
+    thumbnail = coverThumbnail(props.data.videos[0], thumbnailPlaceholder) ?? `${origin}/vi/${props.data.videos[0].videoId}/mqdefault.jpg`
   }
 
   channelName = ''

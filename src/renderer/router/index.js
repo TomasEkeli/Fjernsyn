@@ -14,6 +14,7 @@ import Channel from '../views/Channel/Channel.vue'
 import Watch from '../views/Watch/Watch.vue'
 import Hashtag from '../views/Hashtag/Hashtag.vue'
 import Post from '../views/Post.vue'
+import { peerTubeRoutes } from '../platform/routes'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -146,7 +147,8 @@ const router = createRouter({
         title: 'Post',
       },
       component: Post
-    }
+    },
+    ...peerTubeRoutes
   ],
   scrollBehavior(to, from, savedPosition) {
     return new Promise((resolve, reject) => {

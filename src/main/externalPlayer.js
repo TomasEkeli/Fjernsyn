@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises'
 import { settings } from '../datastores/handlers/base'
 import { isFreeTubeUrl } from './utils'
 import { IpcChannels, UnsupportedPlayerActions } from '../constants'
+import { peerTubeWatchUrl } from './peertubeExternalPlayer'
 
 /**
  * @typedef ExternalPlayerPayload
@@ -15,6 +16,7 @@ import { IpcChannels, UnsupportedPlayerActions } from '../constants'
  * @property {boolean | undefined | null} [playlistReverse]
  * @property {boolean | undefined | null} [playlistShuffle]
  * @property {boolean | undefined | null} [playlistLoop]
+ * @property {string | undefined | null} [videoUrl] Fjernsyn: a PeerTube watch URL, used when there is no valid `videoId`
  */
 
 /**
@@ -46,9 +48,11 @@ export async function handleOpenInExternalPlayer(event, payload) {
   }
 
   const hasValidVideoId = typeof payload.videoId === 'string' && payload.videoId.length === 11 && ID_REGEX.test(payload.videoId)
-  const hasValidPlaylistId = typeof payload.playlistId === 'string' && payload.playlistId.length > 2 && ID_REGEX.test(payload.playlistId)
+  // Fjernsyn: a PeerTube video comes as a validated watch URL, and plays without any playlist
+  const peerTubeVideoUrl = hasValidVideoId ? null : peerTubeWatchUrl(payload.videoUrl)
+  const hasValidPlaylistId = peerTubeVideoUrl === null && typeof payload.playlistId === 'string' && payload.playlistId.length > 2 && ID_REGEX.test(payload.playlistId)
 
-  if (!hasValidVideoId && !hasValidPlaylistId) {
+  if (!hasValidVideoId && !hasValidPlaylistId && peerTubeVideoUrl === null) {
     return
   }
 
@@ -176,6 +180,11 @@ export async function handleOpenInExternalPlayer(event, payload) {
         args.push(`${cmdArgs.videoUrl}https://www.youtube.com/watch?v=${payload.videoId}`)
       }
     }
+  }
+
+  // Last, where the YouTube branches above put the video URL; they added none for it
+  if (peerTubeVideoUrl !== null) {
+    args.push(`${cmdArgs.videoUrl}${peerTubeVideoUrl}`)
   }
 
   event.reply(

@@ -2,6 +2,7 @@ import { reactive } from 'vue'
 
 import i18n from '../i18n/index'
 import { showToast } from './utils'
+import { isPeerTubeDownloadKey, revealDownload } from './downloads'
 import { applyOutcome, loadYtDlpDownloads, qualityText } from './ytdlpDownloads'
 
 /**
@@ -222,7 +223,10 @@ function showOutcome(outcome) {
     }
 
     case 'cancelled':
-      showToast(t('Video.yt-dlp.Download cancelled', { title }))
+      // A PeerTube download keeps nothing to resume from
+      showToast(isPeerTubeDownloadKey(outcome.videoId)
+        ? t('PeerTube.Downloads.Download cancelled', { title })
+        : t('Video.yt-dlp.Download cancelled', { title }))
       break
 
     case 'already-running':
@@ -237,7 +241,8 @@ function showOutcome(outcome) {
           ? t('Video.yt-dlp.Download finished with quality', { title, quality })
           : t('Video.yt-dlp.Download finished', { title }),
         LONG_TOAST_MS,
-        () => window.ftElectron.ytDlpReveal(outcome.videoId)
+        // yt-dlp's or PeerTube's, by the key
+        () => revealDownload(outcome.videoId)
       )
       break
     }

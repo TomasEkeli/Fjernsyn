@@ -1,0 +1,102 @@
+{
+  "about": "Every upstream file the platform layer work edits (touched) or no longer runs while a surface switch is on (shadowed), see ADR-0014. A change that touches or shadows an upstream file adds it here in the same commit; `pnpm run report-platform-layer-upstream` lists what upstream changed in them.",
+  "touched": [
+    {
+      "path": "package.json",
+      "reason": "the registry check and upstream report scripts; dev dependencies for renderer tests (jsdom, Vue test utils, the single file component plugin)"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "reason": "lockfile entries for the renderer test dev dependencies"
+    },
+    {
+      "path": "src/constants.js",
+      "reason": "the PeerTube download IPC channels (PEERTUBE_DOWNLOAD, _CANCEL, _REVEAL, _DISMISS, _LIST_DOWNLOADS)"
+    },
+    {
+      "path": "src/main/externalPlayer.js",
+      "reason": "accepts an optional `videoUrl`, validated as a PeerTube watch URL by src/main/peertubeExternalPlayer.js, when there is no valid YouTube `videoId`; handed to the player without playlist arguments"
+    },
+    {
+      "path": "src/main/index.js",
+      "reason": "onBeforeSendHeaders hands every request to the PeerTube User-Agent helper (src/main/peertubeRequests.js) first; registers the PeerTube download handlers (src/main/peertubeDownloads/ipc.js) next to the yt-dlp ones"
+    },
+    {
+      "path": "src/preload/interface.js",
+      "reason": "the PeerTube download functions (peerTubeDownload, peerTubeCancel, peerTubeReveal, peerTubeDismiss, peerTubeListDownloads)"
+    },
+    {
+      "path": "src/renderer/App.vue",
+      "reason": "the deep link handler (`enableOpenUrl`) hands a `fjernsyn://` link to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `handleYoutubeLink` only when that hands it back (always, while PeerTube is off); in-app link clicks unchanged"
+    },
+    {
+      "path": "src/renderer/components/DataSettings/DataSettings.vue",
+      "reason": "subscriptions through src/renderer/platform/subscriptionExchange.js: NewPipe import adds PeerTube channels (service 3), and PeerTube accounts as all their channels (resolved through getPlatformLayer), while PeerTube is on; YouTube CSV, JSON and OPML exports skip PeerTube stubs; NewPipe export writes them as service 3; the Fjernsyn history and playlist imports keep a PeerTube video's validated platform, host and thumbnails (src/renderer/platform/records.js) and skip one without a valid host or uuid; the YouTube history export skips PeerTube entries; YouTube paths unchanged"
+    },
+    {
+      "path": "src/renderer/components/ExperimentalSettings/ExperimentalSettings.vue",
+      "reason": "the experimental PeerTube toggle"
+    },
+    {
+      "path": "src/renderer/components/FtListChannel/FtListChannel.vue",
+      "reason": "a PeerTube channel links to its PeerTube route and shows its avatar, through src/renderer/platform/cards.js, and subscribes as its PeerTube stub (`channelPlatformFields`); YouTube channels unchanged"
+    },
+    {
+      "path": "src/renderer/components/FtListPlaylist/FtListPlaylist.vue",
+      "reason": "a user playlist's cover is a PeerTube first video's own thumbnail (src/renderer/platform/cards.js `coverThumbnail`)"
+    },
+    {
+      "path": "src/renderer/components/FtListVideo/FtListVideo.vue",
+      "reason": "hooks gated on a PeerTube record (src/renderer/platform/cards.js): watch and channel routes, thumbnail, canonical share entries in place of YouTube and Invidious ones, external player `videoUrl` with no playlist, no DeArrow, no SponsorBlock channel entry; the history entry, playlist item and quick bookmark it writes keep `platform`, `host` and `thumbnail` (and a plain-text description) through `platformRecordFields`"
+    },
+    {
+      "path": "src/renderer/components/FtPlaylistSelector/FtPlaylistSelector.vue",
+      "reason": "a playlist's cover is a PeerTube first video's own thumbnail (src/renderer/platform/cards.js `coverThumbnail`)"
+    },
+    {
+      "path": "src/renderer/components/FtSubscribeButton/FtSubscribeButton.vue",
+      "reason": "optional `channelPlatformFields` prop, spread into the stored channel stub (`platform`, `host` for PeerTube); YouTube callers pass nothing and store exactly `{ id, name, thumbnail }`"
+    },
+    {
+      "path": "src/renderer/components/PlaylistInfo/PlaylistInfo.vue",
+      "reason": "a PeerTube first video gives the cover its own thumbnail, and the cover link plays from the first YouTube video in the playlist, or with none opens the PeerTube video on its own watch route; the URL list export takes a PeerTube video's canonical URL; the YouTube CSV export skips PeerTube videos"
+    },
+    {
+      "path": "src/renderer/components/TopNav/TopNav.vue",
+      "reason": "the search bar (`goToSearch`, now async) hands its text to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `getYoutubeUrlInfo` only when that hands it back (always, while PeerTube is off); search suggestions unchanged"
+    },
+    {
+      "path": "src/renderer/components/WatchVideoPlaylist/WatchVideoPlaylist.vue",
+      "reason": "the next-video preview of a PeerTube item is its own thumbnail, or the placeholder; next, previous, loop and shuffle step over PeerTube items, which open on their own watch page"
+    },
+    {
+      "path": "src/renderer/components/ft-shaka-video-player/ft-shaka-video-player.js",
+      "reason": "optional `platform` prop: no SponsorBlock and no YouTube HLS seek rule for other platforms; lowest variant when none is at or below the preferred quality"
+    },
+    {
+      "path": "src/renderer/main.js",
+      "reason": "installs the platform layer (src/renderer/platform/vue.js) on the app"
+    },
+    {
+      "path": "src/renderer/router/index.js",
+      "reason": "the PeerTube routes (the layer's watch view, and the channel and search views to come) spread in from src/renderer/platform/routes.js"
+    },
+    {
+      "path": "src/renderer/store/modules/settings.js",
+      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw"
+    },
+    {
+      "path": "src/renderer/views/SearchPage/SearchPage.vue",
+      "reason": "a \"Search PeerTube\" link in the heading row, to the layer's search view for the same query, shown only while PeerTube is on (isPeerTubeEnabled); YouTube search unchanged"
+    },
+    {
+      "path": "src/renderer/views/Settings/Settings.vue",
+      "reason": "spreads in the PeerTube settings section (src/renderer/components/PeerTubeSettings/section.js), present only in Electron while PeerTube is on"
+    },
+    {
+      "path": "static/locales/en-US.yaml",
+      "reason": "the fork-only PeerTube strings"
+    }
+  ],
+  "shadowed": {}
+}

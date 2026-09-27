@@ -67,6 +67,14 @@ const IpcChannels = {
   YTDLP_CANCEL: 'ytdlp-cancel',
   YTDLP_LIST_DOWNLOADS: 'ytdlp-list-downloads',
   YTDLP_DISMISS: 'ytdlp-dismiss',
+
+  // The fork's PeerTube downloads, see src/main/peertubeDownloads/; their
+  // outcomes go out on YTDLP_DOWNLOAD_OUTCOME
+  PEERTUBE_DOWNLOAD: 'peertube-download',
+  PEERTUBE_CANCEL: 'peertube-cancel',
+  PEERTUBE_REVEAL: 'peertube-reveal',
+  PEERTUBE_DISMISS: 'peertube-dismiss',
+  PEERTUBE_LIST_DOWNLOADS: 'peertube-list-downloads',
 }
 
 const DBActions = {

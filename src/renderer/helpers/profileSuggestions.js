@@ -36,6 +36,7 @@ import {
   sortChannels,
   uniqueChannels
 } from './channelsOverview.js'
+import { PLATFORM_YOUTUBE, platformOf } from '../platform/refs.js'
 
 /** @import { Channel, Profile } from './channelsOverview.js' */
 
@@ -326,15 +327,16 @@ function isMusicChannel(channel, tags) {
 }
 
 /**
- * Whether it is worth looking at a channel's recent videos: not yet looked at,
- * and not already known to be Music.
+ * Whether it is worth looking at a channel's recent videos: a YouTube channel
+ * (samples come from YouTube, where another platform's handle means nothing),
+ * not yet looked at, and not already known to be Music.
  * @param {Channel} channel
  * @param {ChannelTags | null | undefined} tags
  * @param {VideoSamples | null | undefined} samples
  * @returns {boolean}
  */
 export function needsVideoSamples(channel, tags, samples) {
-  return !Array.isArray(samples?.videos) && !isMusicChannel(channel, tags)
+  return platformOf(channel) === PLATFORM_YOUTUBE && !Array.isArray(samples?.videos) && !isMusicChannel(channel, tags)
 }
 
 /**

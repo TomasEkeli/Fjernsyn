@@ -7,7 +7,7 @@ import {
   enqueueSubscriptionJob,
   LANE_RECOVERY
 } from './subscriptionWorker'
-import { isRetryableFetchStatus } from './subscriptionFetchStatus'
+import { isRetryableFetchStatus, FETCH_SKIPPED } from './subscriptionFetchStatus'
 import { traceRecovery } from './subscriptionTrace'
 import { buildRecoveryGroups } from './subscriptionRecoveryGroups'
 
@@ -63,7 +63,10 @@ export const subscriptionRecoveryProgress = readonly(progress)
 let cancelled = false
 let running = false
 
-/** Channel ids recovered during the current run. */
+/**
+ * Channel ids settled during the current run, which are not asked for again:
+ * recovered, confirmed gone, or skipped.
+ */
 const recovered = new Set()
 
 function resetProgress() {
@@ -115,7 +118,9 @@ export async function recoverUnresolvedChannels({ feed, channels, fetchChannel, 
       recovered.add(channel.id)
     }
 
-    progress.recovered += succeeded.length
+    // A skipped channel (a PeerTube one, with PeerTube switched off since) is
+    // settled, so it is not asked for again, but nothing was got back for it
+    progress.recovered += succeeded.filter(({ result }) => result.status !== FETCH_SKIPPED).length
     progress.remaining = Math.max(0, progress.remaining - succeeded.length)
 
     if (succeeded.length > 0) {

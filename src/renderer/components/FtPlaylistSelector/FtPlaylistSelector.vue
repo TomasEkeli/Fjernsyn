@@ -59,6 +59,7 @@ import { useI18n } from 'vue-i18n'
 import store from '../../store/index'
 
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
+import { coverThumbnail } from '../../platform/cards'
 
 const props = defineProps({
   playlist: {
@@ -180,7 +181,8 @@ if (props.playlist.videos.length > 0) {
     ? currentInvidiousInstanceUrl.value
     : 'https://i.ytimg.com'
 
-  thumbnail.value = `${origin}/vi/${props.playlist.videos[0].videoId}/mqdefault.jpg`
+  // Fjernsyn: coverThumbnail is a first video of another platform's own thumbnail, null for YouTube
+  thumbnail.value = coverThumbnail(props.playlist.videos[0], thumbnailPlaceholder) ?? `${origin}/vi/${props.playlist.videos[0].videoId}/mqdefault.jpg`
 }
 
 function toggleSelection() {

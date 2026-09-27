@@ -1,0 +1,231 @@
+{
+  "recordedAt": "2026-09-27T14:25:31.066Z",
+  "url": "https://makertube.net/api/v1/videos/cb6fa58d-4981-4a4b-9a28-8af37d40f271/comment-threads?start=0&count=5&sort=-totalReplies",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "75",
+    "x-ratelimit-remaining": "74",
+    "x-ratelimit-reset": "1790519142"
+  },
+  "body": {
+    "total": 89,
+    "data": [
+      {
+        "id": 34707,
+        "url": "https://digitalcourage.social/users/derfopps/statuses/114219833031184573",
+        "text": "<p><span class=\"h-card\" translate=\"no\"><a href=\"https://makertube.net/accounts/ct_3003_channel\" class=\"u-url mention\">@<span>ct_3003_channel</span></a></span> Bei den Teams-Alternativen hätte ich mir auch welche gewünscht, die garnicht erst versuchen, die eierlegende Wollmilchsau CloudPIMChatOffice-Lösung zu sein. Ein Tool, das (Gruppen?-)Textchat gut macht, eins das Videochat gut macht und eins mit dem man Dateien teilen kann, schön separat — finde ich viel attraktiver.</p>",
+        "threadId": 34707,
+        "inReplyToCommentId": null,
+        "videoId": 252874,
+        "createdAt": "2025-03-24T22:45:38.000Z",
+        "updatedAt": "2025-03-25T06:34:30.731Z",
+        "deletedAt": null,
+        "heldForReview": false,
+        "isDeleted": false,
+        "totalRepliesFromVideoAuthor": 0,
+        "totalReplies": 3,
+        "account": {
+          "url": "https://digitalcourage.social/users/derfopps",
+          "name": "derfopps",
+          "host": "digitalcourage.social",
+          "avatars": [
+            {
+              "height": null,
+              "width": null,
+              "path": "/lazy-static/avatars/936b56a4-fe42-4334-8b52-108d6542bae3.jpg",
+              "fileUrl": "https://makertube.net/lazy-static/avatars/936b56a4-fe42-4334-8b52-108d6542bae3.jpg",
+              "createdAt": "2026-03-21T21:13:43.931+00:00",
+              "updatedAt": "2026-03-23T11:03:08.001+00:00"
+            }
+          ],
+          "id": 528190,
+          "hostRedundancyAllowed": false,
+          "followingCount": 673,
+          "followersCount": 256,
+          "createdAt": "2021-09-14T00:00:00.000Z",
+          "displayName": "Philipp :geeko:",
+          "description": "<p><a href=\"https://digitalcourage.social/tags/Physik\" class=\"mention hashtag\" rel=\"tag\">#<span>Physik</span></a> <a href=\"https://digitalcourage.social/tags/Fahrrad\" class=\"mention hashtag\" rel=\"tag\">#<span>Fahrrad</span></a> <a href=\"https://digitalcourage.social/tags/PmdRis\" class=\"mention hashtag\" rel=\"tag\">#<span>PmdRis</span></a> <a href=\"https://digitalcourage.social/tags/Segeln\" class=\"mention hashtag\" rel=\"tag\">#<span>Segeln</span></a> <a href=\"https://digitalcourage.social/tags/Bahn\" class=\"mention hashtag\" rel=\"tag\">#<span>Bahn</span></a> <a href=\"https://digitalcourage.social/tags/OpenSource\" class=\"mention hashtag\" rel=\"tag\">#<span>OpenSource</span></a></p>",
+          "updatedAt": "2026-03-21T21:13:44.087Z"
+        }
+      },
+      {
+        "id": 34419,
+        "url": "https://videos.abnormalbeings.space/videos/watch/cb6fa58d-4981-4a4b-9a28-8af37d40f271/comments/28276",
+        "text": "Also, wenn ich mir alleine jetzt schon die Views anschaue, freue ich mich auf jeden Fall, wenn ein paar davon direkt mal in PeerTube hängen bleiben - gibt tatsächlich 'ne menge interessanten Content mittlerweile (das war vor ein paar Jahren noch anders) - gerade hier auf makertube.net viele coole Techies und Bastler. Genau passend natürlich, hier den Kanal aufzumachen.<br /><br />Schaut euch mal um, falls ihr ganz neu seid, es ist wahrlich kein YT - aber das auch im Guten (weniger Fame-chasing, keine Werbung, weniger Algorithmus-bait, weniger watchtime/clickbait generell, viele Leute, die einfach Videos machen, weil sie authentisch Bock drauf haben).",
+        "threadId": 34419,
+        "inReplyToCommentId": null,
+        "videoId": 252874,
+        "createdAt": "2025-03-21T18:56:34.767Z",
+        "updatedAt": "2025-03-22T09:25:11.971Z",
+        "deletedAt": null,
+        "heldForReview": false,
+        "isDeleted": false,
+        "totalRepliesFromVideoAuthor": 0,
+        "totalReplies": 2,
+        "account": {
+          "url": "https://videos.abnormalbeings.space/accounts/abnormalhumanbeing",
+          "name": "abnormalhumanbeing",
+          "host": "videos.abnormalbeings.space",
+          "avatars": [
+            {
+              "height": 48,
+              "width": 48,
+              "path": "/lazy-static/avatars/fc7e642a-2ddb-40f9-ace0-f408b2a72b6a.png",
+              "fileUrl": "https://makertube.net/lazy-static/avatars/fc7e642a-2ddb-40f9-ace0-f408b2a72b6a.png",
+              "createdAt": "2025-03-06T19:06:41.695+00:00",
+              "updatedAt": "2026-03-15T00:52:31.291+00:00"
+            },
+            {
+              "height": 120,
+              "width": 120,
+              "path": "/lazy-static/avatars/605a0ab1-373f-424b-95fb-a920c50fdeff.png",
+              "fileUrl": "https://makertube.net/lazy-static/avatars/605a0ab1-373f-424b-95fb-a920c50fdeff.png",
+              "createdAt": "2025-03-06T19:06:41.689+00:00",
+              "updatedAt": "2026-07-09T09:35:58.735+00:00"
+            },
+            {
+              "height": 600,
+              "width": 600,
+              "path": "/lazy-static/avatars/90a713ad-30f8-4c9e-b0d3-fb3f4e138ad2.png",
+              "fileUrl": "https://makertube.net/lazy-static/avatars/90a713ad-30f8-4c9e-b0d3-fb3f4e138ad2.png",
+              "createdAt": "2025-03-06T19:06:41.687+00:00",
+              "updatedAt": "2025-03-06T19:06:41.687+00:00"
+            },
+            {
+              "height": 1500,
+              "width": 1500,
+              "path": "/lazy-static/avatars/fa7a464e-3a18-48a5-b35d-7a8fbc2ada6e.png",
+              "fileUrl": "https://makertube.net/lazy-static/avatars/fa7a464e-3a18-48a5-b35d-7a8fbc2ada6e.png",
+              "createdAt": "2025-03-06T19:06:41.685+00:00",
+              "updatedAt": "2026-07-22T09:53:44.305+00:00"
+            }
+          ],
+          "id": 625041,
+          "hostRedundancyAllowed": false,
+          "followingCount": 343,
+          "followersCount": 5,
+          "createdAt": "2025-03-06T18:40:34.943Z",
+          "displayName": "AbnormalHumanBeing",
+          "description": "An abnormal human being, just like you and I\n\nSome weird, German communist, hello. He/him pronouns and all that. Obsessed with philosophy and history, secondarily obsessed with video games as a cultural medium. Also somewhat able to program.\n\nMastodon:  https://toots.abnormalbeings.space/@admin\nWebsite: https://abnormalbeings.space\nItch.io: https://abnormalhumanbeing.itch.io/\nLiberapay: https://liberapay.com/Wxnzxn/",
+          "updatedAt": "2025-03-16T23:53:09.160Z"
+        }
+      },
+      {
+        "id": 34540,
+        "url": "https://social.tchncs.de/users/bomit/statuses/114210757124022251",
+        "text": "<p><span class=\"h-card\" translate=\"no\"><a href=\"https://makertube.net/accounts/ct_3003_channel\" class=\"u-url mention\">@<span>ct_3003_channel</span></a></span> mega dass nun mein Lieblings Tech Channel nun auch hier ist!  🙌 Bitte Mastodon und peertube genauso bespielen wie die anderen Kanäle auch! <br />Und endlich kann ich euch ohne YouTube account schreiben dass ich wegen euch zu Docker, Raspis und Home Assistant gekommen bin 💪</p>",
+        "threadId": 34540,
+        "inReplyToCommentId": null,
+        "videoId": 252874,
+        "createdAt": "2025-03-23T08:17:31.000Z",
+        "updatedAt": "2025-04-25T16:03:53.119Z",
+        "deletedAt": null,
+        "heldForReview": false,
+        "isDeleted": false,
+        "totalRepliesFromVideoAuthor": 1,
+        "totalReplies": 2,
+        "account": {
+          "url": "https://social.tchncs.de/users/bomit",
+          "name": "bomit",
+          "host": "social.tchncs.de",
+          "avatars": [
+            {
+              "height": null,
+              "width": null,
+              "path": "/lazy-static/avatars/9efc75aa-18d8-4247-9a95-ec68825e981e.jpg",
+              "fileUrl": "https://makertube.net/lazy-static/avatars/9efc75aa-18d8-4247-9a95-ec68825e981e.jpg",
+              "createdAt": "2026-09-18T16:21:09.673+00:00",
+              "updatedAt": "2026-09-18T17:13:15.177+00:00"
+            }
+          ],
+          "id": 540360,
+          "hostRedundancyAllowed": false,
+          "followingCount": 80,
+          "followersCount": 1,
+          "createdAt": "2021-11-04T00:00:00.000Z",
+          "displayName": "bomit",
+          "description": null,
+          "updatedAt": "2024-12-03T22:47:20.264Z"
+        }
+      },
+      {
+        "id": 34412,
+        "url": "https://hostsharing.coop/users/cdonat/statuses/114201668773208992",
+        "text": "<p><span class=\"h-card\" translate=\"no\"><a href=\"https://makertube.net/accounts/ct_3003_channel\" class=\"u-url mention\">@<span>ct_3003_channel</span></a></span> </p><p>Im Heise-Forum findet man auch den Link dazu.</p><p>Dabei ist mir aufgefallen, dass auch mit SepiaSearch die Suche bei Peertube noch einiges an Optimierungspotential hat. Wenn man nach dem Titel des Videos sucht, findet man (Stand beim Schreiben dieses Posts) das Video nicht.</p>",
+        "threadId": 34412,
+        "inReplyToCommentId": null,
+        "videoId": 252874,
+        "createdAt": "2025-03-21T17:46:14.000Z",
+        "updatedAt": "2025-03-21T18:35:25.143Z",
+        "deletedAt": null,
+        "heldForReview": false,
+        "isDeleted": false,
+        "totalRepliesFromVideoAuthor": 0,
+        "totalReplies": 1,
+        "account": {
+          "url": "https://hostsharing.coop/users/cdonat",
+          "name": "cdonat",
+          "host": "hostsharing.coop",
+          "avatars": [
+            {
+              "height": null,
+              "width": null,
+              "path": "/lazy-static/avatars/ee2f1e56-94ed-429d-b447-69e8410dc12b.png",
+              "fileUrl": "https://makertube.net/lazy-static/avatars/ee2f1e56-94ed-429d-b447-69e8410dc12b.png",
+              "createdAt": "2026-01-17T17:20:19.379+00:00",
+              "updatedAt": "2026-03-13T19:20:24.023+00:00"
+            }
+          ],
+          "id": 238792,
+          "hostRedundancyAllowed": false,
+          "followingCount": 153,
+          "followersCount": 75,
+          "createdAt": "2018-12-06T00:00:00.000Z",
+          "displayName": "𝓒𝓱𝓻𝓲𝓼𝓽𝓸𝓯 𝓓𝓸𝓷𝓪𝓽",
+          "description": "<p>Fearless when facing complex challenges</p><p><a href=\"https://hostsharing.coop/tags/python\" class=\"mention hashtag\" rel=\"tag\">#<span>python</span></a> <a href=\"https://hostsharing.coop/tags/fastapi\" class=\"mention hashtag\" rel=\"tag\">#<span>fastapi</span></a><br /><a href=\"https://hostsharing.coop/tags/cpp\" class=\"mention hashtag\" rel=\"tag\">#<span>cpp</span></a><br /><a href=\"https://hostsharing.coop/tags/postgresql\" class=\"mention hashtag\" rel=\"tag\">#<span>postgresql</span></a></p><p>tootfinder.ch</p>",
+          "updatedAt": "2026-01-17T17:20:19.465Z"
+        }
+      },
+      {
+        "id": 34418,
+        "url": "https://mastodon.online/users/myiu/statuses/114201901049286978",
+        "text": "<p><span class=\"h-card\" translate=\"no\"><a href=\"https://makertube.net/accounts/ct_3003_channel\" class=\"u-url mention\">@<span>ct_3003_channel</span></a></span> cool, gerne mehr auf peertube. ich benutze mit Newpipe einen Android client, der sowohl YouTube, als auch Peertube unterstützt. also ist der Umstieg auf Peertube Kanäle für mich nahtlos.</p>",
+        "threadId": 34418,
+        "inReplyToCommentId": null,
+        "videoId": 252874,
+        "createdAt": "2025-03-21T18:45:18.000Z",
+        "updatedAt": "2025-03-22T02:05:45.881Z",
+        "deletedAt": null,
+        "heldForReview": false,
+        "isDeleted": false,
+        "totalRepliesFromVideoAuthor": 0,
+        "totalReplies": 1,
+        "account": {
+          "url": "https://mastodon.online/users/myiu",
+          "name": "myiu",
+          "host": "mastodon.online",
+          "avatars": [
+            {
+              "height": null,
+              "width": null,
+              "path": "/lazy-static/avatars/6ec8689d-de7b-4ca5-a0ee-e7a33fe840fe.jpg",
+              "fileUrl": "https://makertube.net/lazy-static/avatars/6ec8689d-de7b-4ca5-a0ee-e7a33fe840fe.jpg",
+              "createdAt": "2025-03-21T18:43:44.163+00:00",
+              "updatedAt": "2026-03-21T21:13:49.75+00:00"
+            }
+          ],
+          "id": 638327,
+          "hostRedundancyAllowed": false,
+          "followingCount": 1,
+          "followersCount": 40,
+          "createdAt": "2025-03-21T18:43:44.161Z",
+          "displayName": "Myiu",
+          "description": "<p>music</p><p>i&#39;m anti-capitalist.<br />trans rights are human rights.<br />i will add content warnings for political topics.</p>",
+          "updatedAt": "2025-03-21T18:43:44.167Z"
+        }
+      }
+    ],
+    "totalNotDeletedComments": 91
+  }
+}

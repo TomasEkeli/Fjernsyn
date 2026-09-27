@@ -94,21 +94,21 @@
               v-if="download.status === 'finished'"
               :label="t('Video.yt-dlp.Downloads.Show in folder')"
               :icon="['fas', 'folder-open']"
-              @click="revealYtDlpDownload(download.videoId)"
+              @click="revealDownload(download.videoId)"
             />
             <FtButton
               v-if="isRunning(download)"
               :label="t('Video.yt-dlp.Downloads.Cancel')"
               text-color="var(--text-with-main-color)"
               background-color="var(--primary-color)"
-              @click="cancelYtDlpDownload(download.videoId)"
+              @click="cancelDownload(download.videoId)"
             />
             <FtButton
               v-else
               :label="t('Video.yt-dlp.Downloads.Dismiss')"
               text-color="var(--primary-text-color)"
               background-color="var(--secondary-card-bg-color)"
-              @click="dismissYtDlpDownload(download.videoId)"
+              @click="dismissDownload(download.videoId)"
             />
           </div>
         </li>
@@ -127,14 +127,14 @@ import FtIconButton from '../FtIconButton/FtIconButton.vue'
 import FtProgressRing from '../FtProgressRing/FtProgressRing.vue'
 
 import { library } from '../../fontawesome-minimal'
+// yt-dlp's and PeerTube's downloads both, each action sent by the key
+import { cancelDownload, revealDownload } from '../../helpers/downloads'
 import {
-  cancelYtDlpDownload,
   detailsText,
-  dismissYtDlpDownload,
+  dismissDownload,
   isRunning,
   progressFraction,
   qualityText,
-  revealYtDlpDownload,
   statusText,
   whereText,
   ytDlpDownloads,

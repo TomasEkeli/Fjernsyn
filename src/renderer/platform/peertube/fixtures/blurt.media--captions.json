@@ -1,0 +1,25 @@
+{
+  "recordedAt": "2026-09-27T14:28:52.987Z",
+  "url": "https://blurt.media/api/v1/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/captions",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "47",
+    "x-ratelimit-reset": "1790519342"
+  },
+  "body": {
+    "total": 1,
+    "data": [
+      {
+        "language": {
+          "id": "en",
+          "label": "English"
+        },
+        "automaticallyGenerated": true,
+        "captionPath": "/lazy-static/video-captions/a5b1f424-46b8-49bc-9f7e-a53a2180d1a3-en.vtt",
+        "updatedAt": "2026-09-03T17:35:02.995Z"
+      }
+    ]
+  }
+}

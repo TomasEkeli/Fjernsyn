@@ -1,0 +1,507 @@
+{
+  "recordedAt": "2026-09-27T14:24:09.491Z",
+  "url": "https://video.4d2.org/api/v1/config",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "49",
+    "x-ratelimit-reset": "1790519061"
+  },
+  "body": {
+    "client": {
+      "newFeaturesInfo": true,
+      "header": {
+        "hideInstanceName": false
+      },
+      "videos": {
+        "miniature": {
+          "preferAuthorDisplayName": false
+        },
+        "resumableUpload": {
+          "maxChunkSize": 0
+        }
+      },
+      "browseVideos": {
+        "defaultSort": "-publishedAt",
+        "defaultScope": "federated"
+      },
+      "menu": {
+        "login": {
+          "redirectOnSingleExternalAuth": false
+        }
+      },
+      "openInApp": {
+        "android": {
+          "intent": {
+            "enabled": true,
+            "host": "joinpeertube.org",
+            "scheme": "peertube",
+            "fallbackUrl": "https://play.google.com/store/apps/details?id=org.framasoft.peertube"
+          }
+        },
+        "ios": {
+          "enabled": true,
+          "host": "joinpeertube.org",
+          "scheme": "peertube",
+          "fallbackUrl": "https://apps.apple.com/fr/app/peertube/id6737834858"
+        }
+      }
+    },
+    "defaults": {
+      "publish": {
+        "downloadEnabled": true,
+        "commentsPolicy": 1,
+        "privacy": 1,
+        "licence": null
+      },
+      "live": {
+        "saveReplay": false
+      },
+      "p2p": {
+        "webapp": {
+          "enabled": false
+        },
+        "embed": {
+          "enabled": false
+        }
+      },
+      "player": {
+        "theme": "lucide",
+        "autoPlay": true
+      }
+    },
+    "webadmin": {
+      "configuration": {
+        "edition": {
+          "allowed": true
+        }
+      }
+    },
+    "instance": {
+      "name": "video.4d2.org",
+      "shortDescription": "video dot 4d2 dot org, a free PeerTube instance provided by 4d2 dot org",
+      "isNSFW": false,
+      "defaultNSFWPolicy": "blur",
+      "defaultClientRoute": "/videos/trending",
+      "serverCountry": "USA",
+      "support": {
+        "text": "For support, join #support:4d2.org on Matrix, or email tech@acabinc.org."
+      },
+      "social": {
+        "blueskyLink": "",
+        "mastodonLink": "https://4d2.social/@sarah",
+        "xLink": "",
+        "externalLink": "https://4d2.org"
+      },
+      "customizations": {
+        "javascript": "",
+        "css": ""
+      },
+      "defaultLanguage": "en-US",
+      "avatars": [],
+      "banners": [],
+      "logo": [
+        {
+          "fileUrl": "https://video.4d2.org/client/assets/images/favicon.png",
+          "width": 32,
+          "height": 32,
+          "type": "favicon",
+          "isFallback": true
+        },
+        {
+          "fileUrl": "https://video.4d2.org/client/assets/images/logo.svg",
+          "width": 34,
+          "height": 34,
+          "type": "header-square",
+          "isFallback": true
+        },
+        {
+          "fileUrl": "https://video.4d2.org/client/assets/images/logo.svg",
+          "width": 34,
+          "height": 34,
+          "type": "header-wide",
+          "isFallback": true
+        }
+      ]
+    },
+    "search": {
+      "remoteUri": {
+        "users": true,
+        "anonymous": false
+      },
+      "searchIndex": {
+        "enabled": true,
+        "url": "https://sepiasearch.org/",
+        "disableLocalSearch": false,
+        "isDefaultSearch": false
+      }
+    },
+    "plugin": {
+      "registered": [
+        {
+          "npmName": "peertube-plugin-livechat",
+          "name": "livechat",
+          "version": "12.0.4",
+          "description": "PeerTube plugin livechat: create chat rooms for your Peertube lives! Comes with many features: federation, moderation tools, chat bot, chat persistence, OBS integration, ...",
+          "clientScripts": {
+            "dist/client/common-client-plugin.js": {
+              "script": "dist/client/common-client-plugin.js",
+              "scopes": [
+                "common"
+              ]
+            },
+            "dist/client/admin-plugin-client-plugin.js": {
+              "script": "dist/client/admin-plugin-client-plugin.js",
+              "scopes": [
+                "admin-plugin"
+              ]
+            }
+          }
+        }
+      ],
+      "registeredExternalAuths": [],
+      "registeredIdAndPassAuths": []
+    },
+    "theme": {
+      "registered": [],
+      "builtIn": [
+        {
+          "name": "peertube-core-dark-brown"
+        },
+        {
+          "name": "peertube-core-light-beige"
+        }
+      ],
+      "default": "default",
+      "customization": {
+        "primaryColor": null,
+        "onPrimaryColor": null,
+        "foregroundColor": null,
+        "backgroundColor": null,
+        "backgroundSecondaryColor": null,
+        "menuForegroundColor": null,
+        "menuBackgroundColor": null,
+        "menuBorderRadius": null,
+        "headerForegroundColor": null,
+        "headerBackgroundColor": null,
+        "inputBorderRadius": null
+      }
+    },
+    "email": {
+      "enabled": true
+    },
+    "contactForm": {
+      "enabled": true
+    },
+    "serverVersion": "8.3.0",
+    "serverCommit": "",
+    "transcoding": {
+      "remoteRunners": {
+        "enabled": true
+      },
+      "hls": {
+        "enabled": true,
+        "splitAudioAndVideo": true
+      },
+      "web_videos": {
+        "enabled": false
+      },
+      "enabledResolutions": [
+        0,
+        240,
+        480,
+        720,
+        1080,
+        2160
+      ],
+      "profile": "default",
+      "availableProfiles": [
+        "default"
+      ],
+      "alwaysTranscodeOriginalResolution": false,
+      "alwaysTranscodePodcastOptimizedAudio": true
+    },
+    "live": {
+      "enabled": true,
+      "allowReplay": true,
+      "dvr": {
+        "maxWindow": 3600
+      },
+      "latencySetting": {
+        "enabled": true
+      },
+      "maxDuration": -1,
+      "maxInstanceLives": 20,
+      "maxUserLives": 3,
+      "transcoding": {
+        "enabled": true,
+        "remoteRunners": {
+          "enabled": true
+        },
+        "enabledResolutions": [],
+        "profile": "default",
+        "availableProfiles": [
+          "default"
+        ]
+      },
+      "rtmp": {
+        "port": 1935
+      }
+    },
+    "videoStudio": {
+      "enabled": false,
+      "remoteRunners": {
+        "enabled": false
+      }
+    },
+    "videoFile": {
+      "update": {
+        "enabled": true
+      }
+    },
+    "videoTranscription": {
+      "enabled": false,
+      "remoteRunners": {
+        "enabled": false
+      }
+    },
+    "import": {
+      "videos": {
+        "http": {
+          "enabled": false
+        },
+        "torrent": {
+          "enabled": false
+        }
+      },
+      "videoChannelSynchronization": {
+        "enabled": false
+      },
+      "users": {
+        "enabled": true
+      }
+    },
+    "export": {
+      "users": {
+        "enabled": true,
+        "exportExpiration": 172800000,
+        "maxUserVideoQuota": 10737418240
+      }
+    },
+    "autoBlacklist": {
+      "videos": {
+        "ofUsers": {
+          "enabled": true
+        }
+      }
+    },
+    "avatar": {
+      "file": {
+        "size": {
+          "max": 8388608
+        },
+        "extensions": [
+          ".png",
+          ".jpeg",
+          ".jpg",
+          ".gif",
+          ".webp"
+        ]
+      }
+    },
+    "banner": {
+      "file": {
+        "size": {
+          "max": 8388608
+        },
+        "extensions": [
+          ".png",
+          ".jpeg",
+          ".jpg",
+          ".gif",
+          ".webp"
+        ]
+      }
+    },
+    "logo": {
+      "file": {
+        "size": {
+          "max": 8388608
+        },
+        "extensions": [
+          ".svg",
+          ".png",
+          ".jpeg",
+          ".jpg",
+          ".gif",
+          ".webp"
+        ]
+      }
+    },
+    "video": {
+      "image": {
+        "extensions": [
+          ".png",
+          ".jpg",
+          ".jpeg",
+          ".webp"
+        ],
+        "size": {
+          "max": 8388608
+        }
+      },
+      "file": {
+        "extensions": [
+          ".webm",
+          ".ogv",
+          ".ogg",
+          ".mp4",
+          ".mkv",
+          ".mov",
+          ".qt",
+          ".mqv",
+          ".m4v",
+          ".flv",
+          ".f4v",
+          ".wmv",
+          ".avi",
+          ".3gp",
+          ".3gpp",
+          ".3g2",
+          ".3gpp2",
+          ".nut",
+          ".mts",
+          ".ts",
+          ".m2ts",
+          ".mpv",
+          ".m2v",
+          ".m1v",
+          ".mpg",
+          ".mpe",
+          ".mpeg",
+          ".vob",
+          ".mxf",
+          ".mp3",
+          ".wma",
+          ".wav",
+          ".flac",
+          ".aac",
+          ".m4a",
+          ".m4b",
+          ".ac3"
+        ]
+      }
+    },
+    "videoCaption": {
+      "file": {
+        "size": {
+          "max": 20971520
+        },
+        "extensions": [
+          ".vtt",
+          ".srt"
+        ]
+      }
+    },
+    "user": {
+      "videoQuota": 21474836480,
+      "videoQuotaDaily": -1
+    },
+    "videoChannels": {
+      "maxPerUser": 20
+    },
+    "trending": {
+      "videos": {
+        "intervalDays": 7,
+        "algorithms": {
+          "enabled": [
+            "hot",
+            "most-viewed",
+            "most-liked"
+          ],
+          "default": "hot"
+        }
+      }
+    },
+    "tracker": {
+      "enabled": true
+    },
+    "followings": {
+      "instance": {
+        "autoFollowIndex": {
+          "indexUrl": "https://instances.joinpeertube.org/api/v1/instances/hosts"
+        }
+      }
+    },
+    "blocklist": {
+      "publicLog": {
+        "enabled": false
+      }
+    },
+    "federation": {
+      "enabled": true
+    },
+    "broadcastMessage": {
+      "enabled": true,
+      "message": "This PeerTube instance **will be shutting down on December 16, 2026**. Please plan ahead and migrate your uploaded videos to another instance.",
+      "level": "info",
+      "dismissable": true
+    },
+    "homepage": {
+      "enabled": true
+    },
+    "openTelemetry": {
+      "metrics": {
+        "enabled": false,
+        "playbackStatsInterval": 15000
+      }
+    },
+    "views": {
+      "videos": {
+        "remote": {
+          "maxAge": 2592000000
+        },
+        "local": {
+          "maxAge": -1
+        },
+        "watchingInterval": {
+          "anonymous": 5000,
+          "users": 5000
+        }
+      }
+    },
+    "storyboards": {
+      "enabled": true,
+      "remoteRunners": {
+        "enabled": false
+      }
+    },
+    "webrtc": {
+      "stunServers": [
+        "stun:stunserver2025.stunprotocol.org",
+        "stun:stun.framasoft.org",
+        "stun:stun.ekiga.net",
+        "stun:stun.freeswitch.org"
+      ]
+    },
+    "nsfwFlagsSettings": {
+      "enabled": true
+    },
+    "fieldsConstraints": {
+      "users": {
+        "password": {
+          "minLength": 8,
+          "maxLength": 50
+        }
+      }
+    },
+    "signup": {
+      "allowed": true,
+      "allowedForCurrentIP": true,
+      "minimumAge": 18,
+      "requiresApproval": false,
+      "requiresEmailVerification": true
+    }
+  }
+}

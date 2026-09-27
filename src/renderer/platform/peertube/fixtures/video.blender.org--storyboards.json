@@ -1,0 +1,24 @@
+{
+  "recordedAt": "2026-09-27T14:25:32.893Z",
+  "url": "https://video.blender.org/api/v1/videos/b29290cc-dc51-4a12-bcb2-2aa5fece7605/storyboards",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "47",
+    "x-ratelimit-reset": "1790519142"
+  },
+  "body": {
+    "storyboards": [
+      {
+        "fileUrl": "https://video.blender.org/lazy-static/storyboards/cd071b56-47c0-477c-8e79-d6f8b2a36e79.jpg",
+        "storyboardPath": "/lazy-static/storyboards/cd071b56-47c0-477c-8e79-d6f8b2a36e79.jpg",
+        "totalHeight": 756,
+        "totalWidth": 1920,
+        "spriteWidth": 192,
+        "spriteHeight": 108,
+        "spriteDuration": 1
+      }
+    ]
+  }
+}

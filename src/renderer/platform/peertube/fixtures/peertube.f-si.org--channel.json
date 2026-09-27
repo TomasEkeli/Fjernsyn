@@ -1,0 +1,50 @@
+{
+  "recordedAt": "2026-09-27T14:25:34.059Z",
+  "url": "https://peertube.f-si.org/api/v1/video-channels/fsic2025@peertube.f-si.org",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "46",
+    "x-ratelimit-reset": "1790519142"
+  },
+  "body": {
+    "url": "https://peertube.f-si.org/video-channels/fsic2025",
+    "name": "fsic2025",
+    "host": "peertube.f-si.org",
+    "avatars": [],
+    "id": 7,
+    "hostRedundancyAllowed": false,
+    "followingCount": 0,
+    "followersCount": 1,
+    "createdAt": "2026-05-28T20:48:13.521Z",
+    "banners": [],
+    "displayName": "FSiC2025",
+    "description": null,
+    "support": null,
+    "isLocal": true,
+    "updatedAt": "2026-05-28T20:48:13.524Z",
+    "ownerAccount": {
+      "url": "https://peertube.f-si.org/accounts/root",
+      "name": "root",
+      "host": "peertube.f-si.org",
+      "avatars": [
+        {
+          "width": null,
+          "path": "/lazy-static/avatars/799bae49-58ba-4f9f-bda2-e8dd37fb7286.png",
+          "createdAt": "2019-04-12T20:56:38.924Z",
+          "updatedAt": "2019-04-12T20:56:38.924Z"
+        }
+      ],
+      "id": 2,
+      "hostRedundancyAllowed": false,
+      "followingCount": 0,
+      "followersCount": 1,
+      "createdAt": "2019-03-20T12:29:23.552Z",
+      "displayName": "root",
+      "description": null,
+      "updatedAt": "2019-03-20T12:29:23.563Z",
+      "userId": 1
+    }
+  }
+}

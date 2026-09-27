@@ -84,6 +84,7 @@ import FtButton from '../../components/FtButton/FtButton.vue'
 import FtSettingsMenu from '../../components/FtSettingsMenu/FtSettingsMenu.vue'
 
 import store from '../../store/index'
+import { peerTubeSettingsSections } from '../../components/PeerTubeSettings/section'
 
 const USING_ELECTRON = !!process.env.IS_ELECTRON
 const SETTINGS_MOBILE_WIDTH_THRESHOLD = 1015
@@ -177,6 +178,7 @@ const settingsComponentsData = computed(() => {
       icon: ['fas', 'key'],
       component: PasswordSettings
     },
+    ...peerTubeSettingsSections(t),
     ...(process.env.IS_ELECTRON
       ? [{
           type: 'experimental',

@@ -1,0 +1,55 @@
+{
+  "recordedAt": "2026-09-27T14:27:31.916Z",
+  "url": "https://makertube.net/api/v1/videos/cb6fa58d-4981-4a4b-9a28-8af37d40f271/chapters",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "75",
+    "x-ratelimit-remaining": "72",
+    "x-ratelimit-reset": "1790519261"
+  },
+  "body": {
+    "chapters": [
+      {
+        "timecode": 0,
+        "title": "Intro"
+      },
+      {
+        "timecode": 110,
+        "title": "WERBUNG: NORDVPN"
+      },
+      {
+        "timecode": 168,
+        "title": "Was ist ein US-Dienst?"
+      },
+      {
+        "timecode": 238,
+        "title": "Mail-Anbieter aus Europa"
+      },
+      {
+        "timecode": 402,
+        "title": "Suchmaschinen-Alternativen"
+      },
+      {
+        "timecode": 526,
+        "title": "Karten-Apps"
+      },
+      {
+        "timecode": 769,
+        "title": "Messenger"
+      },
+      {
+        "timecode": 886,
+        "title": "Teams-, Slack-, Office-365-Alternativen"
+      },
+      {
+        "timecode": 1030,
+        "title": "Social-Media-Plattformen"
+      },
+      {
+        "timecode": 1190,
+        "title": "Fazit"
+      }
+    ]
+  }
+}

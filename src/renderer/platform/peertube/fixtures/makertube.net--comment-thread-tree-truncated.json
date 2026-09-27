@@ -1,0 +1,121 @@
+{
+  "recordedAt": "2026-09-27T14:26:32.049Z",
+  "url": "https://makertube.net/api/v1/videos/cb6fa58d-4981-4a4b-9a28-8af37d40f271/comment-threads/34707?repliesPerLevel=1&maxDepth=1",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "75",
+    "x-ratelimit-remaining": "73",
+    "x-ratelimit-reset": "1790519203"
+  },
+  "body": {
+    "comment": {
+      "id": 34707,
+      "url": "https://digitalcourage.social/users/derfopps/statuses/114219833031184573",
+      "text": "<p><span class=\"h-card\" translate=\"no\"><a href=\"https://makertube.net/accounts/ct_3003_channel\" class=\"u-url mention\">@<span>ct_3003_channel</span></a></span> Bei den Teams-Alternativen hätte ich mir auch welche gewünscht, die garnicht erst versuchen, die eierlegende Wollmilchsau CloudPIMChatOffice-Lösung zu sein. Ein Tool, das (Gruppen?-)Textchat gut macht, eins das Videochat gut macht und eins mit dem man Dateien teilen kann, schön separat — finde ich viel attraktiver.</p>",
+      "threadId": 34707,
+      "inReplyToCommentId": null,
+      "videoId": 252874,
+      "createdAt": "2025-03-24T22:45:38.000Z",
+      "updatedAt": "2025-03-25T06:34:30.731Z",
+      "deletedAt": null,
+      "heldForReview": false,
+      "isDeleted": false,
+      "totalRepliesFromVideoAuthor": 0,
+      "totalReplies": 3,
+      "account": {
+        "url": "https://digitalcourage.social/users/derfopps",
+        "name": "derfopps",
+        "host": "digitalcourage.social",
+        "avatars": [
+          {
+            "height": null,
+            "width": null,
+            "path": "/lazy-static/avatars/936b56a4-fe42-4334-8b52-108d6542bae3.jpg",
+            "fileUrl": "https://makertube.net/lazy-static/avatars/936b56a4-fe42-4334-8b52-108d6542bae3.jpg",
+            "createdAt": "2026-03-21T21:13:43.931+00:00",
+            "updatedAt": "2026-03-23T11:03:08.001+00:00"
+          }
+        ],
+        "id": 528190,
+        "hostRedundancyAllowed": false,
+        "followingCount": 673,
+        "followersCount": 256,
+        "createdAt": "2021-09-14T00:00:00.000Z",
+        "displayName": "Philipp :geeko:",
+        "description": "<p><a href=\"https://digitalcourage.social/tags/Physik\" class=\"mention hashtag\" rel=\"tag\">#<span>Physik</span></a> <a href=\"https://digitalcourage.social/tags/Fahrrad\" class=\"mention hashtag\" rel=\"tag\">#<span>Fahrrad</span></a> <a href=\"https://digitalcourage.social/tags/PmdRis\" class=\"mention hashtag\" rel=\"tag\">#<span>PmdRis</span></a> <a href=\"https://digitalcourage.social/tags/Segeln\" class=\"mention hashtag\" rel=\"tag\">#<span>Segeln</span></a> <a href=\"https://digitalcourage.social/tags/Bahn\" class=\"mention hashtag\" rel=\"tag\">#<span>Bahn</span></a> <a href=\"https://digitalcourage.social/tags/OpenSource\" class=\"mention hashtag\" rel=\"tag\">#<span>OpenSource</span></a></p>",
+        "updatedAt": "2026-03-21T21:13:44.087Z"
+      }
+    },
+    "children": [
+      {
+        "comment": {
+          "id": 34723,
+          "url": "https://makertube.net/videos/watch/cb6fa58d-4981-4a4b-9a28-8af37d40f271/comments/34723",
+          "text": "@derfopps@digitalcourage.social Wir nutzen da seid Jahren nextcloud ",
+          "threadId": 34707,
+          "inReplyToCommentId": 34707,
+          "videoId": 252874,
+          "createdAt": "2025-03-25T06:21:09.560Z",
+          "updatedAt": "2025-03-25T06:34:30.804Z",
+          "deletedAt": null,
+          "heldForReview": false,
+          "isDeleted": false,
+          "totalRepliesFromVideoAuthor": 0,
+          "totalReplies": 1,
+          "account": {
+            "url": "https://makertube.net/accounts/freizeitparkapp",
+            "name": "freizeitparkapp",
+            "host": "makertube.net",
+            "avatars": [
+              {
+                "height": 48,
+                "width": 48,
+                "path": "/lazy-static/avatars/d0c1feaa-ef29-4bb2-a7a3-3110ec0bc0f8.png",
+                "fileUrl": "https://makertube.net/lazy-static/avatars/d0c1feaa-ef29-4bb2-a7a3-3110ec0bc0f8.png",
+                "createdAt": "2025-03-25T06:16:04.295+00:00",
+                "updatedAt": "2025-03-25T06:16:04.295+00:00"
+              },
+              {
+                "height": 120,
+                "width": 120,
+                "path": "/lazy-static/avatars/f31ba398-5a65-4724-a107-57a202ea9ce7.png",
+                "fileUrl": "https://makertube.net/lazy-static/avatars/f31ba398-5a65-4724-a107-57a202ea9ce7.png",
+                "createdAt": "2025-03-25T06:16:04.293+00:00",
+                "updatedAt": "2025-03-25T06:16:04.293+00:00"
+              },
+              {
+                "height": 600,
+                "width": 600,
+                "path": "/lazy-static/avatars/f5a8a70b-6464-4945-a855-bad301417e75.png",
+                "fileUrl": "https://makertube.net/lazy-static/avatars/f5a8a70b-6464-4945-a855-bad301417e75.png",
+                "createdAt": "2025-03-25T06:16:04.29+00:00",
+                "updatedAt": "2025-03-25T06:16:04.29+00:00"
+              },
+              {
+                "height": 1500,
+                "width": 1500,
+                "path": "/lazy-static/avatars/65ebc00f-f9a2-4a48-9100-de2e191a1478.png",
+                "fileUrl": "https://makertube.net/lazy-static/avatars/65ebc00f-f9a2-4a48-9100-de2e191a1478.png",
+                "createdAt": "2025-03-25T06:16:04.287+00:00",
+                "updatedAt": "2025-03-25T06:16:04.287+00:00"
+              }
+            ],
+            "id": 641567,
+            "hostRedundancyAllowed": false,
+            "followingCount": 1,
+            "followersCount": 0,
+            "createdAt": "2025-03-24T20:00:34.351Z",
+            "displayName": "Freizeitparkapp",
+            "description": "Dein Begleiter für jeden Freizeitspaß\n\nunsere App beinhaltet ein noch nie dagewesenes Konzept mit einer engen Verflechtung unserer Community! Basierend auf unserem Forum Freizeitparkcheck.de vernetzt diese App User in allen Parks und bietet die Möglichkeit, Bilder und aktuelle Infos wie zum Beispiel Wartezeiten und Statusmeldungen auszutauschen. User können live sehen, welche anderen User sich ebenfalls im jeweiligen Park befinden.\nBesuchte Parks können in mehreren Kategorien bewertet werden, um anderen Nutzern einen schnellen Überblick zu verschaffen.\n\nIn 47 Ländern in 6 Sprachen verfügbar (Weitere Sprachen folgen)\n\nDas Beste: Die Bandbreite der Features gilt für alle Freizeitparks in Europa in!\n\nJetzt kostenlos Downloaden: https://qrco.de/bbRMyN\n\nDu bist gerne in verschiedenen Freizeitparks unterwegs?\nSuchst nach Parks, in denen du noch nicht gewesen bist?",
+            "updatedAt": "2025-06-09T12:40:41.582Z",
+            "userId": 2024
+          }
+        },
+        "children": [],
+        "totalChildren": 1
+      }
+    ],
+    "totalChildren": 2
+  }
+}

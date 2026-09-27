@@ -1,0 +1,336 @@
+{
+  "recordedAt": "2026-09-27T14:25:35.174Z",
+  "url": "https://peertube.f-si.org/api/v1/video-channels/fsic2025@peertube.f-si.org/videos?start=0&count=5&sort=-publishedAt",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "45",
+    "x-ratelimit-reset": "1790519142"
+  },
+  "body": {
+    "total": 57,
+    "data": [
+      {
+        "id": 215,
+        "uuid": "8934b209-5a98-4314-a143-73e567cacd1c",
+        "shortUUID": "hWFseobSCXm6iYhngdw7Rs",
+        "url": "https://peertube.f-si.org/videos/watch/8934b209-5a98-4314-a143-73e567cacd1c",
+        "name": "Gerhard Kahmen Welcome and introduction of IHP, IHP Microelectronics",
+        "category": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "licence": {
+          "id": 6,
+          "label": "Attribution - Non Commercial - No Derivatives"
+        },
+        "language": {
+          "id": "en",
+          "label": "English"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "nsfw": false,
+        "truncatedDescription": null,
+        "description": null,
+        "isLocal": true,
+        "duration": 532,
+        "aspectRatio": 1.7778,
+        "views": 29,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "thumbnailPath": "/lazy-static/thumbnails/bb56dfb7-2c71-4a2c-bbae-8ac9892ff45d.jpg",
+        "previewPath": "/lazy-static/previews/4ad4047e-bdab-41bf-b247-06a319a89878.jpg",
+        "embedPath": "/videos/embed/8934b209-5a98-4314-a143-73e567cacd1c",
+        "createdAt": "2025-09-25T09:52:35.919Z",
+        "updatedAt": "2026-09-26T20:28:00.033Z",
+        "publishedAt": "2025-09-25T09:55:24.890Z",
+        "originallyPublishedAt": null,
+        "isLive": false,
+        "account": {
+          "id": 2,
+          "displayName": "root",
+          "name": "root",
+          "url": "https://peertube.f-si.org/accounts/root",
+          "host": "peertube.f-si.org",
+          "avatars": [
+            {
+              "width": null,
+              "path": "/lazy-static/avatars/799bae49-58ba-4f9f-bda2-e8dd37fb7286.png",
+              "createdAt": "2019-04-12T20:56:38.924Z",
+              "updatedAt": "2019-04-12T20:56:38.924Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 7,
+          "name": "fsic2025",
+          "displayName": "FSiC2025",
+          "url": "https://peertube.f-si.org/video-channels/fsic2025",
+          "host": "peertube.f-si.org",
+          "avatars": []
+        }
+      },
+      {
+        "id": 214,
+        "uuid": "ae72adab-f4a5-4e4f-b41d-947d95ffc120",
+        "shortUUID": "nxpSoEMwNQ6MwAt6Z65Aeo",
+        "url": "https://peertube.f-si.org/videos/watch/ae72adab-f4a5-4e4f-b41d-947d95ffc120",
+        "name": "Manchester decoder of a home thermostat's wireless protocol in Tiny Tapeout, Zachary Kohnen, TU Eindhoven",
+        "category": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": "English",
+          "label": "Unknown"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "nsfw": false,
+        "truncatedDescription": null,
+        "description": null,
+        "isLocal": true,
+        "duration": 409,
+        "aspectRatio": 1.7778,
+        "views": 25,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "thumbnailPath": "/lazy-static/thumbnails/0ab7cb45-7cdb-4a82-a88a-ee8eede34773.jpg",
+        "previewPath": "/lazy-static/previews/c3374a6b-54c4-42ec-ad8d-c87918f2f7f7.jpg",
+        "embedPath": "/videos/embed/ae72adab-f4a5-4e4f-b41d-947d95ffc120",
+        "createdAt": "2025-09-24T16:16:11.610Z",
+        "updatedAt": "2026-09-14T17:27:59.783Z",
+        "publishedAt": "2025-09-24T16:18:30.478Z",
+        "originallyPublishedAt": null,
+        "isLive": false,
+        "account": {
+          "id": 2,
+          "displayName": "root",
+          "name": "root",
+          "url": "https://peertube.f-si.org/accounts/root",
+          "host": "peertube.f-si.org",
+          "avatars": [
+            {
+              "width": null,
+              "path": "/lazy-static/avatars/799bae49-58ba-4f9f-bda2-e8dd37fb7286.png",
+              "createdAt": "2019-04-12T20:56:38.924Z",
+              "updatedAt": "2019-04-12T20:56:38.924Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 7,
+          "name": "fsic2025",
+          "displayName": "FSiC2025",
+          "url": "https://peertube.f-si.org/video-channels/fsic2025",
+          "host": "peertube.f-si.org",
+          "avatars": []
+        }
+      },
+      {
+        "id": 213,
+        "uuid": "bcfc1d82-229a-4743-a64c-53fc89e0c8c4",
+        "shortUUID": "pkwuPYQuoqNc53zSD4q9T7",
+        "url": "https://peertube.f-si.org/videos/watch/bcfc1d82-229a-4743-a64c-53fc89e0c8c4",
+        "name": "An open-source adaptive event-based ADC for bio-signal acquisition in 130nm CMOS, Simon Dorrer, JKU Linz",
+        "category": {
+          "id": 15,
+          "label": "Science & Technology"
+        },
+        "licence": {
+          "id": 6,
+          "label": "Attribution - Non Commercial - No Derivatives"
+        },
+        "language": {
+          "id": "en",
+          "label": "English"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "nsfw": false,
+        "truncatedDescription": null,
+        "description": null,
+        "isLocal": true,
+        "duration": 1109,
+        "aspectRatio": 1.7778,
+        "views": 39,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "thumbnailPath": "/lazy-static/thumbnails/dfdb4741-b54b-4181-bdbb-1e9a0dc6fad3.jpg",
+        "previewPath": "/lazy-static/previews/dac56207-277d-49ec-946f-5b2d47f2ead1.jpg",
+        "embedPath": "/videos/embed/bcfc1d82-229a-4743-a64c-53fc89e0c8c4",
+        "createdAt": "2025-09-24T16:04:57.191Z",
+        "updatedAt": "2026-09-11T03:57:59.761Z",
+        "publishedAt": "2025-09-24T16:11:05.519Z",
+        "originallyPublishedAt": null,
+        "isLive": false,
+        "account": {
+          "id": 2,
+          "displayName": "root",
+          "name": "root",
+          "url": "https://peertube.f-si.org/accounts/root",
+          "host": "peertube.f-si.org",
+          "avatars": [
+            {
+              "width": null,
+              "path": "/lazy-static/avatars/799bae49-58ba-4f9f-bda2-e8dd37fb7286.png",
+              "createdAt": "2019-04-12T20:56:38.924Z",
+              "updatedAt": "2019-04-12T20:56:38.924Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 7,
+          "name": "fsic2025",
+          "displayName": "FSiC2025",
+          "url": "https://peertube.f-si.org/video-channels/fsic2025",
+          "host": "peertube.f-si.org",
+          "avatars": []
+        }
+      },
+      {
+        "id": 212,
+        "uuid": "b2cfb93b-855e-4e98-aee0-62062b7fe22d",
+        "shortUUID": "o5EsjpQxBAA5jBWSvQpKwv",
+        "url": "https://peertube.f-si.org/videos/watch/b2cfb93b-855e-4e98-aee0-62062b7fe22d",
+        "name": "Panel: The current landscape of free hardware — licensing and beyond, Michael Weinberg, OSHWA",
+        "category": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": "English",
+          "label": "Unknown"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "nsfw": false,
+        "truncatedDescription": null,
+        "description": null,
+        "isLocal": true,
+        "duration": 1602,
+        "aspectRatio": 1.7778,
+        "views": 26,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "thumbnailPath": "/lazy-static/thumbnails/aafd6b3d-677f-4b3c-9f77-7af6f38267ff.jpg",
+        "previewPath": "/lazy-static/previews/8cb86b85-04e7-4f74-8f10-35e8b5ff88ba.jpg",
+        "embedPath": "/videos/embed/b2cfb93b-855e-4e98-aee0-62062b7fe22d",
+        "createdAt": "2025-09-23T19:47:27.606Z",
+        "updatedAt": "2026-08-04T14:57:58.351Z",
+        "publishedAt": "2025-09-23T21:44:48.955Z",
+        "originallyPublishedAt": null,
+        "isLive": false,
+        "account": {
+          "id": 2,
+          "displayName": "root",
+          "name": "root",
+          "url": "https://peertube.f-si.org/accounts/root",
+          "host": "peertube.f-si.org",
+          "avatars": [
+            {
+              "width": null,
+              "path": "/lazy-static/avatars/799bae49-58ba-4f9f-bda2-e8dd37fb7286.png",
+              "createdAt": "2019-04-12T20:56:38.924Z",
+              "updatedAt": "2019-04-12T20:56:38.924Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 7,
+          "name": "fsic2025",
+          "displayName": "FSiC2025",
+          "url": "https://peertube.f-si.org/video-channels/fsic2025",
+          "host": "peertube.f-si.org",
+          "avatars": []
+        }
+      },
+      {
+        "id": 211,
+        "uuid": "f1a52671-1c30-41dd-bc7a-c0f10461a43e",
+        "shortUUID": "vQFD2KyZYnV3ADiVtM4AXq",
+        "url": "https://peertube.f-si.org/videos/watch/f1a52671-1c30-41dd-bc7a-c0f10461a43e",
+        "name": "The Transparent Reference Fab: A scalable, open blueprint for European semiconductor sovereignty, Norbert Herfurth, IHP",
+        "category": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": "English",
+          "label": "Unknown"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "nsfw": false,
+        "truncatedDescription": null,
+        "description": null,
+        "isLocal": true,
+        "duration": 1347,
+        "aspectRatio": 1.7778,
+        "views": 17,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "thumbnailPath": "/lazy-static/thumbnails/78f93424-1caa-42a5-b540-1a299a325a90.jpg",
+        "previewPath": "/lazy-static/previews/9a2ce763-95cc-442e-b885-f30ce6916691.jpg",
+        "embedPath": "/videos/embed/f1a52671-1c30-41dd-bc7a-c0f10461a43e",
+        "createdAt": "2025-09-23T19:46:57.980Z",
+        "updatedAt": "2026-07-09T15:27:56.065Z",
+        "publishedAt": "2025-09-23T21:36:44.750Z",
+        "originallyPublishedAt": null,
+        "isLive": false,
+        "account": {
+          "id": 2,
+          "displayName": "root",
+          "name": "root",
+          "url": "https://peertube.f-si.org/accounts/root",
+          "host": "peertube.f-si.org",
+          "avatars": [
+            {
+              "width": null,
+              "path": "/lazy-static/avatars/799bae49-58ba-4f9f-bda2-e8dd37fb7286.png",
+              "createdAt": "2019-04-12T20:56:38.924Z",
+              "updatedAt": "2019-04-12T20:56:38.924Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 7,
+          "name": "fsic2025",
+          "displayName": "FSiC2025",
+          "url": "https://peertube.f-si.org/video-channels/fsic2025",
+          "host": "peertube.f-si.org",
+          "avatars": []
+        }
+      }
+    ]
+  }
+}

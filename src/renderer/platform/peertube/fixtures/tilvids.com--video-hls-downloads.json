@@ -1,0 +1,365 @@
+{
+  "recordedAt": "2026-09-27T14:25:31.018Z",
+  "url": "https://tilvids.com/api/v1/videos/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "49",
+    "x-ratelimit-reset": "1790519142"
+  },
+  "body": {
+    "id": 426091,
+    "uuid": "1ed60f7c-1c42-45dc-9eb9-9006964e5ae9",
+    "shortUUID": "4NRo131dhpS181vJHx1xQv",
+    "url": "https://tilvids.com/videos/watch/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9",
+    "name": "Google is closing down Android more and more, Netherlands move to Linux - Linux Weekly News",
+    "category": {
+      "id": 15,
+      "label": "Science & Technology"
+    },
+    "licence": {
+      "id": 2,
+      "label": "Attribution - Share Alike"
+    },
+    "language": {
+      "id": "en",
+      "label": "English"
+    },
+    "privacy": {
+      "id": 1,
+      "label": "Public"
+    },
+    "nsfw": false,
+    "nsfwFlags": 0,
+    "nsfwSummary": null,
+    "truncatedDescription": "Try out Joplin, one of the best Open Source Note taking apps: https://joplinapp.org/?source=TheLinuxEXP\r\n\r\nUse code LINUXEXPERIMENT for 25% off your first billing cycle for Joplin Cloud\r\n\r\nGrab a brand new laptop or desktop running Linux: https://...",
+    "description": "Try out Joplin, one of the best Open Source Note taking apps: https://joplinapp.org/?source=TheLinuxEXP\r\n\r\nUse code LINUXEXPERIMENT for 25% off your first billing cycle for Joplin Cloud\r\n\r\nGrab a brand new laptop or desktop running Linux: https://www.tuxedocomputers.com/en#\r\n\r\n\r\n👏 SUPPORT THE CHANNEL:\r\nGet access to:\r\n- a Daily Linux News show\r\n- a weekly patroncast for more thoughts\r\n- your name in the credits\r\n\r\nYouTube: https://www.youtube.com/@thelinuxexp/join\r\nPatreon: https://www.patreon.com/thelinuxexperiment\r\n\r\nOr, you can donate whatever you want:\r\nhttps://paypal.me/thelinuxexp\r\nLiberapay: https://liberapay.com/TheLinuxExperiment/\r\n\r\n👕 GET TLE MERCH\r\nSupport the channel AND get cool new gear: https://the-linux-experiment.creator-spring.com/\r\n\r\n#linuxnews #linuxdesktop #linux \r\n\r\nTimestamps\r\n00:00 Intro\r\n00:55 Sponsor: Joplin \r\n02:24 Netherlands goes with NixOS\r\n05:38 Android is less and less open source\r\n08:09 GoogleBook OS introduced as a Linux based system\r\n10:57 KDE's proposed AI policy leads to massive backlash\r\n13:57 GNOME dev offers a \"no AI at all\" policy\r\n16:08 KDE announces their 3 mains goals for 2027\r\n18:04 SteamOS update brings many performance improvements\r\n19:51 Linux kernel 7.4 should open files 39% faster\r\n20:54 Ubuntu improves how the system behaves when out of memory\r\n22:52 Valve introduces new low latency codec for game streaming\r\n24:09 Ubuntu will update the kernel on a weekly basis\r\n25:35 Cosmic 1.9 brings two new applications\r\n27:41 reactOS now has a solid DirectX implementation\r\n29:24 Sponsor: Tuxedo Computers\r\n\r\nLinks:\r\n\r\nNetherlands goes with NixOS\r\nhttps://itsfoss.com/news/netherlands-dawo-initiative/\r\n\r\nAndroid is less and less open source\r\nhttps://itsfoss.com/news/grapheneos-android-17-qpr1-fiasco/\r\n\r\nGoogleBook OS introduced as a Linux based system\r\nhttps://www.techradar.com/computing/laptops/rethinking-the-laptop-is-a-big-undertaking-why-googlebooks-are-so-much-more-than-overpriced-chromebooks-and-apple-should-be-worried\r\n\r\nKDE's proposed AI policy leads to massive backlash\r\nhttps://www.gamingonlinux.com/2026/09/kde-developers-attempts-at-creating-llm-guidelines-are-not-going-well/\r\nhttps://pointieststick.com/2026/09/23/kde-and-ai-and-you-and-me/\r\n\r\nGNOME dev offers a \"no AI at all\" policy\r\nhttps://blogs.gnome.org/alatiera/2026/09/23/the-gnome-llm-policy-that-i-want/\r\n\r\nKDE announces their 3 mains goals for 2027\r\nhttps://www.phoronix.com/news/KDE-Goals-To-2028\r\n\r\nSteamOS update brings many performance improvements\r\nhttps://www.gamingonlinux.com/2026/09/steamos-3-8-28-stable-released-with-big-improvements-for-steam-deck-steam-machine-and-more-hardware-support/\r\n\r\nLinux kernel 7.4 should open files 39% faster\r\nhttps://www.phoronix.com/news/Linux-7.4-Faster-Do-Open \r\n\r\nUbuntu improves how the system behaves when out of memory\r\nhttps://discourse.ubuntu.com/t/improving-ubuntu-desktop-stability-under-memory-pressure/87945\r\n\r\nValve introduces new low latency codec for game streaming\r\nhttps://steamcommunity.com/groups/homestream/discussions/0/564794422009744473?snr=2\r\n\r\nUbuntu will update the kernel on a weekly basis\r\nhttps://canonical.com/blog/accelerating-delivery-of-cve-fixes-with-a-new-kernel-release-strategy\r\n\r\nCosmic 1.9 brings two new applications\r\nhttps://linuxiac.com/cosmic-desktop-1-9-adds-cosmic-viewer-on-screen-keyboard/\r\n\r\nreactOS now has a solid DirectX implementation\r\nhttps://github.com/reactos/reactos/pull/9352",
+    "isLocal": true,
+    "duration": 1842,
+    "aspectRatio": 1.7778,
+    "views": 393,
+    "viewers": 3,
+    "downloads": 324,
+    "likes": 78,
+    "dislikes": 0,
+    "thumbnailPath": "/lazy-static/thumbnails/6438b134-69df-4bc8-a7b4-363f7678d69e.jpg",
+    "previewPath": "/lazy-static/thumbnails/8b2c9391-6273-423e-b522-b49a7244354a.jpg",
+    "thumbnails": [
+      {
+        "height": 480,
+        "width": 850,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://tilvids.com/lazy-static/thumbnails/73b48635-6fe0-4dd2-9b07-d90571c55afa.jpg"
+      },
+      {
+        "height": 720,
+        "width": 1280,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://tilvids.com/lazy-static/thumbnails/25c5747f-2fa1-4bf1-844d-86a60fe30394.jpg"
+      },
+      {
+        "height": 1400,
+        "width": 1400,
+        "aspectRatio": "1:1",
+        "fileUrl": "https://tilvids.com/lazy-static/thumbnails/91dbc56f-91b0-4b81-9368-4d7ae23528d0.jpg"
+      },
+      {
+        "height": 1080,
+        "width": 1920,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://tilvids.com/lazy-static/thumbnails/8b2c9391-6273-423e-b522-b49a7244354a.jpg"
+      },
+      {
+        "height": 157,
+        "width": 280,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://tilvids.com/lazy-static/thumbnails/6438b134-69df-4bc8-a7b4-363f7678d69e.jpg"
+      }
+    ],
+    "embedPath": "/videos/embed/4NRo131dhpS181vJHx1xQv",
+    "createdAt": "2026-09-26T09:24:47.067Z",
+    "updatedAt": "2026-09-27T14:00:59.212Z",
+    "publishedAt": "2026-09-26T09:26:41.751Z",
+    "originallyPublishedAt": null,
+    "isLive": false,
+    "account": {
+      "url": "https://tilvids.com/accounts/thelinuxexperiment",
+      "name": "thelinuxexperiment",
+      "host": "tilvids.com",
+      "avatars": [
+        {
+          "height": 48,
+          "width": 48,
+          "path": "/lazy-static/avatars/74a00993-bc59-48a8-8c35-2665699d4891.jpg",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/74a00993-bc59-48a8-8c35-2665699d4891.jpg",
+          "createdAt": "2026-05-25T04:01:31.945Z",
+          "updatedAt": "2026-05-25T04:01:31.945Z"
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "path": "/lazy-static/avatars/2f647836-dd4c-495b-96e3-e9db562cb4b9.jpg",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/2f647836-dd4c-495b-96e3-e9db562cb4b9.jpg",
+          "createdAt": "2026-05-25T04:01:31.920Z",
+          "updatedAt": "2026-05-25T04:01:31.920Z"
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "path": "/lazy-static/avatars/05dcd09f-1407-4c1f-9f89-556d07261e05.jpg",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/05dcd09f-1407-4c1f-9f89-556d07261e05.jpg",
+          "createdAt": "2026-05-25T04:01:31.884Z",
+          "updatedAt": "2026-05-25T04:01:31.884Z"
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "path": "/lazy-static/avatars/38604e34-ace5-45b7-beda-a5e7afaac2e4.jpg",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/38604e34-ace5-45b7-beda-a5e7afaac2e4.jpg",
+          "createdAt": "2026-05-25T04:01:31.872Z",
+          "updatedAt": "2026-05-25T04:01:31.872Z"
+        }
+      ],
+      "id": 252,
+      "hostRedundancyAllowed": false,
+      "followingCount": 3,
+      "followersCount": 4898,
+      "createdAt": "2020-06-30T13:45:17.950Z",
+      "displayName": "The Linux Experiment",
+      "description": "I'm Nick, and I like to tinker with Linux stuff. I'll bumble through distro reviews, tutorials, and general helpful tidbits and impressions on Linux desktop environments, applications, and news. \n\nYou might see a bit of Linux gaming here and there, and some more personal opinion pieces, but in the end, it's more or less all about Linux and FOSS !\n\nIf you want to stay up to snuff, follow me on Mastodon @TheLinuxEXP@mastodon.social",
+      "updatedAt": "2022-11-17T18:08:45.385Z",
+      "userId": 15
+    },
+    "channel": {
+      "url": "https://tilvids.com/video-channels/thelinuxexperiment_channel",
+      "name": "thelinuxexperiment_channel",
+      "host": "tilvids.com",
+      "avatars": [
+        {
+          "height": 48,
+          "width": 48,
+          "path": "/lazy-static/avatars/d5b6fc80-0cbe-4425-bf67-d0dbf918ccb6.jpg",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/d5b6fc80-0cbe-4425-bf67-d0dbf918ccb6.jpg",
+          "createdAt": "2026-05-25T03:57:45.969Z",
+          "updatedAt": "2026-05-25T03:57:45.969Z"
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "path": "/lazy-static/avatars/0a73baa1-84be-42c4-a92b-1a53ae9a938e.jpg",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/0a73baa1-84be-42c4-a92b-1a53ae9a938e.jpg",
+          "createdAt": "2026-05-25T03:57:45.961Z",
+          "updatedAt": "2026-05-25T03:57:45.961Z"
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "path": "/lazy-static/avatars/9651c496-28cd-4ee7-92b6-70cc5dee5621.jpg",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/9651c496-28cd-4ee7-92b6-70cc5dee5621.jpg",
+          "createdAt": "2026-05-25T03:57:45.953Z",
+          "updatedAt": "2026-05-25T03:57:45.953Z"
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "path": "/lazy-static/avatars/b7663a44-559c-4512-a470-837ce002839b.jpg",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/b7663a44-559c-4512-a470-837ce002839b.jpg",
+          "createdAt": "2026-05-25T03:57:45.903Z",
+          "updatedAt": "2026-05-25T03:57:45.903Z"
+        }
+      ],
+      "id": 47,
+      "hostRedundancyAllowed": false,
+      "followingCount": 0,
+      "followersCount": 4581,
+      "createdAt": "2020-06-30T13:45:17.984Z",
+      "banners": [],
+      "displayName": "The Linux Experiment",
+      "description": "I'm Nick, and I like to tinker with Linux stuff. I'll bumble through distro reviews, tutorials, and general helpful tidbits and impressions on Linux desktop environments, applications, and news. \n\nYou might see a bit of Linux gaming here and there, and some more personal opinion pieces, but in the end, it's more or less all about Linux and FOSS !\n\nIf you want to stay up to snuff, follow me on Mastodon: https://mastodon.social/@thelinuxEXP \n\nIf you can, consider supporting the channel here: \nhttps://www.patreon.com/thelinuxexperiment",
+      "support": "Support the channel on Patreon: \nhttps://www.patreon.com/thelinuxexperiment\n\nSupport on Liberapay:\nhttps://liberapay.com/TheLinuxExperiment/",
+      "isLocal": true,
+      "updatedAt": "2026-09-26T09:24:47.156Z",
+      "ownerAccount": {
+        "url": "https://tilvids.com/accounts/thelinuxexperiment",
+        "name": "thelinuxexperiment",
+        "host": "tilvids.com",
+        "avatars": [
+          {
+            "height": 48,
+            "width": 48,
+            "path": "/lazy-static/avatars/74a00993-bc59-48a8-8c35-2665699d4891.jpg",
+            "fileUrl": "https://tilvids.com/lazy-static/avatars/74a00993-bc59-48a8-8c35-2665699d4891.jpg",
+            "createdAt": "2026-05-25T04:01:31.945Z",
+            "updatedAt": "2026-05-25T04:01:31.945Z"
+          },
+          {
+            "height": 120,
+            "width": 120,
+            "path": "/lazy-static/avatars/2f647836-dd4c-495b-96e3-e9db562cb4b9.jpg",
+            "fileUrl": "https://tilvids.com/lazy-static/avatars/2f647836-dd4c-495b-96e3-e9db562cb4b9.jpg",
+            "createdAt": "2026-05-25T04:01:31.920Z",
+            "updatedAt": "2026-05-25T04:01:31.920Z"
+          },
+          {
+            "height": 600,
+            "width": 600,
+            "path": "/lazy-static/avatars/05dcd09f-1407-4c1f-9f89-556d07261e05.jpg",
+            "fileUrl": "https://tilvids.com/lazy-static/avatars/05dcd09f-1407-4c1f-9f89-556d07261e05.jpg",
+            "createdAt": "2026-05-25T04:01:31.884Z",
+            "updatedAt": "2026-05-25T04:01:31.884Z"
+          },
+          {
+            "height": 1500,
+            "width": 1500,
+            "path": "/lazy-static/avatars/38604e34-ace5-45b7-beda-a5e7afaac2e4.jpg",
+            "fileUrl": "https://tilvids.com/lazy-static/avatars/38604e34-ace5-45b7-beda-a5e7afaac2e4.jpg",
+            "createdAt": "2026-05-25T04:01:31.872Z",
+            "updatedAt": "2026-05-25T04:01:31.872Z"
+          }
+        ],
+        "id": 252,
+        "hostRedundancyAllowed": false,
+        "followingCount": 3,
+        "followersCount": 4898,
+        "createdAt": "2020-06-30T13:45:17.950Z",
+        "displayName": "The Linux Experiment",
+        "description": "I'm Nick, and I like to tinker with Linux stuff. I'll bumble through distro reviews, tutorials, and general helpful tidbits and impressions on Linux desktop environments, applications, and news. \n\nYou might see a bit of Linux gaming here and there, and some more personal opinion pieces, but in the end, it's more or less all about Linux and FOSS !\n\nIf you want to stay up to snuff, follow me on Mastodon @TheLinuxEXP@mastodon.social",
+        "updatedAt": "2022-11-17T18:08:45.385Z",
+        "userId": 15
+      }
+    },
+    "comments": 3,
+    "pluginData": {},
+    "blacklisted": false,
+    "blacklistedReason": null,
+    "streamingPlaylists": [
+      {
+        "id": 7575599,
+        "type": 1,
+        "playlistUrl": "https://tilvids.com/static/streaming-playlists/hls/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9/9dd0ab64-89f4-4163-a53a-6a30b01437e6-master.m3u8",
+        "segmentsSha256Url": "https://tilvids.com/static/streaming-playlists/hls/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9/ebf09399-4cdc-4181-959d-862853a03a3e-segments-sha256.json",
+        "redundancies": [
+          {
+            "baseUrl": "https://cdn01.tilvids.com/static/redundancy/hls/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9"
+          },
+          {
+            "baseUrl": "https://rankett.net/static/redundancy/hls/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9"
+          },
+          {
+            "baseUrl": "https://video.chasmcity.net/static/redundancy/hls/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9"
+          }
+        ],
+        "files": [
+          {
+            "id": 1137802,
+            "resolution": {
+              "id": 720,
+              "label": "720p"
+            },
+            "width": 1280,
+            "height": 720,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Ftilvids.com%2Flazy-static%2Ftorrents%2F95c05a00-324e-4821-a83b-9dd61c70ce18-720-hls.torrent&xt=urn:btih:2b85da7917144a70737dec8ab78ddaac1400ef6c&dn=Google+is+closing+down+Android+more+and+more%2C+Netherlands+move+to+Linux+-+Linux+Weekly+News&tr=https%3A%2F%2Ftilvids.com%2Ftracker%2Fannounce&tr=wss%3A%2F%2Ftilvids.com%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Ftilvids.com%2Fstatic%2Fstreaming-playlists%2Fhls%2F1ed60f7c-1c42-45dc-9eb9-9006964e5ae9%2F3b7097b9-51d3-4b5e-a1b7-2b12d5b89fcd-720-fragmented.mp4",
+            "size": 271650158,
+            "fps": 30,
+            "torrentUrl": "https://tilvids.com/lazy-static/torrents/95c05a00-324e-4821-a83b-9dd61c70ce18-720-hls.torrent",
+            "torrentDownloadUrl": "https://tilvids.com/download/torrents/95c05a00-324e-4821-a83b-9dd61c70ce18-720-hls.torrent",
+            "fileUrl": "https://tilvids.com/static/streaming-playlists/hls/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9/3b7097b9-51d3-4b5e-a1b7-2b12d5b89fcd-720-fragmented.mp4",
+            "fileDownloadUrl": "https://tilvids.com/download/streaming-playlists/hls/videos/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9-720-fragmented.mp4",
+            "metadataUrl": "https://tilvids.com/api/v1/videos/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9/metadata/1137802",
+            "hasAudio": true,
+            "hasVideo": true,
+            "playlistUrl": "https://tilvids.com/static/streaming-playlists/hls/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9/3b7097b9-51d3-4b5e-a1b7-2b12d5b89fcd-720.m3u8",
+            "storage": 0
+          },
+          {
+            "id": 1137807,
+            "resolution": {
+              "id": 360,
+              "label": "360p"
+            },
+            "width": 640,
+            "height": 360,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Ftilvids.com%2Flazy-static%2Ftorrents%2Fb7fd95c3-a097-4c2e-818f-17afcd4893e7-360-hls.torrent&xt=urn:btih:4d7044d4c396357ca0f260f15e49130b9e4001a8&dn=Google+is+closing+down+Android+more+and+more%2C+Netherlands+move+to+Linux+-+Linux+Weekly+News&tr=https%3A%2F%2Ftilvids.com%2Ftracker%2Fannounce&tr=wss%3A%2F%2Ftilvids.com%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Ftilvids.com%2Fstatic%2Fstreaming-playlists%2Fhls%2F1ed60f7c-1c42-45dc-9eb9-9006964e5ae9%2Fa4a91fac-974d-411f-8eeb-40b31079c356-360-fragmented.mp4",
+            "size": 114420047,
+            "fps": 30,
+            "torrentUrl": "https://tilvids.com/lazy-static/torrents/b7fd95c3-a097-4c2e-818f-17afcd4893e7-360-hls.torrent",
+            "torrentDownloadUrl": "https://tilvids.com/download/torrents/b7fd95c3-a097-4c2e-818f-17afcd4893e7-360-hls.torrent",
+            "fileUrl": "https://tilvids.com/static/streaming-playlists/hls/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9/a4a91fac-974d-411f-8eeb-40b31079c356-360-fragmented.mp4",
+            "fileDownloadUrl": "https://tilvids.com/download/streaming-playlists/hls/videos/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9-360-fragmented.mp4",
+            "metadataUrl": "https://tilvids.com/api/v1/videos/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9/metadata/1137807",
+            "hasAudio": true,
+            "hasVideo": true,
+            "playlistUrl": "https://tilvids.com/static/streaming-playlists/hls/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9/a4a91fac-974d-411f-8eeb-40b31079c356-360.m3u8",
+            "storage": 0
+          },
+          {
+            "id": 1137805,
+            "resolution": {
+              "id": 144,
+              "label": "144p"
+            },
+            "width": 256,
+            "height": 144,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Ftilvids.com%2Flazy-static%2Ftorrents%2F88be6ccc-c190-4e64-bc42-43d9dc357bb5-144-hls.torrent&xt=urn:btih:8dfe388af93c413c08a9bb4e13816f764987a85c&dn=Google+is+closing+down+Android+more+and+more%2C+Netherlands+move+to+Linux+-+Linux+Weekly+News&tr=https%3A%2F%2Ftilvids.com%2Ftracker%2Fannounce&tr=wss%3A%2F%2Ftilvids.com%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Ftilvids.com%2Fstatic%2Fstreaming-playlists%2Fhls%2F1ed60f7c-1c42-45dc-9eb9-9006964e5ae9%2F7f7d8743-cf47-45bc-bf54-6c1044d4fd92-144-fragmented.mp4",
+            "size": 55356842,
+            "fps": 30,
+            "torrentUrl": "https://tilvids.com/lazy-static/torrents/88be6ccc-c190-4e64-bc42-43d9dc357bb5-144-hls.torrent",
+            "torrentDownloadUrl": "https://tilvids.com/download/torrents/88be6ccc-c190-4e64-bc42-43d9dc357bb5-144-hls.torrent",
+            "fileUrl": "https://tilvids.com/static/streaming-playlists/hls/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9/7f7d8743-cf47-45bc-bf54-6c1044d4fd92-144-fragmented.mp4",
+            "fileDownloadUrl": "https://tilvids.com/download/streaming-playlists/hls/videos/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9-144-fragmented.mp4",
+            "metadataUrl": "https://tilvids.com/api/v1/videos/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9/metadata/1137805",
+            "hasAudio": true,
+            "hasVideo": true,
+            "playlistUrl": "https://tilvids.com/static/streaming-playlists/hls/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9/7f7d8743-cf47-45bc-bf54-6c1044d4fd92-144.m3u8",
+            "storage": 0
+          }
+        ]
+      }
+    ],
+    "files": [
+      {
+        "id": 1137806,
+        "resolution": {
+          "id": 0,
+          "label": "Audio only"
+        },
+        "width": 0,
+        "height": 0,
+        "magnetUri": "magnet:?xs=https%3A%2F%2Ftilvids.com%2Flazy-static%2Ftorrents%2F8b789997-5770-4cc3-928b-5057f0a37ffd-0.torrent&xt=urn:btih:8da4d66569c20af1870c97433da9f4cca81c834f&dn=Google+is+closing+down+Android+more+and+more%2C+Netherlands+move+to+Linux+-+Linux+Weekly+News&tr=https%3A%2F%2Ftilvids.com%2Ftracker%2Fannounce&tr=wss%3A%2F%2Ftilvids.com%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Ftilvids.com%2Fstatic%2Fweb-videos%2Fdae7036c-2ae3-46fc-9acd-8c36a98b6c81-0.mp4",
+        "size": 29784790,
+        "fps": 0,
+        "torrentUrl": "https://tilvids.com/lazy-static/torrents/8b789997-5770-4cc3-928b-5057f0a37ffd-0.torrent",
+        "torrentDownloadUrl": "https://tilvids.com/download/torrents/8b789997-5770-4cc3-928b-5057f0a37ffd-0.torrent",
+        "fileUrl": "https://tilvids.com/static/web-videos/dae7036c-2ae3-46fc-9acd-8c36a98b6c81-0.mp4",
+        "fileDownloadUrl": "https://tilvids.com/download/web-videos/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9-0.mp4",
+        "metadataUrl": "https://tilvids.com/api/v1/videos/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9/metadata/1137806",
+        "hasAudio": true,
+        "hasVideo": false,
+        "storage": 0
+      }
+    ],
+    "liveSchedules": [],
+    "support": "Support the channel on Patreon: \r\nhttps://www.patreon.com/thelinuxexperiment\r\n\r\nSupport on Liberapay:\r\nhttps://liberapay.com/TheLinuxExperiment/",
+    "tags": [],
+    "commentsPolicy": {
+      "id": 1,
+      "label": "Enabled"
+    },
+    "downloadEnabled": true,
+    "waitTranscoding": true,
+    "inputFileUpdatedAt": null,
+    "state": {
+      "id": 1,
+      "label": "Published"
+    },
+    "trackerUrls": [
+      "https://tilvids.com/tracker/announce",
+      "wss://tilvids.com:443/tracker/socket"
+    ],
+    "embedPrivacyPolicy": {
+      "id": 1,
+      "label": "All allowed"
+    }
+  }
+}

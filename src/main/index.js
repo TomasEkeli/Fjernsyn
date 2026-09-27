@@ -30,6 +30,8 @@ import contextMenu from 'electron-context-menu'
 
 import packageDetails from '../../package.json'
 import { handleOpenInExternalPlayer } from './externalPlayer'
+import { registerPeerTubeDownloadHandlers } from './peertubeDownloads/ipc'
+import { createPeerTubeRequestHeaders, peerTubeUserAgent } from './peertubeRequests'
 import { generatePoToken } from './poTokenGenerator'
 import { buildProxyUrl, isFreeTubeUrl } from './utils'
 import { isRendererWritableYtDlpSetting, registerYtDlpHandlers } from './ytdlp/ipc'
@@ -630,7 +632,13 @@ function runApp() {
       urls: ['https://*/*', 'http://*/*'],
       types: ['xhr', 'media', 'image']
     }
+    // The prescribed User-Agent for PeerTube hosts, from the platform layer's
+    // marked requests (a renderer fetch is of type xhr). Main only learns a
+    // host the layer has confirmed as PeerTube, and refuses to learn or alter
+    // YouTube and Google hosts at all, so the branches below are unaffected.
+    const peerTubeRequestHeaders = createPeerTubeRequestHeaders({ userAgent: peerTubeUserAgent(packageDetails.version) })
     session.defaultSession.webRequest.onBeforeSendHeaders(onBeforeSendHeadersRequestFilter, ({ requestHeaders, url, webContents }, callback) => {
+      peerTubeRequestHeaders.apply(url, requestHeaders)
       const urlObj = new URL(url)
 
       if (url.startsWith('https://www.youtube.com/youtubei/')) {
@@ -1662,6 +1670,7 @@ function runApp() {
   ipcMain.on(IpcChannels.OPEN_IN_EXTERNAL_PLAYER, handleOpenInExternalPlayer)
 
   registerYtDlpHandlers({ chooseDefaultFolder })
+  registerPeerTubeDownloadHandlers({ userAgent: peerTubeUserAgent(packageDetails.version) })
 
   ipcMain.handle(IpcChannels.GET_REPLACE_HTTP_CACHE, (event) => {
     if (isFreeTubeUrl(event.senderFrame.url)) {

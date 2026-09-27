@@ -1,0 +1,177 @@
+/* The layout of Channel.css and ChannelDetails.css, which this mirrors for the layer's channel view */
+.card {
+  position: relative;
+  inline-size: 85%;
+  margin-block: 0 20px;
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+
+.channelHeader {
+  padding: 0;
+  max-inline-size: 92vw;
+}
+
+.banner {
+  display: block;
+  inline-size: 100%;
+  block-size: 13vw;
+  min-block-size: 110px;
+  max-block-size: 32vh;
+  object-fit: cover;
+}
+
+.infoContainer {
+  position: relative;
+  background-color: var(--card-bg-color);
+  padding-block: 16px 0;
+  padding-inline: 16px;
+}
+
+.info {
+  display: flex;
+  flex-flow: row wrap;
+  gap: 10px;
+  inline-size: 100%;
+  justify-content: space-between;
+}
+
+.thumbnailContainer {
+  display: flex;
+}
+
+.avatar {
+  inline-size: 100px;
+  block-size: 100px;
+  border-radius: 200px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.lineContainer {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  padding-inline-start: 1em;
+}
+
+.name {
+  font-weight: bold;
+  inline-size: 100%;
+  font-size: 25px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.handle,
+.followerCount {
+  margin: 0;
+  color: var(--tertiary-text-color);
+}
+
+.handle {
+  overflow-wrap: anywhere;
+}
+
+.infoActionsContainer {
+  display: flex;
+  gap: 30px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  padding-block: 0.3em;
+}
+
+.tab {
+  padding: 15px;
+  font-size: 15px;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  color: var(--tertiary-text-color);
+  border-block-end: 3px solid transparent;
+}
+
+.tab:focus-visible,
+.tab:hover:not(.selectedTab) {
+  font-weight: bold;
+  border-block-end: 3px solid var(--tertiary-text-color);
+}
+
+.selectedTab {
+  color: var(--primary-text-color);
+  border-block-end: 3px solid var(--primary-color);
+  font-weight: bold;
+  box-sizing: border-box;
+}
+
+.select-container {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 10px;
+  margin-block-end: 10px;
+}
+
+.message {
+  color: var(--tertiary-text-color);
+}
+
+.pageError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.getNextPage {
+  background-color: var(--search-bar-color);
+  inline-size: 100%;
+  block-size: 45px;
+  line-height: 45px;
+  text-align: center;
+  cursor: pointer;
+  margin-block-start: 16px;
+}
+
+@media only screen and (width <= 800px) {
+  .tab {
+    flex: 1 1 0%;
+  }
+}
+
+@media only screen and (width <= 680px) {
+  .card {
+    max-inline-size: none;
+    inline-size: 100%;
+  }
+
+  .info {
+    flex-direction: column;
+  }
+
+  .infoActionsContainer {
+    justify-content: start;
+  }
+}
+
+@media only screen and (width <= 400px) {
+  .thumbnailContainer {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .lineContainer {
+    padding-inline-start: 0;
+  }
+
+  .infoActionsContainer {
+    justify-content: center;
+  }
+}

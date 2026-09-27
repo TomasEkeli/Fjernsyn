@@ -1,0 +1,153 @@
+// The layout of views/Watch/Watch.scss, less what only YouTube's watch page
+// has (premiere overlay, playlist, live chat, recommendations)
+
+@mixin dual-column-template {
+  grid-template: 'video video sidebar' 0fr 'info info sidebar' auto 'info info sidebar' 1fr / 1fr 1fr 1fr;
+}
+
+@mixin theatre-mode-template {
+  grid-template: 'video video video' auto 'info info sidebar' auto 'info info sidebar' auto / 1fr 1fr 1fr;
+}
+
+@mixin single-column-template {
+  grid-template: 'video' auto 'info' auto 'sidebar' auto / auto;
+}
+
+.videoLayout {
+  @include dual-column-template;
+
+  align-items: start;
+  display: grid;
+
+  &.isLoading,
+  &.noSidebar {
+    @include single-column-template;
+  }
+
+  .videoArea {
+    grid-area: video;
+
+    .videoAreaMargin {
+      margin-block: 0 16px;
+      margin-inline: 0;
+    }
+
+    .videoPlayer {
+      grid-column: 1;
+      margin-block: 0;
+      margin-inline: auto;
+      max-inline-size: calc(80vh * 1.78);
+      position: relative;
+
+      &.withoutThumbnail {
+        aspect-ratio: 16 / 9;
+        background-color: var(--card-bg-color);
+      }
+
+      .videoThumbnail {
+        display: block;
+        inline-size: 100%;
+      }
+
+      .errorContainer {
+        position: absolute;
+        inset: 30px;
+        display: grid;
+        place-content: center;
+      }
+
+      .errorWrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 20px;
+        padding-block: 10px;
+        padding-inline: 16px;
+        border-radius: 20px;
+        background-color: rgb(0 0 0 / 90%);
+        color: #fff;
+      }
+
+      .errorIcon {
+        font-size: 60px;
+      }
+
+      .errorText {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .errorMessage,
+      .errorDetail {
+        margin: 0;
+      }
+
+      .errorRetryButton {
+        margin: 0;
+      }
+
+      @media only screen and (width <= 680px) {
+        .errorContainer {
+          inset: 10px;
+        }
+
+        .errorWrapper {
+          gap: 10px;
+        }
+
+        .errorIcon {
+          font-size: 40px;
+        }
+      }
+    }
+  }
+
+  .watchVideo {
+    grid-column: 1;
+    margin-block: 0 16px;
+    margin-inline: 0;
+  }
+
+  .infoArea {
+    grid-area: info;
+    position: relative;
+    z-index: 2;
+  }
+
+  .sidebarArea {
+    grid-area: sidebar;
+
+    @media only screen and (width >= 1051px) {
+      min-inline-size: 380px;
+    }
+
+    @at-root .noSidebar#{&} {
+      grid-area: auto;
+    }
+  }
+
+  .watchVideoSidebar {
+    margin-block: 0 16px;
+    margin-inline: 8px;
+
+    @media (width <= 1050px) {
+      margin-inline: 0;
+    }
+  }
+
+  @media only screen and (width <= 1350px) {
+    @include theatre-mode-template;
+  }
+
+  @media only screen and (width >= 1051px) {
+    &.useTheatreMode {
+      @include theatre-mode-template;
+    }
+  }
+
+  @media only screen and (width <= 1050px) {
+    @include single-column-template;
+  }
+}

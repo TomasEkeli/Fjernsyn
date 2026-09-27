@@ -182,7 +182,7 @@
           v-if="channelId !== null"
           class="channelName"
           dir="auto"
-          :to="`/channel/${channelId}`"
+          :to="platformCard?.channelRoute ?? `/channel/${channelId}`"
         >
           {{ channelName }}
         </component>
@@ -339,6 +339,7 @@ import {
 } from '../../helpers/utils.js'
 import { deArrowData, deArrowThumbnail } from '../../helpers/sponsorblock.js'
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
+import { cardShareOptions, describeCard, platformRecordFields, runCardShareOption } from '../../platform/cards'
 
 const props = defineProps({
   data: {
@@ -460,6 +461,9 @@ const showDeArrowTitle = ref(false)
 const showDeArrowThumbnail = ref(false)
 
 const isShort = computed(() => props.data.type === 'shortVideo')
+
+// Fjernsyn: a video of another platform (PeerTube) routes, thumbnails and shares as the platform layer says; null for YouTube
+const platformCard = computed(() => describeCard(props.data, { query: watchPageLinkQuery.value }))
 
 /**
  * The kind this card is marked as, or `null` when it is a plain video and so
@@ -633,7 +637,9 @@ const dropdownOptions = computed(() => {
       })
     }
   }
-  if (!hideSharingActions.value) {
+  if (!hideSharingActions.value && platformCard.value) {
+    options.push(...cardShareOptions(platformCard.value, t))
+  } else if (!hideSharingActions.value) {
     options.push(
       {
         type: 'divider'
@@ -723,7 +729,7 @@ const dropdownOptions = computed(() => {
       )
     }
 
-    if (useSponsorBlock.value) {
+    if (useSponsorBlock.value && !platformCard.value) {
       const isSponsorBlockChannelExcluded = sponsorBlockExcludedChannels.value.some(c => c.name === channelId.value)
 
       options.push(
@@ -773,6 +779,8 @@ function getInvidiousChannelUrl() {
  * @param {string} option
  */
 function handleOptionsClick(option) {
+  if (platformCard.value && runCardShareOption(option, platformCard.value, t)) { return }
+
   switch (option) {
     case 'history':
       if (historyEntryExists.value) {
@@ -914,6 +922,8 @@ const thumbnail = computed(() => {
   if (thumbnailPreference.value === 'hidden') {
     return thumbnailPlaceholder
   }
+
+  if (platformCard.value) { return platformCard.value.thumbnail ?? thumbnailPlaceholder }
 
   if (showDeArrowThumbnail.value && deArrowCache.value?.thumbnail != null) {
     return deArrowCache.value.thumbnail
@@ -1088,6 +1098,8 @@ const watchPageLinkQuery = computed(() => {
 const watchVideoRouterLink = computed(() => {
   // For `router-link` attribute `to`
   if (!externalPlayerIsDefaultViewingMode.value) {
+    if (platformCard.value?.route) { return platformCard.value.route }
+
     return {
       path: `/watch/${id.value}`,
       query: watchPageLinkQuery.value,
@@ -1198,7 +1210,7 @@ function handleExternalPlayer() {
     playlistLoop: props.playlistLoop,
   }
   // Only play video in non playlist mode when user playlist detected
-  if (inUserPlaylist.value) {
+  if (inUserPlaylist.value || platformCard.value) {
     Object.assign(payload, {
       playlistId: null,
       playlistIndex: null,
@@ -1207,6 +1219,8 @@ function handleExternalPlayer() {
       playlistLoop: null,
     })
   }
+
+  if (platformCard.value) { payload.videoUrl = platformCard.value.externalPlayerUrl }
 
   if (process.env.IS_ELECTRON) {
     window.ftElectron.openInExternalPlayer(payload)
@@ -1301,7 +1315,9 @@ function markAsWatched() {
     isLive: false,
     isStation: false,
     isPremiere: false,
-    type: 'video'
+    type: 'video',
+    // Fjernsyn: a PeerTube record keeps its platform, host and thumbnail, and a plain-text description; nothing for YouTube
+    ...platformRecordFields(props.data, { description: description.value }),
   }
 
   store.dispatch('updateHistory', videoData)
@@ -1345,6 +1361,7 @@ function togglePlaylistPrompt() {
     published: published.value,
     premiereDate: props.data.premiereDate,
     premiereTimestamp: props.data.premiereTimestamp,
+    ...platformRecordFields(props.data, { description: description.value }), // Fjernsyn: as in markAsWatched
   }
 
   store.dispatch('showAddToPlaylistPromptForManyVideos', { videos: [videoData] })
@@ -1417,6 +1434,7 @@ function addToQuickBookmarkPlaylist() {
     published: published.value,
     premiereDate: props.data.premiereDate,
     premiereTimestamp: props.data.premiereTimestamp,
+    ...platformRecordFields(props.data), // Fjernsyn: as in markAsWatched
   }
 
   store.dispatch('addVideo', {
@@ -1464,8 +1482,8 @@ function onDragStart(event) {
 
 parseVideoData()
 
-showDeArrowTitle.value = useDeArrowTitles.value
-showDeArrowThumbnail.value = useDeArrowThumbnails.value
+showDeArrowTitle.value = useDeArrowTitles.value && !platformCard.value
+showDeArrowThumbnail.value = useDeArrowThumbnails.value && !platformCard.value
 
 if ((showDeArrowTitle.value || showDeArrowThumbnail.value) && !deArrowCache.value) {
   fetchDeArrowData()

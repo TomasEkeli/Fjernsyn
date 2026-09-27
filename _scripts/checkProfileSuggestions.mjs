@@ -603,6 +603,9 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
   check('one looked at does not, even with no videos found', !needsVideoSamples(plain, null, { sampledAt: 1, videos: [] }))
   check('a Topic channel does not', !needsVideoSamples({ id: 't', name: 'Band - Topic' }, null, undefined))
   check('an artist channel does not', !needsVideoSamples(plain, { tags: [], musicArtist: true }, undefined))
+  const peerTube = { id: 'blender@video.blender.org', name: 'Blender', thumbnail: '', platform: 'peertube', host: 'video.blender.org' }
+  check('a PeerTube channel does not: its videos are not YouTube\'s to sample', !needsVideoSamples(peerTube, null, undefined))
+  check('a channel marked YouTube still does', needsVideoSamples({ ...plain, platform: 'youtube' }, null, undefined))
 
   const shared = samples(['', ['lofi', 'study', 'rain']], ['', ['study', 'lofi']], ['', ['lofi', 'jazz']])
   check('video tags on enough of the videos are shared, most shared first', JSON.stringify(sharedVideoTags(shared)) === JSON.stringify(['lofi', 'study']))
@@ -620,6 +623,9 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
   ]
   const learn = channelsToProbe(profileList, {}, { a: { sampledAt: 1, videos: [] } }, collator)
   check('probing takes the pool first, then channels in one profile, skipping the rest', learn.map(channel => channel.id).join(',') === 'b,c')
+  const peerTubeChannel = { id: 'blender@video.blender.org', name: 'Blender', thumbnail: '', platform: 'peertube', host: 'video.blender.org' }
+  const withPeerTube = [profile(MAIN_PROFILE_ID, 'All Channels', [a, b, peerTubeChannel]), profile('p1', 'One', [peerTubeChannel])]
+  check('probing never takes a PeerTube channel', channelsToProbe(withPeerTube, {}, {}, collator).map(channel => channel.id).join(',') === 'b,a')
 
   const result = proposeProfiles({
     profileList: [profile(MAIN_PROFILE_ID, 'All Channels', [a, b])],

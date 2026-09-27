@@ -259,6 +259,7 @@ import { translateWindowTitle } from '../../helpers/strings'
 import { clearLocalSearchSuggestionsSession, getLocalClip, getLocalSearchSuggestions } from '../../helpers/api/local'
 import { getClipInvidious, getInvidiousSearchSuggestions } from '../../helpers/api/invidious'
 import packageDetails from '../../../../package.json'
+import { openPeerTubeEntry } from '../../platform/entryPoints'
 
 // The wordmark beside the header icon: the app's name as text, which needs no
 // artwork per theme, and a name is not translated
@@ -544,7 +545,7 @@ const searchSettings = computed(() => store.getters.getSearchSettings)
  * @param {object} options
  * @param {MouseEvent} options.event
  */
-function goToSearch(queryText, { event }) {
+async function goToSearch(queryText, { event }) {
   const doCreateNewWindow = event && event.shiftKey
 
   if (window.innerWidth <= MOBILE_WIDTH_THRESHOLD) {
@@ -555,6 +556,15 @@ function goToSearch(queryText, { event }) {
   }
 
   clearLocalSearchSuggestionsSession()
+
+  // Fjernsyn: PeerTube URLs and handles, through the platform layer
+  const peerTube = await openPeerTubeEntry(queryText, { doCreateNewWindow, searchQueryText: queryText })
+  if (peerTube) {
+    if (peerTube === 'opened' && doCreateNewWindow) {
+      updateSearchInputText('')
+    }
+    return
+  }
 
   store.dispatch('getYoutubeUrlInfo', queryText).then(async (result) => {
     switch (result.urlType) {

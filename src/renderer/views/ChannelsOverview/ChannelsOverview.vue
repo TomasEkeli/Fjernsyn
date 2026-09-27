@@ -300,6 +300,7 @@ import { useProfileSuggestions } from '../../composables/useProfileSuggestions'
 import { channelProbingProgress, isProbing, probeChannels, stopProbing } from '../../helpers/channelProbing'
 import { channelsToProbe, needsVideoSamples } from '../../helpers/profileSuggestions'
 import { calculateColorLuminance, colors } from '../../helpers/colors'
+import { describeCard } from '../../platform/cards'
 import { ctrlFHandler, deepCopy, showToast } from '../../helpers/utils'
 import {
   assignCalloutColours,
@@ -1295,7 +1296,7 @@ function chooseFromContextMenu(value) {
 
   switch (value) {
     case 'open':
-      router.push(`/channel/${channel.id}`)
+      router.push(describeCard(channel)?.route ?? `/channel/${channel.id}`)
       break
     case 'remove-here':
       removeDuplicate(channel, column.id)
@@ -1680,7 +1681,8 @@ const thumbnailsRefetched = new Set()
  * @param {Channel} channel
  */
 function updateThumbnail(channel) {
-  if (thumbnailsRefetched.has(channel.id)) { return }
+  // Fetched again from YouTube only: a PeerTube handle means nothing there
+  if (thumbnailsRefetched.has(channel.id) || describeCard(channel) !== null) { return }
 
   thumbnailsRefetched.add(channel.id)
 

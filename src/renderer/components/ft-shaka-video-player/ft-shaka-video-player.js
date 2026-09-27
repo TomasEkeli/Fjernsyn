@@ -230,6 +230,14 @@ export default defineComponent({
       type: Number,
       default: null
     },
+    /**
+     * Which platform the video comes from. Anything but `'youtube'` switches
+     * off the behaviour that only makes sense for YouTube videos.
+     */
+    platform: {
+      type: String,
+      default: 'youtube'
+    },
   },
   emits: [
     'error',
@@ -566,7 +574,8 @@ export default defineComponent({
 
     /** @type {import('vue').ComputedRef<boolean>} */
     const useSponsorBlock = computed(() => {
-      return store.getters.getUseSponsorBlock
+      // SponsorBlock only knows YouTube video ids, so it is never asked about another platform's
+      return props.platform === 'youtube' && store.getters.getUseSponsorBlock
     })
 
     /** @type {import('vue').ComputedRef<boolean>} */
@@ -784,6 +793,12 @@ export default defineComponent({
 
     const seekingIsPossible = computed(() => {
       if (props.manifestMimeType !== 'application/x-mpegurl') {
+        return true
+      }
+
+      // The duration rule below reads YouTube's HLS URLs. Other platforms' HLS
+      // is seekable, and shaka keeps a live stream within its seek range itself.
+      if (props.platform !== 'youtube') {
         return true
       }
 
@@ -2092,6 +2107,13 @@ export default defineComponent({
         matches = variants.filter(variant => {
           return quality > (isPortrait ? variant.width : variant.height)
         })
+      }
+
+      // Nothing at or below the preferred quality, which a PeerTube live
+      // without transcoding does with its one variant: take the lowest there is
+      // rather than selecting nothing, which throws
+      if (matches.length === 0) {
+        matches = [...variants].sort((a, b) => isPortrait ? a.width - b.width : a.height - b.height).slice(0, 1)
       }
 
       matches.sort((a, b) => isPortrait ? b.width - a.width : b.height - a.height)
@@ -3628,7 +3650,10 @@ export default defineComponent({
               const highestBandwidth = Math.max(...variants.map(variant => variant.audioBandwidth))
               variants = variants.filter(variant => variant.audioBandwidth === highestBandwidth)
 
-              player.selectVariantTrack(variants[0])
+              // None in src= mode, as a PeerTube progressive audio file plays
+              if (variants.length > 0 || player.getLoadMode() !== shaka.Player.LoadMode.SRC_EQUALS) {
+                player.selectVariantTrack(variants[0])
+              }
             }
           }
         } catch (error) {
@@ -3828,13 +3853,14 @@ export default defineComponent({
               dimension = legacyFormat.height > legacyFormat.width ? legacyFormat.width : legacyFormat.height
             }
           } else if (oldFormat !== 'legacy') {
+            // None active in src= mode, as a PeerTube progressive audio file plays
             const track = player.getVariantTracks().find(track => track.active)
 
-            if (typeof track.audioBandwidth === 'number') {
+            if (typeof track?.audioBandwidth === 'number') {
               audioBandwidth = track.audioBandwidth
             }
 
-            if (track.label) {
+            if (track?.label) {
               label = track.label
             }
           }
@@ -3897,7 +3923,10 @@ export default defineComponent({
                   }, null)
                 }
 
-                player.selectVariantTrack(chosenVariant)
+                // None in src= mode, as a PeerTube progressive audio file plays
+                if (chosenVariant || player.getLoadMode() !== shaka.Player.LoadMode.SRC_EQUALS) {
+                  player.selectVariantTrack(chosenVariant)
+                }
               }
             }
           } catch (error) {

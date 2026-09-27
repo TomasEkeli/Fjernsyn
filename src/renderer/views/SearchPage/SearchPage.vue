@@ -16,6 +16,13 @@
           />
           {{ t("Search Filters.Search Results") }}
         </h2>
+        <RouterLink
+          v-if="showPeerTubeSearchLink"
+          :to="{ name: 'peertubeSearch', params: { query: processedQuery } }"
+          class="peerTubeSearchLink"
+        >
+          {{ t('PeerTube.Search.Search PeerTube') }}
+        </RouterLink>
         <FtDensitySwitch />
       </div>
       <FtElementList
@@ -64,6 +71,7 @@ import {
   getLocalSearchResults
 } from '../../helpers/api/local'
 import { getInvidiousSearchResults } from '../../helpers/api/invidious'
+import { isPeerTubeEnabled } from '../../platform/vue'
 import { SEARCH_CHAR_LIMIT } from '../../../constants'
 
 const { t } = useI18n()
@@ -80,6 +88,8 @@ const shownResults = shallowRef([])
 
 const query = ref('')
 const processedQuery = computed(() => query.value.trim())
+// Fjernsyn: the link to PeerTube search, Electron only (as PeerTube is) and while PeerTube is on
+const showPeerTubeSearchLink = computed(() => !!process.env.IS_ELECTRON && isPeerTubeEnabled() && processedQuery.value !== '')
 
 /** @type {import('vue').ComputedRef<any[]>} */
 const sessionSearchHistory = computed(() => store.getters.getSessionSearchHistory)

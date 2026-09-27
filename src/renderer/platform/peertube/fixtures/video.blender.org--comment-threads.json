@@ -1,0 +1,55 @@
+{
+  "recordedAt": "2026-09-27T14:22:46.745Z",
+  "url": "https://video.blender.org/api/v1/videos/b29290cc-dc51-4a12-bcb2-2aa5fece7605/comment-threads?start=0&count=5",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "47",
+    "x-ratelimit-reset": "1790518976"
+  },
+  "body": {
+    "total": 1,
+    "data": [
+      {
+        "id": 12534,
+        "url": "https://mastodon.social/ap/users/116912821841051596/statuses/116912863526751547",
+        "text": "<p><span class=\"h-card\" translate=\"no\"><a href=\"https://video.blender.org/a/blender/video-channels\" class=\"u-url mention\">@<span>blender</span></a></span> When you are done with the Overgrown Blender Open Movie please continue with: Project Gooseberry is the code name for Blender Foundation&#39;s 5th Open Movie project, Cosmos Laundromat.<br />which was never completed.<br />Many thanks in advance!!!</p>",
+        "threadId": 12534,
+        "inReplyToCommentId": null,
+        "videoId": 56894,
+        "createdAt": "2026-07-13T13:18:43.000Z",
+        "updatedAt": "2026-07-13T13:18:43.867Z",
+        "deletedAt": null,
+        "heldForReview": false,
+        "isDeleted": false,
+        "totalRepliesFromVideoAuthor": 0,
+        "totalReplies": 0,
+        "account": {
+          "url": "https://mastodon.social/ap/users/116912821841051596",
+          "name": "petarpreradovic",
+          "host": "mastodon.social",
+          "avatars": [
+            {
+              "height": null,
+              "width": null,
+              "path": "/lazy-static/avatars/d85dd906-cc27-4c06-ac99-aa30632d69ba.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/d85dd906-cc27-4c06-ac99-aa30632d69ba.png",
+              "createdAt": "2026-09-25T22:04:27.867+00:00",
+              "updatedAt": "2026-09-25T23:50:48.08+00:00"
+            }
+          ],
+          "id": 1037579,
+          "hostRedundancyAllowed": false,
+          "followingCount": 1,
+          "followersCount": 0,
+          "createdAt": "2026-07-13T00:00:00.000Z",
+          "displayName": "Petar Preradović",
+          "description": null,
+          "updatedAt": "2026-07-13T13:10:59.333Z"
+        }
+      }
+    ],
+    "totalNotDeletedComments": 1
+  }
+}

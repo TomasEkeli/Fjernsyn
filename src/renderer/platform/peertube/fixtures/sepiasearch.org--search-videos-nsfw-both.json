@@ -1,0 +1,1614 @@
+{
+  "recordedAt": "2026-09-27T14:25:34.059Z",
+  "url": "https://sepiasearch.org/api/v1/search/videos?search=horror&start=0&count=10&nsfw=both",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "total": 1230,
+    "data": [
+      {
+        "id": 1365,
+        "uuid": "733c3f10-6eb6-4a90-9b83-f1c6e9903d7e",
+        "shortUUID": "fejT88ytd3wXo7X6FvsHrh",
+        "score": 1,
+        "createdAt": "2021-01-30T16:33:29.831Z",
+        "updatedAt": "2026-09-09T05:10:12.922Z",
+        "publishedAt": "2021-01-30T16:35:29.292Z",
+        "originallyPublishedAt": null,
+        "category": {
+          "id": 7,
+          "label": "Gaming"
+        },
+        "licence": {
+          "id": 1,
+          "label": "Attribution"
+        },
+        "language": {
+          "id": "en",
+          "label": "English"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "name": "horror",
+        "description": "map is too fucking dark on this setting",
+        "truncatedDescription": "map is too fucking dark on this setting",
+        "duration": 20,
+        "tags": [
+          "Freedoom",
+          "GZDoom",
+          "Hideous Destructor"
+        ],
+        "thumbnailPath": "/lazy-static/thumbnails/4fce6a09-7b0e-41e3-ae27-28d060ac68df.jpg",
+        "thumbnailUrl": "https://video.hardlimit.com/lazy-static/thumbnails/4fce6a09-7b0e-41e3-ae27-28d060ac68df.jpg",
+        "previewPath": "/lazy-static/thumbnails/6e1ae2b4-be60-4dda-8aaf-369b95ec7ad2.jpg",
+        "previewUrl": "https://video.hardlimit.com/lazy-static/thumbnails/6e1ae2b4-be60-4dda-8aaf-369b95ec7ad2.jpg",
+        "thumbnails": [
+          {
+            "height": 157,
+            "width": 280,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://video.hardlimit.com/lazy-static/thumbnails/4fce6a09-7b0e-41e3-ae27-28d060ac68df.jpg"
+          },
+          {
+            "height": 480,
+            "width": 850,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://video.hardlimit.com/lazy-static/thumbnails/dae6e815-13f6-4613-905d-e41de0e298c5.jpg"
+          },
+          {
+            "height": 720,
+            "width": 1280,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://video.hardlimit.com/lazy-static/thumbnails/cfcb0700-3812-4732-900c-b362f782d3da.jpg"
+          },
+          {
+            "height": 1400,
+            "width": 1400,
+            "aspectRatio": "1:1",
+            "fileUrl": "https://video.hardlimit.com/lazy-static/thumbnails/dc9bd304-b159-48e9-92f8-a8c4ae25a00c.jpg"
+          },
+          {
+            "height": 1080,
+            "width": 1920,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://video.hardlimit.com/lazy-static/thumbnails/6e1ae2b4-be60-4dda-8aaf-369b95ec7ad2.jpg"
+          }
+        ],
+        "embedPath": "/videos/embed/fejT88ytd3wXo7X6FvsHrh",
+        "embedUrl": "https://video.hardlimit.com/videos/embed/fejT88ytd3wXo7X6FvsHrh",
+        "url": "https://video.hardlimit.com/videos/watch/733c3f10-6eb6-4a90-9b83-f1c6e9903d7e",
+        "isLocal": false,
+        "views": 45,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "comments": 5,
+        "isLive": false,
+        "nsfw": false,
+        "nsfwFlags": 0,
+        "nsfwSummary": null,
+        "aspectRatio": null,
+        "account": {
+          "id": 1652,
+          "name": "imperialsr",
+          "displayName": "ImperialSR",
+          "url": "https://video.hardlimit.com/accounts/imperialsr",
+          "host": "video.hardlimit.com",
+          "avatars": [
+            {
+              "url": "https://video.hardlimit.com/lazy-static/avatars/d0f32e51-cdeb-4f55-b71e-907d9a0b4e1e.jpg",
+              "path": "/lazy-static/avatars/d0f32e51-cdeb-4f55-b71e-907d9a0b4e1e.jpg",
+              "fileUrl": "https://video.hardlimit.com/lazy-static/avatars/d0f32e51-cdeb-4f55-b71e-907d9a0b4e1e.jpg",
+              "width": 48,
+              "createdAt": "2026-04-19T20:35:20.648Z",
+              "updatedAt": "2026-04-19T20:35:20.648Z"
+            },
+            {
+              "url": "https://video.hardlimit.com/lazy-static/avatars/1ed2b46f-de66-450e-8d0d-2d6f1627e0a0.jpg",
+              "path": "/lazy-static/avatars/1ed2b46f-de66-450e-8d0d-2d6f1627e0a0.jpg",
+              "fileUrl": "https://video.hardlimit.com/lazy-static/avatars/1ed2b46f-de66-450e-8d0d-2d6f1627e0a0.jpg",
+              "width": 120,
+              "createdAt": "2026-04-19T20:35:20.633Z",
+              "updatedAt": "2026-04-19T20:35:20.633Z"
+            },
+            {
+              "url": "https://video.hardlimit.com/lazy-static/avatars/07a09662-16f8-40e8-8ebf-4c5659ee41a2.jpg",
+              "path": "/lazy-static/avatars/07a09662-16f8-40e8-8ebf-4c5659ee41a2.jpg",
+              "fileUrl": "https://video.hardlimit.com/lazy-static/avatars/07a09662-16f8-40e8-8ebf-4c5659ee41a2.jpg",
+              "width": 600,
+              "createdAt": "2026-04-19T20:35:20.611Z",
+              "updatedAt": "2026-04-19T20:35:20.611Z"
+            },
+            {
+              "url": "https://video.hardlimit.com/lazy-static/avatars/5225656c-3bbd-471c-abb3-b1a7ae443ffa.jpg",
+              "path": "/lazy-static/avatars/5225656c-3bbd-471c-abb3-b1a7ae443ffa.jpg",
+              "fileUrl": "https://video.hardlimit.com/lazy-static/avatars/5225656c-3bbd-471c-abb3-b1a7ae443ffa.jpg",
+              "width": 1500,
+              "createdAt": "2026-04-19T20:35:20.598Z",
+              "updatedAt": "2026-04-19T20:35:20.598Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 1275,
+          "name": "imperial_sr",
+          "displayName": "Destroyed Republic",
+          "url": "https://video.hardlimit.com/video-channels/imperial_sr",
+          "host": "video.hardlimit.com",
+          "avatars": [
+            {
+              "url": "https://video.hardlimit.com/lazy-static/avatars/015aff14-aea4-414e-80cd-bbe70f81143d.png",
+              "path": "/lazy-static/avatars/015aff14-aea4-414e-80cd-bbe70f81143d.png",
+              "fileUrl": "https://video.hardlimit.com/lazy-static/avatars/015aff14-aea4-414e-80cd-bbe70f81143d.png",
+              "width": 48,
+              "createdAt": "2026-03-21T18:49:34.811Z",
+              "updatedAt": "2026-03-21T18:49:34.811Z"
+            },
+            {
+              "url": "https://video.hardlimit.com/lazy-static/avatars/4636d460-6ee0-4d2e-9d06-fe3690c33d03.png",
+              "path": "/lazy-static/avatars/4636d460-6ee0-4d2e-9d06-fe3690c33d03.png",
+              "fileUrl": "https://video.hardlimit.com/lazy-static/avatars/4636d460-6ee0-4d2e-9d06-fe3690c33d03.png",
+              "width": 120,
+              "createdAt": "2026-03-21T18:49:34.809Z",
+              "updatedAt": "2026-03-21T18:49:34.809Z"
+            },
+            {
+              "url": "https://video.hardlimit.com/lazy-static/avatars/47568dbf-3e99-4287-a659-bfbe9a4a85bd.png",
+              "path": "/lazy-static/avatars/47568dbf-3e99-4287-a659-bfbe9a4a85bd.png",
+              "fileUrl": "https://video.hardlimit.com/lazy-static/avatars/47568dbf-3e99-4287-a659-bfbe9a4a85bd.png",
+              "width": 600,
+              "createdAt": "2026-03-21T18:49:34.807Z",
+              "updatedAt": "2026-03-21T18:49:34.807Z"
+            },
+            {
+              "url": "https://video.hardlimit.com/lazy-static/avatars/41c964b0-af17-47e3-ad95-4598aed991a2.png",
+              "path": "/lazy-static/avatars/41c964b0-af17-47e3-ad95-4598aed991a2.png",
+              "fileUrl": "https://video.hardlimit.com/lazy-static/avatars/41c964b0-af17-47e3-ad95-4598aed991a2.png",
+              "width": 1500,
+              "createdAt": "2026-03-21T18:49:34.805Z",
+              "updatedAt": "2026-03-21T18:49:34.805Z"
+            }
+          ]
+        },
+        "hotScore": 0.0022143809914828036,
+        "rawHotScore": 3751.307315119152
+      },
+      {
+        "id": 62534,
+        "uuid": "1760ccb1-822e-4cbd-81d2-959126356a94",
+        "shortUUID": "3Trif11kiXcws22L5v2kdY",
+        "score": 1,
+        "createdAt": "2026-06-18T01:29:19.281Z",
+        "updatedAt": "2026-06-18T11:38:25.235Z",
+        "publishedAt": "2026-06-18T11:38:25.234Z",
+        "originallyPublishedAt": null,
+        "category": {
+          "id": 1,
+          "label": "Music"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "name": "Horror",
+        "description": "FastTracker",
+        "truncatedDescription": "FastTracker",
+        "duration": 123,
+        "tags": [
+          "demoscene",
+          "FastTracker",
+          "MOD",
+          "S3M",
+          "XM"
+        ],
+        "thumbnailPath": "/lazy-static/thumbnails/3b868572-9d3e-4950-9511-09cec1cad5f3.jpg",
+        "thumbnailUrl": "https://p2b.drjpdns.com/lazy-static/thumbnails/3b868572-9d3e-4950-9511-09cec1cad5f3.jpg",
+        "previewPath": "/lazy-static/thumbnails/56649dff-1136-4002-a009-4c7352b7173a.jpg",
+        "previewUrl": "https://p2b.drjpdns.com/lazy-static/thumbnails/56649dff-1136-4002-a009-4c7352b7173a.jpg",
+        "thumbnails": [
+          {
+            "height": 1080,
+            "width": 1920,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://p2b.drjpdns.com/lazy-static/thumbnails/56649dff-1136-4002-a009-4c7352b7173a.jpg"
+          },
+          {
+            "height": 1400,
+            "width": 1400,
+            "aspectRatio": "1:1",
+            "fileUrl": "https://p2b.drjpdns.com/lazy-static/thumbnails/cfad800d-f5a8-487e-b6e4-562a2679d70b.jpg"
+          },
+          {
+            "height": 720,
+            "width": 1280,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://p2b.drjpdns.com/lazy-static/thumbnails/ae4376e6-f469-41af-ac4f-bd53798da274.jpg"
+          },
+          {
+            "height": 480,
+            "width": 850,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://p2b.drjpdns.com/lazy-static/thumbnails/491d31c3-aff9-482d-b282-b534df6fa213.jpg"
+          },
+          {
+            "height": 157,
+            "width": 280,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://p2b.drjpdns.com/lazy-static/thumbnails/3b868572-9d3e-4950-9511-09cec1cad5f3.jpg"
+          }
+        ],
+        "embedPath": "/videos/embed/3Trif11kiXcws22L5v2kdY",
+        "embedUrl": "https://p2b.drjpdns.com/videos/embed/3Trif11kiXcws22L5v2kdY",
+        "url": "https://p2b.drjpdns.com/videos/watch/1760ccb1-822e-4cbd-81d2-959126356a94",
+        "isLocal": false,
+        "views": 0,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "comments": 0,
+        "isLive": false,
+        "nsfw": false,
+        "nsfwFlags": 0,
+        "nsfwSummary": null,
+        "aspectRatio": 1.7778,
+        "account": {
+          "id": 3,
+          "name": "jaypee",
+          "displayName": "jaypee",
+          "url": "https://tarchivist.drjpdns.com/accounts/jaypee",
+          "host": "p2b.drjpdns.com",
+          "avatars": [
+            {
+              "url": "https://p2b.drjpdns.com/lazy-static/avatars/ffd8b885-1258-4fcd-b264-8584b144c355.webp",
+              "path": "/lazy-static/avatars/ffd8b885-1258-4fcd-b264-8584b144c355.webp",
+              "fileUrl": "https://p2b.drjpdns.com/lazy-static/avatars/ffd8b885-1258-4fcd-b264-8584b144c355.webp",
+              "width": 48,
+              "createdAt": "2025-05-21T19:08:33.122Z",
+              "updatedAt": "2025-05-21T19:08:33.122Z"
+            },
+            {
+              "url": "https://p2b.drjpdns.com/lazy-static/avatars/0dc958a2-b5dc-4690-9cd5-b445fa0ea5fd.webp",
+              "path": "/lazy-static/avatars/0dc958a2-b5dc-4690-9cd5-b445fa0ea5fd.webp",
+              "fileUrl": "https://p2b.drjpdns.com/lazy-static/avatars/0dc958a2-b5dc-4690-9cd5-b445fa0ea5fd.webp",
+              "width": 120,
+              "createdAt": "2025-05-21T19:08:33.109Z",
+              "updatedAt": "2025-05-21T19:08:33.109Z"
+            },
+            {
+              "url": "https://p2b.drjpdns.com/lazy-static/avatars/ae4fac5e-2623-417a-92c7-830065d04726.webp",
+              "path": "/lazy-static/avatars/ae4fac5e-2623-417a-92c7-830065d04726.webp",
+              "fileUrl": "https://p2b.drjpdns.com/lazy-static/avatars/ae4fac5e-2623-417a-92c7-830065d04726.webp",
+              "width": 600,
+              "createdAt": "2025-05-21T19:08:33.108Z",
+              "updatedAt": "2025-05-21T19:08:33.108Z"
+            },
+            {
+              "url": "https://p2b.drjpdns.com/lazy-static/avatars/b408f830-0eab-462d-a1a3-7e5aadf7d234.webp",
+              "path": "/lazy-static/avatars/b408f830-0eab-462d-a1a3-7e5aadf7d234.webp",
+              "fileUrl": "https://p2b.drjpdns.com/lazy-static/avatars/b408f830-0eab-462d-a1a3-7e5aadf7d234.webp",
+              "width": 1500,
+              "createdAt": "2025-05-21T19:08:33.081Z",
+              "updatedAt": "2025-05-21T19:08:33.081Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 1674,
+          "name": "pattern_pulse",
+          "displayName": "Pattern & Pulse",
+          "url": "https://p2b.drjpdns.com/video-channels/pattern_pulse",
+          "host": "p2b.drjpdns.com",
+          "avatars": [
+            {
+              "url": "https://p2b.drjpdns.com/lazy-static/avatars/9aee9cf5-40a0-4039-9239-000c06624107.png",
+              "path": "/lazy-static/avatars/9aee9cf5-40a0-4039-9239-000c06624107.png",
+              "fileUrl": "https://p2b.drjpdns.com/lazy-static/avatars/9aee9cf5-40a0-4039-9239-000c06624107.png",
+              "width": 48,
+              "createdAt": "2025-12-18T19:32:02.396Z",
+              "updatedAt": "2025-12-18T19:32:02.396Z"
+            },
+            {
+              "url": "https://p2b.drjpdns.com/lazy-static/avatars/ac82f762-d74c-4f2b-9fe7-27941986fe4b.png",
+              "path": "/lazy-static/avatars/ac82f762-d74c-4f2b-9fe7-27941986fe4b.png",
+              "fileUrl": "https://p2b.drjpdns.com/lazy-static/avatars/ac82f762-d74c-4f2b-9fe7-27941986fe4b.png",
+              "width": 120,
+              "createdAt": "2025-12-18T19:32:02.392Z",
+              "updatedAt": "2025-12-18T19:32:02.392Z"
+            },
+            {
+              "url": "https://p2b.drjpdns.com/lazy-static/avatars/70c51556-3c17-4550-88b5-5da277888dab.png",
+              "path": "/lazy-static/avatars/70c51556-3c17-4550-88b5-5da277888dab.png",
+              "fileUrl": "https://p2b.drjpdns.com/lazy-static/avatars/70c51556-3c17-4550-88b5-5da277888dab.png",
+              "width": 600,
+              "createdAt": "2025-12-18T19:32:02.391Z",
+              "updatedAt": "2025-12-18T19:32:02.391Z"
+            },
+            {
+              "url": "https://p2b.drjpdns.com/lazy-static/avatars/086c4cec-479a-4dbb-8917-4f262e7d17af.png",
+              "path": "/lazy-static/avatars/086c4cec-479a-4dbb-8917-4f262e7d17af.png",
+              "fileUrl": "https://p2b.drjpdns.com/lazy-static/avatars/086c4cec-479a-4dbb-8917-4f262e7d17af.png",
+              "width": 1500,
+              "createdAt": "2025-12-18T19:32:02.368Z",
+              "updatedAt": "2025-12-18T19:32:02.368Z"
+            }
+          ]
+        },
+        "hotScore": 0,
+        "rawHotScore": 7140.981345404255
+      },
+      {
+        "id": 14883,
+        "uuid": "7a3d4b98-19bc-43e1-b245-f589fdd387fa",
+        "shortUUID": "g6uoF8vCgNczBex18ALjXu",
+        "score": 0.996969696969697,
+        "createdAt": "2020-10-30T12:57:53.000Z",
+        "updatedAt": "2026-09-16T12:39:25.502Z",
+        "publishedAt": "2020-10-30T13:08:15.073Z",
+        "originallyPublishedAt": null,
+        "category": {
+          "id": 13,
+          "label": "Education"
+        },
+        "licence": {
+          "id": 1,
+          "label": "Attribution"
+        },
+        "language": {
+          "id": "fr",
+          "label": "French"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "name": "Horror Humanum Est, le livre...",
+        "description": "Je participe rarement à des financements participatifs, mais celui de la version papier de la série Youtube \"Error Humanum Est\" en valait largement la peine.\r\n\r\nSérie youtube : https://www.youtube.com/channel/UCLbgxBMMEo6mAYe87esxGmg\r\nFinancement ...",
+        "truncatedDescription": "Je participe rarement à des financements participatifs, mais celui de la version papier de la série Youtube \"Error Humanum Est\" en valait largement la peine.\r\n\r\nSérie youtube : https://www.youtube.com/channel/UCLbgxBMMEo6mAYe87esxGmg\r\nFinancement ...",
+        "duration": 183,
+        "tags": [
+          "Horror Humanum Est",
+          "culture",
+          "livre",
+          "présentation"
+        ],
+        "thumbnailPath": "/lazy-static/thumbnails/5da51f97-8b6b-4c63-b9d0-2830d75a67c5.jpg",
+        "thumbnailUrl": "https://peertube.pcservice46.fr/lazy-static/thumbnails/5da51f97-8b6b-4c63-b9d0-2830d75a67c5.jpg",
+        "previewPath": "/lazy-static/thumbnails/54bf6892-a8da-4269-a645-eedb8b30a47d.jpg",
+        "previewUrl": "https://peertube.pcservice46.fr/lazy-static/thumbnails/54bf6892-a8da-4269-a645-eedb8b30a47d.jpg",
+        "thumbnails": [
+          {
+            "height": 157,
+            "width": 280,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://peertube.pcservice46.fr/lazy-static/thumbnails/5da51f97-8b6b-4c63-b9d0-2830d75a67c5.jpg"
+          },
+          {
+            "height": 480,
+            "width": 850,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://peertube.pcservice46.fr/lazy-static/thumbnails/3c681237-5d93-42f6-b156-ae94b59301ab.jpg"
+          },
+          {
+            "height": 720,
+            "width": 1280,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://peertube.pcservice46.fr/lazy-static/thumbnails/9a3e997a-6347-4ad7-8181-ada8506b699a.jpg"
+          },
+          {
+            "height": 1400,
+            "width": 1400,
+            "aspectRatio": "1:1",
+            "fileUrl": "https://peertube.pcservice46.fr/lazy-static/thumbnails/e870c62a-07c9-45b7-9a96-f0e3baa9fbcf.jpg"
+          },
+          {
+            "height": 1080,
+            "width": 1920,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://peertube.pcservice46.fr/lazy-static/thumbnails/54bf6892-a8da-4269-a645-eedb8b30a47d.jpg"
+          }
+        ],
+        "embedPath": "/videos/embed/g6uoF8vCgNczBex18ALjXu",
+        "embedUrl": "https://peertube.pcservice46.fr/videos/embed/g6uoF8vCgNczBex18ALjXu",
+        "url": "https://peertube.pcservice46.fr/videos/watch/7a3d4b98-19bc-43e1-b245-f589fdd387fa",
+        "isLocal": false,
+        "views": 206,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "comments": 0,
+        "isLive": false,
+        "nsfw": false,
+        "nsfwFlags": 0,
+        "nsfwSummary": null,
+        "aspectRatio": null,
+        "account": {
+          "id": 880,
+          "name": "clashoffredo",
+          "displayName": "Tonton Fred",
+          "url": "https://peertube.pcservice46.fr/accounts/clashoffredo",
+          "host": "peertube.pcservice46.fr",
+          "avatars": [
+            {
+              "url": "https://peertube.pcservice46.fr/lazy-static/avatars/31d5cf91-39f7-42f7-9680-4627734f8480.jpg",
+              "path": "/lazy-static/avatars/31d5cf91-39f7-42f7-9680-4627734f8480.jpg",
+              "fileUrl": "https://peertube.pcservice46.fr/lazy-static/avatars/31d5cf91-39f7-42f7-9680-4627734f8480.jpg",
+              "width": 48,
+              "createdAt": "2026-03-11T17:18:32.661Z",
+              "updatedAt": "2026-03-11T17:18:32.661Z"
+            },
+            {
+              "url": "https://peertube.pcservice46.fr/lazy-static/avatars/33d0759d-294d-462b-a4ea-9bd2d9074930.jpg",
+              "path": "/lazy-static/avatars/33d0759d-294d-462b-a4ea-9bd2d9074930.jpg",
+              "fileUrl": "https://peertube.pcservice46.fr/lazy-static/avatars/33d0759d-294d-462b-a4ea-9bd2d9074930.jpg",
+              "width": 120,
+              "createdAt": "2026-03-11T17:18:32.540Z",
+              "updatedAt": "2026-03-11T17:18:32.540Z"
+            },
+            {
+              "url": "https://peertube.pcservice46.fr/lazy-static/avatars/1e3b965c-9227-42f3-a221-1eb11452be6c.jpg",
+              "path": "/lazy-static/avatars/1e3b965c-9227-42f3-a221-1eb11452be6c.jpg",
+              "fileUrl": "https://peertube.pcservice46.fr/lazy-static/avatars/1e3b965c-9227-42f3-a221-1eb11452be6c.jpg",
+              "width": 600,
+              "createdAt": "2026-03-11T17:18:32.539Z",
+              "updatedAt": "2026-03-11T17:18:32.539Z"
+            },
+            {
+              "url": "https://peertube.pcservice46.fr/lazy-static/avatars/cdcb421f-0914-460c-ade7-38b6442d254b.jpg",
+              "path": "/lazy-static/avatars/cdcb421f-0914-460c-ade7-38b6442d254b.jpg",
+              "fileUrl": "https://peertube.pcservice46.fr/lazy-static/avatars/cdcb421f-0914-460c-ade7-38b6442d254b.jpg",
+              "width": 1500,
+              "createdAt": "2026-03-11T17:18:32.538Z",
+              "updatedAt": "2026-03-11T17:18:32.538Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 1450,
+          "name": "culture",
+          "displayName": "Culture, confiture, toussa !",
+          "url": "https://peertube.pcservice46.fr/video-channels/culture",
+          "host": "peertube.pcservice46.fr",
+          "avatars": [
+            {
+              "url": "https://peertube.pcservice46.fr/lazy-static/avatars/2d52e504-8bb4-4ceb-8689-8dd4f56b33dc.jpg",
+              "path": "/lazy-static/avatars/2d52e504-8bb4-4ceb-8689-8dd4f56b33dc.jpg",
+              "fileUrl": "https://peertube.pcservice46.fr/lazy-static/avatars/2d52e504-8bb4-4ceb-8689-8dd4f56b33dc.jpg",
+              "width": 48,
+              "createdAt": "2026-03-11T19:09:12.565Z",
+              "updatedAt": "2026-03-11T19:09:12.565Z"
+            },
+            {
+              "url": "https://peertube.pcservice46.fr/lazy-static/avatars/3c048b1f-9761-4c1c-9b11-1d6533e675d1.jpg",
+              "path": "/lazy-static/avatars/3c048b1f-9761-4c1c-9b11-1d6533e675d1.jpg",
+              "fileUrl": "https://peertube.pcservice46.fr/lazy-static/avatars/3c048b1f-9761-4c1c-9b11-1d6533e675d1.jpg",
+              "width": 120,
+              "createdAt": "2026-03-11T19:09:12.564Z",
+              "updatedAt": "2026-03-11T19:09:12.564Z"
+            },
+            {
+              "url": "https://peertube.pcservice46.fr/lazy-static/avatars/de8403f4-75ed-4e2b-af52-f6d9b3546c5e.jpg",
+              "path": "/lazy-static/avatars/de8403f4-75ed-4e2b-af52-f6d9b3546c5e.jpg",
+              "fileUrl": "https://peertube.pcservice46.fr/lazy-static/avatars/de8403f4-75ed-4e2b-af52-f6d9b3546c5e.jpg",
+              "width": 600,
+              "createdAt": "2026-03-11T19:09:12.563Z",
+              "updatedAt": "2026-03-11T19:09:12.563Z"
+            },
+            {
+              "url": "https://peertube.pcservice46.fr/lazy-static/avatars/6e695092-ae65-4ee7-bf88-c760c2a940b2.jpg",
+              "path": "/lazy-static/avatars/6e695092-ae65-4ee7-bf88-c760c2a940b2.jpg",
+              "fileUrl": "https://peertube.pcservice46.fr/lazy-static/avatars/6e695092-ae65-4ee7-bf88-c760c2a940b2.jpg",
+              "width": 1500,
+              "createdAt": "2026-03-11T19:09:12.542Z",
+              "updatedAt": "2026-03-11T19:09:12.542Z"
+            }
+          ]
+        },
+        "hotScore": 1.5434537823551543e-80,
+        "rawHotScore": 3445.040800117777
+      },
+      {
+        "id": 37577,
+        "uuid": "637d9770-bc23-41c5-b199-832352d5c78d",
+        "shortUUID": "dhyuRK8aQn1wz4MB4o1Jxx",
+        "score": 0.996969696969697,
+        "createdAt": "2025-06-08T22:27:52.251Z",
+        "updatedAt": "2026-09-22T14:07:51.323Z",
+        "publishedAt": "2025-06-08T22:41:54.763Z",
+        "originallyPublishedAt": null,
+        "category": {
+          "id": 7,
+          "label": "Gaming"
+        },
+        "licence": {
+          "id": 2,
+          "label": "Attribution - Share Alike"
+        },
+        "language": {
+          "id": "en",
+          "label": "English"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "name": "Luanti Mod Review: Horror",
+        "description": "Tired of the boring relatively peaceful and safe worlds, do you want to abuse your eardrums and be jump scared? then this is the mod for you.\r\n\r\nDownload Luanti: https://www.luanti.org/downloads/\r\n\r\nhttps://nathansalapat.com/luanti/horror\r\nhttps:/...",
+        "truncatedDescription": "Tired of the boring relatively peaceful and safe worlds, do you want to abuse your eardrums and be jump scared? then this is the mod for you.\r\n\r\nDownload Luanti: https://www.luanti.org/downloads/\r\n\r\nhttps://nathansalapat.com/luanti/horror\r\nhttps:/...",
+        "duration": 705,
+        "tags": [
+          "Horror",
+          "Luanti",
+          "Minecraft Alternative",
+          "Minetest",
+          "Mod Review"
+        ],
+        "thumbnailPath": "/lazy-static/thumbnails/cd02fa8a-a790-476f-b325-828962376747.jpg",
+        "thumbnailUrl": "https://share.tube/lazy-static/thumbnails/cd02fa8a-a790-476f-b325-828962376747.jpg",
+        "previewPath": "/lazy-static/previews/58a0c306-088c-4f0f-8a36-52179b325815.jpg",
+        "previewUrl": "https://share.tube/lazy-static/previews/58a0c306-088c-4f0f-8a36-52179b325815.jpg",
+        "thumbnails": [
+          {
+            "aspectRatio": "16:9",
+            "width": 280,
+            "height": 157,
+            "fileUrl": "https://share.tube/lazy-static/thumbnails/cd02fa8a-a790-476f-b325-828962376747.jpg"
+          },
+          {
+            "aspectRatio": "16:9",
+            "width": 850,
+            "height": 480,
+            "fileUrl": "https://share.tube/lazy-static/previews/58a0c306-088c-4f0f-8a36-52179b325815.jpg"
+          }
+        ],
+        "embedPath": "/videos/embed/637d9770-bc23-41c5-b199-832352d5c78d",
+        "embedUrl": "https://share.tube/videos/embed/637d9770-bc23-41c5-b199-832352d5c78d",
+        "url": "https://share.tube/videos/watch/637d9770-bc23-41c5-b199-832352d5c78d",
+        "isLocal": false,
+        "views": 174,
+        "viewers": 0,
+        "likes": 23,
+        "dislikes": 0,
+        "isLive": false,
+        "nsfw": false,
+        "nsfwFlags": 0,
+        "account": {
+          "id": 49273,
+          "name": "nathansalapat",
+          "displayName": "Luanti Videos",
+          "url": "https://share.tube/accounts/nathansalapat",
+          "host": "share.tube",
+          "avatars": [
+            {
+              "url": "https://share.tube/lazy-static/avatars/d5dd93e0-fdcc-45f7-a55e-48f7ae6ef7be.png",
+              "path": "/lazy-static/avatars/d5dd93e0-fdcc-45f7-a55e-48f7ae6ef7be.png",
+              "width": 48,
+              "createdAt": "2022-06-30T00:50:38.782Z",
+              "updatedAt": "2022-06-30T00:50:38.782Z"
+            },
+            {
+              "url": "https://share.tube/lazy-static/avatars/d4d32bf0-fbc7-49cb-abdd-a34720f8a0d2.png",
+              "path": "/lazy-static/avatars/d4d32bf0-fbc7-49cb-abdd-a34720f8a0d2.png",
+              "width": 120,
+              "createdAt": "2021-08-03T01:26:09.280Z",
+              "updatedAt": "2022-06-30T00:50:38.732Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 818,
+          "name": "minetestvideos",
+          "displayName": "Luanti Videos",
+          "url": "https://share.tube/video-channels/minetestvideos",
+          "host": "share.tube",
+          "avatars": [
+            {
+              "url": "https://share.tube/lazy-static/avatars/63dc560f-3802-453b-9a4c-067c7b7faf26.png",
+              "path": "/lazy-static/avatars/63dc560f-3802-453b-9a4c-067c7b7faf26.png",
+              "width": 48,
+              "createdAt": "2022-06-30T00:50:38.973Z",
+              "updatedAt": "2022-06-30T00:50:38.973Z"
+            },
+            {
+              "url": "https://share.tube/lazy-static/avatars/caf000cb-10a5-4fc6-8d5e-9a6080f4ca20.png",
+              "path": "/lazy-static/avatars/caf000cb-10a5-4fc6-8d5e-9a6080f4ca20.png",
+              "width": 120,
+              "createdAt": "2021-08-03T01:45:32.817Z",
+              "updatedAt": "2022-06-30T00:50:38.933Z"
+            }
+          ]
+        },
+        "hotScore": 6998.759598118439,
+        "rawHotScore": 6998.759598118439
+      },
+      {
+        "id": 141395,
+        "uuid": "9f6823a5-1b9d-427f-a2a4-4afb7c1514e4",
+        "shortUUID": "kFFKzGpKLJ3K4VL9iq7DJu",
+        "score": 0.996969696969697,
+        "createdAt": "2025-02-17T17:15:35.741Z",
+        "updatedAt": "2026-09-15T06:20:38.542Z",
+        "publishedAt": "2025-02-17T17:25:27.153Z",
+        "originallyPublishedAt": null,
+        "category": {
+          "id": 10,
+          "label": "Entertainment"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": "en",
+          "label": "English"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "name": "Horror Film Sizzle Reel",
+        "description": "music: neon red (instrumental remix) by miracle of sound\r\n\r\nlist of movies: https://boxd.it/Dfxqy",
+        "truncatedDescription": "music: neon red (instrumental remix) by miracle of sound\r\n\r\nlist of movies: https://boxd.it/Dfxqy",
+        "duration": 97,
+        "tags": [
+          "blood",
+          "horror",
+          "reel"
+        ],
+        "thumbnailPath": "/lazy-static/thumbnails/0963a676-017f-493f-8594-38ea95101ff1.jpg",
+        "thumbnailUrl": "https://spectra.video/lazy-static/thumbnails/0963a676-017f-493f-8594-38ea95101ff1.jpg",
+        "previewPath": "/lazy-static/thumbnails/3c4f0b47-3895-4e1d-8e66-b25a4e6fe5dd.jpg",
+        "previewUrl": "https://spectra.video/lazy-static/thumbnails/3c4f0b47-3895-4e1d-8e66-b25a4e6fe5dd.jpg",
+        "thumbnails": [
+          {
+            "height": 157,
+            "width": 280,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://spectra.video/lazy-static/thumbnails/0963a676-017f-493f-8594-38ea95101ff1.jpg"
+          },
+          {
+            "height": 480,
+            "width": 850,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://spectra.video/lazy-static/thumbnails/3c4f0b47-3895-4e1d-8e66-b25a4e6fe5dd.jpg"
+          }
+        ],
+        "embedPath": "/videos/embed/kFFKzGpKLJ3K4VL9iq7DJu",
+        "embedUrl": "https://spectra.video/videos/embed/kFFKzGpKLJ3K4VL9iq7DJu",
+        "url": "https://spectra.video/videos/watch/9f6823a5-1b9d-427f-a2a4-4afb7c1514e4",
+        "isLocal": false,
+        "views": 112,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "comments": 0,
+        "isLive": false,
+        "nsfw": true,
+        "nsfwFlags": 1,
+        "nsfwSummary": null,
+        "aspectRatio": 1.7778,
+        "account": {
+          "id": 818254,
+          "name": "gorror",
+          "displayName": "jewish gore whore 🤡",
+          "url": "https://spectra.video/accounts/gorror",
+          "host": "spectra.video",
+          "avatars": [
+            {
+              "url": "https://spectra.video/lazy-static/avatars/1a1e9147-8aad-48c7-894a-f114472b5ef6.png",
+              "path": "/lazy-static/avatars/1a1e9147-8aad-48c7-894a-f114472b5ef6.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/1a1e9147-8aad-48c7-894a-f114472b5ef6.png",
+              "width": 48,
+              "createdAt": "2026-09-17T23:46:40.355Z",
+              "updatedAt": "2026-09-17T23:46:40.355Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/2429e8b6-e1d5-4100-bc36-9fda678031ef.png",
+              "path": "/lazy-static/avatars/2429e8b6-e1d5-4100-bc36-9fda678031ef.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/2429e8b6-e1d5-4100-bc36-9fda678031ef.png",
+              "width": 120,
+              "createdAt": "2026-09-17T23:46:40.344Z",
+              "updatedAt": "2026-09-17T23:46:40.344Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/1ed51014-88b9-491a-a516-831333a6cfe6.png",
+              "path": "/lazy-static/avatars/1ed51014-88b9-491a-a516-831333a6cfe6.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/1ed51014-88b9-491a-a516-831333a6cfe6.png",
+              "width": 600,
+              "createdAt": "2026-09-17T23:46:40.334Z",
+              "updatedAt": "2026-09-17T23:46:40.334Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/855ddb98-4629-473e-8f76-ae26c7a5e334.png",
+              "path": "/lazy-static/avatars/855ddb98-4629-473e-8f76-ae26c7a5e334.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/855ddb98-4629-473e-8f76-ae26c7a5e334.png",
+              "width": 1500,
+              "createdAt": "2026-09-17T23:46:40.313Z",
+              "updatedAt": "2026-09-17T23:46:40.313Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 6661,
+          "name": "horrorjunk",
+          "displayName": "Horror Junk Food",
+          "url": "https://spectra.video/video-channels/horrorjunk",
+          "host": "spectra.video",
+          "avatars": [
+            {
+              "url": "https://spectra.video/lazy-static/avatars/35d1ba99-8d23-45af-9387-2f9a893407dc.jpg",
+              "path": "/lazy-static/avatars/35d1ba99-8d23-45af-9387-2f9a893407dc.jpg",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/35d1ba99-8d23-45af-9387-2f9a893407dc.jpg",
+              "width": 48,
+              "createdAt": "2025-02-17T17:14:40.471Z",
+              "updatedAt": "2025-02-17T17:14:40.471Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/15008074-ca53-4321-8f98-246b970e4b21.jpg",
+              "path": "/lazy-static/avatars/15008074-ca53-4321-8f98-246b970e4b21.jpg",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/15008074-ca53-4321-8f98-246b970e4b21.jpg",
+              "width": 120,
+              "createdAt": "2025-02-17T17:14:40.470Z",
+              "updatedAt": "2025-02-17T17:14:40.470Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/039eebf5-c7d8-4bf3-9ce3-5be1bd5b38d1.jpg",
+              "path": "/lazy-static/avatars/039eebf5-c7d8-4bf3-9ce3-5be1bd5b38d1.jpg",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/039eebf5-c7d8-4bf3-9ce3-5be1bd5b38d1.jpg",
+              "width": 600,
+              "createdAt": "2025-02-17T17:14:40.468Z",
+              "updatedAt": "2025-02-17T17:14:40.468Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/ef06c3c8-044a-4347-bc82-3d6fc8f61c34.jpg",
+              "path": "/lazy-static/avatars/ef06c3c8-044a-4347-bc82-3d6fc8f61c34.jpg",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/ef06c3c8-044a-4347-bc82-3d6fc8f61c34.jpg",
+              "width": 1500,
+              "createdAt": "2025-02-17T17:14:40.467Z",
+              "updatedAt": "2025-02-17T17:14:40.467Z"
+            }
+          ]
+        },
+        "hotScore": 0.00006115858817901415,
+        "rawHotScore": 6323.649804099399
+      },
+      {
+        "id": 290796,
+        "uuid": "6d5c7c70-36c5-4c46-bf34-60dd70852c02",
+        "shortUUID": "evfMLVg3R3Au6mRjZ91buA",
+        "score": 0.996969696969697,
+        "createdAt": "2026-07-19T16:51:08.443Z",
+        "updatedAt": "2026-09-26T12:07:41.683Z",
+        "publishedAt": "2026-07-19T16:51:11.241Z",
+        "originallyPublishedAt": null,
+        "category": {
+          "id": 2,
+          "label": "Films"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": "en",
+          "label": "English"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "name": "The Horrorgirl Mixtape",
+        "description": "After making montages of horror films for about year i collected a handful together to curate a mixtape celebration of scream queens in all their bloody, sexy glory!!  This is the Horrorgirl Mixtape!! thank you everyone for watching mwauh :3\r\n\r\nLog on lb -> https://boxd.it/15RMg",
+        "truncatedDescription": "After making montages of horror films for about year i collected a handful together to curate a mixtape celebration of scream queens in all their bloody, sexy glory!!  This is the Horrorgirl Mixtape!! thank you everyone for watching mwauh :3\r\n\r\nLo...",
+        "duration": 1638,
+        "tags": [
+          "horror",
+          "mixtape",
+          "x-rated"
+        ],
+        "thumbnailPath": "/lazy-static/thumbnails/a1dcd716-7ba5-4f8c-8ec0-c0f7a741cdce.png",
+        "thumbnailUrl": "https://spectra.video/lazy-static/thumbnails/a1dcd716-7ba5-4f8c-8ec0-c0f7a741cdce.png",
+        "previewPath": "/lazy-static/thumbnails/c2d5b783-9b02-41ad-9b7f-b44bd193a663.png",
+        "previewUrl": "https://spectra.video/lazy-static/thumbnails/c2d5b783-9b02-41ad-9b7f-b44bd193a663.png",
+        "thumbnails": [
+          {
+            "height": 157,
+            "width": 280,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://spectra.video/lazy-static/thumbnails/a1dcd716-7ba5-4f8c-8ec0-c0f7a741cdce.png"
+          },
+          {
+            "height": 480,
+            "width": 850,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://spectra.video/lazy-static/thumbnails/c2d5b783-9b02-41ad-9b7f-b44bd193a663.png"
+          }
+        ],
+        "embedPath": "/videos/embed/evfMLVg3R3Au6mRjZ91buA",
+        "embedUrl": "https://spectra.video/videos/embed/evfMLVg3R3Au6mRjZ91buA",
+        "url": "https://spectra.video/videos/watch/6d5c7c70-36c5-4c46-bf34-60dd70852c02",
+        "isLocal": false,
+        "views": 84,
+        "viewers": 0,
+        "likes": 1,
+        "dislikes": 0,
+        "comments": 2,
+        "isLive": false,
+        "nsfw": true,
+        "nsfwFlags": 3,
+        "nsfwSummary": null,
+        "aspectRatio": 1.3333,
+        "account": {
+          "id": 818254,
+          "name": "gorror",
+          "displayName": "jewish gore whore 🤡",
+          "url": "https://spectra.video/accounts/gorror",
+          "host": "spectra.video",
+          "avatars": [
+            {
+              "url": "https://spectra.video/lazy-static/avatars/1a1e9147-8aad-48c7-894a-f114472b5ef6.png",
+              "path": "/lazy-static/avatars/1a1e9147-8aad-48c7-894a-f114472b5ef6.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/1a1e9147-8aad-48c7-894a-f114472b5ef6.png",
+              "width": 48,
+              "height": 48,
+              "createdAt": "2026-09-17T23:46:40.355Z",
+              "updatedAt": "2026-09-17T23:46:40.355Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/2429e8b6-e1d5-4100-bc36-9fda678031ef.png",
+              "path": "/lazy-static/avatars/2429e8b6-e1d5-4100-bc36-9fda678031ef.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/2429e8b6-e1d5-4100-bc36-9fda678031ef.png",
+              "width": 120,
+              "height": 120,
+              "createdAt": "2026-09-17T23:46:40.344Z",
+              "updatedAt": "2026-09-17T23:46:40.344Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/1ed51014-88b9-491a-a516-831333a6cfe6.png",
+              "path": "/lazy-static/avatars/1ed51014-88b9-491a-a516-831333a6cfe6.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/1ed51014-88b9-491a-a516-831333a6cfe6.png",
+              "width": 600,
+              "height": 600,
+              "createdAt": "2026-09-17T23:46:40.334Z",
+              "updatedAt": "2026-09-17T23:46:40.334Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/855ddb98-4629-473e-8f76-ae26c7a5e334.png",
+              "path": "/lazy-static/avatars/855ddb98-4629-473e-8f76-ae26c7a5e334.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/855ddb98-4629-473e-8f76-ae26c7a5e334.png",
+              "width": 1500,
+              "height": 1500,
+              "createdAt": "2026-09-17T23:46:40.313Z",
+              "updatedAt": "2026-09-17T23:46:40.313Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 6661,
+          "name": "horrorjunk",
+          "displayName": "Horror Junk Food",
+          "url": "https://spectra.video/video-channels/horrorjunk",
+          "host": "spectra.video",
+          "avatars": [
+            {
+              "url": "https://spectra.video/lazy-static/avatars/35d1ba99-8d23-45af-9387-2f9a893407dc.jpg",
+              "path": "/lazy-static/avatars/35d1ba99-8d23-45af-9387-2f9a893407dc.jpg",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/35d1ba99-8d23-45af-9387-2f9a893407dc.jpg",
+              "width": 48,
+              "height": 48,
+              "createdAt": "2025-02-17T17:14:40.471Z",
+              "updatedAt": "2025-02-17T17:14:40.471Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/15008074-ca53-4321-8f98-246b970e4b21.jpg",
+              "path": "/lazy-static/avatars/15008074-ca53-4321-8f98-246b970e4b21.jpg",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/15008074-ca53-4321-8f98-246b970e4b21.jpg",
+              "width": 120,
+              "height": 120,
+              "createdAt": "2025-02-17T17:14:40.470Z",
+              "updatedAt": "2025-02-17T17:14:40.470Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/039eebf5-c7d8-4bf3-9ce3-5be1bd5b38d1.jpg",
+              "path": "/lazy-static/avatars/039eebf5-c7d8-4bf3-9ce3-5be1bd5b38d1.jpg",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/039eebf5-c7d8-4bf3-9ce3-5be1bd5b38d1.jpg",
+              "width": 600,
+              "height": 600,
+              "createdAt": "2025-02-17T17:14:40.468Z",
+              "updatedAt": "2025-02-17T17:14:40.468Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/ef06c3c8-044a-4347-bc82-3d6fc8f61c34.jpg",
+              "path": "/lazy-static/avatars/ef06c3c8-044a-4347-bc82-3d6fc8f61c34.jpg",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/ef06c3c8-044a-4347-bc82-3d6fc8f61c34.jpg",
+              "width": 1500,
+              "height": 1500,
+              "createdAt": "2025-02-17T17:14:40.467Z",
+              "updatedAt": "2025-02-17T17:14:40.467Z"
+            }
+          ]
+        },
+        "hotScore": 5871.011995481062,
+        "rawHotScore": 7338.764994351327
+      },
+      {
+        "id": 284889,
+        "uuid": "0bcac56e-bbe3-41ff-b814-3a75f077889f",
+        "shortUUID": "2ssrxS4ctusZ3Nv4LRBCRM",
+        "score": 0.996969696969697,
+        "createdAt": "2026-05-23T22:18:35.869Z",
+        "updatedAt": "2026-09-26T12:07:41.326Z",
+        "publishedAt": "2026-05-23T22:19:47.433Z",
+        "originallyPublishedAt": null,
+        "category": {
+          "id": 9,
+          "label": "Comedy"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": "en",
+          "label": "English"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "name": "The Horror, The Horror Clip: Scrapbook(2000), kinda hot?",
+        "description": "a request from patrizia\r\n\r\nclipped from episode 8 of The Horror, The Horror! with Patrizia Dahlia Thompson\r\nlisten to the horror, the horror https://thehorrorthehorrorpod.buzzsprout.com/\r\nsupport the horror, the horror https://patreon.com/Ththpodcast\r\n\r\ni guess i have a type. if you too have a transgirl-run underground horror podcast reach out jewishmixtape@protonmail.com",
+        "truncatedDescription": "a request from patrizia\r\n\r\nclipped from episode 8 of The Horror, The Horror! with Patrizia Dahlia Thompson\r\nlisten to the horror, the horror https://thehorrorthehorrorpod.buzzsprout.com/\r\nsupport the horror, the horror https://patreon.com/Ththpodc...",
+        "duration": 263,
+        "tags": [
+          "horror",
+          "podcast",
+          "sov"
+        ],
+        "thumbnailPath": "/lazy-static/thumbnails/66edaa1b-38bc-4ea4-ab36-ae4892557fd9.png",
+        "thumbnailUrl": "https://spectra.video/lazy-static/thumbnails/66edaa1b-38bc-4ea4-ab36-ae4892557fd9.png",
+        "previewPath": "/lazy-static/thumbnails/7c5b49ab-77ef-4e20-b923-8a30bc6f10e2.png",
+        "previewUrl": "https://spectra.video/lazy-static/thumbnails/7c5b49ab-77ef-4e20-b923-8a30bc6f10e2.png",
+        "thumbnails": [
+          {
+            "height": 157,
+            "width": 280,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://spectra.video/lazy-static/thumbnails/66edaa1b-38bc-4ea4-ab36-ae4892557fd9.png"
+          },
+          {
+            "height": 480,
+            "width": 850,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://spectra.video/lazy-static/thumbnails/7c5b49ab-77ef-4e20-b923-8a30bc6f10e2.png"
+          }
+        ],
+        "embedPath": "/videos/embed/2ssrxS4ctusZ3Nv4LRBCRM",
+        "embedUrl": "https://spectra.video/videos/embed/2ssrxS4ctusZ3Nv4LRBCRM",
+        "url": "https://spectra.video/videos/watch/0bcac56e-bbe3-41ff-b814-3a75f077889f",
+        "isLocal": false,
+        "views": 72,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "comments": 0,
+        "isLive": false,
+        "nsfw": true,
+        "nsfwFlags": 3,
+        "nsfwSummary": "rape fest 3000",
+        "aspectRatio": 1.3333,
+        "account": {
+          "id": 818254,
+          "name": "gorror",
+          "displayName": "jewish gore whore 🤡",
+          "url": "https://spectra.video/accounts/gorror",
+          "host": "spectra.video",
+          "avatars": [
+            {
+              "url": "https://spectra.video/lazy-static/avatars/1a1e9147-8aad-48c7-894a-f114472b5ef6.png",
+              "path": "/lazy-static/avatars/1a1e9147-8aad-48c7-894a-f114472b5ef6.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/1a1e9147-8aad-48c7-894a-f114472b5ef6.png",
+              "width": 48,
+              "height": 48,
+              "createdAt": "2026-09-17T23:46:40.355Z",
+              "updatedAt": "2026-09-17T23:46:40.355Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/2429e8b6-e1d5-4100-bc36-9fda678031ef.png",
+              "path": "/lazy-static/avatars/2429e8b6-e1d5-4100-bc36-9fda678031ef.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/2429e8b6-e1d5-4100-bc36-9fda678031ef.png",
+              "width": 120,
+              "height": 120,
+              "createdAt": "2026-09-17T23:46:40.344Z",
+              "updatedAt": "2026-09-17T23:46:40.344Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/1ed51014-88b9-491a-a516-831333a6cfe6.png",
+              "path": "/lazy-static/avatars/1ed51014-88b9-491a-a516-831333a6cfe6.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/1ed51014-88b9-491a-a516-831333a6cfe6.png",
+              "width": 600,
+              "height": 600,
+              "createdAt": "2026-09-17T23:46:40.334Z",
+              "updatedAt": "2026-09-17T23:46:40.334Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/855ddb98-4629-473e-8f76-ae26c7a5e334.png",
+              "path": "/lazy-static/avatars/855ddb98-4629-473e-8f76-ae26c7a5e334.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/855ddb98-4629-473e-8f76-ae26c7a5e334.png",
+              "width": 1500,
+              "height": 1500,
+              "createdAt": "2026-09-17T23:46:40.313Z",
+              "updatedAt": "2026-09-17T23:46:40.313Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 6661,
+          "name": "horrorjunk",
+          "displayName": "Horror Junk Food",
+          "url": "https://spectra.video/video-channels/horrorjunk",
+          "host": "spectra.video",
+          "avatars": [
+            {
+              "url": "https://spectra.video/lazy-static/avatars/35d1ba99-8d23-45af-9387-2f9a893407dc.jpg",
+              "path": "/lazy-static/avatars/35d1ba99-8d23-45af-9387-2f9a893407dc.jpg",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/35d1ba99-8d23-45af-9387-2f9a893407dc.jpg",
+              "width": 48,
+              "height": 48,
+              "createdAt": "2025-02-17T17:14:40.471Z",
+              "updatedAt": "2025-02-17T17:14:40.471Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/15008074-ca53-4321-8f98-246b970e4b21.jpg",
+              "path": "/lazy-static/avatars/15008074-ca53-4321-8f98-246b970e4b21.jpg",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/15008074-ca53-4321-8f98-246b970e4b21.jpg",
+              "width": 120,
+              "height": 120,
+              "createdAt": "2025-02-17T17:14:40.470Z",
+              "updatedAt": "2025-02-17T17:14:40.470Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/039eebf5-c7d8-4bf3-9ce3-5be1bd5b38d1.jpg",
+              "path": "/lazy-static/avatars/039eebf5-c7d8-4bf3-9ce3-5be1bd5b38d1.jpg",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/039eebf5-c7d8-4bf3-9ce3-5be1bd5b38d1.jpg",
+              "width": 600,
+              "height": 600,
+              "createdAt": "2025-02-17T17:14:40.468Z",
+              "updatedAt": "2025-02-17T17:14:40.468Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/ef06c3c8-044a-4347-bc82-3d6fc8f61c34.jpg",
+              "path": "/lazy-static/avatars/ef06c3c8-044a-4347-bc82-3d6fc8f61c34.jpg",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/ef06c3c8-044a-4347-bc82-3d6fc8f61c34.jpg",
+              "width": 1500,
+              "height": 1500,
+              "createdAt": "2025-02-17T17:14:40.467Z",
+              "updatedAt": "2025-02-17T17:14:40.467Z"
+            }
+          ]
+        },
+        "hotScore": 24.610683918810643,
+        "rawHotScore": 7162.6517219732705
+      },
+      {
+        "id": 64577,
+        "uuid": "bfea8562-569f-4204-a111-153428b082cf",
+        "shortUUID": "pGw9K5DwRGATncYYBmparH",
+        "score": 0.996969696969697,
+        "createdAt": "2026-06-25T13:36:55.067Z",
+        "updatedAt": "2026-09-26T15:55:50.493Z",
+        "publishedAt": "2026-06-25T13:39:04.409Z",
+        "originallyPublishedAt": "2014-07-17T12:54:00.000Z",
+        "category": {
+          "id": 1006,
+          "label": "Fanfiction Readings"
+        },
+        "licence": {
+          "id": 1,
+          "label": "Attribution"
+        },
+        "language": {
+          "id": "en",
+          "label": "English"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "name": "Horror At The Secret Hotel (Part 1) (2014) (Fanfic Reading) (Cringe Warning)",
+        "description": "The CMC sneak out for a secret holiday, only to be catapulted into a maelstrom of chaos, as an old enemywatches from the shadows, having awaited them for so long...\r\n\r\nI'll be straight up with this. The second half is cringe. I apologize in the video, but it bears repeating. It was an innocent idea that went well beyond what it should have been. In my opinion, you should just wait for the end of the scene just before the Ferris Wheel part, then skip to part 2. If you want to see this idea done better, just watch the original Vacational Death Cruise comic, (which, you can find on YouTube, or you can find the lost dub of it on my archive channel).\r\n\r\nWritten on - 17 July 2014\r\nArt, by me - Completed on: 21 June 2026  \r\nScootaloo PNG, by me - Completed on - 23 July 2016",
+        "truncatedDescription": "The CMC sneak out for a secret holiday, only to be catapulted into a maelstrom of chaos, as an old enemywatches from the shadows, having awaited them for so long...\r\n\r\nI'll be straight up with this. The second half is cringe. I apologize in the vi...",
+        "duration": 1702,
+        "tags": [
+          "CMC",
+          "Fanfic Reading",
+          "Hotel Horror Trilogy",
+          "MLP AU 2.0 (2014)",
+          "Voice Recording"
+        ],
+        "thumbnailPath": "/lazy-static/thumbnails/07ada90c-2e79-4cd7-95d6-5ee25fdd7008.png",
+        "thumbnailUrl": "https://www.pony.tube/lazy-static/thumbnails/07ada90c-2e79-4cd7-95d6-5ee25fdd7008.png",
+        "previewPath": "/lazy-static/thumbnails/7741e626-541e-405f-b7cb-25e38e0c9562.png",
+        "previewUrl": "https://www.pony.tube/lazy-static/thumbnails/7741e626-541e-405f-b7cb-25e38e0c9562.png",
+        "thumbnails": [
+          {
+            "height": 157,
+            "width": 280,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://pony.tube/lazy-static/thumbnails/07ada90c-2e79-4cd7-95d6-5ee25fdd7008.png"
+          },
+          {
+            "height": 480,
+            "width": 850,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://pony.tube/lazy-static/thumbnails/6dd2730e-035f-4127-b460-ffa4c93f116c.png"
+          },
+          {
+            "height": 720,
+            "width": 1280,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://pony.tube/lazy-static/thumbnails/a8cf8d8f-1805-47f1-9b7a-c53878ea6e14.png"
+          },
+          {
+            "height": 1400,
+            "width": 1400,
+            "aspectRatio": "1:1",
+            "fileUrl": "https://pony.tube/lazy-static/thumbnails/697286f5-3ea5-4d18-807d-da66bb6dfc79.png"
+          },
+          {
+            "height": 1080,
+            "width": 1920,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://pony.tube/lazy-static/thumbnails/7741e626-541e-405f-b7cb-25e38e0c9562.png"
+          }
+        ],
+        "embedPath": "/videos/embed/pGw9K5DwRGATncYYBmparH",
+        "embedUrl": "https://www.pony.tube/videos/embed/pGw9K5DwRGATncYYBmparH",
+        "url": "https://www.pony.tube/videos/watch/bfea8562-569f-4204-a111-153428b082cf",
+        "isLocal": false,
+        "views": 47,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "comments": 1,
+        "isLive": false,
+        "nsfw": false,
+        "nsfwFlags": 0,
+        "nsfwSummary": null,
+        "aspectRatio": 1.7778,
+        "account": {
+          "id": 701738,
+          "name": "pony_potential",
+          "displayName": "Realistic Cartoon Horses",
+          "url": "https://pony.tube/accounts/pony_potential",
+          "host": "pony.tube",
+          "avatars": [
+            {
+              "url": "https://pony.tube/lazy-static/avatars/f38897ae-fdd3-464e-b44a-96c9fc6ece86.gif",
+              "path": "/lazy-static/avatars/f38897ae-fdd3-464e-b44a-96c9fc6ece86.gif",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/f38897ae-fdd3-464e-b44a-96c9fc6ece86.gif",
+              "width": 1500,
+              "height": 1500,
+              "createdAt": "2026-01-24T14:39:43.203Z",
+              "updatedAt": "2026-01-24T14:39:43.203Z"
+            },
+            {
+              "url": "https://pony.tube/lazy-static/avatars/bffb1166-1b20-4ec1-b66a-9c987492c949.gif",
+              "path": "/lazy-static/avatars/bffb1166-1b20-4ec1-b66a-9c987492c949.gif",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/bffb1166-1b20-4ec1-b66a-9c987492c949.gif",
+              "width": 600,
+              "height": 600,
+              "createdAt": "2026-01-24T14:39:43.204Z",
+              "updatedAt": "2026-01-24T14:39:43.204Z"
+            },
+            {
+              "url": "https://pony.tube/lazy-static/avatars/f8b47ffd-45e2-4355-baf2-2b26c20aa11e.gif",
+              "path": "/lazy-static/avatars/f8b47ffd-45e2-4355-baf2-2b26c20aa11e.gif",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/f8b47ffd-45e2-4355-baf2-2b26c20aa11e.gif",
+              "width": 120,
+              "height": 120,
+              "createdAt": "2026-01-24T14:39:43.205Z",
+              "updatedAt": "2026-01-24T14:39:43.205Z"
+            },
+            {
+              "url": "https://pony.tube/lazy-static/avatars/03b2a5ee-6e3e-43cc-a95d-7d7dd444d682.gif",
+              "path": "/lazy-static/avatars/03b2a5ee-6e3e-43cc-a95d-7d7dd444d682.gif",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/03b2a5ee-6e3e-43cc-a95d-7d7dd444d682.gif",
+              "width": 48,
+              "height": 48,
+              "createdAt": "2026-01-24T14:39:43.205Z",
+              "updatedAt": "2026-01-24T14:39:43.205Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 11895,
+          "name": "fanfics_exhumed",
+          "displayName": "RCH's Fanfic Vault",
+          "url": "https://pony.tube/video-channels/fanfics_exhumed",
+          "host": "pony.tube",
+          "avatars": [
+            {
+              "url": "https://pony.tube/lazy-static/avatars/3c0a865f-4ad9-48de-9232-55e8e58dd0a8.png",
+              "path": "/lazy-static/avatars/3c0a865f-4ad9-48de-9232-55e8e58dd0a8.png",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/3c0a865f-4ad9-48de-9232-55e8e58dd0a8.png",
+              "width": 1500,
+              "height": 1500,
+              "createdAt": "2026-05-02T03:11:04.201Z",
+              "updatedAt": "2026-05-02T03:11:04.201Z"
+            },
+            {
+              "url": "https://pony.tube/lazy-static/avatars/7decb1a5-3449-404d-8c79-be1b5a6c87a3.png",
+              "path": "/lazy-static/avatars/7decb1a5-3449-404d-8c79-be1b5a6c87a3.png",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/7decb1a5-3449-404d-8c79-be1b5a6c87a3.png",
+              "width": 600,
+              "height": 600,
+              "createdAt": "2026-05-02T03:11:04.203Z",
+              "updatedAt": "2026-05-02T03:11:04.203Z"
+            },
+            {
+              "url": "https://pony.tube/lazy-static/avatars/82bae2ae-a62e-4c78-b6df-d3307226fd7c.png",
+              "path": "/lazy-static/avatars/82bae2ae-a62e-4c78-b6df-d3307226fd7c.png",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/82bae2ae-a62e-4c78-b6df-d3307226fd7c.png",
+              "width": 120,
+              "height": 120,
+              "createdAt": "2026-05-02T03:11:04.204Z",
+              "updatedAt": "2026-05-02T03:11:04.204Z"
+            },
+            {
+              "url": "https://pony.tube/lazy-static/avatars/f85925e6-26af-483e-91e7-a33f6f023faa.png",
+              "path": "/lazy-static/avatars/f85925e6-26af-483e-91e7-a33f6f023faa.png",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/f85925e6-26af-483e-91e7-a33f6f023faa.png",
+              "width": 48,
+              "height": 48,
+              "createdAt": "2026-05-02T03:11:04.205Z",
+              "updatedAt": "2026-05-02T03:11:04.205Z"
+            }
+          ]
+        },
+        "hotScore": 5.273056014776916e-12,
+        "rawHotScore": 7215.942671685163
+      },
+      {
+        "id": 64597,
+        "uuid": "10127d39-410b-43b2-bff1-2df77af51f94",
+        "shortUUID": "2Z7qhbxS3igNuFFKYPyE5C",
+        "score": 0.996969696969697,
+        "createdAt": "2026-06-29T04:51:43.823Z",
+        "updatedAt": "2026-09-12T16:55:50.090Z",
+        "publishedAt": "2026-06-29T04:54:57.072Z",
+        "originallyPublishedAt": "2014-07-21T04:42:00.000Z",
+        "category": {
+          "id": 1006,
+          "label": "Fanfiction Readings"
+        },
+        "licence": {
+          "id": 1,
+          "label": "Attribution"
+        },
+        "language": {
+          "id": "en",
+          "label": "English"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "name": "Horror At The Secret Hotel (Part 2) (2014) (Fanfic Reading)",
+        "description": "The CMC awake in the Shockwave Hotel, only to find the ponies feeing in terror. A Dark Shade is in the halls, and the fighters are still outside, hunting them. Worse still. The shade seems familiar; as more memories begin to burn in Scootaloo's mi...",
+        "truncatedDescription": "The CMC awake in the Shockwave Hotel, only to find the ponies feeing in terror. A Dark Shade is in the halls, and the fighters are still outside, hunting them. Worse still. The shade seems familiar; as more memories begin to burn in Scootaloo's mi...",
+        "duration": 2832,
+        "tags": [
+          "CMC",
+          "Fanfic Reading",
+          "Hotel Horror Trilogy",
+          "MLP AU 2.0 (2014)",
+          "Voice Recording"
+        ],
+        "thumbnailPath": "/lazy-static/thumbnails/79a7ad57-f1e3-4c07-9b53-32deab29f52f.png",
+        "thumbnailUrl": "https://www.pony.tube/lazy-static/thumbnails/79a7ad57-f1e3-4c07-9b53-32deab29f52f.png",
+        "previewPath": "/lazy-static/thumbnails/539d2ceb-202e-4353-a09c-1883d0a5f4b6.png",
+        "previewUrl": "https://www.pony.tube/lazy-static/thumbnails/539d2ceb-202e-4353-a09c-1883d0a5f4b6.png",
+        "thumbnails": [
+          {
+            "height": 1400,
+            "width": 1400,
+            "aspectRatio": "1:1",
+            "fileUrl": "https://pony.tube/lazy-static/thumbnails/9a522f8f-a200-4d73-9e15-6d557e74cb3c.png"
+          },
+          {
+            "height": 1080,
+            "width": 1920,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://pony.tube/lazy-static/thumbnails/539d2ceb-202e-4353-a09c-1883d0a5f4b6.png"
+          },
+          {
+            "height": 157,
+            "width": 280,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://pony.tube/lazy-static/thumbnails/79a7ad57-f1e3-4c07-9b53-32deab29f52f.png"
+          },
+          {
+            "height": 480,
+            "width": 850,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://pony.tube/lazy-static/thumbnails/6636a80d-120d-42c2-9a2f-6e25815d3cfa.png"
+          },
+          {
+            "height": 720,
+            "width": 1280,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://pony.tube/lazy-static/thumbnails/5e4859b3-90df-4230-9272-3bf7889fb60e.png"
+          }
+        ],
+        "embedPath": "/videos/embed/2Z7qhbxS3igNuFFKYPyE5C",
+        "embedUrl": "https://www.pony.tube/videos/embed/2Z7qhbxS3igNuFFKYPyE5C",
+        "url": "https://www.pony.tube/videos/watch/10127d39-410b-43b2-bff1-2df77af51f94",
+        "isLocal": false,
+        "views": 43,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "comments": 2,
+        "isLive": false,
+        "nsfw": false,
+        "nsfwFlags": 0,
+        "nsfwSummary": null,
+        "aspectRatio": 1.7778,
+        "account": {
+          "id": 701738,
+          "name": "pony_potential",
+          "displayName": "Realistic Cartoon Horses",
+          "url": "https://pony.tube/accounts/pony_potential",
+          "host": "pony.tube",
+          "avatars": [
+            {
+              "url": "https://pony.tube/lazy-static/avatars/f38897ae-fdd3-464e-b44a-96c9fc6ece86.gif",
+              "path": "/lazy-static/avatars/f38897ae-fdd3-464e-b44a-96c9fc6ece86.gif",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/f38897ae-fdd3-464e-b44a-96c9fc6ece86.gif",
+              "width": 1500,
+              "createdAt": "2026-01-24T14:39:43.203Z",
+              "updatedAt": "2026-01-24T14:39:43.203Z"
+            },
+            {
+              "url": "https://pony.tube/lazy-static/avatars/bffb1166-1b20-4ec1-b66a-9c987492c949.gif",
+              "path": "/lazy-static/avatars/bffb1166-1b20-4ec1-b66a-9c987492c949.gif",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/bffb1166-1b20-4ec1-b66a-9c987492c949.gif",
+              "width": 600,
+              "createdAt": "2026-01-24T14:39:43.204Z",
+              "updatedAt": "2026-01-24T14:39:43.204Z"
+            },
+            {
+              "url": "https://pony.tube/lazy-static/avatars/f8b47ffd-45e2-4355-baf2-2b26c20aa11e.gif",
+              "path": "/lazy-static/avatars/f8b47ffd-45e2-4355-baf2-2b26c20aa11e.gif",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/f8b47ffd-45e2-4355-baf2-2b26c20aa11e.gif",
+              "width": 120,
+              "createdAt": "2026-01-24T14:39:43.205Z",
+              "updatedAt": "2026-01-24T14:39:43.205Z"
+            },
+            {
+              "url": "https://pony.tube/lazy-static/avatars/03b2a5ee-6e3e-43cc-a95d-7d7dd444d682.gif",
+              "path": "/lazy-static/avatars/03b2a5ee-6e3e-43cc-a95d-7d7dd444d682.gif",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/03b2a5ee-6e3e-43cc-a95d-7d7dd444d682.gif",
+              "width": 48,
+              "createdAt": "2026-01-24T14:39:43.205Z",
+              "updatedAt": "2026-01-24T14:39:43.205Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 11895,
+          "name": "fanfics_exhumed",
+          "displayName": "RCH's Fanfic Vault",
+          "url": "https://pony.tube/video-channels/fanfics_exhumed",
+          "host": "pony.tube",
+          "avatars": [
+            {
+              "url": "https://pony.tube/lazy-static/avatars/3c0a865f-4ad9-48de-9232-55e8e58dd0a8.png",
+              "path": "/lazy-static/avatars/3c0a865f-4ad9-48de-9232-55e8e58dd0a8.png",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/3c0a865f-4ad9-48de-9232-55e8e58dd0a8.png",
+              "width": 1500,
+              "createdAt": "2026-05-02T03:11:04.201Z",
+              "updatedAt": "2026-05-02T03:11:04.201Z"
+            },
+            {
+              "url": "https://pony.tube/lazy-static/avatars/7decb1a5-3449-404d-8c79-be1b5a6c87a3.png",
+              "path": "/lazy-static/avatars/7decb1a5-3449-404d-8c79-be1b5a6c87a3.png",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/7decb1a5-3449-404d-8c79-be1b5a6c87a3.png",
+              "width": 600,
+              "createdAt": "2026-05-02T03:11:04.203Z",
+              "updatedAt": "2026-05-02T03:11:04.203Z"
+            },
+            {
+              "url": "https://pony.tube/lazy-static/avatars/82bae2ae-a62e-4c78-b6df-d3307226fd7c.png",
+              "path": "/lazy-static/avatars/82bae2ae-a62e-4c78-b6df-d3307226fd7c.png",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/82bae2ae-a62e-4c78-b6df-d3307226fd7c.png",
+              "width": 120,
+              "createdAt": "2026-05-02T03:11:04.204Z",
+              "updatedAt": "2026-05-02T03:11:04.204Z"
+            },
+            {
+              "url": "https://pony.tube/lazy-static/avatars/f85925e6-26af-483e-91e7-a33f6f023faa.png",
+              "path": "/lazy-static/avatars/f85925e6-26af-483e-91e7-a33f6f023faa.png",
+              "fileUrl": "https://pony.tube/lazy-static/avatars/f85925e6-26af-483e-91e7-a33f6f023faa.png",
+              "width": 48,
+              "createdAt": "2026-05-02T03:11:04.205Z",
+              "updatedAt": "2026-05-02T03:11:04.205Z"
+            }
+          ]
+        },
+        "hotScore": 2.004010933958776,
+        "rawHotScore": 7290.549306922092
+      },
+      {
+        "id": 284389,
+        "uuid": "510ec5da-d0a1-405f-bbed-977c38ae96cb",
+        "shortUUID": "b1xswt8YPXjeTbvZ7BfHav",
+        "score": 0.996969696969697,
+        "createdAt": "2026-05-19T07:38:40.691Z",
+        "updatedAt": "2026-09-26T12:37:45.000Z",
+        "publishedAt": "2026-05-19T07:39:28.139Z",
+        "originallyPublishedAt": null,
+        "category": {
+          "id": 9,
+          "label": "Comedy"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": "en",
+          "label": "English"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "name": "horror meme compilation 2",
+        "description": null,
+        "truncatedDescription": null,
+        "duration": 353,
+        "tags": [
+          "horror",
+          "meme"
+        ],
+        "thumbnailPath": "/lazy-static/thumbnails/07d80f19-927a-40ff-b14a-90b2c80c0fd3.jpg",
+        "thumbnailUrl": "https://spectra.video/lazy-static/thumbnails/07d80f19-927a-40ff-b14a-90b2c80c0fd3.jpg",
+        "previewPath": "/lazy-static/thumbnails/b70da58e-6a35-4477-81a2-14dcff0c79a3.jpg",
+        "previewUrl": "https://spectra.video/lazy-static/thumbnails/b70da58e-6a35-4477-81a2-14dcff0c79a3.jpg",
+        "thumbnails": [
+          {
+            "height": 480,
+            "width": 850,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://spectra.video/lazy-static/thumbnails/b70da58e-6a35-4477-81a2-14dcff0c79a3.jpg"
+          },
+          {
+            "height": 157,
+            "width": 280,
+            "aspectRatio": "16:9",
+            "fileUrl": "https://spectra.video/lazy-static/thumbnails/07d80f19-927a-40ff-b14a-90b2c80c0fd3.jpg"
+          }
+        ],
+        "embedPath": "/videos/embed/b1xswt8YPXjeTbvZ7BfHav",
+        "embedUrl": "https://spectra.video/videos/embed/b1xswt8YPXjeTbvZ7BfHav",
+        "url": "https://spectra.video/videos/watch/510ec5da-d0a1-405f-bbed-977c38ae96cb",
+        "isLocal": false,
+        "views": 39,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "comments": 0,
+        "isLive": false,
+        "nsfw": false,
+        "nsfwFlags": 0,
+        "nsfwSummary": null,
+        "aspectRatio": 0.5625,
+        "account": {
+          "id": 818254,
+          "name": "gorror",
+          "displayName": "jewish gore whore 🤡",
+          "url": "https://spectra.video/accounts/gorror",
+          "host": "spectra.video",
+          "avatars": [
+            {
+              "url": "https://spectra.video/lazy-static/avatars/1a1e9147-8aad-48c7-894a-f114472b5ef6.png",
+              "path": "/lazy-static/avatars/1a1e9147-8aad-48c7-894a-f114472b5ef6.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/1a1e9147-8aad-48c7-894a-f114472b5ef6.png",
+              "width": 48,
+              "height": 48,
+              "createdAt": "2026-09-17T23:46:40.355Z",
+              "updatedAt": "2026-09-17T23:46:40.355Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/2429e8b6-e1d5-4100-bc36-9fda678031ef.png",
+              "path": "/lazy-static/avatars/2429e8b6-e1d5-4100-bc36-9fda678031ef.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/2429e8b6-e1d5-4100-bc36-9fda678031ef.png",
+              "width": 120,
+              "height": 120,
+              "createdAt": "2026-09-17T23:46:40.344Z",
+              "updatedAt": "2026-09-17T23:46:40.344Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/1ed51014-88b9-491a-a516-831333a6cfe6.png",
+              "path": "/lazy-static/avatars/1ed51014-88b9-491a-a516-831333a6cfe6.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/1ed51014-88b9-491a-a516-831333a6cfe6.png",
+              "width": 600,
+              "height": 600,
+              "createdAt": "2026-09-17T23:46:40.334Z",
+              "updatedAt": "2026-09-17T23:46:40.334Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/855ddb98-4629-473e-8f76-ae26c7a5e334.png",
+              "path": "/lazy-static/avatars/855ddb98-4629-473e-8f76-ae26c7a5e334.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/855ddb98-4629-473e-8f76-ae26c7a5e334.png",
+              "width": 1500,
+              "height": 1500,
+              "createdAt": "2026-09-17T23:46:40.313Z",
+              "updatedAt": "2026-09-17T23:46:40.313Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 10991,
+          "name": "memes",
+          "displayName": "The Wet Basement",
+          "url": "https://spectra.video/video-channels/memes",
+          "host": "spectra.video",
+          "avatars": [
+            {
+              "url": "https://spectra.video/lazy-static/avatars/87440e73-8a0e-4869-862f-2956de310fa3.png",
+              "path": "/lazy-static/avatars/87440e73-8a0e-4869-862f-2956de310fa3.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/87440e73-8a0e-4869-862f-2956de310fa3.png",
+              "width": 48,
+              "height": 48,
+              "createdAt": "2026-04-23T14:02:23.138Z",
+              "updatedAt": "2026-04-23T14:02:23.138Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/9d65a6cd-9624-47ea-b1ca-a55cb5429bb7.png",
+              "path": "/lazy-static/avatars/9d65a6cd-9624-47ea-b1ca-a55cb5429bb7.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/9d65a6cd-9624-47ea-b1ca-a55cb5429bb7.png",
+              "width": 120,
+              "height": 120,
+              "createdAt": "2026-04-23T14:02:23.137Z",
+              "updatedAt": "2026-04-23T14:02:23.137Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/f6a9437c-c712-45b2-90c6-e01d5f36edc5.png",
+              "path": "/lazy-static/avatars/f6a9437c-c712-45b2-90c6-e01d5f36edc5.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/f6a9437c-c712-45b2-90c6-e01d5f36edc5.png",
+              "width": 600,
+              "height": 600,
+              "createdAt": "2026-04-23T14:02:23.136Z",
+              "updatedAt": "2026-04-23T14:02:23.136Z"
+            },
+            {
+              "url": "https://spectra.video/lazy-static/avatars/a751e5e6-609f-47f5-83db-bae16ff55a90.png",
+              "path": "/lazy-static/avatars/a751e5e6-609f-47f5-83db-bae16ff55a90.png",
+              "fileUrl": "https://spectra.video/lazy-static/avatars/a751e5e6-609f-47f5-83db-bae16ff55a90.png",
+              "width": 1500,
+              "height": 1500,
+              "createdAt": "2026-04-23T14:02:23.134Z",
+              "updatedAt": "2026-04-23T14:02:23.134Z"
+            }
+          ]
+        },
+        "hotScore": 1.9638787950051104,
+        "rawHotScore": 7144.549435925396
+      }
+    ]
+  }
+}

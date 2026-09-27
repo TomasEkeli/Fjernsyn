@@ -132,6 +132,9 @@ import {
   writeFileWithPicker,
 } from '../../helpers/utils'
 import { processToBeAddedPlaylistVideo } from '../../helpers/playlists'
+import { isYouTubeChannelStub, peerTubeChannelsFromNewPipe, peerTubeStubToNewPipeEntry, resolveNewPipeAccounts } from '../../platform/subscriptionExchange'
+import { getPlatformLayer } from '../../platform/vue'
+import { importedPlaylistVideo, isYouTubeRecord, splitImportedPlatformFields } from '../../platform/records'
 
 const IMPORT_DIRECTORY_ID = 'data-settings-import'
 const START_IN_DIRECTORY = 'downloads'
@@ -243,7 +246,7 @@ async function importSubscriptions() {
   } else if (filename.endsWith('.json')) {
     const jsonContent = JSON.parse(content)
     if (jsonContent.subscriptions) {
-      importNewPipeSubscriptions(jsonContent)
+      await importNewPipeSubscriptions(jsonContent)
     } else {
       importYouTubeSubscriptions(jsonContent)
     }
@@ -553,7 +556,7 @@ function importOpmlYouTubeSubscriptions(data) {
 /**
  * @param {object} newPipeData
  */
-function importNewPipeSubscriptions(newPipeData) {
+async function importNewPipeSubscriptions(newPipeData) {
   if (typeof newPipeData.subscriptions === 'undefined') {
     showToast(t('Settings.Data Settings.Invalid subscriptions file'))
 
@@ -586,6 +589,25 @@ function importNewPipeSubscriptions(newPipeData) {
     const progressPercentage = (count / (newPipeSubscriptions.length - 1)) * 100
     store.commit('setProgressBarPercentage', progressPercentage)
   })
+
+  // Fjernsyn: PeerTube channels, and accounts as all their channels, while PeerTube is on (platform/subscriptionExchange.js)
+  const peerTube = peerTubeChannelsFromNewPipe(newPipeData.subscriptions)
+  if (!store.getters.getEnablePeerTube) {
+    const peerTubeCount = peerTube.channels.length + peerTube.accounts.length + peerTube.skipped
+    if (peerTubeCount > 0) { showToast(t('PeerTube.Import.Switched off', { count: peerTubeCount }, peerTubeCount)) }
+  } else {
+    const fromAccounts = await resolveNewPipeAccounts(peerTube.accounts, getPlatformLayer())
+    let added = 0
+    peerTube.channels.concat(fromAccounts.channels).forEach((channel) => {
+      if (!isChannelSubscribed(channel.id, subscriptions)) {
+        subscriptions.push(channel)
+        added++
+      }
+    })
+    const skipped = peerTube.skipped + fromAccounts.failed
+    if (added > 0) { showToast(t('PeerTube.Import.Channels imported', { count: added }, added)) }
+    if (skipped > 0) { showToast(t('PeerTube.Import.Skipped', { count: skipped }, skipped)) }
+  }
 
   primaryProfile.value.subscriptions = primaryProfile.value.subscriptions.concat(subscriptions)
   store.dispatch('updateProfile', primaryProfile.value)
@@ -649,7 +671,7 @@ async function exportYouTubeSubscriptions() {
   const dateStr = getTodayDateStrLocalTimezone()
   const exportFileName = 'youtube-subscriptions-' + dateStr + '.json'
 
-  const subscriptionsObject = profileList.value[0].subscriptions.map((channel) => {
+  const subscriptionsObject = profileList.value[0].subscriptions.filter(isYouTubeChannelStub).map((channel) => {
     const object = {
       contentDetails: {
         activityType: 'all',
@@ -701,7 +723,7 @@ async function exportOpmlYouTubeSubscriptions() {
 
   let opmlData = '<opml version="1.1"><body><outline text="YouTube Subscriptions" title="YouTube Subscriptions">'
 
-  profileList.value[0].subscriptions.forEach((channel) => {
+  profileList.value[0].subscriptions.filter(isYouTubeChannelStub).forEach((channel) => {
     const escapedName = escapeHTML(channel.name)
 
     const channelOpmlString = `<outline text="${escapedName}" title="${escapedName}" type="rss" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=${channel.id}"/>`
@@ -725,7 +747,7 @@ async function exportCsvYouTubeSubscriptions() {
   const exportFileName = 'youtube-subscriptions-' + dateStr + '.csv'
 
   let exportText = 'Channel ID,Channel URL,Channel title\n'
-  profileList.value[0].subscriptions.forEach((channel) => {
+  profileList.value[0].subscriptions.filter(isYouTubeChannelStub).forEach((channel) => {
     const channelUrl = `https://www.youtube.com/channel/${channel.id}`
 
     // always have channel name quoted to simplify things
@@ -755,6 +777,13 @@ async function exportNewPipeSubscriptions() {
   }
 
   profileList.value[0].subscriptions.forEach((channel) => {
+    // Fjernsyn: a PeerTube channel is written with NewPipe's PeerTube service id
+    if (!isYouTubeChannelStub(channel)) {
+      const entry = peerTubeStubToNewPipeEntry(channel)
+      if (entry !== null) { newPipeObject.subscriptions.push(entry) }
+      return
+    }
+
     const channelUrl = `https://www.youtube.com/channel/${channel.id}`
     const subscription = {
       service_id: 0,
@@ -868,7 +897,9 @@ async function importFreeTubeWatchHistory(textDecode) {
   const historyItems = new Map(deepCopy(Object.entries(historyCacheById.value)))
 
   textDecode.forEach((history) => {
-    const historyData = JSON.parse(history)
+    // Fjernsyn: a PeerTube entry's platform fields are validated apart; a YouTube entry is read as it always was (platform/records.js)
+    const { record: historyData, fields: platformFields } = splitImportedPlatformFields(JSON.parse(history))
+    if (platformFields === null) { showToast(t('Settings.Data Settings.History object has insufficient data, skipping item')); return }
     // We would technically already be done by the time the data is parsed,
     // however we want to limit the possibility of malicious data being sent
     // to the app, so we'll only grab the data we need here.
@@ -892,6 +923,7 @@ async function importFreeTubeWatchHistory(textDecode) {
     } else {
       // FreeTube history export does not have this data if the video was marked as watched manually, setting default value
       historyObject.description = historyObject.description ?? ''
+      Object.assign(historyObject, platformFields)
 
       historyItems.set(historyObject.videoId, historyObject)
     }
@@ -1033,7 +1065,8 @@ async function exportFreeTubeWatchHistory() {
 }
 
 async function exportYouTubeWatchHistory() {
-  const historyData = historyCacheSorted.value.map((entry) => {
+  // Fjernsyn: a PeerTube entry has no YouTube URL, so it is left out
+  const historyData = historyCacheSorted.value.filter(isYouTubeRecord).map((entry) => {
     return {
       header: 'YouTube',
       title: `Watched ${entry.title}`,
@@ -1171,7 +1204,10 @@ async function importPlaylists() {
         showToast(message)
       } else if (key === 'videos') {
         const videoArray = []
-        playlistData.videos.forEach((video) => {
+        playlistData.videos.forEach((importedVideo) => {
+          // Fjernsyn: a PeerTube item keeps its validated platform fields, or is skipped; a YouTube item is itself
+          const video = importedPlaylistVideo(importedVideo)
+          if (video === null) { return }
           const videoPropertyKeys = Object.keys(video)
           const videoObjectHasAllRequiredKeys = requiredVideoKeys.every((k) => videoPropertyKeys.includes(k))
 

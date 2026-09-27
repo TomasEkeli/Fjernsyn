@@ -1,0 +1,198 @@
+{
+  "synthesised": true,
+  "note": "GET /api/v1/accounts/{name@host}/video-channels, an account's video channels: a list like the others, { total, data: [VideoChannel] } (PeerTube REST reference, getAccountVideoChannelList; server/core/controllers/api/accounts.ts listAccountChannels). data[0] is the recorded video.blender.org--channel.json body unedited; data[1] is a copy with another name and no avatars or banners. The account is the channels' ownerAccount, blender@video.blender.org.",
+  "recordedAt": "2026-09-27T14:25:36.233Z",
+  "url": "https://video.blender.org/api/v1/accounts/blender@video.blender.org/video-channels?count=100",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "44",
+    "x-ratelimit-reset": "1790519142"
+  },
+  "body": {
+    "total": 2,
+    "data": [
+      {
+        "url": "https://video.blender.org/video-channels/blender_studio",
+        "name": "blender_studio",
+        "host": "video.blender.org",
+        "avatars": [
+          {
+            "height": 48,
+            "width": 48,
+            "path": "/lazy-static/avatars/2b80b2de-7091-475e-bec0-868775dc7db1.webp",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/2b80b2de-7091-475e-bec0-868775dc7db1.webp",
+            "createdAt": "2026-06-03T15:42:47.900Z",
+            "updatedAt": "2026-06-03T15:42:47.900Z"
+          },
+          {
+            "height": 120,
+            "width": 120,
+            "path": "/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp",
+            "createdAt": "2026-06-03T15:42:47.895Z",
+            "updatedAt": "2026-06-03T15:42:47.895Z"
+          },
+          {
+            "height": 600,
+            "width": 600,
+            "path": "/lazy-static/avatars/e112a9c2-4a18-4024-9e59-87870753e704.webp",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/e112a9c2-4a18-4024-9e59-87870753e704.webp",
+            "createdAt": "2026-06-03T15:42:47.890Z",
+            "updatedAt": "2026-06-03T15:42:47.890Z"
+          },
+          {
+            "height": 1500,
+            "width": 1500,
+            "path": "/lazy-static/avatars/cf1a28ef-a26f-4c8b-b46c-e00ea90dce5f.webp",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/cf1a28ef-a26f-4c8b-b46c-e00ea90dce5f.webp",
+            "createdAt": "2026-06-03T15:42:47.884Z",
+            "updatedAt": "2026-06-03T15:42:47.884Z"
+          }
+        ],
+        "id": 4570,
+        "hostRedundancyAllowed": false,
+        "followingCount": 0,
+        "followersCount": 33,
+        "createdAt": "2026-06-03T15:42:47.209Z",
+        "banners": [
+          {
+            "height": 100,
+            "width": 600,
+            "path": "/lazy-static/banners/f33b48f1-6e52-46cd-a289-2c1d65b58a77.jpg",
+            "fileUrl": "https://video.blender.org/lazy-static/banners/f33b48f1-6e52-46cd-a289-2c1d65b58a77.jpg",
+            "createdAt": "2026-06-03T15:42:48.118Z",
+            "updatedAt": "2026-06-03T15:42:48.118Z"
+          },
+          {
+            "height": 317,
+            "width": 1920,
+            "path": "/lazy-static/banners/85199ab2-1a34-4206-a5cd-788f692f6d5b.jpg",
+            "fileUrl": "https://video.blender.org/lazy-static/banners/85199ab2-1a34-4206-a5cd-788f692f6d5b.jpg",
+            "createdAt": "2026-06-03T15:42:48.113Z",
+            "updatedAt": "2026-06-03T15:42:48.113Z"
+          }
+        ],
+        "displayName": "Blender Studio",
+        "description": "Welcome to the Blender Studio channel on PeerTube! Here the team behind the Blender Open Movies shares their work in progress, production logs, live streams and of course some amazing short films. ",
+        "support": "[Blender Studio Subscription](https://studio.blender.org/join/).\n\nSubscribe to access invaluable production knowledge from Blender Studio artists, while securing Blender's future. Inspect 3D processes, learn efficient workflows, and unlock inspiration. ",
+        "isLocal": true,
+        "updatedAt": "2026-09-15T10:40:05.254Z",
+        "ownerAccount": {
+          "url": "https://video.blender.org/accounts/blender",
+          "name": "blender",
+          "host": "video.blender.org",
+          "avatars": [
+            {
+              "height": 48,
+              "width": 48,
+              "path": "/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "createdAt": "2026-05-24T11:32:01.734Z",
+              "updatedAt": "2026-05-24T11:32:01.734Z"
+            },
+            {
+              "height": 120,
+              "width": 120,
+              "path": "/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "createdAt": "2026-05-24T11:32:01.730Z",
+              "updatedAt": "2026-05-24T11:32:01.730Z"
+            },
+            {
+              "height": 600,
+              "width": 600,
+              "path": "/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "createdAt": "2026-05-24T11:32:01.724Z",
+              "updatedAt": "2026-05-24T11:32:01.724Z"
+            },
+            {
+              "height": 1500,
+              "width": 1500,
+              "path": "/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "createdAt": "2026-05-24T11:32:01.719Z",
+              "updatedAt": "2026-05-24T11:32:01.719Z"
+            }
+          ],
+          "id": 6,
+          "hostRedundancyAllowed": false,
+          "followingCount": 1,
+          "followersCount": 6381,
+          "createdAt": "2018-10-24T14:55:59.623Z",
+          "displayName": "Blender",
+          "description": "Blender is the free and open source 3D creation suite. \n\nIt supports the entirety of the 3D pipeline—modeling, rigging, animation, simulation, rendering, compositing and motion tracking, even video editing and game creation.  \n\nBlender is well suited to individuals and small studios who benefit from its unified pipeline and responsive development process.",
+          "updatedAt": "2022-12-19T21:05:12.414Z",
+          "userId": 4
+        }
+      },
+      {
+        "url": "https://video.blender.org/video-channels/blender_developers",
+        "name": "blender_developers",
+        "host": "video.blender.org",
+        "avatars": [],
+        "id": 4571,
+        "hostRedundancyAllowed": false,
+        "followingCount": 0,
+        "followersCount": 7,
+        "createdAt": "2026-06-03T15:42:47.209Z",
+        "banners": [],
+        "displayName": "Blender Developers",
+        "description": "Talks and meetings of the Blender developers.",
+        "support": null,
+        "isLocal": true,
+        "updatedAt": "2026-09-15T10:40:05.254Z",
+        "ownerAccount": {
+          "url": "https://video.blender.org/accounts/blender",
+          "name": "blender",
+          "host": "video.blender.org",
+          "avatars": [
+            {
+              "height": 48,
+              "width": 48,
+              "path": "/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "createdAt": "2026-05-24T11:32:01.734Z",
+              "updatedAt": "2026-05-24T11:32:01.734Z"
+            },
+            {
+              "height": 120,
+              "width": 120,
+              "path": "/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "createdAt": "2026-05-24T11:32:01.730Z",
+              "updatedAt": "2026-05-24T11:32:01.730Z"
+            },
+            {
+              "height": 600,
+              "width": 600,
+              "path": "/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "createdAt": "2026-05-24T11:32:01.724Z",
+              "updatedAt": "2026-05-24T11:32:01.724Z"
+            },
+            {
+              "height": 1500,
+              "width": 1500,
+              "path": "/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "createdAt": "2026-05-24T11:32:01.719Z",
+              "updatedAt": "2026-05-24T11:32:01.719Z"
+            }
+          ],
+          "id": 6,
+          "hostRedundancyAllowed": false,
+          "followingCount": 1,
+          "followersCount": 6381,
+          "createdAt": "2018-10-24T14:55:59.623Z",
+          "displayName": "Blender",
+          "description": "Blender is the free and open source 3D creation suite. \n\nIt supports the entirety of the 3D pipeline—modeling, rigging, animation, simulation, rendering, compositing and motion tracking, even video editing and game creation.  \n\nBlender is well suited to individuals and small studios who benefit from its unified pipeline and responsive development process.",
+          "updatedAt": "2022-12-19T21:05:12.414Z",
+          "userId": 4
+        }
+      }
+    ]
+  }
+}

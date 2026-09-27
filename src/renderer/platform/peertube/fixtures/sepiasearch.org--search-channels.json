@@ -1,0 +1,633 @@
+{
+  "recordedAt": "2026-09-27T14:25:32.928Z",
+  "url": "https://sepiasearch.org/api/v1/search/video-channels?search=blender&start=0&count=5",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8"
+  },
+  "body": {
+    "total": 70,
+    "data": [
+      {
+        "id": 4,
+        "score": 1,
+        "url": "https://video.blender.org/video-channels/blender_channel",
+        "name": "blender_channel",
+        "host": "video.blender.org",
+        "followingCount": 0,
+        "followersCount": 1187,
+        "createdAt": "2018-10-24T14:55:59.645Z",
+        "updatedAt": "2026-09-26T23:05:39.144Z",
+        "avatars": [
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/56817c33-af28-475f-9e87-0244015a04e0.png",
+            "path": "/lazy-static/avatars/56817c33-af28-475f-9e87-0244015a04e0.png",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/56817c33-af28-475f-9e87-0244015a04e0.png",
+            "width": 48,
+            "height": 48,
+            "createdAt": "2026-05-24T10:42:47.572Z",
+            "updatedAt": "2026-05-24T10:42:47.572Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/5720b4a8-d244-4fae-a2bf-3474caa8f644.png",
+            "path": "/lazy-static/avatars/5720b4a8-d244-4fae-a2bf-3474caa8f644.png",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/5720b4a8-d244-4fae-a2bf-3474caa8f644.png",
+            "width": 120,
+            "height": 120,
+            "createdAt": "2026-05-24T10:42:47.565Z",
+            "updatedAt": "2026-05-24T10:42:47.565Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/24f94d65-d525-4afc-8522-cfe19ea97464.png",
+            "path": "/lazy-static/avatars/24f94d65-d525-4afc-8522-cfe19ea97464.png",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/24f94d65-d525-4afc-8522-cfe19ea97464.png",
+            "width": 600,
+            "height": 600,
+            "createdAt": "2026-05-24T10:42:47.556Z",
+            "updatedAt": "2026-05-24T10:42:47.556Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/40cb35af-7fd5-45f3-8026-c90b54cd9da1.png",
+            "path": "/lazy-static/avatars/40cb35af-7fd5-45f3-8026-c90b54cd9da1.png",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/40cb35af-7fd5-45f3-8026-c90b54cd9da1.png",
+            "width": 1500,
+            "height": 1500,
+            "createdAt": "2026-05-24T10:42:47.543Z",
+            "updatedAt": "2026-05-24T10:42:47.543Z"
+          }
+        ],
+        "banners": [
+          {
+            "url": "https://video.blender.org/lazy-static/banners/98cf3d52-54ef-4e41-8e97-b6a3ae2abbe5.jpg",
+            "path": "/lazy-static/banners/98cf3d52-54ef-4e41-8e97-b6a3ae2abbe5.jpg",
+            "fileUrl": "https://video.blender.org/lazy-static/banners/98cf3d52-54ef-4e41-8e97-b6a3ae2abbe5.jpg",
+            "width": 600,
+            "height": 100,
+            "createdAt": "2026-05-25T13:21:40.845Z",
+            "updatedAt": "2026-05-25T13:21:40.845Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/banners/d7ffe6f5-f742-4124-82d7-3d230b73ab6d.jpg",
+            "path": "/lazy-static/banners/d7ffe6f5-f742-4124-82d7-3d230b73ab6d.jpg",
+            "fileUrl": "https://video.blender.org/lazy-static/banners/d7ffe6f5-f742-4124-82d7-3d230b73ab6d.jpg",
+            "width": 1920,
+            "height": 317,
+            "createdAt": "2026-05-25T13:21:40.800Z",
+            "updatedAt": "2026-05-25T13:21:40.800Z"
+          }
+        ],
+        "displayName": "Blender",
+        "description": "Official PeerTube channel for Blender, the Free and Open Source 3D Creation Suite.\n\n**The Freedom to Create**",
+        "support": "Join the [Blender Development Fund](https://fund.blender.org/).",
+        "isLocal": false,
+        "videosCount": 868,
+        "ownerAccount": {
+          "id": 6,
+          "url": "https://video.blender.org/accounts/blender",
+          "displayName": "Blender",
+          "description": "Blender is the free and open source 3D creation suite. \n\nIt supports the entirety of the 3D pipeline—modeling, rigging, animation, simulation, rendering, compositing and motion tracking, even video editing and game creation.  \n\nBlender is well suited to individuals and small studios who benefit from its unified pipeline and responsive development process.",
+          "name": "blender",
+          "host": "video.blender.org",
+          "followingCount": 1,
+          "followersCount": 6382,
+          "createdAt": "2018-10-24T14:55:59.623Z",
+          "updatedAt": "2022-12-19T21:05:12.414Z",
+          "avatars": [
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "path": "/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "width": 48,
+              "height": 48,
+              "createdAt": "2026-05-24T11:32:01.734Z",
+              "updatedAt": "2026-05-24T11:32:01.734Z"
+            },
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "path": "/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "width": 120,
+              "height": 120,
+              "createdAt": "2026-05-24T11:32:01.730Z",
+              "updatedAt": "2026-05-24T11:32:01.730Z"
+            },
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "path": "/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "width": 600,
+              "height": 600,
+              "createdAt": "2026-05-24T11:32:01.724Z",
+              "updatedAt": "2026-05-24T11:32:01.724Z"
+            },
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "path": "/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "width": 1500,
+              "height": 1500,
+              "createdAt": "2026-05-24T11:32:01.719Z",
+              "updatedAt": "2026-05-24T11:32:01.719Z"
+            }
+          ]
+        }
+      },
+      {
+        "id": 2737,
+        "score": 1,
+        "url": "https://video.blender.org/video-channels/blenderdevelopers",
+        "name": "blenderdevelopers",
+        "host": "video.blender.org",
+        "followingCount": 0,
+        "followersCount": 815,
+        "createdAt": "2019-01-12T04:04:40.740Z",
+        "updatedAt": "2026-09-15T10:52:49.072Z",
+        "avatars": [
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/05e460d8-4e66-4cc1-a542-c55b00347c48.jpg",
+            "path": "/lazy-static/avatars/05e460d8-4e66-4cc1-a542-c55b00347c48.jpg",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/05e460d8-4e66-4cc1-a542-c55b00347c48.jpg",
+            "width": 48,
+            "height": 48,
+            "createdAt": "2026-05-25T13:11:37.112Z",
+            "updatedAt": "2026-05-25T13:11:37.112Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/04060492-3cfc-45a7-bfd9-968aeb3bfb1b.jpg",
+            "path": "/lazy-static/avatars/04060492-3cfc-45a7-bfd9-968aeb3bfb1b.jpg",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/04060492-3cfc-45a7-bfd9-968aeb3bfb1b.jpg",
+            "width": 120,
+            "height": 120,
+            "createdAt": "2026-05-25T13:11:37.087Z",
+            "updatedAt": "2026-05-25T13:11:37.087Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/14e77cc2-31be-41de-a4f5-9dc7faa27e17.jpg",
+            "path": "/lazy-static/avatars/14e77cc2-31be-41de-a4f5-9dc7faa27e17.jpg",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/14e77cc2-31be-41de-a4f5-9dc7faa27e17.jpg",
+            "width": 600,
+            "height": 600,
+            "createdAt": "2026-05-25T13:11:37.033Z",
+            "updatedAt": "2026-05-25T13:11:37.033Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/3b2e46b8-db9a-4c34-ad2e-f0c3c2ec6a32.jpg",
+            "path": "/lazy-static/avatars/3b2e46b8-db9a-4c34-ad2e-f0c3c2ec6a32.jpg",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/3b2e46b8-db9a-4c34-ad2e-f0c3c2ec6a32.jpg",
+            "width": 1500,
+            "height": 1500,
+            "createdAt": "2026-05-25T13:11:37.011Z",
+            "updatedAt": "2026-05-25T13:11:37.011Z"
+          }
+        ],
+        "banners": [
+          {
+            "url": "https://video.blender.org/lazy-static/banners/7d18b954-d5c6-4749-9cb3-406222100b46.jpg",
+            "path": "/lazy-static/banners/7d18b954-d5c6-4749-9cb3-406222100b46.jpg",
+            "fileUrl": "https://video.blender.org/lazy-static/banners/7d18b954-d5c6-4749-9cb3-406222100b46.jpg",
+            "width": 600,
+            "height": 100,
+            "createdAt": "2026-05-25T13:25:22.249Z",
+            "updatedAt": "2026-05-25T13:25:22.249Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/banners/61a591c3-3c68-43e4-bbb0-fd8fc20aedb9.jpg",
+            "path": "/lazy-static/banners/61a591c3-3c68-43e4-bbb0-fd8fc20aedb9.jpg",
+            "fileUrl": "https://video.blender.org/lazy-static/banners/61a591c3-3c68-43e4-bbb0-fd8fc20aedb9.jpg",
+            "width": 1920,
+            "height": 317,
+            "createdAt": "2026-05-25T13:25:22.242Z",
+            "updatedAt": "2026-05-25T13:25:22.242Z"
+          }
+        ],
+        "displayName": "Blender Developers",
+        "description": "Official account for development news of Blender, the Free and Open Source 3D creation suite. ",
+        "support": "Join the [Blender Development Fund](https://fund.blender.org/).",
+        "isLocal": false,
+        "videosCount": 144,
+        "ownerAccount": {
+          "id": 6,
+          "url": "https://video.blender.org/accounts/blender",
+          "displayName": "Blender",
+          "description": "Blender is the free and open source 3D creation suite. \n\nIt supports the entirety of the 3D pipeline—modeling, rigging, animation, simulation, rendering, compositing and motion tracking, even video editing and game creation.  \n\nBlender is well suited to individuals and small studios who benefit from its unified pipeline and responsive development process.",
+          "name": "blender",
+          "host": "video.blender.org",
+          "followingCount": 1,
+          "followersCount": 6382,
+          "createdAt": "2018-10-24T14:55:59.623Z",
+          "updatedAt": "2022-12-19T21:05:12.414Z",
+          "avatars": [
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "path": "/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "width": 48,
+              "height": 48,
+              "createdAt": "2026-05-24T11:32:01.734Z",
+              "updatedAt": "2026-05-24T11:32:01.734Z"
+            },
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "path": "/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "width": 120,
+              "height": 120,
+              "createdAt": "2026-05-24T11:32:01.730Z",
+              "updatedAt": "2026-05-24T11:32:01.730Z"
+            },
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "path": "/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "width": 600,
+              "height": 600,
+              "createdAt": "2026-05-24T11:32:01.724Z",
+              "updatedAt": "2026-05-24T11:32:01.724Z"
+            },
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "path": "/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "width": 1500,
+              "height": 1500,
+              "createdAt": "2026-05-24T11:32:01.719Z",
+              "updatedAt": "2026-05-24T11:32:01.719Z"
+            }
+          ]
+        }
+      },
+      {
+        "id": 9,
+        "score": 1,
+        "url": "https://video.blender.org/video-channels/blender_open_movies",
+        "name": "blender_open_movies",
+        "host": "video.blender.org",
+        "followingCount": 0,
+        "followersCount": 468,
+        "createdAt": "2018-10-25T13:08:22.385Z",
+        "updatedAt": "2026-09-14T14:42:23.068Z",
+        "avatars": [
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/f79d3ae7-86a8-4705-a9cf-75652312ed20.png",
+            "path": "/lazy-static/avatars/f79d3ae7-86a8-4705-a9cf-75652312ed20.png",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/f79d3ae7-86a8-4705-a9cf-75652312ed20.png",
+            "width": 48,
+            "height": 48,
+            "createdAt": "2026-06-04T09:58:19.748Z",
+            "updatedAt": "2026-06-04T09:58:19.748Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/df50b04c-67e0-4317-822a-be1f1a2d85d3.png",
+            "path": "/lazy-static/avatars/df50b04c-67e0-4317-822a-be1f1a2d85d3.png",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/df50b04c-67e0-4317-822a-be1f1a2d85d3.png",
+            "width": 120,
+            "height": 120,
+            "createdAt": "2026-06-04T09:58:19.735Z",
+            "updatedAt": "2026-06-04T09:58:19.735Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/0001ea1f-7c7b-45b3-8a15-004c6d0713bb.png",
+            "path": "/lazy-static/avatars/0001ea1f-7c7b-45b3-8a15-004c6d0713bb.png",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/0001ea1f-7c7b-45b3-8a15-004c6d0713bb.png",
+            "width": 600,
+            "height": 600,
+            "createdAt": "2026-06-04T09:58:19.728Z",
+            "updatedAt": "2026-06-04T09:58:19.728Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/2676b86b-94a3-4692-9601-f4e41dcbf72f.png",
+            "path": "/lazy-static/avatars/2676b86b-94a3-4692-9601-f4e41dcbf72f.png",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/2676b86b-94a3-4692-9601-f4e41dcbf72f.png",
+            "width": 1500,
+            "height": 1500,
+            "createdAt": "2026-06-04T09:58:19.710Z",
+            "updatedAt": "2026-06-04T09:58:19.710Z"
+          }
+        ],
+        "banners": [
+          {
+            "url": "https://video.blender.org/lazy-static/banners/c0a1b39b-ccfd-426e-873f-4cac312b9dca.png",
+            "path": "/lazy-static/banners/c0a1b39b-ccfd-426e-873f-4cac312b9dca.png",
+            "fileUrl": "https://video.blender.org/lazy-static/banners/c0a1b39b-ccfd-426e-873f-4cac312b9dca.png",
+            "width": 600,
+            "height": 100,
+            "createdAt": "2026-06-04T09:58:26.601Z",
+            "updatedAt": "2026-06-04T09:58:26.601Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/banners/b12f93e6-2b5c-4f95-ab04-64b3a6d8f318.png",
+            "path": "/lazy-static/banners/b12f93e6-2b5c-4f95-ab04-64b3a6d8f318.png",
+            "fileUrl": "https://video.blender.org/lazy-static/banners/b12f93e6-2b5c-4f95-ab04-64b3a6d8f318.png",
+            "width": 1920,
+            "height": 317,
+            "createdAt": "2026-06-04T09:58:26.593Z",
+            "updatedAt": "2026-06-04T09:58:26.593Z"
+          }
+        ],
+        "displayName": "Blender Open Movies",
+        "description": "Official PeerTube channel with all iconic Blender Open Movies and behind-the-scenes content.\n\n**The Freedom to Create**",
+        "support": "Join the [Blender Development Fund](https://fund.blender.org/) and become a [Blender Studio subscriber](https://studio.blender.org/join).",
+        "isLocal": false,
+        "videosCount": 23,
+        "ownerAccount": {
+          "id": 6,
+          "url": "https://video.blender.org/accounts/blender",
+          "displayName": "Blender",
+          "description": "Blender is the free and open source 3D creation suite. \n\nIt supports the entirety of the 3D pipeline—modeling, rigging, animation, simulation, rendering, compositing and motion tracking, even video editing and game creation.  \n\nBlender is well suited to individuals and small studios who benefit from its unified pipeline and responsive development process.",
+          "name": "blender",
+          "host": "video.blender.org",
+          "followingCount": 1,
+          "followersCount": 6382,
+          "createdAt": "2018-10-24T14:55:59.623Z",
+          "updatedAt": "2022-12-19T21:05:12.414Z",
+          "avatars": [
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "path": "/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "width": 48,
+              "height": 48,
+              "createdAt": "2026-05-24T11:32:01.734Z",
+              "updatedAt": "2026-05-24T11:32:01.734Z"
+            },
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "path": "/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "width": 120,
+              "height": 120,
+              "createdAt": "2026-05-24T11:32:01.730Z",
+              "updatedAt": "2026-05-24T11:32:01.730Z"
+            },
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "path": "/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "width": 600,
+              "height": 600,
+              "createdAt": "2026-05-24T11:32:01.724Z",
+              "updatedAt": "2026-05-24T11:32:01.724Z"
+            },
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "path": "/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "width": 1500,
+              "height": 1500,
+              "createdAt": "2026-05-24T11:32:01.719Z",
+              "updatedAt": "2026-05-24T11:32:01.719Z"
+            }
+          ]
+        }
+      },
+      {
+        "id": 4570,
+        "score": 1,
+        "url": "https://video.blender.org/video-channels/blender_studio",
+        "name": "blender_studio",
+        "host": "video.blender.org",
+        "followingCount": 0,
+        "followersCount": 32,
+        "createdAt": "2026-06-03T15:42:47.209Z",
+        "updatedAt": "2026-09-15T10:40:05.254Z",
+        "avatars": [
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/2b80b2de-7091-475e-bec0-868775dc7db1.webp",
+            "path": "/lazy-static/avatars/2b80b2de-7091-475e-bec0-868775dc7db1.webp",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/2b80b2de-7091-475e-bec0-868775dc7db1.webp",
+            "width": 48,
+            "height": 48,
+            "createdAt": "2026-06-03T15:42:47.900Z",
+            "updatedAt": "2026-06-03T15:42:47.900Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp",
+            "path": "/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp",
+            "width": 120,
+            "height": 120,
+            "createdAt": "2026-06-03T15:42:47.895Z",
+            "updatedAt": "2026-06-03T15:42:47.895Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/e112a9c2-4a18-4024-9e59-87870753e704.webp",
+            "path": "/lazy-static/avatars/e112a9c2-4a18-4024-9e59-87870753e704.webp",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/e112a9c2-4a18-4024-9e59-87870753e704.webp",
+            "width": 600,
+            "height": 600,
+            "createdAt": "2026-06-03T15:42:47.890Z",
+            "updatedAt": "2026-06-03T15:42:47.890Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/avatars/cf1a28ef-a26f-4c8b-b46c-e00ea90dce5f.webp",
+            "path": "/lazy-static/avatars/cf1a28ef-a26f-4c8b-b46c-e00ea90dce5f.webp",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/cf1a28ef-a26f-4c8b-b46c-e00ea90dce5f.webp",
+            "width": 1500,
+            "height": 1500,
+            "createdAt": "2026-06-03T15:42:47.884Z",
+            "updatedAt": "2026-06-03T15:42:47.884Z"
+          }
+        ],
+        "banners": [
+          {
+            "url": "https://video.blender.org/lazy-static/banners/f33b48f1-6e52-46cd-a289-2c1d65b58a77.jpg",
+            "path": "/lazy-static/banners/f33b48f1-6e52-46cd-a289-2c1d65b58a77.jpg",
+            "fileUrl": "https://video.blender.org/lazy-static/banners/f33b48f1-6e52-46cd-a289-2c1d65b58a77.jpg",
+            "width": 600,
+            "height": 100,
+            "createdAt": "2026-06-03T15:42:48.118Z",
+            "updatedAt": "2026-06-03T15:42:48.118Z"
+          },
+          {
+            "url": "https://video.blender.org/lazy-static/banners/85199ab2-1a34-4206-a5cd-788f692f6d5b.jpg",
+            "path": "/lazy-static/banners/85199ab2-1a34-4206-a5cd-788f692f6d5b.jpg",
+            "fileUrl": "https://video.blender.org/lazy-static/banners/85199ab2-1a34-4206-a5cd-788f692f6d5b.jpg",
+            "width": 1920,
+            "height": 317,
+            "createdAt": "2026-06-03T15:42:48.113Z",
+            "updatedAt": "2026-06-03T15:42:48.113Z"
+          }
+        ],
+        "displayName": "Blender Studio",
+        "description": "Welcome to the Blender Studio channel on PeerTube! Here the team behind the Blender Open Movies shares their work in progress, production logs, live streams and of course some amazing short films. ",
+        "support": "[Blender Studio Subscription](https://studio.blender.org/join/).\n\nSubscribe to access invaluable production knowledge from Blender Studio artists, while securing Blender's future. Inspect 3D processes, learn efficient workflows, and unlock inspiration. ",
+        "isLocal": false,
+        "videosCount": 152,
+        "ownerAccount": {
+          "id": 6,
+          "url": "https://video.blender.org/accounts/blender",
+          "displayName": "Blender",
+          "description": "Blender is the free and open source 3D creation suite. \n\nIt supports the entirety of the 3D pipeline—modeling, rigging, animation, simulation, rendering, compositing and motion tracking, even video editing and game creation.  \n\nBlender is well suited to individuals and small studios who benefit from its unified pipeline and responsive development process.",
+          "name": "blender",
+          "host": "video.blender.org",
+          "followingCount": 1,
+          "followersCount": 6382,
+          "createdAt": "2018-10-24T14:55:59.623Z",
+          "updatedAt": "2022-12-19T21:05:12.414Z",
+          "avatars": [
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "path": "/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/d81f71c9-cdd8-4c61-a0dd-75a9dfad8dc1.png",
+              "width": 48,
+              "height": 48,
+              "createdAt": "2026-05-24T11:32:01.734Z",
+              "updatedAt": "2026-05-24T11:32:01.734Z"
+            },
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "path": "/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/07965da7-5723-40d6-9a61-c034d6ebeabd.png",
+              "width": 120,
+              "height": 120,
+              "createdAt": "2026-05-24T11:32:01.730Z",
+              "updatedAt": "2026-05-24T11:32:01.730Z"
+            },
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "path": "/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/1485e2e7-71d0-4e6a-b56d-bf46b2ec40de.png",
+              "width": 600,
+              "height": 600,
+              "createdAt": "2026-05-24T11:32:01.724Z",
+              "updatedAt": "2026-05-24T11:32:01.724Z"
+            },
+            {
+              "url": "https://video.blender.org/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "path": "/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/b4d1c81e-bded-45e2-a569-413d391cdd82.png",
+              "width": 1500,
+              "height": 1500,
+              "createdAt": "2026-05-24T11:32:01.719Z",
+              "updatedAt": "2026-05-24T11:32:01.719Z"
+            }
+          ]
+        }
+      },
+      {
+        "id": 29403,
+        "score": 1,
+        "url": "https://makertube.net/video-channels/blender_stuff",
+        "name": "blender_stuff",
+        "host": "makertube.net",
+        "followingCount": 0,
+        "followersCount": 1,
+        "createdAt": "2026-04-21T15:40:05.121Z",
+        "updatedAt": "2026-04-25T10:43:49.748Z",
+        "avatars": [
+          {
+            "url": "https://makertube.net/lazy-static/avatars/220c46d6-72d1-4bf0-9487-2869d1dd0cc8.png",
+            "path": "/lazy-static/avatars/220c46d6-72d1-4bf0-9487-2869d1dd0cc8.png",
+            "fileUrl": "https://makertube.net/lazy-static/avatars/220c46d6-72d1-4bf0-9487-2869d1dd0cc8.png",
+            "width": 48,
+            "height": 48,
+            "createdAt": "2026-04-21T15:40:15.726Z",
+            "updatedAt": "2026-04-21T15:40:15.726Z"
+          },
+          {
+            "url": "https://makertube.net/lazy-static/avatars/dedec2b5-fdec-49d1-bdef-6f80befcc362.png",
+            "path": "/lazy-static/avatars/dedec2b5-fdec-49d1-bdef-6f80befcc362.png",
+            "fileUrl": "https://makertube.net/lazy-static/avatars/dedec2b5-fdec-49d1-bdef-6f80befcc362.png",
+            "width": 120,
+            "height": 120,
+            "createdAt": "2026-04-21T15:40:15.723Z",
+            "updatedAt": "2026-04-21T15:40:15.723Z"
+          },
+          {
+            "url": "https://makertube.net/lazy-static/avatars/b32eac7b-fe47-4d7b-9439-caa0b891b0a5.png",
+            "path": "/lazy-static/avatars/b32eac7b-fe47-4d7b-9439-caa0b891b0a5.png",
+            "fileUrl": "https://makertube.net/lazy-static/avatars/b32eac7b-fe47-4d7b-9439-caa0b891b0a5.png",
+            "width": 600,
+            "height": 600,
+            "createdAt": "2026-04-21T15:40:15.721Z",
+            "updatedAt": "2026-04-21T15:40:15.721Z"
+          },
+          {
+            "url": "https://makertube.net/lazy-static/avatars/c6f65870-b594-4c5d-8971-212dd5fa3681.png",
+            "path": "/lazy-static/avatars/c6f65870-b594-4c5d-8971-212dd5fa3681.png",
+            "fileUrl": "https://makertube.net/lazy-static/avatars/c6f65870-b594-4c5d-8971-212dd5fa3681.png",
+            "width": 1500,
+            "height": 1500,
+            "createdAt": "2026-04-21T15:40:15.717Z",
+            "updatedAt": "2026-04-21T15:40:15.717Z"
+          }
+        ],
+        "banners": [
+          {
+            "url": "https://makertube.net/lazy-static/banners/05aa22dd-2ae3-43f2-ae62-846a521e25ee.png",
+            "path": "/lazy-static/banners/05aa22dd-2ae3-43f2-ae62-846a521e25ee.png",
+            "fileUrl": "https://makertube.net/lazy-static/banners/05aa22dd-2ae3-43f2-ae62-846a521e25ee.png",
+            "width": 600,
+            "height": 100,
+            "createdAt": "2026-04-21T15:40:24.794Z",
+            "updatedAt": "2026-04-21T15:40:24.794Z"
+          },
+          {
+            "url": "https://makertube.net/lazy-static/banners/d5492a55-aafe-4b19-aa36-4b975a463672.png",
+            "path": "/lazy-static/banners/d5492a55-aafe-4b19-aa36-4b975a463672.png",
+            "fileUrl": "https://makertube.net/lazy-static/banners/d5492a55-aafe-4b19-aa36-4b975a463672.png",
+            "width": 1920,
+            "height": 317,
+            "createdAt": "2026-04-21T15:40:24.788Z",
+            "updatedAt": "2026-04-21T15:40:24.788Z"
+          }
+        ],
+        "displayName": "Blender",
+        "description": "Blender stuff, like addons",
+        "support": "Though I do **not** want donations for my projects, I recommend to donate to MakerTube if you want to support their platform: https://de.liberapay.com/MakerTube/donate",
+        "isLocal": false,
+        "videosCount": 4,
+        "ownerAccount": {
+          "id": 962402,
+          "url": "https://makertube.net/accounts/bechele",
+          "displayName": "bechele",
+          "description": "My maker channel contains beside a few other things mainly hard- and software videos for my Bechele animatronic project. The project runs based on a Rasperry Pi and model building servos. All parts are under open source licenses.",
+          "name": "bechele",
+          "host": "makertube.net",
+          "followingCount": 2,
+          "followersCount": 1,
+          "createdAt": "2026-04-21T12:27:15.344Z",
+          "updatedAt": "2026-04-21T14:06:17.238Z",
+          "avatars": [
+            {
+              "url": "https://makertube.net/lazy-static/avatars/2eac9652-0eef-4dc2-9e0a-f94b1ff2edb0.jpg",
+              "path": "/lazy-static/avatars/2eac9652-0eef-4dc2-9e0a-f94b1ff2edb0.jpg",
+              "fileUrl": "https://makertube.net/lazy-static/avatars/2eac9652-0eef-4dc2-9e0a-f94b1ff2edb0.jpg",
+              "width": 48,
+              "height": 48,
+              "createdAt": "2026-04-21T13:28:17.301Z",
+              "updatedAt": "2026-04-21T13:28:17.301Z"
+            },
+            {
+              "url": "https://makertube.net/lazy-static/avatars/ac2a2247-650a-4801-a1e6-958d048f4a03.jpg",
+              "path": "/lazy-static/avatars/ac2a2247-650a-4801-a1e6-958d048f4a03.jpg",
+              "fileUrl": "https://makertube.net/lazy-static/avatars/ac2a2247-650a-4801-a1e6-958d048f4a03.jpg",
+              "width": 120,
+              "height": 120,
+              "createdAt": "2026-04-21T13:28:17.299Z",
+              "updatedAt": "2026-04-21T13:28:17.299Z"
+            },
+            {
+              "url": "https://makertube.net/lazy-static/avatars/1c35749d-c81f-4336-8681-59d61fc40212.jpg",
+              "path": "/lazy-static/avatars/1c35749d-c81f-4336-8681-59d61fc40212.jpg",
+              "fileUrl": "https://makertube.net/lazy-static/avatars/1c35749d-c81f-4336-8681-59d61fc40212.jpg",
+              "width": 600,
+              "height": 600,
+              "createdAt": "2026-04-21T13:28:17.296Z",
+              "updatedAt": "2026-04-21T13:28:17.296Z"
+            },
+            {
+              "url": "https://makertube.net/lazy-static/avatars/274bff98-8462-4f84-84d9-2939d9496788.jpg",
+              "path": "/lazy-static/avatars/274bff98-8462-4f84-84d9-2939d9496788.jpg",
+              "fileUrl": "https://makertube.net/lazy-static/avatars/274bff98-8462-4f84-84d9-2939d9496788.jpg",
+              "width": 1500,
+              "height": 1500,
+              "createdAt": "2026-04-21T13:28:17.292Z",
+              "updatedAt": "2026-04-21T13:28:17.292Z"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

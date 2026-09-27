@@ -1,0 +1,15 @@
+{
+  "synthesised": true,
+  "note": "A 429 from the /api/* limiter (default 50 requests per 10 s per IP). Not provoked. Shape from PeerTube develop server/core/middlewares/rate-limiter.ts (sendRateLimited: res.status(options.statusCode).send(options.message)) with express-rate-limit 8.7 defaults (statusCode 429, message \"Too many requests, please try again later.\", legacy X-RateLimit-* headers, Retry-After in whole seconds until the window resets). The body is plain text sent with res.send, so Express labels it text/html. Header values are illustrative.",
+  "recordedAt": "2026-09-27T14:30:18.857Z",
+  "url": "https://peertube.example/api/v1/videos/11111111-2222-4333-8444-555555555555",
+  "status": 429,
+  "headers": {
+    "content-type": "text/html; charset=utf-8",
+    "retry-after": "7",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "0",
+    "x-ratelimit-reset": "1790520007"
+  },
+  "body": "Too many requests, please try again later."
+}

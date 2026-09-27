@@ -1,0 +1,387 @@
+{
+  "recordedAt": "2026-09-27T14:28:51.947Z",
+  "url": "https://blurt.media/api/v1/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "48",
+    "x-ratelimit-reset": "1790519342"
+  },
+  "body": {
+    "id": 54456,
+    "uuid": "9bcc834c-3f60-44a2-9f7a-818c3f2d53e4",
+    "shortUUID": "keR28ycTAkqeKfjQ61jQ6j",
+    "url": "https://blurt.media/videos/watch/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4",
+    "name": "The Rise and Fall of a Loaf",
+    "category": {
+      "id": 18,
+      "label": "Food"
+    },
+    "licence": {
+      "id": null,
+      "label": "Unknown"
+    },
+    "language": {
+      "id": null,
+      "label": "Unknown"
+    },
+    "privacy": {
+      "id": 1,
+      "label": "Public"
+    },
+    "nsfw": false,
+    "truncatedDescription": "I decided to make bread.\r\n\r\nHow hard could it be?\r\n\r\nApparently, very.\r\n\r\nWhat started as a completely normal attempt at baking bread slowly turned into an absolute disaster. Dough, flour, a declaration of war, and one deeply unfortunate loaf late...",
+    "description": "I decided to make bread.\r\n\r\nHow hard could it be?\r\n\r\nApparently, very.\r\n\r\nWhat started as a completely normal attempt at baking bread slowly turned into an absolute disaster. Dough, flour, a declaration of war, and one deeply unfortunate loaf later… here we are.\r\n\r\nWelcome to the beginning of my war against bread. 🍞⚔️💥\r\n\r\nBread: 1\r\nMe: 0\r\n\r\n-------------------------------------------------------\r\n\r\nINGREDIENTS:\r\n\r\n2tsp dry active yeast \r\n\r\n1tbs sugar \r\n\r\n1.5c warm water \r\n\r\n3c bread flour (I used normal flour so I don't think it matters that much)\r\n\r\n2tsp salt \r\n\r\nINSTRUCTIONS:\r\n\r\nPut the yeast, sugar, and water in a bowl. Mix and cover with plastic wrap or a towel and let it rise for 5 - 10 mins, or until its foamed up. Put your flour and salt in there, mix it and cover. Let the dough rise for 2 hours and when done, start preheating  your oven to 275°C. Place your dough in a dutch oven and score. If you don't have a dutch oven you can place  your dough in a loaf pan with another on top. Place in the oven for 25 mins with the lid on, then take the lid off and let it bake for 5 minutes or until you have achieved the perfect golden crust.\r\n\r\n If you have any questions, feel free to let me know in the comments, I hope my video gave you a good chuckle, and see you in the next one. Byeeeee! ",
+    "isLocal": true,
+    "duration": 790,
+    "aspectRatio": 1.7778,
+    "views": 21,
+    "viewers": 0,
+    "likes": 0,
+    "dislikes": 0,
+    "thumbnailPath": "/lazy-static/thumbnails/54130b40-5732-4ae5-be71-2d89d5fc5773.jpg",
+    "previewPath": "/lazy-static/previews/336869ee-2032-4a9a-b1d9-62c2b5ff6f32.jpg",
+    "embedPath": "/videos/embed/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4",
+    "createdAt": "2026-09-03T17:33:57.942Z",
+    "updatedAt": "2026-09-27T00:31:36.567Z",
+    "publishedAt": "2026-09-03T18:33:46.701Z",
+    "originallyPublishedAt": null,
+    "isLive": false,
+    "account": {
+      "url": "https://blurt.media/accounts/surf.grrl",
+      "name": "surf.grrl",
+      "host": "blurt.media",
+      "avatars": [
+        {
+          "width": 48,
+          "path": "/lazy-static/avatars/d6956c2e-7b6a-4179-8616-5645d0ae7ba9.jpg",
+          "createdAt": "2025-01-14T23:05:08.610Z",
+          "updatedAt": "2025-01-14T23:05:08.610Z"
+        },
+        {
+          "width": 120,
+          "path": "/lazy-static/avatars/5f702786-2b77-4924-af16-ba05f0f77bf5.jpg",
+          "createdAt": "2025-01-14T23:05:08.609Z",
+          "updatedAt": "2025-01-14T23:05:08.609Z"
+        },
+        {
+          "width": 600,
+          "path": "/lazy-static/avatars/d68c18dd-96e6-4704-8b0a-19b16d051d36.jpg",
+          "createdAt": "2025-01-14T23:05:08.609Z",
+          "updatedAt": "2025-01-14T23:05:08.609Z"
+        },
+        {
+          "width": 1500,
+          "path": "/lazy-static/avatars/93244dad-2253-4a49-a0f3-752ecae975cb.jpg",
+          "createdAt": "2025-01-14T23:05:08.607Z",
+          "updatedAt": "2025-01-14T23:05:08.607Z"
+        }
+      ],
+      "id": 26,
+      "hostRedundancyAllowed": false,
+      "followingCount": 3,
+      "followersCount": 0,
+      "createdAt": "2025-01-14T22:59:51.133Z",
+      "displayName": "SurfGrrl",
+      "description": "I'm here to chew bubble gum and shred waves, but I'm all out of bubble gum. ",
+      "updatedAt": "2025-01-14T23:02:05.564Z",
+      "userId": 20
+    },
+    "channel": {
+      "url": "https://blurt.media/video-channels/surfgrrl",
+      "name": "surfgrrl",
+      "host": "blurt.media",
+      "avatars": [
+        {
+          "width": 600,
+          "path": "/lazy-static/avatars/fc692eb8-50a4-422e-a45a-eb0767ceb8ec.jpg",
+          "createdAt": "2025-01-14T23:04:51.409Z",
+          "updatedAt": "2025-01-14T23:04:51.409Z"
+        },
+        {
+          "width": 48,
+          "path": "/lazy-static/avatars/811bc59d-1f4b-4b0f-a2ee-c239b548f8eb.jpg",
+          "createdAt": "2025-01-14T23:04:51.412Z",
+          "updatedAt": "2025-01-14T23:04:51.412Z"
+        },
+        {
+          "width": 120,
+          "path": "/lazy-static/avatars/732606b4-5910-4fe3-922d-80ac921c13e3.jpg",
+          "createdAt": "2025-01-14T23:04:51.411Z",
+          "updatedAt": "2025-01-14T23:04:51.411Z"
+        },
+        {
+          "width": 1500,
+          "path": "/lazy-static/avatars/5d96d7cb-adff-4ada-9477-cd2d9c63082f.jpg",
+          "createdAt": "2025-01-14T23:04:51.408Z",
+          "updatedAt": "2025-01-14T23:04:51.408Z"
+        }
+      ],
+      "id": 25,
+      "hostRedundancyAllowed": false,
+      "followingCount": 0,
+      "followersCount": 13,
+      "createdAt": "2025-01-14T22:59:51.136Z",
+      "banners": [],
+      "displayName": "SurfGrrl",
+      "description": "I'm here to chew bubble gum and shred waves, but I'm all out of bubble gum. ",
+      "support": null,
+      "isLocal": true,
+      "updatedAt": "2026-09-03T17:33:57.970Z",
+      "ownerAccount": {
+        "url": "https://blurt.media/accounts/surf.grrl",
+        "name": "surf.grrl",
+        "host": "blurt.media",
+        "avatars": [
+          {
+            "width": 48,
+            "path": "/lazy-static/avatars/d6956c2e-7b6a-4179-8616-5645d0ae7ba9.jpg",
+            "createdAt": "2025-01-14T23:05:08.610Z",
+            "updatedAt": "2025-01-14T23:05:08.610Z"
+          },
+          {
+            "width": 120,
+            "path": "/lazy-static/avatars/5f702786-2b77-4924-af16-ba05f0f77bf5.jpg",
+            "createdAt": "2025-01-14T23:05:08.609Z",
+            "updatedAt": "2025-01-14T23:05:08.609Z"
+          },
+          {
+            "width": 600,
+            "path": "/lazy-static/avatars/d68c18dd-96e6-4704-8b0a-19b16d051d36.jpg",
+            "createdAt": "2025-01-14T23:05:08.609Z",
+            "updatedAt": "2025-01-14T23:05:08.609Z"
+          },
+          {
+            "width": 1500,
+            "path": "/lazy-static/avatars/93244dad-2253-4a49-a0f3-752ecae975cb.jpg",
+            "createdAt": "2025-01-14T23:05:08.607Z",
+            "updatedAt": "2025-01-14T23:05:08.607Z"
+          }
+        ],
+        "id": 26,
+        "hostRedundancyAllowed": false,
+        "followingCount": 3,
+        "followersCount": 0,
+        "createdAt": "2025-01-14T22:59:51.133Z",
+        "displayName": "SurfGrrl",
+        "description": "I'm here to chew bubble gum and shred waves, but I'm all out of bubble gum. ",
+        "updatedAt": "2025-01-14T23:02:05.564Z",
+        "userId": 20
+      }
+    },
+    "pluginData": {
+      "demoMode": false,
+      "showReputationComments": true,
+      "showDownvoteComments": true,
+      "showPayoutsTooltip": true,
+      "additionalPercent": "90",
+      "mapped": true,
+      "c": 1,
+      "ha": "agorise",
+      "ba": "agorise",
+      "mt": "",
+      "bmapped": true,
+      "permLinkObj": {
+        "a": "blurt.media",
+        "p": "the-rise-and-fall-of-a-loaf-nbam11z461",
+        "pp": "bread"
+      },
+      "blurt-permLinkObj": {
+        "a": "blurt.media",
+        "p": "the-rise-and-fall-of-a-loaf-0qrjazybs3vp",
+        "pp": "bread"
+      },
+      "usernameObj": "surfgrrl",
+      "tip": {},
+      "blurt-usernameObj": "surfgrrl",
+      "blurt-tip": {},
+      "ucfg": {
+        "hive": "surfgrrl",
+        "blurt": "surfgrrl"
+      },
+      "defaultObj": "agorise",
+      "blurt-defaultObj": "agorise",
+      "ifvrsp": "no"
+    },
+    "blacklisted": false,
+    "blacklistedReason": null,
+    "streamingPlaylists": [
+      {
+        "id": 52190,
+        "type": 1,
+        "playlistUrl": "https://blurt.media/static/streaming-playlists/hls/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/048323ab-1759-4811-98d3-326be412097e-master.m3u8",
+        "segmentsSha256Url": "https://blurt.media/static/streaming-playlists/hls/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/a707706b-67ca-46b9-bccd-2748310f9e83-segments-sha256.json",
+        "redundancies": [],
+        "files": [
+          {
+            "id": 223603,
+            "resolution": {
+              "id": 1080,
+              "label": "1080p"
+            },
+            "width": 1920,
+            "height": 1080,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fblurt.media%2Flazy-static%2Ftorrents%2F713d0952-c24b-44b1-8054-0d1abf1622e5-1080-hls.torrent&xt=urn:btih:6104fd1b470f9c7098c0576a1a2388395d42c985&dn=The+Rise+and+Fall+of+a+Loaf&tr=https%3A%2F%2Fblurt.media%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fblurt.media%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fblurt.media%2Fstatic%2Fstreaming-playlists%2Fhls%2F9bcc834c-3f60-44a2-9f7a-818c3f2d53e4%2F763463db-79e4-48cf-9363-31b1c999af85-1080-fragmented.mp4",
+            "size": 251231915,
+            "fps": 30,
+            "torrentUrl": "https://blurt.media/lazy-static/torrents/713d0952-c24b-44b1-8054-0d1abf1622e5-1080-hls.torrent",
+            "torrentDownloadUrl": "https://blurt.media/download/torrents/713d0952-c24b-44b1-8054-0d1abf1622e5-1080-hls.torrent",
+            "fileUrl": "https://blurt.media/static/streaming-playlists/hls/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/763463db-79e4-48cf-9363-31b1c999af85-1080-fragmented.mp4",
+            "fileDownloadUrl": "https://blurt.media/download/streaming-playlists/hls/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4-1080-fragmented.mp4",
+            "metadataUrl": "https://blurt.media/api/v1/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/metadata/223603",
+            "hasAudio": true,
+            "hasVideo": true,
+            "storage": 0
+          },
+          {
+            "id": 223607,
+            "resolution": {
+              "id": 720,
+              "label": "720p"
+            },
+            "width": 1280,
+            "height": 720,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fblurt.media%2Flazy-static%2Ftorrents%2F1fafefe5-58a0-4e36-b85e-ce387f2f81ab-720-hls.torrent&xt=urn:btih:da326560806954d3cebc56763f2aa1cc57a2ee9b&dn=The+Rise+and+Fall+of+a+Loaf&tr=https%3A%2F%2Fblurt.media%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fblurt.media%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fblurt.media%2Fstatic%2Fstreaming-playlists%2Fhls%2F9bcc834c-3f60-44a2-9f7a-818c3f2d53e4%2F7a697193-baef-4405-a2f8-ccf427b42e8a-720-fragmented.mp4",
+            "size": 118766781,
+            "fps": 30,
+            "torrentUrl": "https://blurt.media/lazy-static/torrents/1fafefe5-58a0-4e36-b85e-ce387f2f81ab-720-hls.torrent",
+            "torrentDownloadUrl": "https://blurt.media/download/torrents/1fafefe5-58a0-4e36-b85e-ce387f2f81ab-720-hls.torrent",
+            "fileUrl": "https://blurt.media/static/streaming-playlists/hls/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/7a697193-baef-4405-a2f8-ccf427b42e8a-720-fragmented.mp4",
+            "fileDownloadUrl": "https://blurt.media/download/streaming-playlists/hls/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4-720-fragmented.mp4",
+            "metadataUrl": "https://blurt.media/api/v1/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/metadata/223607",
+            "hasAudio": true,
+            "hasVideo": true,
+            "storage": 0
+          },
+          {
+            "id": 223604,
+            "resolution": {
+              "id": 480,
+              "label": "480p"
+            },
+            "width": 854,
+            "height": 480,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fblurt.media%2Flazy-static%2Ftorrents%2F05d51fd1-fda3-4973-827c-ae20f558925e-480-hls.torrent&xt=urn:btih:6693fa985289dfb1a2704f8ac3a4a726d8006592&dn=The+Rise+and+Fall+of+a+Loaf&tr=https%3A%2F%2Fblurt.media%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fblurt.media%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fblurt.media%2Fstatic%2Fstreaming-playlists%2Fhls%2F9bcc834c-3f60-44a2-9f7a-818c3f2d53e4%2F0bf33696-ab4e-4602-9d3f-ccf1aa709614-480-fragmented.mp4",
+            "size": 67020710,
+            "fps": 30,
+            "torrentUrl": "https://blurt.media/lazy-static/torrents/05d51fd1-fda3-4973-827c-ae20f558925e-480-hls.torrent",
+            "torrentDownloadUrl": "https://blurt.media/download/torrents/05d51fd1-fda3-4973-827c-ae20f558925e-480-hls.torrent",
+            "fileUrl": "https://blurt.media/static/streaming-playlists/hls/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/0bf33696-ab4e-4602-9d3f-ccf1aa709614-480-fragmented.mp4",
+            "fileDownloadUrl": "https://blurt.media/download/streaming-playlists/hls/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4-480-fragmented.mp4",
+            "metadataUrl": "https://blurt.media/api/v1/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/metadata/223604",
+            "hasAudio": true,
+            "hasVideo": true,
+            "storage": 0
+          },
+          {
+            "id": 223605,
+            "resolution": {
+              "id": 360,
+              "label": "360p"
+            },
+            "width": 640,
+            "height": 360,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fblurt.media%2Flazy-static%2Ftorrents%2F5dd415a3-fc1e-4d5e-8d04-bb0eed56a945-360-hls.torrent&xt=urn:btih:742f428463c09b98c38c0169f48250375fc6997f&dn=The+Rise+and+Fall+of+a+Loaf&tr=https%3A%2F%2Fblurt.media%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fblurt.media%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fblurt.media%2Fstatic%2Fstreaming-playlists%2Fhls%2F9bcc834c-3f60-44a2-9f7a-818c3f2d53e4%2Fbb2331b3-e2ca-49c6-b2f1-4f890af2b5b0-360-fragmented.mp4",
+            "size": 48362698,
+            "fps": 30,
+            "torrentUrl": "https://blurt.media/lazy-static/torrents/5dd415a3-fc1e-4d5e-8d04-bb0eed56a945-360-hls.torrent",
+            "torrentDownloadUrl": "https://blurt.media/download/torrents/5dd415a3-fc1e-4d5e-8d04-bb0eed56a945-360-hls.torrent",
+            "fileUrl": "https://blurt.media/static/streaming-playlists/hls/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/bb2331b3-e2ca-49c6-b2f1-4f890af2b5b0-360-fragmented.mp4",
+            "fileDownloadUrl": "https://blurt.media/download/streaming-playlists/hls/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4-360-fragmented.mp4",
+            "metadataUrl": "https://blurt.media/api/v1/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/metadata/223605",
+            "hasAudio": true,
+            "hasVideo": true,
+            "storage": 0
+          },
+          {
+            "id": 223609,
+            "resolution": {
+              "id": 240,
+              "label": "240p"
+            },
+            "width": 426,
+            "height": 240,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fblurt.media%2Flazy-static%2Ftorrents%2Fd592abef-2f82-47d4-a396-328fffa7b3dc-240-hls.torrent&xt=urn:btih:e41a14bcc9cc20a4bddb0dd100a0ae918f31fdb2&dn=The+Rise+and+Fall+of+a+Loaf&tr=https%3A%2F%2Fblurt.media%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fblurt.media%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fblurt.media%2Fstatic%2Fstreaming-playlists%2Fhls%2F9bcc834c-3f60-44a2-9f7a-818c3f2d53e4%2F6b3475a3-d68d-4bf2-9869-7660c6df7926-240-fragmented.mp4",
+            "size": 32099369,
+            "fps": 30,
+            "torrentUrl": "https://blurt.media/lazy-static/torrents/d592abef-2f82-47d4-a396-328fffa7b3dc-240-hls.torrent",
+            "torrentDownloadUrl": "https://blurt.media/download/torrents/d592abef-2f82-47d4-a396-328fffa7b3dc-240-hls.torrent",
+            "fileUrl": "https://blurt.media/static/streaming-playlists/hls/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/6b3475a3-d68d-4bf2-9869-7660c6df7926-240-fragmented.mp4",
+            "fileDownloadUrl": "https://blurt.media/download/streaming-playlists/hls/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4-240-fragmented.mp4",
+            "metadataUrl": "https://blurt.media/api/v1/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/metadata/223609",
+            "hasAudio": true,
+            "hasVideo": true,
+            "storage": 0
+          },
+          {
+            "id": 223608,
+            "resolution": {
+              "id": 144,
+              "label": "144p"
+            },
+            "width": 256,
+            "height": 144,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fblurt.media%2Flazy-static%2Ftorrents%2F50b76346-0165-4e0c-8afa-ebf8d72ebc4f-144-hls.torrent&xt=urn:btih:ccfb41ef0e26b13fdf27067652a942be7b9bed3b&dn=The+Rise+and+Fall+of+a+Loaf&tr=https%3A%2F%2Fblurt.media%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fblurt.media%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fblurt.media%2Fstatic%2Fstreaming-playlists%2Fhls%2F9bcc834c-3f60-44a2-9f7a-818c3f2d53e4%2F6a5a769a-0dd9-4ead-b512-a4bcc7148edd-144-fragmented.mp4",
+            "size": 22427739,
+            "fps": 30,
+            "torrentUrl": "https://blurt.media/lazy-static/torrents/50b76346-0165-4e0c-8afa-ebf8d72ebc4f-144-hls.torrent",
+            "torrentDownloadUrl": "https://blurt.media/download/torrents/50b76346-0165-4e0c-8afa-ebf8d72ebc4f-144-hls.torrent",
+            "fileUrl": "https://blurt.media/static/streaming-playlists/hls/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/6a5a769a-0dd9-4ead-b512-a4bcc7148edd-144-fragmented.mp4",
+            "fileDownloadUrl": "https://blurt.media/download/streaming-playlists/hls/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4-144-fragmented.mp4",
+            "metadataUrl": "https://blurt.media/api/v1/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/metadata/223608",
+            "hasAudio": true,
+            "hasVideo": true,
+            "storage": 0
+          },
+          {
+            "id": 223606,
+            "resolution": {
+              "id": 0,
+              "label": "Audio only"
+            },
+            "width": 0,
+            "height": 0,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fblurt.media%2Flazy-static%2Ftorrents%2Fb96d55c2-4ecd-4527-a1bf-f25ca7c9669b-0-hls.torrent&xt=urn:btih:f82da3cb0de1dffe4a8261c207946025907e91f4&dn=The+Rise+and+Fall+of+a+Loaf&tr=https%3A%2F%2Fblurt.media%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fblurt.media%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fblurt.media%2Fstatic%2Fstreaming-playlists%2Fhls%2F9bcc834c-3f60-44a2-9f7a-818c3f2d53e4%2F5006c58c-fedd-4bf4-a555-a05798d28963-0-fragmented.mp4",
+            "size": 12526106,
+            "fps": 0,
+            "torrentUrl": "https://blurt.media/lazy-static/torrents/b96d55c2-4ecd-4527-a1bf-f25ca7c9669b-0-hls.torrent",
+            "torrentDownloadUrl": "https://blurt.media/download/torrents/b96d55c2-4ecd-4527-a1bf-f25ca7c9669b-0-hls.torrent",
+            "fileUrl": "https://blurt.media/static/streaming-playlists/hls/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/5006c58c-fedd-4bf4-a555-a05798d28963-0-fragmented.mp4",
+            "fileDownloadUrl": "https://blurt.media/download/streaming-playlists/hls/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4-0-fragmented.mp4",
+            "metadataUrl": "https://blurt.media/api/v1/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/metadata/223606",
+            "hasAudio": true,
+            "hasVideo": false,
+            "storage": 0
+          }
+        ]
+      }
+    ],
+    "files": [],
+    "support": null,
+    "descriptionPath": "/api/v1/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/description",
+    "tags": [
+      "bread",
+      "breadmaking",
+      "comedy",
+      "fail",
+      "recipe"
+    ],
+    "commentsEnabled": true,
+    "commentsPolicy": {
+      "id": 1,
+      "label": "Enabled"
+    },
+    "downloadEnabled": true,
+    "waitTranscoding": true,
+    "inputFileUpdatedAt": null,
+    "state": {
+      "id": 1,
+      "label": "Published"
+    },
+    "trackerUrls": [
+      "https://blurt.media/tracker/announce",
+      "wss://blurt.media:443/tracker/socket"
+    ]
+  }
+}

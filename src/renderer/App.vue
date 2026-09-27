@@ -81,6 +81,7 @@ import { translateWindowTitle } from './helpers/strings'
 import { loadLocale } from './i18n/index'
 import { getLocalClip } from './helpers/api/local.js'
 import { getClipInvidious } from './helpers/api/invidious.js'
+import { openPeerTubeEntry } from './platform/entryPoints'
 
 const route = useRoute()
 const router = useRouter()
@@ -427,8 +428,9 @@ async function handleYoutubeLink(href, { doCreateNewWindow = false } = {}) {
 }
 
 function enableOpenUrl() {
-  window.ftElectron.handleOpenUrl((url) => {
-    if (url) {
+  window.ftElectron.handleOpenUrl(async (url) => {
+    // Fjernsyn: PeerTube URLs and handles, through the platform layer
+    if (url && !await openPeerTubeEntry(url)) {
       handleYoutubeLink(url)
     }
   })

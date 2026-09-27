@@ -1,12 +1,17 @@
 import { reactive } from 'vue'
 
 import i18n from '../i18n/index'
+import { dismissDownloadInMain, isPeerTubeDownloadKey, listAllDownloads } from './downloads'
 
 /**
  * The downloads this window knows about, for the downloads panel and the
  * watch page button: every running download, those that ended in the last
  * few minutes, and the finished file of each video downloaded this session.
  * In memory only, like main's, so a restart forgets them.
+ *
+ * PeerTube downloads are here too, keyed `peertube:<host>:<uuid>` where a
+ * yt-dlp one has its video id: main's PeerTube service reports in the same
+ * shapes, on the same channel.
  */
 
 /** @typedef {import('../../main/ytdlp/downloadService').DownloadSnapshot | (Omit<import('../../main/ytdlp/downloadService').DownloadSnapshot, 'status'> & { status: 'waiting' })} Download */
@@ -37,10 +42,11 @@ export function isRunning(download) {
 }
 
 /**
- * What main already knows, for a window opened after downloads started.
+ * What main already knows, yt-dlp and PeerTube downloads both, for a window
+ * opened after downloads started.
  */
 export async function loadYtDlpDownloads() {
-  const { downloads, finished } = await window.ftElectron.ytDlpListDownloads()
+  const { downloads, finished } = await listAllDownloads()
 
   for (const download of downloads) {
     put(download)
@@ -125,18 +131,14 @@ function remove(videoId) {
 }
 
 /**
- * @param {string} videoId
+ * Takes an ended download off the panel, here and in main: yt-dlp's or
+ * PeerTube's, by its key.
+ *
+ * @param {string} key
  */
-export function dismissYtDlpDownload(videoId) {
-  remove(videoId)
-  window.ftElectron.ytDlpDismiss(videoId)
-}
-
-/**
- * @param {string} videoId
- */
-export function cancelYtDlpDownload(videoId) {
-  window.ftElectron.ytDlpCancel(videoId)
+export function dismissDownload(key) {
+  remove(key)
+  dismissDownloadInMain(key)
 }
 
 /**
@@ -173,6 +175,11 @@ export function progressFraction(download) {
  */
 export function whereText(download) {
   const t = i18n.global.t
+
+  // A PeerTube download that did not finish keeps nothing, anywhere
+  if (isPeerTubeDownloadKey(download.videoId) && (download.status === 'failed' || download.status === 'cancelled')) {
+    return ''
+  }
 
   if (download.destination) {
     switch (download.status) {
@@ -224,7 +231,10 @@ export function statusText(download) {
     case 'finished':
       return t('Video.yt-dlp.Downloads.Status.Finished')
     case 'cancelled':
-      return t('Video.yt-dlp.Downloads.Status.Cancelled')
+      // Nothing is kept of a PeerTube download to resume from
+      return isPeerTubeDownloadKey(download.videoId)
+        ? t('PeerTube.Downloads.Status.Cancelled')
+        : t('Video.yt-dlp.Downloads.Status.Cancelled')
     case 'failed':
       return download.reason
         ? t('Video.yt-dlp.Downloads.Status.Failed', { reason: download.reason })

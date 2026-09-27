@@ -208,6 +208,42 @@ function scrapedVideo(overrides = {}) {
   check('empty incoming passes through', carry([rssVideo()], []).length === 0)
 }
 
+// A PeerTube entry is taken as fetched: its list carries the duration and the
+// live and scheduled flags, so a flag the last copy had and this one lacks has
+// ended, not been left out
+{
+  const peerTube = (overrides = {}) => ({
+    platform: 'peertube',
+    host: 'video.example',
+    authorId: 'channel@video.example',
+    author: 'Channel',
+    videoId: '221b3d31-e0c2-45cb-a757-4c57a9a23df4',
+    title: 'A live',
+    published: 1_700_000_000_000,
+    viewCount: 7,
+    type: 'video',
+    liveNow: false,
+    isUpcoming: false,
+    ...overrides
+  })
+
+  const scheduled = [peerTube({ isUpcoming: true, premiereDate: new Date(1_800_000_000_000) })]
+  const onNow = [peerTube({ liveNow: true })]
+
+  carryOverKnownVideoDetails(scheduled, onNow)
+
+  check('a PeerTube live on now does not inherit the schedule it had', !('premiereDate' in onNow[0]))
+  check('nor the upcoming flag', onNow[0].isUpcoming === false)
+
+  const before = [peerTube({ lengthSeconds: 600, description: 'old' })]
+  const after = [peerTube({ lengthSeconds: 0 })]
+
+  carryOverKnownVideoDetails(before, after)
+
+  check('a PeerTube entry keeps its own duration', after[0].lengthSeconds === 0)
+  check('and gains nothing from the last copy', !('description' in after[0]))
+}
+
 if (failures > 0) {
   console.log(`\n${failures} check(s) failed`)
   process.exit(1)
