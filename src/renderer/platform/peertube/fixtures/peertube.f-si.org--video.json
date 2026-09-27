@@ -1,0 +1,163 @@
+{
+  "recordedAt": "2026-09-27T14:25:30.974Z",
+  "url": "https://peertube.f-si.org/api/v1/videos/8934b209-5a98-4314-a143-73e567cacd1c",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "49",
+    "x-ratelimit-reset": "1790519142"
+  },
+  "body": {
+    "id": 215,
+    "uuid": "8934b209-5a98-4314-a143-73e567cacd1c",
+    "shortUUID": "hWFseobSCXm6iYhngdw7Rs",
+    "url": "https://peertube.f-si.org/videos/watch/8934b209-5a98-4314-a143-73e567cacd1c",
+    "name": "Gerhard Kahmen Welcome and introduction of IHP, IHP Microelectronics",
+    "category": {
+      "id": null,
+      "label": "Unknown"
+    },
+    "licence": {
+      "id": 6,
+      "label": "Attribution - Non Commercial - No Derivatives"
+    },
+    "language": {
+      "id": "en",
+      "label": "English"
+    },
+    "privacy": {
+      "id": 1,
+      "label": "Public"
+    },
+    "nsfw": false,
+    "truncatedDescription": null,
+    "description": null,
+    "isLocal": true,
+    "duration": 532,
+    "aspectRatio": 1.7778,
+    "views": 29,
+    "viewers": 0,
+    "likes": 0,
+    "dislikes": 0,
+    "thumbnailPath": "/lazy-static/thumbnails/bb56dfb7-2c71-4a2c-bbae-8ac9892ff45d.jpg",
+    "previewPath": "/lazy-static/previews/4ad4047e-bdab-41bf-b247-06a319a89878.jpg",
+    "embedPath": "/videos/embed/8934b209-5a98-4314-a143-73e567cacd1c",
+    "createdAt": "2025-09-25T09:52:35.919Z",
+    "updatedAt": "2026-09-26T20:28:00.033Z",
+    "publishedAt": "2025-09-25T09:55:24.890Z",
+    "originallyPublishedAt": null,
+    "isLive": false,
+    "account": {
+      "url": "https://peertube.f-si.org/accounts/root",
+      "name": "root",
+      "host": "peertube.f-si.org",
+      "avatars": [
+        {
+          "width": null,
+          "path": "/lazy-static/avatars/799bae49-58ba-4f9f-bda2-e8dd37fb7286.png",
+          "createdAt": "2019-04-12T20:56:38.924Z",
+          "updatedAt": "2019-04-12T20:56:38.924Z"
+        }
+      ],
+      "id": 2,
+      "hostRedundancyAllowed": false,
+      "followingCount": 0,
+      "followersCount": 1,
+      "createdAt": "2019-03-20T12:29:23.552Z",
+      "displayName": "root",
+      "description": null,
+      "updatedAt": "2019-03-20T12:29:23.563Z",
+      "userId": 1
+    },
+    "channel": {
+      "url": "https://peertube.f-si.org/video-channels/fsic2025",
+      "name": "fsic2025",
+      "host": "peertube.f-si.org",
+      "avatars": [],
+      "id": 7,
+      "hostRedundancyAllowed": false,
+      "followingCount": 0,
+      "followersCount": 1,
+      "createdAt": "2026-05-28T20:48:13.521Z",
+      "banners": [],
+      "displayName": "FSiC2025",
+      "description": null,
+      "support": null,
+      "isLocal": true,
+      "updatedAt": "2026-05-28T20:48:13.524Z",
+      "ownerAccount": {
+        "url": "https://peertube.f-si.org/accounts/root",
+        "name": "root",
+        "host": "peertube.f-si.org",
+        "avatars": [
+          {
+            "width": null,
+            "path": "/lazy-static/avatars/799bae49-58ba-4f9f-bda2-e8dd37fb7286.png",
+            "createdAt": "2019-04-12T20:56:38.924Z",
+            "updatedAt": "2019-04-12T20:56:38.924Z"
+          }
+        ],
+        "id": 2,
+        "hostRedundancyAllowed": false,
+        "followingCount": 0,
+        "followersCount": 1,
+        "createdAt": "2019-03-20T12:29:23.552Z",
+        "displayName": "root",
+        "description": null,
+        "updatedAt": "2019-03-20T12:29:23.563Z",
+        "userId": 1
+      }
+    },
+    "blacklisted": false,
+    "blacklistedReason": null,
+    "streamingPlaylists": [
+      {
+        "id": 99,
+        "type": 1,
+        "playlistUrl": "https://peertube.f-si.org/static/streaming-playlists/hls/8934b209-5a98-4314-a143-73e567cacd1c/aa3fba85-4e01-44b6-a7e7-12a64eb27416-master.m3u8",
+        "segmentsSha256Url": "https://peertube.f-si.org/static/streaming-playlists/hls/8934b209-5a98-4314-a143-73e567cacd1c/c9b23e24-7a61-4e33-bca9-24268bfa56ba-segments-sha256.json",
+        "redundancies": [],
+        "files": [
+          {
+            "id": 215,
+            "resolution": {
+              "id": 1080,
+              "label": "1080p"
+            },
+            "width": 1920,
+            "height": 1080,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fpeertube.f-si.org%2Flazy-static%2Ftorrents%2F8000b9b1-3bdd-498b-9a2a-848e5ae0bcc9-1080-hls.torrent&xt=urn:btih:de10e2a3a93803b63de9afa988f928a24583f9ff&dn=Gerhard+Kahmen+Welcome+and+introduction+of+IHP%2C+IHP+Microelectronics&tr=https%3A%2F%2Fpeertube.f-si.org%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fpeertube.f-si.org%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fpeertube.f-si.org%2Fstatic%2Fstreaming-playlists%2Fhls%2F8934b209-5a98-4314-a143-73e567cacd1c%2F1328e170-ca2c-4d81-83b2-448563d6015f-1080-fragmented.mp4",
+            "size": 41842396,
+            "fps": 25,
+            "torrentUrl": "https://peertube.f-si.org/lazy-static/torrents/8000b9b1-3bdd-498b-9a2a-848e5ae0bcc9-1080-hls.torrent",
+            "torrentDownloadUrl": "https://peertube.f-si.org/download/torrents/8000b9b1-3bdd-498b-9a2a-848e5ae0bcc9-1080-hls.torrent",
+            "fileUrl": "https://peertube.f-si.org/static/streaming-playlists/hls/8934b209-5a98-4314-a143-73e567cacd1c/1328e170-ca2c-4d81-83b2-448563d6015f-1080-fragmented.mp4",
+            "fileDownloadUrl": "https://peertube.f-si.org/download/streaming-playlists/hls/videos/8934b209-5a98-4314-a143-73e567cacd1c-1080-fragmented.mp4",
+            "metadataUrl": "https://peertube.f-si.org/api/v1/videos/8934b209-5a98-4314-a143-73e567cacd1c/metadata/215"
+          }
+        ]
+      }
+    ],
+    "files": [],
+    "support": null,
+    "descriptionPath": "/api/v1/videos/8934b209-5a98-4314-a143-73e567cacd1c/description",
+    "tags": [],
+    "commentsEnabled": true,
+    "commentsPolicy": {
+      "id": 1,
+      "label": "Enabled"
+    },
+    "downloadEnabled": true,
+    "waitTranscoding": false,
+    "inputFileUpdatedAt": null,
+    "state": {
+      "id": 1,
+      "label": "Published"
+    },
+    "trackerUrls": [
+      "https://peertube.f-si.org/tracker/announce",
+      "wss://peertube.f-si.org:443/tracker/socket"
+    ]
+  }
+}

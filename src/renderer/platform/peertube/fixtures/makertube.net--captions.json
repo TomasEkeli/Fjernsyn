@@ -1,0 +1,27 @@
+{
+  "recordedAt": "2026-09-27T14:27:30.747Z",
+  "url": "https://makertube.net/api/v1/videos/cb6fa58d-4981-4a4b-9a28-8af37d40f271/captions",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "75",
+    "x-ratelimit-remaining": "73",
+    "x-ratelimit-reset": "1790519261"
+  },
+  "body": {
+    "total": 1,
+    "data": [
+      {
+        "language": {
+          "id": "de",
+          "label": "German"
+        },
+        "automaticallyGenerated": true,
+        "captionPath": "/lazy-static/video-captions/ae1b7daf-3467-40a2-89f9-fba22e231636-de.vtt",
+        "fileUrl": "https://media.makertube.net/captions/ae1b7daf-3467-40a2-89f9-fba22e231636-de.vtt",
+        "m3u8Url": null,
+        "updatedAt": "2025-03-21T16:43:34.127Z"
+      }
+    ]
+  }
+}

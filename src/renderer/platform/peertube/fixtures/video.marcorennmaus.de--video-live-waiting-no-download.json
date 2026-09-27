@@ -1,0 +1,169 @@
+{
+  "recordedAt": "2026-09-27T14:25:31.028Z",
+  "url": "https://video.marcorennmaus.de/api/v1/videos/125c3a12-2565-40e9-b80c-f93c303923fe",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "49",
+    "x-ratelimit-reset": "1790519142"
+  },
+  "body": {
+    "id": 39581,
+    "uuid": "125c3a12-2565-40e9-b80c-f93c303923fe",
+    "shortUUID": "3guSzehtxfYdfUFSKfJNaL",
+    "url": "https://video.marcorennmaus.de/videos/watch/125c3a12-2565-40e9-b80c-f93c303923fe",
+    "name": "Roscaelifer Chapter 3: Their Secret Histories - Stream 1 | Zenless Zone Zero",
+    "category": {
+      "id": null,
+      "label": "Unknown"
+    },
+    "licence": {
+      "id": null,
+      "label": "Unknown"
+    },
+    "language": {
+      "id": null,
+      "label": "Unknown"
+    },
+    "privacy": {
+      "id": 1,
+      "label": "Public"
+    },
+    "nsfw": false,
+    "nsfwFlags": 0,
+    "nsfwSummary": null,
+    "truncatedDescription": null,
+    "description": null,
+    "isLocal": true,
+    "duration": 0,
+    "aspectRatio": 1.7778,
+    "views": 0,
+    "viewers": 0,
+    "likes": 0,
+    "dislikes": 0,
+    "thumbnailPath": "/lazy-static/thumbnails/2de5dbd7-568c-4212-a95f-7f3da6b6e704.jpg",
+    "previewPath": "/lazy-static/previews/566b7400-ebe4-4e9b-a9b9-e5a12e1622a8.jpg",
+    "embedPath": "/videos/embed/3guSzehtxfYdfUFSKfJNaL",
+    "createdAt": "2026-09-25T17:17:56.906Z",
+    "updatedAt": "2026-09-25T20:40:32.627Z",
+    "publishedAt": "2026-09-25T17:33:41.465Z",
+    "originallyPublishedAt": null,
+    "isLive": true,
+    "account": {
+      "url": "https://video.marcorennmaus.de/accounts/marcorennmaus",
+      "name": "marcorennmaus",
+      "host": "video.marcorennmaus.de",
+      "avatars": [
+        {
+          "width": 48,
+          "path": "/lazy-static/avatars/939b311f-36c3-4ef3-81c2-25e6a8d5f8f4.png",
+          "fileUrl": "https://video.marcorennmaus.de/lazy-static/avatars/939b311f-36c3-4ef3-81c2-25e6a8d5f8f4.png",
+          "createdAt": "2022-06-15T21:52:33.545Z",
+          "updatedAt": "2022-06-15T21:52:33.545Z"
+        },
+        {
+          "width": 120,
+          "path": "/lazy-static/avatars/4972bd7e-68e4-44b6-a31a-3678deb07a4a.png",
+          "fileUrl": "https://video.marcorennmaus.de/lazy-static/avatars/4972bd7e-68e4-44b6-a31a-3678deb07a4a.png",
+          "createdAt": "2019-10-22T13:58:15.074Z",
+          "updatedAt": "2022-06-15T21:52:33.537Z"
+        }
+      ],
+      "id": 3,
+      "hostRedundancyAllowed": false,
+      "followingCount": 6,
+      "followersCount": 1,
+      "createdAt": "2019-10-22T13:49:06.429Z",
+      "displayName": "marco_rennmaus",
+      "description": null,
+      "updatedAt": "2019-10-22T13:49:06.440Z",
+      "userId": 2
+    },
+    "channel": {
+      "url": "https://video.marcorennmaus.de/video-channels/gaming",
+      "name": "gaming",
+      "host": "video.marcorennmaus.de",
+      "avatars": [
+        {
+          "width": 48,
+          "path": "/lazy-static/avatars/c0fa2d87-6948-478c-8dac-2156d5031794.png",
+          "fileUrl": "https://video.marcorennmaus.de/lazy-static/avatars/c0fa2d87-6948-478c-8dac-2156d5031794.png",
+          "createdAt": "2024-06-29T09:15:20.970Z",
+          "updatedAt": "2024-06-29T09:15:20.970Z"
+        },
+        {
+          "width": 120,
+          "path": "/lazy-static/avatars/ee9d38c9-cc3c-45f5-b850-5dfc8dbb574b.png",
+          "fileUrl": "https://video.marcorennmaus.de/lazy-static/avatars/ee9d38c9-cc3c-45f5-b850-5dfc8dbb574b.png",
+          "createdAt": "2024-06-29T09:15:20.968Z",
+          "updatedAt": "2024-06-29T09:15:20.968Z"
+        }
+      ],
+      "id": 1234,
+      "hostRedundancyAllowed": false,
+      "followingCount": 0,
+      "followersCount": 4,
+      "createdAt": "2024-02-24T14:31:40.158Z",
+      "banners": [],
+      "displayName": "marco_rennmaus Gaming",
+      "description": null,
+      "support": null,
+      "isLocal": true,
+      "updatedAt": "2026-09-25T17:17:56.929Z",
+      "ownerAccount": {
+        "url": "https://video.marcorennmaus.de/accounts/marcorennmaus",
+        "name": "marcorennmaus",
+        "host": "video.marcorennmaus.de",
+        "avatars": [
+          {
+            "width": 48,
+            "path": "/lazy-static/avatars/939b311f-36c3-4ef3-81c2-25e6a8d5f8f4.png",
+            "fileUrl": "https://video.marcorennmaus.de/lazy-static/avatars/939b311f-36c3-4ef3-81c2-25e6a8d5f8f4.png",
+            "createdAt": "2022-06-15T21:52:33.545Z",
+            "updatedAt": "2022-06-15T21:52:33.545Z"
+          },
+          {
+            "width": 120,
+            "path": "/lazy-static/avatars/4972bd7e-68e4-44b6-a31a-3678deb07a4a.png",
+            "fileUrl": "https://video.marcorennmaus.de/lazy-static/avatars/4972bd7e-68e4-44b6-a31a-3678deb07a4a.png",
+            "createdAt": "2019-10-22T13:58:15.074Z",
+            "updatedAt": "2022-06-15T21:52:33.537Z"
+          }
+        ],
+        "id": 3,
+        "hostRedundancyAllowed": false,
+        "followingCount": 6,
+        "followersCount": 1,
+        "createdAt": "2019-10-22T13:49:06.429Z",
+        "displayName": "marco_rennmaus",
+        "description": null,
+        "updatedAt": "2019-10-22T13:49:06.440Z",
+        "userId": 2
+      }
+    },
+    "comments": 0,
+    "blacklisted": false,
+    "blacklistedReason": null,
+    "streamingPlaylists": [],
+    "files": [],
+    "support": null,
+    "tags": [],
+    "commentsEnabled": true,
+    "commentsPolicy": {
+      "id": 1,
+      "label": "Enabled"
+    },
+    "downloadEnabled": false,
+    "waitTranscoding": true,
+    "inputFileUpdatedAt": null,
+    "state": {
+      "id": 4,
+      "label": "Waiting for livestream"
+    },
+    "trackerUrls": [
+      "https://video.marcorennmaus.de/tracker/announce",
+      "wss://video.marcorennmaus.de:443/tracker/socket"
+    ]
+  }
+}

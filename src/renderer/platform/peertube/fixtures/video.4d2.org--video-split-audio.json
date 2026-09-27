@@ -1,0 +1,398 @@
+{
+  "recordedAt": "2026-09-27T14:26:31.718Z",
+  "url": "https://video.4d2.org/api/v1/videos/79856d94-7771-4e85-98fc-7e03152d5915",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "49",
+    "x-ratelimit-reset": "1790519203"
+  },
+  "body": {
+    "id": 1132770,
+    "uuid": "79856d94-7771-4e85-98fc-7e03152d5915",
+    "shortUUID": "g1m38XDFFabDDAEpaDJJKP",
+    "url": "https://video.4d2.org/videos/watch/79856d94-7771-4e85-98fc-7e03152d5915",
+    "name": "Rikti Mothership Raid on Rebirth City of Heroes Server",
+    "category": {
+      "id": null,
+      "label": "Unknown"
+    },
+    "licence": {
+      "id": null,
+      "label": "Unknown"
+    },
+    "language": {
+      "id": null,
+      "label": "Unknown"
+    },
+    "privacy": {
+      "id": 1,
+      "label": "Public"
+    },
+    "nsfw": false,
+    "nsfwFlags": 0,
+    "nsfwSummary": null,
+    "truncatedDescription": "I was a little disoriented at the start because I looked away to queue up some music and start OBS on a whim.  And since this was on a whim I had to scrounge up some background noise.  Buuuuut at least you get glimpse of what a rikti mothership ra...",
+    "description": "I was a little disoriented at the start because I looked away to queue up some music and start OBS on a whim.  And since this was on a whim I had to scrounge up some background noise.  Buuuuut at least you get glimpse of what a rikti mothership raid looks like.",
+    "isLocal": true,
+    "duration": 1936,
+    "aspectRatio": 1.7778,
+    "views": 5,
+    "viewers": 0,
+    "downloads": 2,
+    "likes": 0,
+    "dislikes": 0,
+    "thumbnailPath": "/lazy-static/thumbnails/e2557421-6916-461f-b516-36505c29926e.jpg",
+    "previewPath": "/lazy-static/thumbnails/9f15ad9f-6671-4f80-ae48-e0845f3a524b.jpg",
+    "thumbnails": [
+      {
+        "height": 1080,
+        "width": 1920,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://video.4d2.org/lazy-static/thumbnails/9f15ad9f-6671-4f80-ae48-e0845f3a524b.jpg"
+      },
+      {
+        "height": 1400,
+        "width": 1400,
+        "aspectRatio": "1:1",
+        "fileUrl": "https://video.4d2.org/lazy-static/thumbnails/83cbd84b-57f7-4d29-8ea1-b9d359ec1e8b.jpg"
+      },
+      {
+        "height": 720,
+        "width": 1280,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://video.4d2.org/lazy-static/thumbnails/617aabc4-e2e3-40d0-a5e7-60dd9bf7e5f9.jpg"
+      },
+      {
+        "height": 480,
+        "width": 850,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://video.4d2.org/lazy-static/thumbnails/9fe9d56f-4fa3-46d8-a9e8-2c08c4bc748b.jpg"
+      },
+      {
+        "height": 157,
+        "width": 280,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://video.4d2.org/lazy-static/thumbnails/e2557421-6916-461f-b516-36505c29926e.jpg"
+      }
+    ],
+    "embedPath": "/videos/embed/g1m38XDFFabDDAEpaDJJKP",
+    "createdAt": "2026-09-12T18:33:12.020Z",
+    "updatedAt": "2026-09-23T16:53:01.954Z",
+    "publishedAt": "2026-09-12T18:39:48.549Z",
+    "originallyPublishedAt": null,
+    "isLive": false,
+    "account": {
+      "url": "https://video.4d2.org/accounts/bellimora",
+      "name": "bellimora",
+      "host": "video.4d2.org",
+      "avatars": [
+        {
+          "height": 48,
+          "width": 48,
+          "path": "/lazy-static/avatars/e38a7151-efd0-4416-b7d6-2d8cb6c5535b.png",
+          "fileUrl": "https://video.4d2.org/lazy-static/avatars/e38a7151-efd0-4416-b7d6-2d8cb6c5535b.png",
+          "createdAt": "2025-05-18T04:55:30.257Z",
+          "updatedAt": "2025-05-18T04:55:30.257Z"
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "path": "/lazy-static/avatars/d7eee2b8-f8dc-4bfe-8d2a-9a25bcfe6ca3.png",
+          "fileUrl": "https://video.4d2.org/lazy-static/avatars/d7eee2b8-f8dc-4bfe-8d2a-9a25bcfe6ca3.png",
+          "createdAt": "2025-05-18T04:55:30.257Z",
+          "updatedAt": "2025-05-18T04:55:30.257Z"
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "path": "/lazy-static/avatars/c457a083-2725-4fab-bbfc-fefb34710a5e.png",
+          "fileUrl": "https://video.4d2.org/lazy-static/avatars/c457a083-2725-4fab-bbfc-fefb34710a5e.png",
+          "createdAt": "2025-05-18T04:55:30.256Z",
+          "updatedAt": "2025-05-18T04:55:30.256Z"
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "path": "/lazy-static/avatars/284110fc-c47b-4499-8199-c169fbf68c19.png",
+          "fileUrl": "https://video.4d2.org/lazy-static/avatars/284110fc-c47b-4499-8199-c169fbf68c19.png",
+          "createdAt": "2025-05-18T04:55:30.254Z",
+          "updatedAt": "2025-05-18T04:55:30.254Z"
+        }
+      ],
+      "id": 124153,
+      "hostRedundancyAllowed": false,
+      "followingCount": 0,
+      "followersCount": 0,
+      "createdAt": "2025-05-18T04:49:21.695Z",
+      "displayName": "Bellimora",
+      "description": "A random rabbit who records random things on a random account.",
+      "updatedAt": "2025-05-18T04:56:52.803Z",
+      "userId": 73
+    },
+    "channel": {
+      "url": "https://video.4d2.org/video-channels/randomrabbitgameplayvids",
+      "name": "randomrabbitgameplayvids",
+      "host": "video.4d2.org",
+      "avatars": [
+        {
+          "height": 48,
+          "width": 48,
+          "path": "/lazy-static/avatars/89156b88-670f-480d-9bd1-137c680009e8.png",
+          "fileUrl": "https://video.4d2.org/lazy-static/avatars/89156b88-670f-480d-9bd1-137c680009e8.png",
+          "createdAt": "2025-05-18T04:57:41.393Z",
+          "updatedAt": "2025-05-18T04:57:41.393Z"
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "path": "/lazy-static/avatars/6b5d00fe-4420-4503-8a29-e534454015ac.png",
+          "fileUrl": "https://video.4d2.org/lazy-static/avatars/6b5d00fe-4420-4503-8a29-e534454015ac.png",
+          "createdAt": "2025-05-18T04:57:41.391Z",
+          "updatedAt": "2025-05-18T04:57:41.391Z"
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "path": "/lazy-static/avatars/2d367f27-ae82-46b7-8161-dbc9b0834c83.png",
+          "fileUrl": "https://video.4d2.org/lazy-static/avatars/2d367f27-ae82-46b7-8161-dbc9b0834c83.png",
+          "createdAt": "2025-05-18T04:57:41.391Z",
+          "updatedAt": "2025-05-18T04:57:41.391Z"
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "path": "/lazy-static/avatars/6fc381c4-064e-451e-827d-e76d09dd0914.png",
+          "fileUrl": "https://video.4d2.org/lazy-static/avatars/6fc381c4-064e-451e-827d-e76d09dd0914.png",
+          "createdAt": "2025-05-18T04:57:41.390Z",
+          "updatedAt": "2025-05-18T04:57:41.390Z"
+        }
+      ],
+      "id": 24345,
+      "hostRedundancyAllowed": false,
+      "followingCount": 0,
+      "followersCount": 1,
+      "createdAt": "2025-05-18T04:49:21.697Z",
+      "banners": [],
+      "displayName": "RandomRabbitGameplayVids",
+      "description": "Random gameplay videos, likely city of heroes rebirth and such.",
+      "support": null,
+      "publicEmail": null,
+      "isLocal": true,
+      "updatedAt": "2026-09-12T18:33:12.040Z",
+      "ownerAccount": {
+        "url": "https://video.4d2.org/accounts/bellimora",
+        "name": "bellimora",
+        "host": "video.4d2.org",
+        "avatars": [
+          {
+            "height": 48,
+            "width": 48,
+            "path": "/lazy-static/avatars/e38a7151-efd0-4416-b7d6-2d8cb6c5535b.png",
+            "fileUrl": "https://video.4d2.org/lazy-static/avatars/e38a7151-efd0-4416-b7d6-2d8cb6c5535b.png",
+            "createdAt": "2025-05-18T04:55:30.257Z",
+            "updatedAt": "2025-05-18T04:55:30.257Z"
+          },
+          {
+            "height": 120,
+            "width": 120,
+            "path": "/lazy-static/avatars/d7eee2b8-f8dc-4bfe-8d2a-9a25bcfe6ca3.png",
+            "fileUrl": "https://video.4d2.org/lazy-static/avatars/d7eee2b8-f8dc-4bfe-8d2a-9a25bcfe6ca3.png",
+            "createdAt": "2025-05-18T04:55:30.257Z",
+            "updatedAt": "2025-05-18T04:55:30.257Z"
+          },
+          {
+            "height": 600,
+            "width": 600,
+            "path": "/lazy-static/avatars/c457a083-2725-4fab-bbfc-fefb34710a5e.png",
+            "fileUrl": "https://video.4d2.org/lazy-static/avatars/c457a083-2725-4fab-bbfc-fefb34710a5e.png",
+            "createdAt": "2025-05-18T04:55:30.256Z",
+            "updatedAt": "2025-05-18T04:55:30.256Z"
+          },
+          {
+            "height": 1500,
+            "width": 1500,
+            "path": "/lazy-static/avatars/284110fc-c47b-4499-8199-c169fbf68c19.png",
+            "fileUrl": "https://video.4d2.org/lazy-static/avatars/284110fc-c47b-4499-8199-c169fbf68c19.png",
+            "createdAt": "2025-05-18T04:55:30.254Z",
+            "updatedAt": "2025-05-18T04:55:30.254Z"
+          }
+        ],
+        "id": 124153,
+        "hostRedundancyAllowed": false,
+        "followingCount": 0,
+        "followersCount": 0,
+        "createdAt": "2025-05-18T04:49:21.695Z",
+        "displayName": "Bellimora",
+        "description": "A random rabbit who records random things on a random account.",
+        "updatedAt": "2025-05-18T04:56:52.803Z",
+        "userId": 73
+      }
+    },
+    "comments": 0,
+    "pluginData": {},
+    "blacklisted": false,
+    "blacklistedReason": null,
+    "streamingPlaylists": [
+      {
+        "id": 15824471,
+        "type": 1,
+        "playlistUrl": "https://cdn-video.4d2.org/streaming-playlists/hls/79856d94-7771-4e85-98fc-7e03152d5915/f9762888-cc67-4463-94b0-5f75bcbb5efd-master.m3u8",
+        "segmentsSha256Url": "https://cdn-video.4d2.org/streaming-playlists/hls/79856d94-7771-4e85-98fc-7e03152d5915/9a6fa6a8-e209-4be2-aa5a-91d540fe4489-segments-sha256.json",
+        "redundancies": [],
+        "files": [
+          {
+            "id": 4380856,
+            "resolution": {
+              "id": 1080,
+              "label": "1080p"
+            },
+            "width": 1920,
+            "height": 1080,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fvideo.4d2.org%2Flazy-static%2Ftorrents%2F592979a5-a3f1-4fad-8ea2-8453a1b3d6b8-1080-hls.torrent&xt=urn:btih:566f8a08ccd4fbfb43e4a1b5fc49a5c1b9c80ca0&dn=Rikti+Mothership+Raid+on+Rebirth+City+of+Heroes+Server&tr=https%3A%2F%2Fvideo.4d2.org%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fvideo.4d2.org%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fcdn-video.4d2.org%2Fstreaming-playlists%2Fhls%2F79856d94-7771-4e85-98fc-7e03152d5915%2F0f6dbf9a-fb4c-4062-a1f8-c6d0e1e84d67-1080-fragmented.mp4",
+            "size": 838722692,
+            "fps": 30,
+            "torrentUrl": "https://video.4d2.org/lazy-static/torrents/592979a5-a3f1-4fad-8ea2-8453a1b3d6b8-1080-hls.torrent",
+            "torrentDownloadUrl": "https://video.4d2.org/download/torrents/592979a5-a3f1-4fad-8ea2-8453a1b3d6b8-1080-hls.torrent",
+            "fileUrl": "https://cdn-video.4d2.org/streaming-playlists/hls/79856d94-7771-4e85-98fc-7e03152d5915/0f6dbf9a-fb4c-4062-a1f8-c6d0e1e84d67-1080-fragmented.mp4",
+            "fileDownloadUrl": "https://video.4d2.org/download/streaming-playlists/hls/videos/79856d94-7771-4e85-98fc-7e03152d5915-1080-fragmented.mp4",
+            "metadataUrl": "https://video.4d2.org/api/v1/videos/79856d94-7771-4e85-98fc-7e03152d5915/metadata/4380856",
+            "hasAudio": false,
+            "hasVideo": true,
+            "playlistUrl": "https://cdn-video.4d2.org/streaming-playlists/hls/79856d94-7771-4e85-98fc-7e03152d5915/0f6dbf9a-fb4c-4062-a1f8-c6d0e1e84d67-1080.m3u8",
+            "storage": 1
+          },
+          {
+            "id": 4381037,
+            "resolution": {
+              "id": 720,
+              "label": "720p"
+            },
+            "width": 1280,
+            "height": 720,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fvideo.4d2.org%2Flazy-static%2Ftorrents%2Fcc354703-a02c-43ef-907a-57ba77ab0eba-720-hls.torrent&xt=urn:btih:90de5f9031beef2dbd340eb53618ba71fa3a65a8&dn=Rikti+Mothership+Raid+on+Rebirth+City+of+Heroes+Server&tr=https%3A%2F%2Fvideo.4d2.org%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fvideo.4d2.org%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fcdn-video.4d2.org%2Fstreaming-playlists%2Fhls%2F79856d94-7771-4e85-98fc-7e03152d5915%2F006c0260-175a-4e20-b3f5-8b8d4e0f1fb0-720-fragmented.mp4",
+            "size": 692779657,
+            "fps": 30,
+            "torrentUrl": "https://video.4d2.org/lazy-static/torrents/cc354703-a02c-43ef-907a-57ba77ab0eba-720-hls.torrent",
+            "torrentDownloadUrl": "https://video.4d2.org/download/torrents/cc354703-a02c-43ef-907a-57ba77ab0eba-720-hls.torrent",
+            "fileUrl": "https://cdn-video.4d2.org/streaming-playlists/hls/79856d94-7771-4e85-98fc-7e03152d5915/006c0260-175a-4e20-b3f5-8b8d4e0f1fb0-720-fragmented.mp4",
+            "fileDownloadUrl": "https://video.4d2.org/download/streaming-playlists/hls/videos/79856d94-7771-4e85-98fc-7e03152d5915-720-fragmented.mp4",
+            "metadataUrl": "https://video.4d2.org/api/v1/videos/79856d94-7771-4e85-98fc-7e03152d5915/metadata/4381037",
+            "hasAudio": false,
+            "hasVideo": true,
+            "playlistUrl": "https://cdn-video.4d2.org/streaming-playlists/hls/79856d94-7771-4e85-98fc-7e03152d5915/006c0260-175a-4e20-b3f5-8b8d4e0f1fb0-720.m3u8",
+            "storage": 1
+          },
+          {
+            "id": 4380861,
+            "resolution": {
+              "id": 480,
+              "label": "480p"
+            },
+            "width": 854,
+            "height": 480,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fvideo.4d2.org%2Flazy-static%2Ftorrents%2F289ce1f4-9406-47bd-a202-adaeae03f0be-480-hls.torrent&xt=urn:btih:0e01b64f21e38dccf6602d29517e04a1229b0045&dn=Rikti+Mothership+Raid+on+Rebirth+City+of+Heroes+Server&tr=https%3A%2F%2Fvideo.4d2.org%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fvideo.4d2.org%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fcdn-video.4d2.org%2Fstreaming-playlists%2Fhls%2F79856d94-7771-4e85-98fc-7e03152d5915%2F719f8128-fdab-47d3-964f-ef3638585d3e-480-fragmented.mp4",
+            "size": 344188344,
+            "fps": 30,
+            "torrentUrl": "https://video.4d2.org/lazy-static/torrents/289ce1f4-9406-47bd-a202-adaeae03f0be-480-hls.torrent",
+            "torrentDownloadUrl": "https://video.4d2.org/download/torrents/289ce1f4-9406-47bd-a202-adaeae03f0be-480-hls.torrent",
+            "fileUrl": "https://cdn-video.4d2.org/streaming-playlists/hls/79856d94-7771-4e85-98fc-7e03152d5915/719f8128-fdab-47d3-964f-ef3638585d3e-480-fragmented.mp4",
+            "fileDownloadUrl": "https://video.4d2.org/download/streaming-playlists/hls/videos/79856d94-7771-4e85-98fc-7e03152d5915-480-fragmented.mp4",
+            "metadataUrl": "https://video.4d2.org/api/v1/videos/79856d94-7771-4e85-98fc-7e03152d5915/metadata/4380861",
+            "hasAudio": false,
+            "hasVideo": true,
+            "playlistUrl": "https://cdn-video.4d2.org/streaming-playlists/hls/79856d94-7771-4e85-98fc-7e03152d5915/719f8128-fdab-47d3-964f-ef3638585d3e-480.m3u8",
+            "storage": 1
+          },
+          {
+            "id": 4380859,
+            "resolution": {
+              "id": 240,
+              "label": "240p"
+            },
+            "width": 426,
+            "height": 240,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fvideo.4d2.org%2Flazy-static%2Ftorrents%2Fa225430c-2c93-45db-ac79-a054e132dcdb-240-hls.torrent&xt=urn:btih:384146e1c1f58ff2ec5a59b6595217ceeb70ce0a&dn=Rikti+Mothership+Raid+on+Rebirth+City+of+Heroes+Server&tr=https%3A%2F%2Fvideo.4d2.org%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fvideo.4d2.org%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fcdn-video.4d2.org%2Fstreaming-playlists%2Fhls%2F79856d94-7771-4e85-98fc-7e03152d5915%2F6574089e-fdd7-4c4e-a197-fd66327525ed-240-fragmented.mp4",
+            "size": 121733956,
+            "fps": 30,
+            "torrentUrl": "https://video.4d2.org/lazy-static/torrents/a225430c-2c93-45db-ac79-a054e132dcdb-240-hls.torrent",
+            "torrentDownloadUrl": "https://video.4d2.org/download/torrents/a225430c-2c93-45db-ac79-a054e132dcdb-240-hls.torrent",
+            "fileUrl": "https://cdn-video.4d2.org/streaming-playlists/hls/79856d94-7771-4e85-98fc-7e03152d5915/6574089e-fdd7-4c4e-a197-fd66327525ed-240-fragmented.mp4",
+            "fileDownloadUrl": "https://video.4d2.org/download/streaming-playlists/hls/videos/79856d94-7771-4e85-98fc-7e03152d5915-240-fragmented.mp4",
+            "metadataUrl": "https://video.4d2.org/api/v1/videos/79856d94-7771-4e85-98fc-7e03152d5915/metadata/4380859",
+            "hasAudio": false,
+            "hasVideo": true,
+            "playlistUrl": "https://cdn-video.4d2.org/streaming-playlists/hls/79856d94-7771-4e85-98fc-7e03152d5915/6574089e-fdd7-4c4e-a197-fd66327525ed-240.m3u8",
+            "storage": 1
+          },
+          {
+            "id": 4380855,
+            "resolution": {
+              "id": 0,
+              "label": "Audio only"
+            },
+            "width": 0,
+            "height": 0,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fvideo.4d2.org%2Flazy-static%2Ftorrents%2Fb6ea2ac7-9a00-4f8f-9996-bf253344d5b4-0-hls.torrent&xt=urn:btih:643c01db206eb81531a95946ea7fa2332e17175c&dn=Rikti+Mothership+Raid+on+Rebirth+City+of+Heroes+Server&tr=https%3A%2F%2Fvideo.4d2.org%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fvideo.4d2.org%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fcdn-video.4d2.org%2Fstreaming-playlists%2Fhls%2F79856d94-7771-4e85-98fc-7e03152d5915%2F097d8563-a6c1-4444-9a96-b17a333faaa8-0-fragmented.mp4",
+            "size": 31946956,
+            "fps": 0,
+            "torrentUrl": "https://video.4d2.org/lazy-static/torrents/b6ea2ac7-9a00-4f8f-9996-bf253344d5b4-0-hls.torrent",
+            "torrentDownloadUrl": "https://video.4d2.org/download/torrents/b6ea2ac7-9a00-4f8f-9996-bf253344d5b4-0-hls.torrent",
+            "fileUrl": "https://cdn-video.4d2.org/streaming-playlists/hls/79856d94-7771-4e85-98fc-7e03152d5915/097d8563-a6c1-4444-9a96-b17a333faaa8-0-fragmented.mp4",
+            "fileDownloadUrl": "https://video.4d2.org/download/streaming-playlists/hls/videos/79856d94-7771-4e85-98fc-7e03152d5915-0-fragmented.mp4",
+            "metadataUrl": "https://video.4d2.org/api/v1/videos/79856d94-7771-4e85-98fc-7e03152d5915/metadata/4380855",
+            "hasAudio": true,
+            "hasVideo": false,
+            "playlistUrl": "https://cdn-video.4d2.org/streaming-playlists/hls/79856d94-7771-4e85-98fc-7e03152d5915/097d8563-a6c1-4444-9a96-b17a333faaa8-0.m3u8",
+            "storage": 1
+          }
+        ]
+      }
+    ],
+    "files": [
+      {
+        "id": 4380854,
+        "resolution": {
+          "id": 0,
+          "label": "Audio only"
+        },
+        "width": 0,
+        "height": 0,
+        "magnetUri": "magnet:?xs=https%3A%2F%2Fvideo.4d2.org%2Flazy-static%2Ftorrents%2Ff72f01c2-d42a-4080-9f56-d956f2c3e7ea-0.torrent&xt=urn:btih:429a0016f7b88e9ba466f20dc43ee4e03d703c53&dn=Rikti+Mothership+Raid+on+Rebirth+City+of+Heroes+Server&tr=https%3A%2F%2Fvideo.4d2.org%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fvideo.4d2.org%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fcdn-video.4d2.org%2Fweb-videos%2F77f8d610-936c-4037-ab95-4061ce40263f-0.mp4",
+        "size": 39088339,
+        "fps": 0,
+        "torrentUrl": "https://video.4d2.org/lazy-static/torrents/f72f01c2-d42a-4080-9f56-d956f2c3e7ea-0.torrent",
+        "torrentDownloadUrl": "https://video.4d2.org/download/torrents/f72f01c2-d42a-4080-9f56-d956f2c3e7ea-0.torrent",
+        "fileUrl": "https://cdn-video.4d2.org/web-videos/77f8d610-936c-4037-ab95-4061ce40263f-0.mp4",
+        "fileDownloadUrl": "https://video.4d2.org/download/web-videos/79856d94-7771-4e85-98fc-7e03152d5915-0.mp4",
+        "metadataUrl": "https://video.4d2.org/api/v1/videos/79856d94-7771-4e85-98fc-7e03152d5915/metadata/4380854",
+        "hasAudio": true,
+        "hasVideo": false,
+        "storage": 1
+      }
+    ],
+    "liveSchedules": [],
+    "support": null,
+    "tags": [],
+    "commentsPolicy": {
+      "id": 1,
+      "label": "Enabled"
+    },
+    "downloadEnabled": true,
+    "waitTranscoding": true,
+    "inputFileUpdatedAt": null,
+    "state": {
+      "id": 1,
+      "label": "Published"
+    },
+    "trackerUrls": [
+      "https://video.4d2.org/tracker/announce",
+      "wss://video.4d2.org:443/tracker/socket"
+    ],
+    "embedPrivacyPolicy": {
+      "id": 1,
+      "label": "All allowed"
+    }
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "recordedAt": "2026-09-27T14:27:29.759Z",
+  "url": "https://tilvids.com/api/v1/videos/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9/chapters",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "49",
+    "x-ratelimit-reset": "1790519261"
+  },
+  "body": {
+    "chapters": [
+      {
+        "timecode": 0,
+        "title": "Intro"
+      },
+      {
+        "timecode": 55,
+        "title": "Sponsor: Joplin "
+      },
+      {
+        "timecode": 144,
+        "title": "Netherlands goes with NixOS"
+      },
+      {
+        "timecode": 338,
+        "title": "Android is less and less open source"
+      },
+      {
+        "timecode": 489,
+        "title": "GoogleBook OS introduced as a Linux based system"
+      },
+      {
+        "timecode": 657,
+        "title": "KDE's proposed AI policy leads to massive backlash"
+      },
+      {
+        "timecode": 837,
+        "title": "GNOME dev offers a \"no AI at all\" policy"
+      },
+      {
+        "timecode": 968,
+        "title": "KDE announces their 3 mains goals for 2027"
+      },
+      {
+        "timecode": 1084,
+        "title": "SteamOS update brings many performance improvements"
+      },
+      {
+        "timecode": 1191,
+        "title": "Linux kernel 7.4 should open files 39% faster"
+      },
+      {
+        "timecode": 1254,
+        "title": "Ubuntu improves how the system behaves when out of memory"
+      },
+      {
+        "timecode": 1372,
+        "title": "Valve introduces new low latency codec for game streaming"
+      },
+      {
+        "timecode": 1449,
+        "title": "Ubuntu will update the kernel on a weekly basis"
+      },
+      {
+        "timecode": 1535,
+        "title": "Cosmic 1.9 brings two new applications"
+      },
+      {
+        "timecode": 1661,
+        "title": "reactOS now has a solid DirectX implementation"
+      },
+      {
+        "timecode": 1764,
+        "title": "Sponsor: Tuxedo Computers"
+      }
+    ]
+  }
+}

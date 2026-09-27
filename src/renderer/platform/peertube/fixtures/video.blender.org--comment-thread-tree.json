@@ -1,0 +1,117 @@
+{
+  "recordedAt": "2026-09-27T14:26:31.172Z",
+  "url": "https://video.blender.org/api/v1/videos/3d95fb3d-c866-42c8-9db1-fe82f48ccb95/comment-threads/7175",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "44",
+    "x-ratelimit-reset": "1790519194"
+  },
+  "body": {
+    "comment": {
+      "id": 7175,
+      "url": "https://mastodon.social/users/superpete/statuses/109960711818572856",
+      "text": "<p><span class=\"h-card\"><a href=\"https://video.blender.org/accounts/blender\" class=\"u-url mention\">@<span>blender</span></a></span> I don&#39;t really understand what on earth was happening, but I loved every second of it!</p>",
+      "threadId": 7175,
+      "inReplyToCommentId": null,
+      "videoId": 23488,
+      "createdAt": "2023-03-03T18:15:06.000Z",
+      "updatedAt": "2026-02-04T11:36:33.474Z",
+      "deletedAt": null,
+      "heldForReview": false,
+      "isDeleted": false,
+      "totalRepliesFromVideoAuthor": 0,
+      "totalReplies": 2,
+      "account": {
+        "url": "https://mastodon.social/users/superpete",
+        "name": "superpete",
+        "host": "mastodon.social",
+        "avatars": [
+          {
+            "height": null,
+            "width": null,
+            "path": "/lazy-static/avatars/a3cacdcc-8bd6-4d9e-9234-06a643a5dde0.jpg",
+            "fileUrl": "https://video.blender.org/lazy-static/avatars/a3cacdcc-8bd6-4d9e-9234-06a643a5dde0.jpg",
+            "createdAt": "2026-09-11T19:46:11.891+00:00",
+            "updatedAt": "2026-09-11T20:58:47.255+00:00"
+          }
+        ],
+        "id": 219734,
+        "hostRedundancyAllowed": false,
+        "followingCount": 30,
+        "followersCount": 0,
+        "createdAt": "2023-02-28T00:00:00.000Z",
+        "displayName": "Peter Schachte",
+        "description": "<p>I&#39;m a chill Catholic guy</p>",
+        "updatedAt": "2023-03-03T18:15:08.416Z"
+      }
+    },
+    "children": [
+      {
+        "comment": {
+          "id": 12311,
+          "url": "https://mastodon.social/ap/users/116012118659315055/statuses/116012129435401276",
+          "text": "<p><span class=\"h-card\" translate=\"no\"><a href=\"https://mastodon.social/@superpete\" class=\"u-url mention\">@<span>superpete</span></a></span> <span class=\"h-card\" translate=\"no\"><a href=\"https://video.blender.org/accounts/blender\" class=\"u-url mention\">@<span>blender</span></a></span><br />:)</p>",
+          "threadId": 7175,
+          "inReplyToCommentId": 7175,
+          "videoId": 23488,
+          "createdAt": "2026-02-04T11:30:11.000Z",
+          "updatedAt": "2026-02-04T11:30:13.236Z",
+          "deletedAt": null,
+          "heldForReview": false,
+          "isDeleted": false,
+          "totalRepliesFromVideoAuthor": 0,
+          "totalReplies": 0,
+          "account": {
+            "url": "https://mastodon.social/ap/users/116012118659315055",
+            "name": "karlocomment",
+            "host": "mastodon.social",
+            "avatars": [],
+            "id": 978824,
+            "hostRedundancyAllowed": false,
+            "followingCount": 10,
+            "followersCount": 0,
+            "createdAt": "2026-02-04T00:00:00.000Z",
+            "displayName": "Karlo Comment",
+            "description": null,
+            "updatedAt": "2026-02-04T11:30:13.121Z"
+          }
+        },
+        "children": []
+      },
+      {
+        "comment": {
+          "id": 12312,
+          "url": "https://mastodon.social/ap/users/116012118659315055/statuses/116012154170405865",
+          "text": "<p><span class=\"h-card\" translate=\"no\"><a href=\"https://mastodon.social/@superpete\" class=\"u-url mention\">@<span>superpete</span></a></span> <span class=\"h-card\" translate=\"no\"><a href=\"https://video.blender.org/accounts/blender\" class=\"u-url mention\">@<span>blender</span></a></span> <br />:)</p>",
+          "threadId": 7175,
+          "inReplyToCommentId": 7175,
+          "videoId": 23488,
+          "createdAt": "2026-02-04T11:36:29.000Z",
+          "updatedAt": "2026-02-04T11:36:33.485Z",
+          "deletedAt": null,
+          "heldForReview": false,
+          "isDeleted": false,
+          "totalRepliesFromVideoAuthor": 0,
+          "totalReplies": 0,
+          "account": {
+            "url": "https://mastodon.social/ap/users/116012118659315055",
+            "name": "karlocomment",
+            "host": "mastodon.social",
+            "avatars": [],
+            "id": 978824,
+            "hostRedundancyAllowed": false,
+            "followingCount": 10,
+            "followersCount": 0,
+            "createdAt": "2026-02-04T00:00:00.000Z",
+            "displayName": "Karlo Comment",
+            "description": null,
+            "updatedAt": "2026-02-04T11:30:13.121Z"
+          }
+        },
+        "children": []
+      }
+    ]
+  }
+}

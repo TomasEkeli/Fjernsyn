@@ -1,0 +1,200 @@
+{
+  "recordedAt": "2026-09-27T14:25:34.015Z",
+  "url": "https://video.blender.org/api/v1/videos/3d95fb3d-c866-42c8-9db1-fe82f48ccb95/comment-threads?start=0&count=5&sort=-totalReplies",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "46",
+    "x-ratelimit-reset": "1790519142"
+  },
+  "body": {
+    "total": 11,
+    "data": [
+      {
+        "id": 7175,
+        "url": "https://mastodon.social/users/superpete/statuses/109960711818572856",
+        "text": "<p><span class=\"h-card\"><a href=\"https://video.blender.org/accounts/blender\" class=\"u-url mention\">@<span>blender</span></a></span> I don&#39;t really understand what on earth was happening, but I loved every second of it!</p>",
+        "threadId": 7175,
+        "inReplyToCommentId": null,
+        "videoId": 23488,
+        "createdAt": "2023-03-03T18:15:06.000Z",
+        "updatedAt": "2026-02-04T11:36:33.474Z",
+        "deletedAt": null,
+        "heldForReview": false,
+        "isDeleted": false,
+        "totalRepliesFromVideoAuthor": 0,
+        "totalReplies": 2,
+        "account": {
+          "url": "https://mastodon.social/users/superpete",
+          "name": "superpete",
+          "host": "mastodon.social",
+          "avatars": [
+            {
+              "height": null,
+              "width": null,
+              "path": "/lazy-static/avatars/a3cacdcc-8bd6-4d9e-9234-06a643a5dde0.jpg",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/a3cacdcc-8bd6-4d9e-9234-06a643a5dde0.jpg",
+              "createdAt": "2026-09-11T19:46:11.891+00:00",
+              "updatedAt": "2026-09-11T20:58:47.255+00:00"
+            }
+          ],
+          "id": 219734,
+          "hostRedundancyAllowed": false,
+          "followingCount": 30,
+          "followersCount": 0,
+          "createdAt": "2023-02-28T00:00:00.000Z",
+          "displayName": "Peter Schachte",
+          "description": "<p>I&#39;m a chill Catholic guy</p>",
+          "updatedAt": "2023-03-03T18:15:08.416Z"
+        }
+      },
+      {
+        "id": 12290,
+        "url": "https://post.hr/users/ivek2026/statuses/115905512802386166",
+        "text": "<p><span class=\"h-card\" translate=\"no\"><a href=\"https://video.blender.org/accounts/blender\" class=\"u-url mention\">@<span>blender</span></a></span> :):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):)</p>",
+        "threadId": 12290,
+        "inReplyToCommentId": null,
+        "videoId": 23488,
+        "createdAt": "2026-01-16T15:36:11.000Z",
+        "updatedAt": "2026-02-06T09:11:23.205Z",
+        "deletedAt": null,
+        "heldForReview": false,
+        "isDeleted": false,
+        "totalRepliesFromVideoAuthor": 0,
+        "totalReplies": 2,
+        "account": {
+          "url": "https://post.hr/users/ivek2026",
+          "name": "ivek2026",
+          "host": "post.hr",
+          "avatars": [],
+          "id": 970855,
+          "hostRedundancyAllowed": false,
+          "followingCount": 0,
+          "followersCount": 0,
+          "createdAt": "2026-01-16T00:00:00.000Z",
+          "displayName": "ivek2026",
+          "description": null,
+          "updatedAt": "2026-01-16T15:32:33.239Z"
+        }
+      },
+      {
+        "id": 3683,
+        "url": "https://fosstodon.org/users/dotcs/statuses/103115849159924986",
+        "text": "<p><span class=\"h-card\"><a href=\"https://video.blender.org/accounts/blender\" class=\"u-url mention\">@<span>blender</span></a></span> Great video. Awesome work from the blender team!</p>",
+        "threadId": 3683,
+        "inReplyToCommentId": null,
+        "videoId": 23488,
+        "createdAt": "2019-11-10T21:56:31.000Z",
+        "updatedAt": "2019-11-10T21:56:52.496Z",
+        "deletedAt": null,
+        "heldForReview": false,
+        "isDeleted": false,
+        "totalRepliesFromVideoAuthor": 0,
+        "totalReplies": 0,
+        "account": {
+          "url": "https://fosstodon.org/users/dotcs",
+          "name": "dotcs",
+          "host": "fosstodon.org",
+          "avatars": [
+            {
+              "height": null,
+              "width": null,
+              "path": "/lazy-static/avatars/3c96c4aa-8192-4e43-8ce6-037e65cff388.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/3c96c4aa-8192-4e43-8ce6-037e65cff388.png",
+              "createdAt": "2026-08-23T10:49:22.145+00:00",
+              "updatedAt": "2026-08-24T03:55:22.04+00:00"
+            }
+          ],
+          "id": 7591,
+          "hostRedundancyAllowed": false,
+          "followingCount": 61,
+          "followersCount": 17,
+          "createdAt": "2019-10-26T00:00:00.000Z",
+          "displayName": "FG",
+          "description": "<p>Working as a Web Dev. I love hiking and cycling. Make love, not war! 🇺🇦</p>",
+          "updatedAt": "2022-04-27T11:23:11.738Z"
+        }
+      },
+      {
+        "id": 6849,
+        "url": "https://tube.tchncs.de/videos/watch/3d95fb3d-c866-42c8-9db1-fe82f48ccb95/comments/28405",
+        "text": "",
+        "threadId": 6849,
+        "inReplyToCommentId": null,
+        "videoId": 23488,
+        "createdAt": "2022-07-09T23:38:52.402Z",
+        "updatedAt": "2022-07-09T23:39:01.141Z",
+        "deletedAt": "2022-07-09T23:39:01.141Z",
+        "heldForReview": false,
+        "isDeleted": true,
+        "totalRepliesFromVideoAuthor": 0,
+        "totalReplies": 0,
+        "account": null
+      },
+      {
+        "id": 7210,
+        "url": "https://tilvids.com/videos/watch/3d95fb3d-c866-42c8-9db1-fe82f48ccb95/comments/25451",
+        "text": "👍👍👍",
+        "threadId": 7210,
+        "inReplyToCommentId": null,
+        "videoId": 23488,
+        "createdAt": "2023-04-29T00:05:18.244Z",
+        "updatedAt": "2023-04-29T00:05:18.516Z",
+        "deletedAt": null,
+        "heldForReview": false,
+        "isDeleted": false,
+        "totalRepliesFromVideoAuthor": 0,
+        "totalReplies": 0,
+        "account": {
+          "url": "https://tilvids.com/accounts/ivan",
+          "name": "ivan",
+          "host": "tilvids.com",
+          "avatars": [
+            {
+              "height": 48,
+              "width": 48,
+              "path": "/lazy-static/avatars/3a516613-014d-45b7-816d-895010b7ed36.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/3a516613-014d-45b7-816d-895010b7ed36.png",
+              "createdAt": "2026-08-23T09:02:19.566+00:00",
+              "updatedAt": "2026-08-23T14:49:58.944+00:00"
+            },
+            {
+              "height": 120,
+              "width": 120,
+              "path": "/lazy-static/avatars/033024bb-3822-4e73-bec4-fda297f303ca.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/033024bb-3822-4e73-bec4-fda297f303ca.png",
+              "createdAt": "2026-08-23T09:02:19.562+00:00",
+              "updatedAt": "2026-08-25T03:48:53.054+00:00"
+            },
+            {
+              "height": 600,
+              "width": 600,
+              "path": "/lazy-static/avatars/945aeca6-d602-472a-a272-230dee367cb8.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/945aeca6-d602-472a-a272-230dee367cb8.png",
+              "createdAt": "2026-08-23T09:02:19.568+00:00",
+              "updatedAt": "2026-08-23T09:02:19.568+00:00"
+            },
+            {
+              "height": 1500,
+              "width": 1500,
+              "path": "/lazy-static/avatars/4af5a0bb-afd9-4e52-822d-0465a946f5fb.png",
+              "fileUrl": "https://video.blender.org/lazy-static/avatars/4af5a0bb-afd9-4e52-822d-0465a946f5fb.png",
+              "createdAt": "2026-08-23T09:02:19.569+00:00",
+              "updatedAt": "2026-08-23T09:02:19.569+00:00"
+            }
+          ],
+          "id": 246832,
+          "hostRedundancyAllowed": false,
+          "followingCount": 2,
+          "followersCount": 0,
+          "createdAt": "2022-11-05T12:31:08.229Z",
+          "displayName": "Ivan",
+          "description": "aff",
+          "updatedAt": "2023-04-29T00:02:49.516Z"
+        }
+      }
+    ],
+    "totalNotDeletedComments": 14
+  }
+}

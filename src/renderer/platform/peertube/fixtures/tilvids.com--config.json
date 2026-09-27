@@ -1,0 +1,677 @@
+{
+  "recordedAt": "2026-09-27T14:24:09.210Z",
+  "url": "https://tilvids.com/api/v1/config",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "49",
+    "x-ratelimit-reset": "1790519061"
+  },
+  "body": {
+    "client": {
+      "newFeaturesInfo": true,
+      "header": {
+        "hideInstanceName": false
+      },
+      "videos": {
+        "miniature": {
+          "preferAuthorDisplayName": false
+        },
+        "resumableUpload": {
+          "maxChunkSize": 0
+        }
+      },
+      "browseVideos": {
+        "defaultSort": "-publishedAt",
+        "defaultScope": "federated"
+      },
+      "menu": {
+        "login": {
+          "redirectOnSingleExternalAuth": false
+        }
+      },
+      "openInApp": {
+        "android": {
+          "intent": {
+            "enabled": true,
+            "host": "joinpeertube.org",
+            "scheme": "peertube",
+            "fallbackUrl": "https://play.google.com/store/apps/details?id=org.framasoft.peertube"
+          }
+        },
+        "ios": {
+          "enabled": true,
+          "host": "joinpeertube.org",
+          "scheme": "peertube",
+          "fallbackUrl": "https://apps.apple.com/fr/app/peertube/id6737834858"
+        }
+      }
+    },
+    "defaults": {
+      "publish": {
+        "downloadEnabled": true,
+        "commentsPolicy": 1,
+        "privacy": 1,
+        "licence": null
+      },
+      "live": {
+        "saveReplay": false
+      },
+      "p2p": {
+        "webapp": {
+          "enabled": true
+        },
+        "embed": {
+          "enabled": true
+        }
+      },
+      "player": {
+        "theme": "lucide",
+        "autoPlay": true
+      }
+    },
+    "webadmin": {
+      "configuration": {
+        "edition": {
+          "allowed": true
+        }
+      }
+    },
+    "instance": {
+      "name": "TILvids",
+      "shortDescription": "Welcome to TILvids! Our goal is to provide you with interesting video content that will make you say, \"Today I Learned!\"",
+      "isNSFW": false,
+      "defaultNSFWPolicy": "do_not_list",
+      "defaultClientRoute": "/home",
+      "serverCountry": "",
+      "support": {
+        "text": ""
+      },
+      "social": {
+        "blueskyLink": "",
+        "mastodonLink": "",
+        "xLink": "",
+        "externalLink": ""
+      },
+      "customizations": {
+        "javascript": "",
+        "css": ""
+      },
+      "defaultLanguage": "fr",
+      "avatars": [
+        {
+          "height": 48,
+          "width": 48,
+          "path": "/lazy-static/avatars/fc1a4551-9cdf-4d62-a136-9e811c897d8d.png",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/fc1a4551-9cdf-4d62-a136-9e811c897d8d.png",
+          "createdAt": "2025-01-12T15:19:47.947Z",
+          "updatedAt": "2025-01-12T15:19:47.947Z"
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "path": "/lazy-static/avatars/4e92b107-4f0e-4dc4-9d34-00a43668f41f.png",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/4e92b107-4f0e-4dc4-9d34-00a43668f41f.png",
+          "createdAt": "2025-01-12T15:19:47.943Z",
+          "updatedAt": "2025-01-12T15:19:47.943Z"
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "path": "/lazy-static/avatars/3219af8a-350a-4d63-857f-c2485b1c6708.png",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/3219af8a-350a-4d63-857f-c2485b1c6708.png",
+          "createdAt": "2025-01-12T15:19:47.939Z",
+          "updatedAt": "2025-01-12T15:19:47.939Z"
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "path": "/lazy-static/avatars/a8b2efbf-2a14-445c-a432-b4ebcf28cb7d.png",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/a8b2efbf-2a14-445c-a432-b4ebcf28cb7d.png",
+          "createdAt": "2025-01-12T15:19:47.934Z",
+          "updatedAt": "2025-01-12T15:19:47.934Z"
+        }
+      ],
+      "banners": [],
+      "logo": [
+        {
+          "height": 48,
+          "width": 48,
+          "type": "favicon",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/fc1a4551-9cdf-4d62-a136-9e811c897d8d.png",
+          "isFallback": true
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "type": "favicon",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/4e92b107-4f0e-4dc4-9d34-00a43668f41f.png",
+          "isFallback": true
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "type": "favicon",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/3219af8a-350a-4d63-857f-c2485b1c6708.png",
+          "isFallback": true
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "type": "favicon",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/a8b2efbf-2a14-445c-a432-b4ebcf28cb7d.png",
+          "isFallback": true
+        },
+        {
+          "height": 48,
+          "width": 48,
+          "type": "header-square",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/fc1a4551-9cdf-4d62-a136-9e811c897d8d.png",
+          "isFallback": true
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "type": "header-square",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/4e92b107-4f0e-4dc4-9d34-00a43668f41f.png",
+          "isFallback": true
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "type": "header-square",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/3219af8a-350a-4d63-857f-c2485b1c6708.png",
+          "isFallback": true
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "type": "header-square",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/a8b2efbf-2a14-445c-a432-b4ebcf28cb7d.png",
+          "isFallback": true
+        },
+        {
+          "height": 48,
+          "width": 48,
+          "type": "header-wide",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/fc1a4551-9cdf-4d62-a136-9e811c897d8d.png",
+          "isFallback": true
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "type": "header-wide",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/4e92b107-4f0e-4dc4-9d34-00a43668f41f.png",
+          "isFallback": true
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "type": "header-wide",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/3219af8a-350a-4d63-857f-c2485b1c6708.png",
+          "isFallback": true
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "type": "header-wide",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/a8b2efbf-2a14-445c-a432-b4ebcf28cb7d.png",
+          "isFallback": true
+        },
+        {
+          "height": 48,
+          "width": 48,
+          "type": "opengraph",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/fc1a4551-9cdf-4d62-a136-9e811c897d8d.png",
+          "isFallback": true
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "type": "opengraph",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/4e92b107-4f0e-4dc4-9d34-00a43668f41f.png",
+          "isFallback": true
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "type": "opengraph",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/3219af8a-350a-4d63-857f-c2485b1c6708.png",
+          "isFallback": true
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "type": "opengraph",
+          "fileUrl": "https://tilvids.com/lazy-static/avatars/a8b2efbf-2a14-445c-a432-b4ebcf28cb7d.png",
+          "isFallback": true
+        }
+      ]
+    },
+    "search": {
+      "remoteUri": {
+        "users": true,
+        "anonymous": false
+      },
+      "searchIndex": {
+        "enabled": false,
+        "url": "",
+        "disableLocalSearch": false,
+        "isDefaultSearch": false
+      }
+    },
+    "plugin": {
+      "registered": [
+        {
+          "npmName": "peertube-plugin-custom-links",
+          "name": "custom-links",
+          "version": "0.0.10",
+          "description": "PeerTube plugin that allows you to add custom links on the bottom of the menu",
+          "clientScripts": {
+            "dist/common-client-plugin.js": {
+              "script": "dist/common-client-plugin.js",
+              "scopes": [
+                "common"
+              ]
+            }
+          }
+        },
+        {
+          "npmName": "peertube-plugin-simplelogo",
+          "name": "simplelogo",
+          "version": "0.0.6",
+          "description": "Plugin that let you change logo and favicon on your PeerTube instance.",
+          "clientScripts": {
+            "client/common-client-plugin.js": {
+              "script": "client/common-client-plugin.js",
+              "scopes": [
+                "common"
+              ]
+            }
+          }
+        },
+        {
+          "npmName": "peertube-plugin-livechat",
+          "name": "livechat",
+          "version": "14.0.4",
+          "description": "PeerTube plugin livechat: create chat rooms for your Peertube lives! Comes with many features: federation, moderation tools, chat bot, chat persistence, OBS integration, ...",
+          "clientScripts": {
+            "dist/client/common-client-plugin.js": {
+              "script": "dist/client/common-client-plugin.js",
+              "scopes": [
+                "common"
+              ]
+            },
+            "dist/client/admin-plugin-client-plugin.js": {
+              "script": "dist/client/admin-plugin-client-plugin.js",
+              "scopes": [
+                "admin-plugin"
+              ]
+            }
+          }
+        },
+        {
+          "npmName": "peertube-plugin-auth-ldap",
+          "name": "auth-ldap",
+          "version": "0.1.0",
+          "description": "Add LDAP support to login form in PeerTube.",
+          "clientScripts": {}
+        }
+      ],
+      "registeredExternalAuths": [],
+      "registeredIdAndPassAuths": [
+        {
+          "npmName": "peertube-plugin-auth-ldap",
+          "name": "auth-ldap",
+          "version": "0.1.0",
+          "authName": "ldap",
+          "weight": 100
+        }
+      ]
+    },
+    "theme": {
+      "registered": [
+        {
+          "npmName": "peertube-theme-dark",
+          "name": "dark",
+          "version": "3.0.3",
+          "description": "PeerTube dark theme",
+          "css": [
+            "assets/style.css"
+          ],
+          "clientScripts": {}
+        }
+      ],
+      "builtIn": [
+        {
+          "name": "peertube-core-dark-brown"
+        },
+        {
+          "name": "peertube-core-light-beige"
+        }
+      ],
+      "default": "peertube-core-dark-brown",
+      "customization": {
+        "primaryColor": null,
+        "onPrimaryColor": null,
+        "foregroundColor": null,
+        "backgroundColor": null,
+        "backgroundSecondaryColor": null,
+        "menuForegroundColor": null,
+        "menuBackgroundColor": null,
+        "menuBorderRadius": null,
+        "headerForegroundColor": null,
+        "headerBackgroundColor": null,
+        "inputBorderRadius": null
+      }
+    },
+    "email": {
+      "enabled": true
+    },
+    "contactForm": {
+      "enabled": true
+    },
+    "serverVersion": "8.2.4",
+    "serverCommit": "",
+    "transcoding": {
+      "remoteRunners": {
+        "enabled": false
+      },
+      "hls": {
+        "enabled": true
+      },
+      "web_videos": {
+        "enabled": false
+      },
+      "enabledResolutions": [
+        144,
+        360,
+        1080
+      ],
+      "profile": "default",
+      "availableProfiles": [
+        "default"
+      ]
+    },
+    "live": {
+      "enabled": true,
+      "allowReplay": true,
+      "dvr": {
+        "maxWindow": 3600
+      },
+      "latencySetting": {
+        "enabled": true
+      },
+      "maxDuration": 3600000,
+      "maxInstanceLives": 10,
+      "maxUserLives": 2,
+      "transcoding": {
+        "enabled": true,
+        "remoteRunners": {
+          "enabled": false
+        },
+        "enabledResolutions": [
+          360
+        ],
+        "profile": "default",
+        "availableProfiles": [
+          "default"
+        ]
+      },
+      "rtmp": {
+        "port": 1935
+      }
+    },
+    "videoStudio": {
+      "enabled": false,
+      "remoteRunners": {
+        "enabled": false
+      }
+    },
+    "videoFile": {
+      "update": {
+        "enabled": false
+      }
+    },
+    "videoTranscription": {
+      "enabled": false,
+      "remoteRunners": {
+        "enabled": false
+      }
+    },
+    "import": {
+      "videos": {
+        "http": {
+          "enabled": true
+        },
+        "torrent": {
+          "enabled": false
+        }
+      },
+      "videoChannelSynchronization": {
+        "enabled": true
+      },
+      "users": {
+        "enabled": true
+      }
+    },
+    "export": {
+      "users": {
+        "enabled": true,
+        "exportExpiration": 172800000,
+        "maxUserVideoQuota": 10737418240
+      }
+    },
+    "autoBlacklist": {
+      "videos": {
+        "ofUsers": {
+          "enabled": false
+        }
+      }
+    },
+    "avatar": {
+      "file": {
+        "size": {
+          "max": 8388608
+        },
+        "extensions": [
+          ".png",
+          ".jpeg",
+          ".jpg",
+          ".gif",
+          ".webp"
+        ]
+      }
+    },
+    "banner": {
+      "file": {
+        "size": {
+          "max": 8388608
+        },
+        "extensions": [
+          ".png",
+          ".jpeg",
+          ".jpg",
+          ".gif",
+          ".webp"
+        ]
+      }
+    },
+    "logo": {
+      "file": {
+        "size": {
+          "max": 8388608
+        },
+        "extensions": [
+          ".svg",
+          ".png",
+          ".jpeg",
+          ".jpg",
+          ".gif",
+          ".webp"
+        ]
+      }
+    },
+    "video": {
+      "image": {
+        "extensions": [
+          ".png",
+          ".jpg",
+          ".jpeg",
+          ".webp"
+        ],
+        "size": {
+          "max": 8388608
+        }
+      },
+      "file": {
+        "extensions": [
+          ".webm",
+          ".ogv",
+          ".ogg",
+          ".mp4",
+          ".mkv",
+          ".mov",
+          ".qt",
+          ".mqv",
+          ".m4v",
+          ".flv",
+          ".f4v",
+          ".wmv",
+          ".avi",
+          ".3gp",
+          ".3gpp",
+          ".3g2",
+          ".3gpp2",
+          ".nut",
+          ".mts",
+          ".ts",
+          ".m2ts",
+          ".mpv",
+          ".m2v",
+          ".m1v",
+          ".mpg",
+          ".mpe",
+          ".mpeg",
+          ".vob",
+          ".mxf",
+          ".mp3",
+          ".wma",
+          ".wav",
+          ".flac",
+          ".aac",
+          ".m4a",
+          ".m4b",
+          ".ac3"
+        ]
+      }
+    },
+    "videoCaption": {
+      "file": {
+        "size": {
+          "max": 20971520
+        },
+        "extensions": [
+          ".vtt",
+          ".srt"
+        ]
+      }
+    },
+    "user": {
+      "videoQuota": 0,
+      "videoQuotaDaily": 0
+    },
+    "videoChannels": {
+      "maxPerUser": 20
+    },
+    "trending": {
+      "videos": {
+        "intervalDays": 7,
+        "algorithms": {
+          "enabled": [
+            "best",
+            "hot",
+            "most-viewed",
+            "most-liked"
+          ],
+          "default": "hot"
+        }
+      }
+    },
+    "tracker": {
+      "enabled": true
+    },
+    "followings": {
+      "instance": {
+        "autoFollowIndex": {
+          "indexUrl": "https://instances.joinpeertube.org"
+        }
+      }
+    },
+    "federation": {
+      "enabled": true
+    },
+    "broadcastMessage": {
+      "enabled": true,
+      "message": "Interested in sharing your content on TILvids? Need to activate your account? Reach out to us on our [Matrix Channel](https://matrix.to/#/#tilvids:matrix.org)!",
+      "level": "info",
+      "dismissable": true
+    },
+    "homepage": {
+      "enabled": true
+    },
+    "openTelemetry": {
+      "metrics": {
+        "enabled": false,
+        "playbackStatsInterval": 15000
+      }
+    },
+    "views": {
+      "videos": {
+        "remote": {
+          "maxAge": 2592000000
+        },
+        "local": {
+          "maxAge": -1
+        },
+        "watchingInterval": {
+          "anonymous": 5000,
+          "users": 5000
+        }
+      }
+    },
+    "storyboards": {
+      "enabled": true,
+      "remoteRunners": {
+        "enabled": false
+      }
+    },
+    "webrtc": {
+      "stunServers": [
+        "stun:stunserver2025.stunprotocol.org",
+        "stun:stun.framasoft.org",
+        "stun:stun.ekiga.net",
+        "stun:stun.freeswitch.org"
+      ]
+    },
+    "nsfwFlagsSettings": {
+      "enabled": true
+    },
+    "fieldsConstraints": {
+      "users": {
+        "password": {
+          "minLength": 8,
+          "maxLength": 50
+        }
+      }
+    },
+    "signup": {
+      "allowed": true,
+      "allowedForCurrentIP": true,
+      "minimumAge": 16,
+      "requiresApproval": true,
+      "requiresEmailVerification": true
+    }
+  }
+}

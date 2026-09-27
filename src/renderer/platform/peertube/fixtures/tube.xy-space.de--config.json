@@ -1,0 +1,646 @@
+{
+  "recordedAt": "2026-09-27T14:26:31.077Z",
+  "url": "https://tube.xy-space.de/api/v1/config",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "49",
+    "x-ratelimit-reset": "1790519202"
+  },
+  "body": {
+    "client": {
+      "newFeaturesInfo": true,
+      "header": {
+        "hideInstanceName": false
+      },
+      "videos": {
+        "miniature": {
+          "preferAuthorDisplayName": false
+        },
+        "resumableUpload": {
+          "maxChunkSize": 0
+        }
+      },
+      "browseVideos": {
+        "defaultSort": "-publishedAt",
+        "defaultScope": "federated"
+      },
+      "menu": {
+        "login": {
+          "redirectOnSingleExternalAuth": false
+        }
+      },
+      "openInApp": {
+        "android": {
+          "intent": {
+            "enabled": true,
+            "host": "joinpeertube.org",
+            "scheme": "peertube",
+            "fallbackUrl": "https://play.google.com/store/apps/details?id=org.framasoft.peertube"
+          }
+        },
+        "ios": {
+          "enabled": true,
+          "host": "joinpeertube.org",
+          "scheme": "peertube",
+          "fallbackUrl": "https://apps.apple.com/fr/app/peertube/id6737834858"
+        }
+      }
+    },
+    "defaults": {
+      "publish": {
+        "downloadEnabled": true,
+        "commentsPolicy": 1,
+        "privacy": 1,
+        "licence": 8
+      },
+      "live": {
+        "saveReplay": false
+      },
+      "p2p": {
+        "webapp": {
+          "enabled": true
+        },
+        "embed": {
+          "enabled": true
+        }
+      },
+      "player": {
+        "theme": "lucide",
+        "autoPlay": true
+      }
+    },
+    "webadmin": {
+      "configuration": {
+        "edition": {
+          "allowed": true
+        }
+      }
+    },
+    "instance": {
+      "name": "PeerTube (xy-space)",
+      "shortDescription": "PeerTube, this instance is - for the public - not bound to any topic.\n\nLast change 2023-01-30",
+      "isNSFW": false,
+      "defaultNSFWPolicy": "blur",
+      "defaultClientRoute": "/videos/browse?scope=local",
+      "serverCountry": "Finland/Europe",
+      "support": {
+        "text": "Support openSUSE, peertube, Linux kernel development, the FSF, and so on..."
+      },
+      "social": {
+        "blueskyLink": "",
+        "mastodonLink": "",
+        "xLink": "",
+        "externalLink": ""
+      },
+      "customizations": {
+        "javascript": "",
+        "css": ""
+      },
+      "defaultLanguage": "en-US",
+      "avatars": [
+        {
+          "height": 48,
+          "width": 48,
+          "path": "/lazy-static/avatars/d6b0a691-4855-4269-bc74-60cd28c7c83f.jpg",
+          "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/d6b0a691-4855-4269-bc74-60cd28c7c83f.jpg",
+          "createdAt": "2026-03-15T20:15:05.319Z",
+          "updatedAt": "2026-03-15T20:15:05.319Z"
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "path": "/lazy-static/avatars/98ae2ff9-8bce-49e5-aa01-ca80281efcef.jpg",
+          "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/98ae2ff9-8bce-49e5-aa01-ca80281efcef.jpg",
+          "createdAt": "2026-03-15T20:15:05.319Z",
+          "updatedAt": "2026-03-15T20:15:05.319Z"
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "path": "/lazy-static/avatars/9dd149fb-cafa-4bb5-8f7e-8b983f030724.jpg",
+          "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/9dd149fb-cafa-4bb5-8f7e-8b983f030724.jpg",
+          "createdAt": "2026-03-15T20:15:05.318Z",
+          "updatedAt": "2026-03-15T20:15:05.318Z"
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "path": "/lazy-static/avatars/68a2a05c-edd4-4a7c-8474-8282e17c600b.jpg",
+          "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/68a2a05c-edd4-4a7c-8474-8282e17c600b.jpg",
+          "createdAt": "2026-03-15T20:15:05.316Z",
+          "updatedAt": "2026-03-15T20:15:05.316Z"
+        }
+      ],
+      "banners": [
+        {
+          "height": 100,
+          "width": 600,
+          "path": "/lazy-static/banners/58e78a61-d017-4954-b6d4-ee0b87af117c.jpg",
+          "fileUrl": "https://tube.xy-space.de/lazy-static/banners/58e78a61-d017-4954-b6d4-ee0b87af117c.jpg",
+          "createdAt": "2026-03-15T20:15:05.571Z",
+          "updatedAt": "2026-03-15T20:15:05.571Z"
+        },
+        {
+          "height": 317,
+          "width": 1920,
+          "path": "/lazy-static/banners/043a20f0-66a9-4823-bc77-6688e27ac2a4.jpg",
+          "fileUrl": "https://tube.xy-space.de/lazy-static/banners/043a20f0-66a9-4823-bc77-6688e27ac2a4.jpg",
+          "createdAt": "2026-03-15T20:15:05.570Z",
+          "updatedAt": "2026-03-15T20:15:05.570Z"
+        }
+      ],
+      "logo": [
+        {
+          "height": 32,
+          "width": 32,
+          "type": "favicon",
+          "fileUrl": "https://tube.xy-space.de/static/uploads/images/f9dfceff-53d2-4b09-a1b1-7257da2bbc95.jpg",
+          "isFallback": false
+        },
+        {
+          "height": 48,
+          "width": 48,
+          "type": "header-square",
+          "fileUrl": "https://tube.xy-space.de/static/uploads/images/3ee07fb9-46b1-43b1-b66a-27204c7f33d7.jpg",
+          "isFallback": false
+        },
+        {
+          "height": 48,
+          "width": 85,
+          "type": "header-wide",
+          "fileUrl": "https://tube.xy-space.de/static/uploads/images/a10eea75-545d-4ae4-b026-6ce86ece8ef8.jpg",
+          "isFallback": false
+        },
+        {
+          "height": 650,
+          "width": 1200,
+          "type": "opengraph",
+          "fileUrl": "https://tube.xy-space.de/static/uploads/images/5fb18667-befc-43e6-8d75-44f615639458.jpg",
+          "isFallback": false
+        }
+      ]
+    },
+    "search": {
+      "remoteUri": {
+        "users": true,
+        "anonymous": true
+      },
+      "searchIndex": {
+        "enabled": true,
+        "url": "http://localhost:3234",
+        "disableLocalSearch": false,
+        "isDefaultSearch": true
+      }
+    },
+    "plugin": {
+      "registered": [
+        {
+          "npmName": "peertube-plugin-social-sharing",
+          "name": "social-sharing",
+          "version": "0.10.1",
+          "description": "Share a video or playlist URL on social media (Mastodon, WordPress, reddit, Twitter, etc.)",
+          "clientScripts": {
+            "dist/common-client-plugin.js": {
+              "script": "dist/common-client-plugin.js",
+              "scopes": [
+                "common"
+              ]
+            }
+          }
+        },
+        {
+          "npmName": "peertube-plugin-transcoding-custom-quality",
+          "name": "transcoding-custom-quality",
+          "version": "0.2.0",
+          "description": "Set a custom quality for transcoding",
+          "clientScripts": {}
+        },
+        {
+          "npmName": "peertube-plugin-video-annotation",
+          "name": "video-annotation",
+          "version": "0.2.0",
+          "description": "PeerTube plugin video annotation",
+          "clientScripts": {
+            "dist/embed-client-plugin.js": {
+              "script": "dist/embed-client-plugin.js",
+              "scopes": [
+                "embed"
+              ]
+            },
+            "dist/video-edit-client-plugin.js": {
+              "script": "dist/video-edit-client-plugin.js",
+              "scopes": [
+                "video-edit"
+              ]
+            },
+            "dist/video-watch-client-plugin.js": {
+              "script": "dist/video-watch-client-plugin.js",
+              "scopes": [
+                "video-watch"
+              ]
+            }
+          }
+        },
+        {
+          "npmName": "peertube-plugin-logo-framasoft",
+          "name": "logo-framasoft",
+          "version": "0.0.4",
+          "description": "Framasoft logo on PeerTube.",
+          "clientScripts": {
+            "client/common-client-plugin.js": {
+              "script": "client/common-client-plugin.js",
+              "scopes": [
+                "common"
+              ]
+            }
+          }
+        },
+        {
+          "npmName": "peertube-plugin-subtitle-editor",
+          "name": "subtitle-editor",
+          "version": "0.5.0",
+          "description": "Basic subtitle editor that supports editing and managing captions for multiple languages directly in PeerTube.",
+          "clientScripts": {
+            "dist/client/common-client-plugin.js": {
+              "script": "dist/client/common-client-plugin.js",
+              "scopes": [
+                "common"
+              ]
+            }
+          }
+        },
+        {
+          "npmName": "peertube-plugin-livechat",
+          "name": "livechat",
+          "version": "14.0.2",
+          "description": "PeerTube plugin livechat: create chat rooms for your Peertube lives! Comes with many features: federation, moderation tools, chat bot, chat persistence, OBS integration, ...",
+          "clientScripts": {
+            "dist/client/common-client-plugin.js": {
+              "script": "dist/client/common-client-plugin.js",
+              "scopes": [
+                "common"
+              ]
+            },
+            "dist/client/admin-plugin-client-plugin.js": {
+              "script": "dist/client/admin-plugin-client-plugin.js",
+              "scopes": [
+                "admin-plugin"
+              ]
+            }
+          }
+        }
+      ],
+      "registeredExternalAuths": [],
+      "registeredIdAndPassAuths": []
+    },
+    "theme": {
+      "registered": [
+        {
+          "npmName": "peertube-theme-dark",
+          "name": "dark",
+          "version": "3.0.3",
+          "description": "PeerTube dark theme",
+          "css": [
+            "assets/style.css"
+          ],
+          "clientScripts": {}
+        }
+      ],
+      "builtIn": [
+        {
+          "name": "peertube-core-dark-brown"
+        },
+        {
+          "name": "peertube-core-light-beige"
+        }
+      ],
+      "default": "dark",
+      "customization": {
+        "primaryColor": "#9fb0c4",
+        "onPrimaryColor": null,
+        "foregroundColor": null,
+        "backgroundColor": null,
+        "backgroundSecondaryColor": null,
+        "menuForegroundColor": null,
+        "menuBackgroundColor": null,
+        "menuBorderRadius": null,
+        "headerForegroundColor": null,
+        "headerBackgroundColor": null,
+        "inputBorderRadius": null
+      }
+    },
+    "email": {
+      "enabled": true
+    },
+    "contactForm": {
+      "enabled": true
+    },
+    "serverVersion": "8.2.0",
+    "serverCommit": "",
+    "transcoding": {
+      "remoteRunners": {
+        "enabled": false
+      },
+      "hls": {
+        "enabled": true
+      },
+      "web_videos": {
+        "enabled": true
+      },
+      "enabledResolutions": [
+        360,
+        720,
+        1440
+      ],
+      "profile": "default",
+      "availableProfiles": [
+        "default",
+        "custom-quality"
+      ]
+    },
+    "live": {
+      "enabled": true,
+      "allowReplay": true,
+      "dvr": {
+        "maxWindow": 3600
+      },
+      "latencySetting": {
+        "enabled": true
+      },
+      "maxDuration": 36000000,
+      "maxInstanceLives": 128,
+      "maxUserLives": 64,
+      "transcoding": {
+        "enabled": true,
+        "remoteRunners": {
+          "enabled": false
+        },
+        "enabledResolutions": [
+          360,
+          720,
+          1440
+        ],
+        "profile": "default",
+        "availableProfiles": [
+          "default",
+          "custom-quality"
+        ]
+      },
+      "rtmp": {
+        "port": 1935
+      }
+    },
+    "videoStudio": {
+      "enabled": true,
+      "remoteRunners": {
+        "enabled": false
+      }
+    },
+    "videoFile": {
+      "update": {
+        "enabled": true
+      }
+    },
+    "videoTranscription": {
+      "enabled": true,
+      "remoteRunners": {
+        "enabled": false
+      }
+    },
+    "import": {
+      "videos": {
+        "http": {
+          "enabled": false
+        },
+        "torrent": {
+          "enabled": false
+        }
+      },
+      "videoChannelSynchronization": {
+        "enabled": false
+      },
+      "users": {
+        "enabled": true
+      }
+    },
+    "export": {
+      "users": {
+        "enabled": true,
+        "exportExpiration": 172800000,
+        "maxUserVideoQuota": 21474836480
+      }
+    },
+    "autoBlacklist": {
+      "videos": {
+        "ofUsers": {
+          "enabled": false
+        }
+      }
+    },
+    "avatar": {
+      "file": {
+        "size": {
+          "max": 8388608
+        },
+        "extensions": [
+          ".png",
+          ".jpeg",
+          ".jpg",
+          ".gif",
+          ".webp"
+        ]
+      }
+    },
+    "banner": {
+      "file": {
+        "size": {
+          "max": 8388608
+        },
+        "extensions": [
+          ".png",
+          ".jpeg",
+          ".jpg",
+          ".gif",
+          ".webp"
+        ]
+      }
+    },
+    "logo": {
+      "file": {
+        "size": {
+          "max": 8388608
+        },
+        "extensions": [
+          ".svg",
+          ".png",
+          ".jpeg",
+          ".jpg",
+          ".gif",
+          ".webp"
+        ]
+      }
+    },
+    "video": {
+      "image": {
+        "extensions": [
+          ".png",
+          ".jpg",
+          ".jpeg",
+          ".webp"
+        ],
+        "size": {
+          "max": 8388608
+        }
+      },
+      "file": {
+        "extensions": [
+          ".webm",
+          ".ogv",
+          ".ogg",
+          ".mp4",
+          ".mkv",
+          ".mov",
+          ".qt",
+          ".mqv",
+          ".m4v",
+          ".flv",
+          ".f4v",
+          ".wmv",
+          ".avi",
+          ".3gp",
+          ".3gpp",
+          ".3g2",
+          ".3gpp2",
+          ".nut",
+          ".mts",
+          ".ts",
+          ".m2ts",
+          ".mpv",
+          ".m2v",
+          ".m1v",
+          ".mpg",
+          ".mpe",
+          ".mpeg",
+          ".vob",
+          ".mxf",
+          ".mp3",
+          ".wma",
+          ".wav",
+          ".flac",
+          ".aac",
+          ".m4a",
+          ".m4b",
+          ".ac3"
+        ]
+      }
+    },
+    "videoCaption": {
+      "file": {
+        "size": {
+          "max": 20971520
+        },
+        "extensions": [
+          ".vtt",
+          ".srt"
+        ]
+      }
+    },
+    "user": {
+      "videoQuota": 21474836480,
+      "videoQuotaDaily": 21474836480
+    },
+    "videoChannels": {
+      "maxPerUser": 128
+    },
+    "trending": {
+      "videos": {
+        "intervalDays": 365,
+        "algorithms": {
+          "enabled": [
+            "best",
+            "hot",
+            "most-viewed",
+            "most-liked"
+          ],
+          "default": "most-viewed"
+        }
+      }
+    },
+    "tracker": {
+      "enabled": true
+    },
+    "followings": {
+      "instance": {
+        "autoFollowIndex": {
+          "indexUrl": ""
+        }
+      }
+    },
+    "federation": {
+      "enabled": true
+    },
+    "broadcastMessage": {
+      "enabled": true,
+      "message": "",
+      "level": "info",
+      "dismissable": true
+    },
+    "homepage": {
+      "enabled": false
+    },
+    "openTelemetry": {
+      "metrics": {
+        "enabled": false,
+        "playbackStatsInterval": 15000
+      }
+    },
+    "views": {
+      "videos": {
+        "remote": {
+          "maxAge": 2592000000
+        },
+        "local": {
+          "maxAge": -1
+        },
+        "watchingInterval": {
+          "anonymous": 5000,
+          "users": 5000
+        }
+      }
+    },
+    "storyboards": {
+      "enabled": true,
+      "remoteRunners": {
+        "enabled": false
+      }
+    },
+    "webrtc": {
+      "stunServers": [
+        "stun:stunserver2025.stunprotocol.org",
+        "stun:stun.framasoft.org",
+        "stun:stun.ekiga.net",
+        "stun:stun.freeswitch.org"
+      ]
+    },
+    "nsfwFlagsSettings": {
+      "enabled": true
+    },
+    "fieldsConstraints": {
+      "users": {
+        "password": {
+          "minLength": 8,
+          "maxLength": 50
+        }
+      }
+    },
+    "signup": {
+      "allowed": true,
+      "allowedForCurrentIP": true,
+      "minimumAge": 14,
+      "requiresApproval": true,
+      "requiresEmailVerification": true
+    }
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "recordedAt": "2026-09-27T14:28:54.116Z",
+  "url": "https://blurt.media/api/v1/videos/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/comment-threads?start=0&count=5",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "46",
+    "x-ratelimit-reset": "1790519342"
+  },
+  "body": {
+    "total": 2,
+    "data": [
+      {
+        "id": 10210,
+        "url": "https://blurt.media/videos/watch/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/comments/10210",
+        "text": "Wow, i learnt something today!\n\nExcellent!\n\nYou will be a great baker; i can tell you put your soul into the dough. The secret ingredient is to enjoy what you do; each day you'll get better as you develop a relationship with your instrument of choice...in this case, the dough and the bread.\n\nIf you ever read the Lord of The Rings, i'm sure you'll also find much inspiration for the art of bread baking. Here's Malcom Guite, an old English gentleman who is an avid J.R.R Tolkien fan...this video [here](https://youtu.be/dGkQcolky6M) talks about the life of Hobbits. Oh and don't forget [Lembas](https://youtu.be/ncA9fOsljPM)!\n\nOne day your baking skills will come to serve many in need. Have faith in the art of bread making; as long as you enjoy what you do, the art will reward you more than you will ever know. Trust me.\n\n\n\n",
+        "threadId": 10210,
+        "inReplyToCommentId": null,
+        "videoId": 54456,
+        "createdAt": "2026-09-05T22:44:05.852Z",
+        "updatedAt": "2026-09-05T22:44:05.853Z",
+        "deletedAt": null,
+        "heldForReview": false,
+        "isDeleted": false,
+        "totalRepliesFromVideoAuthor": 0,
+        "totalReplies": 0,
+        "account": {
+          "url": "https://blurt.media/accounts/brave.smoke",
+          "name": "brave.smoke",
+          "host": "blurt.media",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/432f21f0-ad32-4477-9fe8-14aac5c5cc9c.png",
+              "createdAt": "2025-03-03T21:44:11.131Z",
+              "updatedAt": "2025-03-03T21:44:11.131Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/03b98328-79b5-4c0c-be48-775745002ebb.png",
+              "createdAt": "2025-03-03T21:44:11.130Z",
+              "updatedAt": "2025-03-03T21:44:11.130Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/04f7ec70-34ab-4ee3-afff-ce2c81660123.png",
+              "createdAt": "2025-03-03T21:44:11.129Z",
+              "updatedAt": "2025-03-03T21:44:11.129Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/47835e0b-b57e-42a5-bc56-fa907fe03ad9.png",
+              "createdAt": "2025-03-03T21:44:11.127Z",
+              "updatedAt": "2025-03-03T21:44:11.127Z"
+            }
+          ],
+          "id": 49,
+          "hostRedundancyAllowed": false,
+          "followingCount": 38,
+          "followersCount": 0,
+          "createdAt": "2025-02-28T17:31:15.065Z",
+          "displayName": "Brave-Smoke",
+          "description": "Extricate The System\n\nhttps://Brave-Smoke.com\n\nXMR: 837Ci1UsP9FG9xmRWwzNUa4TGVQurMKmkhTjfPvtCXpxXp8eGhSBHgHap5LWDkfS43eU1GvgjciwuAtDP2vhyAzcPNDY3DV\n",
+          "updatedAt": "2026-09-18T18:57:27.726Z",
+          "userId": 32
+        }
+      },
+      {
+        "id": 10207,
+        "url": "https://blurt.media/videos/watch/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4/comments/10207",
+        "text": "Practice makes perfect!",
+        "threadId": 10207,
+        "inReplyToCommentId": null,
+        "videoId": 54456,
+        "createdAt": "2026-09-03T18:44:50.603Z",
+        "updatedAt": "2026-09-03T18:44:50.614Z",
+        "deletedAt": null,
+        "heldForReview": false,
+        "isDeleted": false,
+        "totalRepliesFromVideoAuthor": 0,
+        "totalReplies": 0,
+        "account": {
+          "url": "https://blurt.media/accounts/dotevo.media",
+          "name": "dotevo.media",
+          "host": "blurt.media",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/cd913297-ace3-4fda-a8d5-3fd5eead3b80.png",
+              "createdAt": "2026-04-02T06:51:42.746Z",
+              "updatedAt": "2026-04-02T06:51:42.746Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/c1f8e938-1cad-4f62-98e6-7df2dd54b6b2.png",
+              "createdAt": "2026-04-02T06:51:42.746Z",
+              "updatedAt": "2026-04-02T06:51:42.746Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/6b20cbe8-da86-4217-af43-3f29679d4564.png",
+              "createdAt": "2026-04-02T06:51:42.745Z",
+              "updatedAt": "2026-04-02T06:51:42.745Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/a6990290-db9c-4175-ae73-f2adbf946daf.png",
+              "createdAt": "2026-04-02T06:51:42.736Z",
+              "updatedAt": "2026-04-02T06:51:42.736Z"
+            }
+          ],
+          "id": 39608,
+          "hostRedundancyAllowed": false,
+          "followingCount": 9,
+          "followersCount": 0,
+          "createdAt": "2026-04-01T17:13:48.192Z",
+          "displayName": "Dotevo",
+          "description": "Professionally a human, personally an enthusiast of open-source software, Linux, and OSM.",
+          "updatedAt": "2026-04-02T06:53:56.922Z",
+          "userId": 152
+        }
+      }
+    ],
+    "totalNotDeletedComments": 2
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "recordedAt": "2026-09-27T14:25:43.904Z",
+  "url": "https://video.blender.org/api/v1/videos/0d5c6a3e-9a7b-4f1e-8c2d-3b4a5e6f7a8b",
+  "status": 404,
+  "headers": {
+    "content-type": "application/problem+json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "47",
+    "x-ratelimit-reset": "1790519153"
+  },
+  "body": {
+    "type": "about:blank",
+    "title": "Not Found",
+    "detail": "Video not found",
+    "status": 404,
+    "docs": "https://docs.joinpeertube.org/api-rest-reference.html#operation/getVideo"
+  }
+}

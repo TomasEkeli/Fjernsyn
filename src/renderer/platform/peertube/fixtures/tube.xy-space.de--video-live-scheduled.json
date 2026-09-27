@@ -1,0 +1,274 @@
+{
+  "recordedAt": "2026-09-27T14:25:31.673Z",
+  "url": "https://tube.xy-space.de/api/v1/videos/221b3d31-e0c2-45cb-a757-4c57a9a23df4",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "49",
+    "x-ratelimit-reset": "1790519142"
+  },
+  "body": {
+    "id": 586022,
+    "uuid": "221b3d31-e0c2-45cb-a757-4c57a9a23df4",
+    "shortUUID": "5dgQtDQtYjHPosa1p2Uzpb",
+    "url": "https://tube.xy-space.de/videos/watch/221b3d31-e0c2-45cb-a757-4c57a9a23df4",
+    "name": "Music, Views and News",
+    "category": {
+      "id": 11,
+      "label": "News & Politics"
+    },
+    "licence": {
+      "id": 6,
+      "label": "Attribution - Non Commercial - No Derivatives"
+    },
+    "language": {
+      "id": "en",
+      "label": "English"
+    },
+    "privacy": {
+      "id": 1,
+      "label": "Public"
+    },
+    "nsfw": false,
+    "nsfwFlags": 0,
+    "nsfwSummary": null,
+    "truncatedDescription": "Beats\r\nPhilosophy\r\nJust chatting\r\nEmacs Lisp programming\r\n\r\nSaundVaibz website\r\nhttps://vaibz.webnode.page/\r\n\r\nTruth Research Philosophy\r\nhttps://trp2.webnode.page/",
+    "description": "Beats\r\nPhilosophy\r\nJust chatting\r\nEmacs Lisp programming\r\n\r\nSaundVaibz website\r\nhttps://vaibz.webnode.page/\r\n\r\nTruth Research Philosophy\r\nhttps://trp2.webnode.page/",
+    "isLocal": true,
+    "duration": 0,
+    "aspectRatio": 1.6,
+    "views": 7,
+    "viewers": 0,
+    "downloads": 7,
+    "likes": 0,
+    "dislikes": 0,
+    "thumbnailPath": "/lazy-static/thumbnails/06afe610-7e7c-4641-84de-79c702057b69.jpg",
+    "previewPath": "/lazy-static/thumbnails/3cc63a67-13c8-4a2d-bfb3-842198519df5.jpg",
+    "thumbnails": [
+      {
+        "height": 157,
+        "width": 280,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://tube.xy-space.de/lazy-static/thumbnails/06afe610-7e7c-4641-84de-79c702057b69.jpg"
+      },
+      {
+        "height": 480,
+        "width": 850,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://tube.xy-space.de/lazy-static/thumbnails/9b22bacb-0ca3-4b33-953e-9a5d9b83acc5.jpg"
+      },
+      {
+        "height": 720,
+        "width": 1280,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://tube.xy-space.de/lazy-static/thumbnails/3227fb2a-05ae-4613-bde9-ed1c5d06830f.jpg"
+      },
+      {
+        "height": 1400,
+        "width": 1400,
+        "aspectRatio": "1:1",
+        "fileUrl": "https://tube.xy-space.de/lazy-static/thumbnails/1961123e-e465-4b00-acbd-0a0ab989de3b.jpg"
+      },
+      {
+        "height": 1080,
+        "width": 1920,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://tube.xy-space.de/lazy-static/thumbnails/3cc63a67-13c8-4a2d-bfb3-842198519df5.jpg"
+      }
+    ],
+    "embedPath": "/videos/embed/5dgQtDQtYjHPosa1p2Uzpb",
+    "createdAt": "2026-08-23T18:36:01.796Z",
+    "updatedAt": "2026-09-20T10:03:49.481Z",
+    "publishedAt": "2026-09-20T07:55:56.705Z",
+    "originallyPublishedAt": null,
+    "isLive": true,
+    "account": {
+      "url": "https://tube.xy-space.de/accounts/saundvaibz",
+      "name": "saundvaibz",
+      "host": "tube.xy-space.de",
+      "avatars": [
+        {
+          "height": 48,
+          "width": 48,
+          "path": "/lazy-static/avatars/adbc8448-c6fe-4633-bd6a-58c607ec52f7.png",
+          "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/adbc8448-c6fe-4633-bd6a-58c607ec52f7.png",
+          "createdAt": "2026-08-23T16:44:34.887Z",
+          "updatedAt": "2026-08-23T16:44:34.887Z"
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "path": "/lazy-static/avatars/d2ea7fdc-333b-4e9e-8024-e5f090739716.png",
+          "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/d2ea7fdc-333b-4e9e-8024-e5f090739716.png",
+          "createdAt": "2026-08-23T16:44:34.886Z",
+          "updatedAt": "2026-08-23T16:44:34.886Z"
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "path": "/lazy-static/avatars/0c1aae3c-3d10-41c8-9dbf-995f9ce901e5.png",
+          "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/0c1aae3c-3d10-41c8-9dbf-995f9ce901e5.png",
+          "createdAt": "2026-08-23T16:44:34.886Z",
+          "updatedAt": "2026-08-23T16:44:34.886Z"
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "path": "/lazy-static/avatars/1da522fc-31b3-4f14-a0fa-25cdbe4c5d9c.png",
+          "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/1da522fc-31b3-4f14-a0fa-25cdbe4c5d9c.png",
+          "createdAt": "2026-08-23T16:44:34.885Z",
+          "updatedAt": "2026-08-23T16:44:34.885Z"
+        }
+      ],
+      "id": 932304,
+      "hostRedundancyAllowed": false,
+      "followingCount": 0,
+      "followersCount": 0,
+      "createdAt": "2026-08-23T11:21:26.518Z",
+      "displayName": "Saund Vaibz",
+      "description": "Truth advocate, Music Lover, Political Programmer, Religious Humanitarian Socialist, Hard-line Environmentalist.\n\nSaundVaibz website:\nhttps://vaibz.webnode.page/\n\nTruth Research Philosophy:\nhttps://trp2.webnode.page/\n\nMastadon:\nhttps://mastodon.social/@saund_vaibz\n\n\nSupport:\nMonero (XMR):\n86VWtCQySULKz82V7TH22iE96dTEtc1rhN18Fq9fBdrMeShWd5yNuqJX6LjzTT9MnbdCfP1bHF7VKVBqpB8RhuCTRkHv6Mr\n\nBitcoin (BTC):\nbc1q38hflgnt2ry5zyu5h8r53yak8ycv544a6xx7w8\n\nLitecoin (LTC):\nltc1qsq5dhsy80tkscgr07pshwu2jhtu797ntpqns8d",
+      "updatedAt": "2026-08-23T19:22:41.138Z",
+      "userId": 1773
+    },
+    "channel": {
+      "url": "https://tube.xy-space.de/video-channels/vaibz",
+      "name": "vaibz",
+      "host": "tube.xy-space.de",
+      "avatars": [
+        {
+          "height": 48,
+          "width": 48,
+          "path": "/lazy-static/avatars/a79179b4-4de8-4f30-8805-7bd5df86c427.png",
+          "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/a79179b4-4de8-4f30-8805-7bd5df86c427.png",
+          "createdAt": "2026-08-23T17:06:19.163Z",
+          "updatedAt": "2026-08-23T17:06:19.163Z"
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "path": "/lazy-static/avatars/10d4cb6d-92a8-480d-afe4-6d4ff924ff9a.png",
+          "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/10d4cb6d-92a8-480d-afe4-6d4ff924ff9a.png",
+          "createdAt": "2026-08-23T17:06:19.163Z",
+          "updatedAt": "2026-08-23T17:06:19.163Z"
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "path": "/lazy-static/avatars/8a357184-29e3-43ce-8155-43e43b6c8596.png",
+          "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/8a357184-29e3-43ce-8155-43e43b6c8596.png",
+          "createdAt": "2026-08-23T17:06:19.162Z",
+          "updatedAt": "2026-08-23T17:06:19.162Z"
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "path": "/lazy-static/avatars/bd5a6626-2676-483c-808a-de9e2ff127c8.png",
+          "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/bd5a6626-2676-483c-808a-de9e2ff127c8.png",
+          "createdAt": "2026-08-23T17:06:19.161Z",
+          "updatedAt": "2026-08-23T17:06:19.161Z"
+        }
+      ],
+      "id": 17600,
+      "hostRedundancyAllowed": false,
+      "followingCount": 0,
+      "followersCount": 0,
+      "createdAt": "2026-08-23T11:21:26.521Z",
+      "banners": [],
+      "displayName": "Saund Vaibz",
+      "description": "Music, Views and News\nStreaming every other week\n\n   Beats,  Philosophy, Emacs, Just Chatting.\n\nSaundVaibz website:  https://vaibz.webnode.page/\n\nTruth Research Philosophy: https://trp2.webnode.page/",
+      "support": "Monero (XMR):\n86VWtCQySULKz82V7TH22iE96dTEtc1rhN18Fq9fBdrMeShWd5yNuqJX6LjzTT9MnbdCfP1bHF7VKVBqpB8RhuCTRkHv6Mr\n\nBitcoin (BTC):\nbc1q38hflgnt2ry5zyu5h8r53yak8ycv544a6xx7w8\n\nLitecoin (LTC):\nltc1qsq5dhsy80tkscgr07pshwu2jhtu797ntpqns8d",
+      "isLocal": true,
+      "updatedAt": "2026-09-20T10:06:29.959Z",
+      "ownerAccount": {
+        "url": "https://tube.xy-space.de/accounts/saundvaibz",
+        "name": "saundvaibz",
+        "host": "tube.xy-space.de",
+        "avatars": [
+          {
+            "height": 48,
+            "width": 48,
+            "path": "/lazy-static/avatars/adbc8448-c6fe-4633-bd6a-58c607ec52f7.png",
+            "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/adbc8448-c6fe-4633-bd6a-58c607ec52f7.png",
+            "createdAt": "2026-08-23T16:44:34.887Z",
+            "updatedAt": "2026-08-23T16:44:34.887Z"
+          },
+          {
+            "height": 120,
+            "width": 120,
+            "path": "/lazy-static/avatars/d2ea7fdc-333b-4e9e-8024-e5f090739716.png",
+            "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/d2ea7fdc-333b-4e9e-8024-e5f090739716.png",
+            "createdAt": "2026-08-23T16:44:34.886Z",
+            "updatedAt": "2026-08-23T16:44:34.886Z"
+          },
+          {
+            "height": 600,
+            "width": 600,
+            "path": "/lazy-static/avatars/0c1aae3c-3d10-41c8-9dbf-995f9ce901e5.png",
+            "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/0c1aae3c-3d10-41c8-9dbf-995f9ce901e5.png",
+            "createdAt": "2026-08-23T16:44:34.886Z",
+            "updatedAt": "2026-08-23T16:44:34.886Z"
+          },
+          {
+            "height": 1500,
+            "width": 1500,
+            "path": "/lazy-static/avatars/1da522fc-31b3-4f14-a0fa-25cdbe4c5d9c.png",
+            "fileUrl": "https://tube.xy-space.de/lazy-static/avatars/1da522fc-31b3-4f14-a0fa-25cdbe4c5d9c.png",
+            "createdAt": "2026-08-23T16:44:34.885Z",
+            "updatedAt": "2026-08-23T16:44:34.885Z"
+          }
+        ],
+        "id": 932304,
+        "hostRedundancyAllowed": false,
+        "followingCount": 0,
+        "followersCount": 0,
+        "createdAt": "2026-08-23T11:21:26.518Z",
+        "displayName": "Saund Vaibz",
+        "description": "Truth advocate, Music Lover, Political Programmer, Religious Humanitarian Socialist, Hard-line Environmentalist.\n\nSaundVaibz website:\nhttps://vaibz.webnode.page/\n\nTruth Research Philosophy:\nhttps://trp2.webnode.page/\n\nMastadon:\nhttps://mastodon.social/@saund_vaibz\n\n\nSupport:\nMonero (XMR):\n86VWtCQySULKz82V7TH22iE96dTEtc1rhN18Fq9fBdrMeShWd5yNuqJX6LjzTT9MnbdCfP1bHF7VKVBqpB8RhuCTRkHv6Mr\n\nBitcoin (BTC):\nbc1q38hflgnt2ry5zyu5h8r53yak8ycv544a6xx7w8\n\nLitecoin (LTC):\nltc1qsq5dhsy80tkscgr07pshwu2jhtu797ntpqns8d",
+        "updatedAt": "2026-08-23T19:22:41.138Z",
+        "userId": 1773
+      }
+    },
+    "comments": 0,
+    "pluginData": {
+      "player-annotations": null,
+      "livechat-active": true
+    },
+    "blacklisted": false,
+    "blacklistedReason": null,
+    "streamingPlaylists": [],
+    "files": [],
+    "liveSchedules": [
+      {
+        "startAt": "2026-10-04T07:30:00.000Z"
+      }
+    ],
+    "support": "Monero (XMR):\r\n86VWtCQySULKz82V7TH22iE96dTEtc1rhN18Fq9fBdrMeShWd5yNuqJX6LjzTT9MnbdCfP1bHF7VKVBqpB8RhuCTRkHv6Mr\r\n\r\nBitcoin (BTC):\r\nbc1q38hflgnt2ry5zyu5h8r53yak8ycv544a6xx7w8\r\n\r\nLitecoin (LTC):\r\nltc1qsq5dhsy80tkscgr07pshwu2jhtu797ntpqns8d",
+    "tags": [
+      "Emacs",
+      "Lisp",
+      "Music",
+      "News",
+      "Philosophy"
+    ],
+    "commentsPolicy": {
+      "id": 1,
+      "label": "Enabled"
+    },
+    "downloadEnabled": true,
+    "waitTranscoding": true,
+    "inputFileUpdatedAt": null,
+    "state": {
+      "id": 4,
+      "label": "Waiting for livestream"
+    },
+    "trackerUrls": [
+      "https://tube.xy-space.de/tracker/announce",
+      "wss://tube.xy-space.de:443/tracker/socket"
+    ],
+    "embedPrivacyPolicy": {
+      "id": 1,
+      "label": "All allowed"
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "synthesised": true,
+  "note": "Anonymous GET of a private, internal or blocked video. Shape from PeerTube develop: server/core/middlewares/validators/shared/videos.ts checkCanSeeUserAuthVideo -> authenticateOrFail defaults (401, detail \"Authentication is required\", no type or code). The server does not say which of private/internal/blocked it was; with a token and no rights it would be 403 \"Cannot fetch information of private/internal/blocked video\".",
+  "recordedAt": "2026-09-27T14:30:18.857Z",
+  "url": "https://peertube.example/api/v1/videos/11111111-2222-4333-8444-555555555555",
+  "status": 401,
+  "headers": {
+    "content-type": "application/problem+json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "49",
+    "x-ratelimit-reset": "1790520000"
+  },
+  "body": {
+    "detail": "Authentication is required",
+    "status": 401,
+    "docs": "https://docs.joinpeertube.org/api-rest-reference.html#operation/getVideo"
+  }
+}

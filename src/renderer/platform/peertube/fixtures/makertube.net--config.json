@@ -1,0 +1,596 @@
+{
+  "recordedAt": "2026-09-27T14:24:09.097Z",
+  "url": "https://makertube.net/api/v1/config",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "75",
+    "x-ratelimit-remaining": "74",
+    "x-ratelimit-reset": "1790516457"
+  },
+  "body": {
+    "client": {
+      "newFeaturesInfo": true,
+      "header": {
+        "hideInstanceName": false
+      },
+      "videos": {
+        "miniature": {
+          "preferAuthorDisplayName": false
+        },
+        "resumableUpload": {
+          "maxChunkSize": 0
+        }
+      },
+      "browseVideos": {
+        "defaultSort": "-hot",
+        "defaultScope": "local"
+      },
+      "menu": {
+        "login": {
+          "redirectOnSingleExternalAuth": false
+        }
+      },
+      "openInApp": {
+        "android": {
+          "intent": {
+            "enabled": true,
+            "host": "joinpeertube.org",
+            "scheme": "peertube",
+            "fallbackUrl": "https://play.google.com/store/apps/details?id=org.framasoft.peertube"
+          }
+        },
+        "ios": {
+          "enabled": true,
+          "host": "joinpeertube.org",
+          "scheme": "peertube",
+          "fallbackUrl": "https://apps.apple.com/fr/app/peertube/id6737834858"
+        }
+      }
+    },
+    "defaults": {
+      "publish": {
+        "downloadEnabled": false,
+        "commentsPolicy": 1,
+        "privacy": 1,
+        "licence": null
+      },
+      "live": {
+        "saveReplay": false
+      },
+      "p2p": {
+        "webapp": {
+          "enabled": true
+        },
+        "embed": {
+          "enabled": true
+        }
+      },
+      "player": {
+        "theme": "galaxy",
+        "autoPlay": true
+      }
+    },
+    "webadmin": {
+      "configuration": {
+        "edition": {
+          "allowed": true
+        }
+      }
+    },
+    "instance": {
+      "name": "MakerTube",
+      "shortDescription": "A home for makers, musicians, artists and DIY folks",
+      "isNSFW": false,
+      "defaultNSFWPolicy": "blur",
+      "defaultClientRoute": "/videos/browse?scope=local",
+      "serverCountry": "Germany",
+      "support": {
+        "text": "MakerTube is funded by storage subscriptions. The platform stays ad-free and independent; you pay for the space you use.\n\nPlans (billed monthly via Stripe):\n\n* Free — up to 2 GB\n* 10 GB — €3 / month\n* 100 GB — €5 / month\n* 250 GB — €10 / month\n* 500 GB — €20 / month\n* 1000 GB — €35 / month\n\nSubscribe and manage your plan from your MakerTube account (see <a href=\"/p/ncd-my-subscription\">Storage Plan</a> in menu). Quota updates after a successful payment.\n\nExisting users can already subscribe to a plan according to their usage. Otherwise you will be moved over to the new subscription model later this year.\n\nYou can find your current usage in your account settings: https://makertube.net/my-account\n\nIf you want to tip beyond your plan, optional donations are still welcome:\n\n* Patreon: https://patreon.com/MakerTube\n* Liberapay: https://liberapay.com/MakerTube\n* PayPal: https://paypal.me/MakerTube\n\nQuestions about billing or quota? Email admin[ät]makertube.net."
+      },
+      "social": {
+        "blueskyLink": "",
+        "mastodonLink": "https://mastodon.social/@MakerTube",
+        "xLink": "",
+        "externalLink": ""
+      },
+      "customizations": {
+        "javascript": "",
+        "css": ".root-header .instance-name {\n    font-style: normal;\n    font-weight: 600; \n    letter-spacing: 0.02em; \n}\n.video-actions .action-button-like.activated,\n.video-actions .action-button-like.activated .feather.feather-thumbs-up {\n    color: var(--primary-450) !important;\n}\n\n/* Hide portal form button; keep the billing-portal link */\n.ncd-content #formManageSub,\n.ncd-content #checkout-and-portal-button {\n  display: none !important;\n}\n"
+      },
+      "defaultLanguage": "en-US",
+      "avatars": [
+        {
+          "height": 48,
+          "width": 48,
+          "path": "/lazy-static/avatars/ad992c24-e1b7-4430-a838-a691d89e55d2.jpg",
+          "fileUrl": "https://makertube.net/lazy-static/avatars/ad992c24-e1b7-4430-a838-a691d89e55d2.jpg",
+          "createdAt": "2024-05-01T19:02:34.944Z",
+          "updatedAt": "2024-05-01T19:02:34.944Z"
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "path": "/lazy-static/avatars/42714f6f-0069-402e-b13f-1380bcaaa6a7.jpg",
+          "fileUrl": "https://makertube.net/lazy-static/avatars/42714f6f-0069-402e-b13f-1380bcaaa6a7.jpg",
+          "createdAt": "2024-05-01T19:02:34.942Z",
+          "updatedAt": "2024-05-01T19:02:34.942Z"
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "path": "/lazy-static/avatars/b79569ba-e2d0-441a-bb95-daa71c071ebc.jpg",
+          "fileUrl": "https://makertube.net/lazy-static/avatars/b79569ba-e2d0-441a-bb95-daa71c071ebc.jpg",
+          "createdAt": "2024-05-01T19:02:34.940Z",
+          "updatedAt": "2024-05-01T19:02:34.940Z"
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "path": "/lazy-static/avatars/0b736857-a1ef-43dc-b501-bf66acb29cc1.jpg",
+          "fileUrl": "https://makertube.net/lazy-static/avatars/0b736857-a1ef-43dc-b501-bf66acb29cc1.jpg",
+          "createdAt": "2024-05-01T19:02:34.936Z",
+          "updatedAt": "2024-05-01T19:02:34.936Z"
+        }
+      ],
+      "banners": [
+        {
+          "height": 100,
+          "width": 600,
+          "path": "/lazy-static/banners/fa4fd086-dde9-47f8-8845-eaf012209fa6.png",
+          "fileUrl": "https://makertube.net/lazy-static/banners/fa4fd086-dde9-47f8-8845-eaf012209fa6.png",
+          "createdAt": "2026-04-19T15:53:32.795Z",
+          "updatedAt": "2026-04-19T15:53:32.795Z"
+        },
+        {
+          "height": 317,
+          "width": 1920,
+          "path": "/lazy-static/banners/cfeeaaa0-a1cf-4914-932c-b0b42e400dff.png",
+          "fileUrl": "https://makertube.net/lazy-static/banners/cfeeaaa0-a1cf-4914-932c-b0b42e400dff.png",
+          "createdAt": "2026-04-19T15:53:32.789Z",
+          "updatedAt": "2026-04-19T15:53:32.789Z"
+        }
+      ],
+      "logo": [
+        {
+          "height": 32,
+          "width": 32,
+          "type": "favicon",
+          "fileUrl": "https://makertube.net/static/uploads/images/aef9088b-4893-406b-a17a-70556a26140f.jpg",
+          "isFallback": false
+        },
+        {
+          "height": 48,
+          "width": 48,
+          "type": "header-square",
+          "fileUrl": "https://makertube.net/static/uploads/images/918642e9-1ad9-43a7-8642-200523ec7dd8.png",
+          "isFallback": false
+        },
+        {
+          "height": 48,
+          "width": 48,
+          "type": "header-wide",
+          "fileUrl": "https://makertube.net/static/uploads/images/b29b8c8d-47cb-4a30-83f3-7663103c7171.png",
+          "isFallback": false
+        },
+        {
+          "height": 48,
+          "width": 48,
+          "type": "opengraph",
+          "fileUrl": "https://makertube.net/lazy-static/avatars/ad992c24-e1b7-4430-a838-a691d89e55d2.jpg",
+          "isFallback": true
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "type": "opengraph",
+          "fileUrl": "https://makertube.net/lazy-static/avatars/42714f6f-0069-402e-b13f-1380bcaaa6a7.jpg",
+          "isFallback": true
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "type": "opengraph",
+          "fileUrl": "https://makertube.net/lazy-static/avatars/b79569ba-e2d0-441a-bb95-daa71c071ebc.jpg",
+          "isFallback": true
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "type": "opengraph",
+          "fileUrl": "https://makertube.net/lazy-static/avatars/0b736857-a1ef-43dc-b501-bf66acb29cc1.jpg",
+          "isFallback": true
+        }
+      ]
+    },
+    "search": {
+      "remoteUri": {
+        "users": true,
+        "anonymous": false
+      },
+      "searchIndex": {
+        "enabled": false,
+        "url": "",
+        "disableLocalSearch": false,
+        "isDefaultSearch": false
+      }
+    },
+    "plugin": {
+      "registered": [
+        {
+          "npmName": "peertube-plugin-livechat",
+          "name": "livechat",
+          "version": "14.0.4",
+          "description": "PeerTube plugin livechat: create chat rooms for your Peertube lives! Comes with many features: federation, moderation tools, chat bot, chat persistence, OBS integration, ...",
+          "clientScripts": {
+            "dist/client/common-client-plugin.js": {
+              "script": "dist/client/common-client-plugin.js",
+              "scopes": [
+                "common"
+              ]
+            },
+            "dist/client/admin-plugin-client-plugin.js": {
+              "script": "dist/client/admin-plugin-client-plugin.js",
+              "scopes": [
+                "admin-plugin"
+              ]
+            }
+          }
+        },
+        {
+          "npmName": "peertube-plugin-sell-storage",
+          "name": "sell-storage",
+          "version": "1.1.9",
+          "description": "Completely automated storage (video quota) subscriptions to users.",
+          "clientScripts": {
+            "dist/common-client-plugin.js": {
+              "script": "dist/common-client-plugin.js",
+              "scopes": [
+                "common"
+              ]
+            }
+          }
+        }
+      ],
+      "registeredExternalAuths": [],
+      "registeredIdAndPassAuths": []
+    },
+    "theme": {
+      "registered": [],
+      "builtIn": [
+        {
+          "name": "peertube-core-dark-brown"
+        },
+        {
+          "name": "peertube-core-light-beige"
+        }
+      ],
+      "default": "default",
+      "customization": {
+        "primaryColor": "#f15b26",
+        "onPrimaryColor": null,
+        "foregroundColor": null,
+        "backgroundColor": null,
+        "backgroundSecondaryColor": null,
+        "menuForegroundColor": null,
+        "menuBackgroundColor": null,
+        "menuBorderRadius": null,
+        "headerForegroundColor": null,
+        "headerBackgroundColor": null,
+        "inputBorderRadius": null
+      }
+    },
+    "email": {
+      "enabled": true
+    },
+    "contactForm": {
+      "enabled": true
+    },
+    "serverVersion": "8.3.0",
+    "serverCommit": "",
+    "transcoding": {
+      "remoteRunners": {
+        "enabled": true
+      },
+      "hls": {
+        "enabled": true,
+        "splitAudioAndVideo": false
+      },
+      "web_videos": {
+        "enabled": false
+      },
+      "enabledResolutions": [
+        720,
+        1080,
+        2160
+      ],
+      "profile": "default",
+      "availableProfiles": [
+        "default"
+      ],
+      "alwaysTranscodeOriginalResolution": true,
+      "alwaysTranscodePodcastOptimizedAudio": true
+    },
+    "live": {
+      "enabled": true,
+      "allowReplay": true,
+      "dvr": {
+        "maxWindow": 3600
+      },
+      "latencySetting": {
+        "enabled": true
+      },
+      "maxDuration": -1,
+      "maxInstanceLives": 100,
+      "maxUserLives": 1,
+      "transcoding": {
+        "enabled": false,
+        "remoteRunners": {
+          "enabled": false
+        },
+        "enabledResolutions": [],
+        "profile": "default",
+        "availableProfiles": [
+          "default"
+        ]
+      },
+      "rtmp": {
+        "port": 1935
+      }
+    },
+    "videoStudio": {
+      "enabled": false,
+      "remoteRunners": {
+        "enabled": false
+      }
+    },
+    "videoFile": {
+      "update": {
+        "enabled": true
+      }
+    },
+    "videoTranscription": {
+      "enabled": true,
+      "remoteRunners": {
+        "enabled": true
+      }
+    },
+    "import": {
+      "videos": {
+        "http": {
+          "enabled": true
+        },
+        "torrent": {
+          "enabled": false
+        }
+      },
+      "videoChannelSynchronization": {
+        "enabled": true
+      },
+      "users": {
+        "enabled": true
+      }
+    },
+    "export": {
+      "users": {
+        "enabled": true,
+        "exportExpiration": 172800000,
+        "maxUserVideoQuota": 1099511627776
+      }
+    },
+    "autoBlacklist": {
+      "videos": {
+        "ofUsers": {
+          "enabled": false
+        }
+      }
+    },
+    "avatar": {
+      "file": {
+        "size": {
+          "max": 8388608
+        },
+        "extensions": [
+          ".png",
+          ".jpeg",
+          ".jpg",
+          ".gif",
+          ".webp"
+        ]
+      }
+    },
+    "banner": {
+      "file": {
+        "size": {
+          "max": 8388608
+        },
+        "extensions": [
+          ".png",
+          ".jpeg",
+          ".jpg",
+          ".gif",
+          ".webp"
+        ]
+      }
+    },
+    "logo": {
+      "file": {
+        "size": {
+          "max": 8388608
+        },
+        "extensions": [
+          ".svg",
+          ".png",
+          ".jpeg",
+          ".jpg",
+          ".gif",
+          ".webp"
+        ]
+      }
+    },
+    "video": {
+      "image": {
+        "extensions": [
+          ".png",
+          ".jpg",
+          ".jpeg",
+          ".webp"
+        ],
+        "size": {
+          "max": 8388608
+        }
+      },
+      "file": {
+        "extensions": [
+          ".webm",
+          ".ogv",
+          ".ogg",
+          ".mp4",
+          ".mkv",
+          ".mov",
+          ".qt",
+          ".mqv",
+          ".m4v",
+          ".flv",
+          ".f4v",
+          ".wmv",
+          ".avi",
+          ".3gp",
+          ".3gpp",
+          ".3g2",
+          ".3gpp2",
+          ".nut",
+          ".mts",
+          ".ts",
+          ".m2ts",
+          ".mpv",
+          ".m2v",
+          ".m1v",
+          ".mpg",
+          ".mpe",
+          ".mpeg",
+          ".vob",
+          ".mxf",
+          ".mp3",
+          ".wma",
+          ".wav",
+          ".flac",
+          ".aac",
+          ".m4a",
+          ".m4b",
+          ".ac3"
+        ]
+      }
+    },
+    "videoCaption": {
+      "file": {
+        "size": {
+          "max": 20971520
+        },
+        "extensions": [
+          ".vtt",
+          ".srt"
+        ]
+      }
+    },
+    "user": {
+      "videoQuota": 2147483648,
+      "videoQuotaDaily": -1
+    },
+    "videoChannels": {
+      "maxPerUser": 20
+    },
+    "trending": {
+      "videos": {
+        "intervalDays": 7,
+        "algorithms": {
+          "enabled": [
+            "hot",
+            "most-viewed",
+            "most-liked"
+          ],
+          "default": "hot"
+        }
+      }
+    },
+    "tracker": {
+      "enabled": true
+    },
+    "followings": {
+      "instance": {
+        "autoFollowIndex": {
+          "indexUrl": "https://ptindex.btfree.org"
+        }
+      }
+    },
+    "blocklist": {
+      "publicLog": {
+        "enabled": false
+      }
+    },
+    "federation": {
+      "enabled": true
+    },
+    "broadcastMessage": {
+      "enabled": true,
+      "message": "<a href=\"https://makertube.net/about/instance/support\">MakerTube is now subscription-based for storage - learn more</a>\n\n<a href=\"https://peerseek.video/\" target=\"_blank\">Try out PeerSeek - your personal PeerTube search index</a>",
+      "level": "info",
+      "dismissable": false
+    },
+    "homepage": {
+      "enabled": false
+    },
+    "openTelemetry": {
+      "metrics": {
+        "enabled": true,
+        "playbackStatsInterval": 60000
+      }
+    },
+    "views": {
+      "videos": {
+        "remote": {
+          "maxAge": 604800000
+        },
+        "local": {
+          "maxAge": -1
+        },
+        "watchingInterval": {
+          "anonymous": null,
+          "users": 10000
+        }
+      }
+    },
+    "storyboards": {
+      "enabled": true,
+      "remoteRunners": {
+        "enabled": true
+      }
+    },
+    "webrtc": {
+      "stunServers": [
+        "stun:stunserver2025.stunprotocol.org",
+        "stun:stun.framasoft.org",
+        "stun:stun.ekiga.net",
+        "stun:stun.freeswitch.org"
+      ]
+    },
+    "nsfwFlagsSettings": {
+      "enabled": true
+    },
+    "fieldsConstraints": {
+      "users": {
+        "password": {
+          "minLength": 8,
+          "maxLength": 50
+        }
+      }
+    },
+    "signup": {
+      "allowed": true,
+      "allowedForCurrentIP": true,
+      "minimumAge": 16,
+      "requiresApproval": true,
+      "requiresEmailVerification": true
+    }
+  }
+}

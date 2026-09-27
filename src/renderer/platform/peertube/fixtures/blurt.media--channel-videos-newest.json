@@ -1,0 +1,716 @@
+{
+  "recordedAt": "2026-09-27T14:28:56.559Z",
+  "url": "https://blurt.media/api/v1/video-channels/surfgrrl@blurt.media/videos?start=0&count=5&sort=-publishedAt",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "44",
+    "x-ratelimit-reset": "1790519342"
+  },
+  "body": {
+    "total": 19,
+    "data": [
+      {
+        "id": 54456,
+        "uuid": "9bcc834c-3f60-44a2-9f7a-818c3f2d53e4",
+        "shortUUID": "keR28ycTAkqeKfjQ61jQ6j",
+        "url": "https://blurt.media/videos/watch/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4",
+        "name": "The Rise and Fall of a Loaf",
+        "category": {
+          "id": 18,
+          "label": "Food"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "nsfw": false,
+        "truncatedDescription": "I decided to make bread.\r\n\r\nHow hard could it be?\r\n\r\nApparently, very.\r\n\r\nWhat started as a completely normal attempt at baking bread slowly turned into an absolute disaster. Dough, flour, a declaration of war, and one deeply unfortunate loaf late...",
+        "description": "I decided to make bread.\r\n\r\nHow hard could it be?\r\n\r\nApparently, very.\r\n\r\nWhat started as a completely normal attempt at baking bread slowly turned into an absolute disaster. Dough, flour, a declaration of war, and one deeply unfortunate loaf late...",
+        "isLocal": true,
+        "duration": 790,
+        "aspectRatio": 1.7778,
+        "views": 21,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "thumbnailPath": "/lazy-static/thumbnails/54130b40-5732-4ae5-be71-2d89d5fc5773.jpg",
+        "previewPath": "/lazy-static/previews/336869ee-2032-4a9a-b1d9-62c2b5ff6f32.jpg",
+        "embedPath": "/videos/embed/9bcc834c-3f60-44a2-9f7a-818c3f2d53e4",
+        "createdAt": "2026-09-03T17:33:57.942Z",
+        "updatedAt": "2026-09-27T00:31:36.567Z",
+        "publishedAt": "2026-09-03T18:33:46.701Z",
+        "originallyPublishedAt": null,
+        "isLive": false,
+        "account": {
+          "id": 26,
+          "displayName": "SurfGrrl",
+          "name": "surf.grrl",
+          "url": "https://blurt.media/accounts/surf.grrl",
+          "host": "blurt.media",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/d6956c2e-7b6a-4179-8616-5645d0ae7ba9.jpg",
+              "createdAt": "2025-01-14T23:05:08.610Z",
+              "updatedAt": "2025-01-14T23:05:08.610Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/5f702786-2b77-4924-af16-ba05f0f77bf5.jpg",
+              "createdAt": "2025-01-14T23:05:08.609Z",
+              "updatedAt": "2025-01-14T23:05:08.609Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/d68c18dd-96e6-4704-8b0a-19b16d051d36.jpg",
+              "createdAt": "2025-01-14T23:05:08.609Z",
+              "updatedAt": "2025-01-14T23:05:08.609Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/93244dad-2253-4a49-a0f3-752ecae975cb.jpg",
+              "createdAt": "2025-01-14T23:05:08.607Z",
+              "updatedAt": "2025-01-14T23:05:08.607Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 25,
+          "name": "surfgrrl",
+          "displayName": "SurfGrrl",
+          "url": "https://blurt.media/video-channels/surfgrrl",
+          "host": "blurt.media",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/811bc59d-1f4b-4b0f-a2ee-c239b548f8eb.jpg",
+              "createdAt": "2025-01-14T23:04:51.412Z",
+              "updatedAt": "2025-01-14T23:04:51.412Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/732606b4-5910-4fe3-922d-80ac921c13e3.jpg",
+              "createdAt": "2025-01-14T23:04:51.411Z",
+              "updatedAt": "2025-01-14T23:04:51.411Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/fc692eb8-50a4-422e-a45a-eb0767ceb8ec.jpg",
+              "createdAt": "2025-01-14T23:04:51.409Z",
+              "updatedAt": "2025-01-14T23:04:51.409Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/5d96d7cb-adff-4ada-9477-cd2d9c63082f.jpg",
+              "createdAt": "2025-01-14T23:04:51.408Z",
+              "updatedAt": "2025-01-14T23:04:51.408Z"
+            }
+          ]
+        },
+        "pluginData": {
+          "demoMode": false,
+          "showReputationComments": true,
+          "showDownvoteComments": true,
+          "showPayoutsTooltip": true,
+          "additionalPercent": "90",
+          "mapped": true,
+          "c": 1,
+          "ha": "agorise",
+          "ba": "agorise",
+          "mt": "",
+          "bmapped": true,
+          "permLinkObj": {
+            "a": "blurt.media",
+            "p": "the-rise-and-fall-of-a-loaf-nbam11z461",
+            "pp": "bread"
+          },
+          "blurt-permLinkObj": {
+            "a": "blurt.media",
+            "p": "the-rise-and-fall-of-a-loaf-0qrjazybs3vp",
+            "pp": "bread"
+          },
+          "usernameObj": "surfgrrl",
+          "tip": {},
+          "blurt-usernameObj": "surfgrrl",
+          "blurt-tip": {},
+          "ucfg": {
+            "hive": "surfgrrl",
+            "blurt": "surfgrrl"
+          },
+          "defaultObj": "agorise",
+          "blurt-defaultObj": "agorise"
+        }
+      },
+      {
+        "id": 52751,
+        "uuid": "c55506ce-9858-442b-bf3b-dc0ee4cc3ebe",
+        "shortUUID": "qniYKjMzgVhDhBxehYGn6G",
+        "url": "https://blurt.media/videos/watch/c55506ce-9858-442b-bf3b-dc0ee4cc3ebe",
+        "name": "My Chocolate Lava Cake, But I start to question my reality 😬",
+        "category": {
+          "id": 9,
+          "label": "Comedy"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "nsfw": false,
+        "truncatedDescription": "I don't think I was fully conscious when I made this, or maybe this weirdo is who I really am, who knows? I hope you liked my video, leave me a like, I'd really appreciate it, and see you in the next one!",
+        "description": "I don't think I was fully conscious when I made this, or maybe this weirdo is who I really am, who knows? I hope you liked my video, leave me a like, I'd really appreciate it, and see you in the next one!",
+        "isLocal": true,
+        "duration": 286,
+        "aspectRatio": 1.7778,
+        "views": 24,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "thumbnailPath": "/lazy-static/thumbnails/73a34f67-5a4f-47f4-9eb2-ae7830e6fbd5.jpg",
+        "previewPath": "/lazy-static/previews/060e7001-7a92-4efb-9fab-7f6c5d17048b.jpg",
+        "embedPath": "/videos/embed/c55506ce-9858-442b-bf3b-dc0ee4cc3ebe",
+        "createdAt": "2026-05-20T04:08:41.729Z",
+        "updatedAt": "2026-09-24T18:01:36.510Z",
+        "publishedAt": "2026-05-20T04:27:55.498Z",
+        "originallyPublishedAt": null,
+        "isLive": false,
+        "account": {
+          "id": 26,
+          "displayName": "SurfGrrl",
+          "name": "surf.grrl",
+          "url": "https://blurt.media/accounts/surf.grrl",
+          "host": "blurt.media",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/d6956c2e-7b6a-4179-8616-5645d0ae7ba9.jpg",
+              "createdAt": "2025-01-14T23:05:08.610Z",
+              "updatedAt": "2025-01-14T23:05:08.610Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/5f702786-2b77-4924-af16-ba05f0f77bf5.jpg",
+              "createdAt": "2025-01-14T23:05:08.609Z",
+              "updatedAt": "2025-01-14T23:05:08.609Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/d68c18dd-96e6-4704-8b0a-19b16d051d36.jpg",
+              "createdAt": "2025-01-14T23:05:08.609Z",
+              "updatedAt": "2025-01-14T23:05:08.609Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/93244dad-2253-4a49-a0f3-752ecae975cb.jpg",
+              "createdAt": "2025-01-14T23:05:08.607Z",
+              "updatedAt": "2025-01-14T23:05:08.607Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 25,
+          "name": "surfgrrl",
+          "displayName": "SurfGrrl",
+          "url": "https://blurt.media/video-channels/surfgrrl",
+          "host": "blurt.media",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/811bc59d-1f4b-4b0f-a2ee-c239b548f8eb.jpg",
+              "createdAt": "2025-01-14T23:04:51.412Z",
+              "updatedAt": "2025-01-14T23:04:51.412Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/732606b4-5910-4fe3-922d-80ac921c13e3.jpg",
+              "createdAt": "2025-01-14T23:04:51.411Z",
+              "updatedAt": "2025-01-14T23:04:51.411Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/fc692eb8-50a4-422e-a45a-eb0767ceb8ec.jpg",
+              "createdAt": "2025-01-14T23:04:51.409Z",
+              "updatedAt": "2025-01-14T23:04:51.409Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/5d96d7cb-adff-4ada-9477-cd2d9c63082f.jpg",
+              "createdAt": "2025-01-14T23:04:51.408Z",
+              "updatedAt": "2025-01-14T23:04:51.408Z"
+            }
+          ]
+        },
+        "pluginData": {
+          "demoMode": false,
+          "showReputationComments": true,
+          "showDownvoteComments": true,
+          "showPayoutsTooltip": true,
+          "additionalPercent": "90",
+          "mapped": true,
+          "c": 1,
+          "ha": "agorise",
+          "ba": "agorise",
+          "mt": "",
+          "bmapped": true,
+          "permLinkObj": {
+            "a": "blurt.media",
+            "p": "my-chocolate-lava-cake-but-i-start-to-question-my-reality--8ekllm6l1ki",
+            "pp": "baking"
+          },
+          "blurt-permLinkObj": {
+            "a": "blurt.media",
+            "p": "my-chocolate-lava-cake-but-i-start-to-question-my-reality--bymarbsqfw5",
+            "pp": "baking"
+          },
+          "usernameObj": "surfgrrl",
+          "tip": {},
+          "blurt-usernameObj": "surfgrrl",
+          "blurt-tip": {},
+          "ucfg": {
+            "hive": "surfgrrl",
+            "blurt": "surfgrrl"
+          },
+          "defaultObj": "agorise",
+          "blurt-defaultObj": "agorise"
+        }
+      },
+      {
+        "id": 50005,
+        "uuid": "7e5d03c6-a877-443d-8c74-651afad239e2",
+        "shortUUID": "gB2sYAELTAVdn6VSdpT9wf",
+        "url": "https://blurt.media/videos/watch/7e5d03c6-a877-443d-8c74-651afad239e2",
+        "name": "Which is better? Machado Square at day vs night? *GONE WRONG*",
+        "category": {
+          "id": 10,
+          "label": "Entertainment"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "nsfw": false,
+        "truncatedDescription": "I just wanted to take a relaxing walk through Machado for you, but things took a major turn when I decided to break the rules and enter Santa's workshop. I'm lucky I came out not turned into an elf!",
+        "description": "I just wanted to take a relaxing walk through Machado for you, but things took a major turn when I decided to break the rules and enter Santa's workshop. I'm lucky I came out not turned into an elf!",
+        "isLocal": true,
+        "duration": 1288,
+        "aspectRatio": 1.7778,
+        "views": 14,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "thumbnailPath": "/lazy-static/thumbnails/fc7141b3-9d04-441c-87b4-5ce85dcf20fa.jpg",
+        "previewPath": "/lazy-static/previews/5a8f73d2-c9ca-4548-94ed-71a1ee4200b9.jpg",
+        "embedPath": "/videos/embed/7e5d03c6-a877-443d-8c74-651afad239e2",
+        "createdAt": "2025-12-25T19:15:58.127Z",
+        "updatedAt": "2026-04-13T21:46:12.339Z",
+        "publishedAt": "2025-12-25T19:58:45.552Z",
+        "originallyPublishedAt": null,
+        "isLive": false,
+        "account": {
+          "id": 26,
+          "displayName": "SurfGrrl",
+          "name": "surf.grrl",
+          "url": "https://blurt.media/accounts/surf.grrl",
+          "host": "blurt.media",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/d6956c2e-7b6a-4179-8616-5645d0ae7ba9.jpg",
+              "createdAt": "2025-01-14T23:05:08.610Z",
+              "updatedAt": "2025-01-14T23:05:08.610Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/5f702786-2b77-4924-af16-ba05f0f77bf5.jpg",
+              "createdAt": "2025-01-14T23:05:08.609Z",
+              "updatedAt": "2025-01-14T23:05:08.609Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/d68c18dd-96e6-4704-8b0a-19b16d051d36.jpg",
+              "createdAt": "2025-01-14T23:05:08.609Z",
+              "updatedAt": "2025-01-14T23:05:08.609Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/93244dad-2253-4a49-a0f3-752ecae975cb.jpg",
+              "createdAt": "2025-01-14T23:05:08.607Z",
+              "updatedAt": "2025-01-14T23:05:08.607Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 25,
+          "name": "surfgrrl",
+          "displayName": "SurfGrrl",
+          "url": "https://blurt.media/video-channels/surfgrrl",
+          "host": "blurt.media",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/811bc59d-1f4b-4b0f-a2ee-c239b548f8eb.jpg",
+              "createdAt": "2025-01-14T23:04:51.412Z",
+              "updatedAt": "2025-01-14T23:04:51.412Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/732606b4-5910-4fe3-922d-80ac921c13e3.jpg",
+              "createdAt": "2025-01-14T23:04:51.411Z",
+              "updatedAt": "2025-01-14T23:04:51.411Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/fc692eb8-50a4-422e-a45a-eb0767ceb8ec.jpg",
+              "createdAt": "2025-01-14T23:04:51.409Z",
+              "updatedAt": "2025-01-14T23:04:51.409Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/5d96d7cb-adff-4ada-9477-cd2d9c63082f.jpg",
+              "createdAt": "2025-01-14T23:04:51.408Z",
+              "updatedAt": "2025-01-14T23:04:51.408Z"
+            }
+          ]
+        },
+        "pluginData": {
+          "demoMode": false,
+          "showReputationComments": true,
+          "showDownvoteComments": true,
+          "showPayoutsTooltip": true,
+          "additionalPercent": "90",
+          "mapped": true,
+          "c": 1,
+          "ha": "agorise",
+          "ba": "agorise",
+          "mt": "",
+          "bmapped": true,
+          "permLinkObj": {
+            "a": "blurt.media",
+            "p": "which-is-better-machado-square-at-day-vs-night-gone-wrong-nd5vsks8kwd",
+            "pp": "christmas"
+          },
+          "blurt-permLinkObj": {
+            "a": "blurt.media",
+            "p": "which-is-better-machado-square-at-day-vs-night-gone-wrong-n5um7sdwth9",
+            "pp": "christmas"
+          },
+          "usernameObj": "surfgrrl",
+          "tip": {},
+          "blurt-usernameObj": "surfgrrl",
+          "blurt-tip": {},
+          "ucfg": {
+            "hive": "surfgrrl",
+            "blurt": "surfgrrl"
+          },
+          "defaultObj": "agorise",
+          "blurt-defaultObj": "agorise"
+        }
+      },
+      {
+        "id": 49120,
+        "uuid": "98315300-9547-4087-a098-683242bd18ed",
+        "shortUUID": "jN1ZSEtvt12h28ABU2t82P",
+        "url": "https://blurt.media/videos/watch/98315300-9547-4087-a098-683242bd18ed",
+        "name": "Loud ~ my new favorite Suno song!",
+        "category": {
+          "id": 1,
+          "label": "Music"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "nsfw": false,
+        "truncatedDescription": "This song has quite a funny story behind it, and I am more than happy to share it with you! So one day I was ranting to my best friend about how I wanted to post something, but I didn't know what. She said to make some music on Suno.ai. I thought ...",
+        "description": "This song has quite a funny story behind it, and I am more than happy to share it with you! So one day I was ranting to my best friend about how I wanted to post something, but I didn't know what. She said to make some music on Suno.ai. I thought ...",
+        "isLocal": true,
+        "duration": 171,
+        "aspectRatio": 0.5628,
+        "views": 10,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "thumbnailPath": "/lazy-static/thumbnails/f765f0a2-141e-4c45-97e1-3df6e1d58826.jpg",
+        "previewPath": "/lazy-static/previews/29e3cb8f-7574-4f79-bd11-549272f0f663.jpg",
+        "embedPath": "/videos/embed/98315300-9547-4087-a098-683242bd18ed",
+        "createdAt": "2025-11-14T20:26:30.292Z",
+        "updatedAt": "2026-09-07T00:01:36.296Z",
+        "publishedAt": "2025-11-14T20:57:39.835Z",
+        "originallyPublishedAt": null,
+        "isLive": false,
+        "account": {
+          "id": 26,
+          "displayName": "SurfGrrl",
+          "name": "surf.grrl",
+          "url": "https://blurt.media/accounts/surf.grrl",
+          "host": "blurt.media",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/d6956c2e-7b6a-4179-8616-5645d0ae7ba9.jpg",
+              "createdAt": "2025-01-14T23:05:08.610Z",
+              "updatedAt": "2025-01-14T23:05:08.610Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/5f702786-2b77-4924-af16-ba05f0f77bf5.jpg",
+              "createdAt": "2025-01-14T23:05:08.609Z",
+              "updatedAt": "2025-01-14T23:05:08.609Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/d68c18dd-96e6-4704-8b0a-19b16d051d36.jpg",
+              "createdAt": "2025-01-14T23:05:08.609Z",
+              "updatedAt": "2025-01-14T23:05:08.609Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/93244dad-2253-4a49-a0f3-752ecae975cb.jpg",
+              "createdAt": "2025-01-14T23:05:08.607Z",
+              "updatedAt": "2025-01-14T23:05:08.607Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 25,
+          "name": "surfgrrl",
+          "displayName": "SurfGrrl",
+          "url": "https://blurt.media/video-channels/surfgrrl",
+          "host": "blurt.media",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/811bc59d-1f4b-4b0f-a2ee-c239b548f8eb.jpg",
+              "createdAt": "2025-01-14T23:04:51.412Z",
+              "updatedAt": "2025-01-14T23:04:51.412Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/732606b4-5910-4fe3-922d-80ac921c13e3.jpg",
+              "createdAt": "2025-01-14T23:04:51.411Z",
+              "updatedAt": "2025-01-14T23:04:51.411Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/fc692eb8-50a4-422e-a45a-eb0767ceb8ec.jpg",
+              "createdAt": "2025-01-14T23:04:51.409Z",
+              "updatedAt": "2025-01-14T23:04:51.409Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/5d96d7cb-adff-4ada-9477-cd2d9c63082f.jpg",
+              "createdAt": "2025-01-14T23:04:51.408Z",
+              "updatedAt": "2025-01-14T23:04:51.408Z"
+            }
+          ]
+        },
+        "pluginData": {
+          "demoMode": false,
+          "showReputationComments": true,
+          "showDownvoteComments": true,
+          "showPayoutsTooltip": true,
+          "additionalPercent": "90",
+          "mapped": true,
+          "c": 1,
+          "ha": "agorise",
+          "ba": "agorise",
+          "mt": "",
+          "bmapped": true,
+          "permLinkObj": {
+            "a": "blurt.media",
+            "p": "loud-my-new-favorite-suno-song-9d1gt89q4bo",
+            "pp": "loud"
+          },
+          "blurt-permLinkObj": {
+            "a": "blurt.media",
+            "p": "loud-my-new-favorite-suno-song-j9a61xpkqie",
+            "pp": "loud"
+          },
+          "usernameObj": "surfgrrl",
+          "tip": {},
+          "blurt-usernameObj": "surfgrrl",
+          "blurt-tip": {},
+          "ucfg": {
+            "hive": "surfgrrl",
+            "blurt": "surfgrrl"
+          },
+          "defaultObj": "agorise",
+          "blurt-defaultObj": "agorise"
+        }
+      },
+      {
+        "id": 48826,
+        "uuid": "f0c75cc1-00a3-4583-b5d2-cfddf843ab46",
+        "shortUUID": "vJtKC546bH143nKu1Lw3Lo",
+        "url": "https://blurt.media/videos/watch/f0c75cc1-00a3-4583-b5d2-cfddf843ab46",
+        "name": "Spooky Halloween Interviews!",
+        "category": {
+          "id": 8,
+          "label": "People"
+        },
+        "licence": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "language": {
+          "id": null,
+          "label": "Unknown"
+        },
+        "privacy": {
+          "id": 1,
+          "label": "Public"
+        },
+        "nsfw": false,
+        "truncatedDescription": "I hit the streets of Mazatlán to ask people what they love most about the city on Halloween night. Let’s just say, the costumes weren’t the only things getting wild! 🎃💀\r\nMazatlán knows how to celebrate. I think that's one of the main reasons eve...",
+        "description": "I hit the streets of Mazatlán to ask people what they love most about the city on Halloween night. Let’s just say, the costumes weren’t the only things getting wild! 🎃💀\r\nMazatlán knows how to celebrate. I think that's one of the main reasons eve...",
+        "isLocal": true,
+        "duration": 350,
+        "aspectRatio": 0.5625,
+        "views": 9,
+        "viewers": 0,
+        "likes": 0,
+        "dislikes": 0,
+        "thumbnailPath": "/lazy-static/thumbnails/045f7557-cc8c-4ec9-b371-3207028d9d83.jpg",
+        "previewPath": "/lazy-static/previews/033aef16-e763-4113-b9a4-2ddff72e2402.jpg",
+        "embedPath": "/videos/embed/f0c75cc1-00a3-4583-b5d2-cfddf843ab46",
+        "createdAt": "2025-11-02T18:36:49.658Z",
+        "updatedAt": "2025-11-26T23:35:17.867Z",
+        "publishedAt": "2025-11-02T19:26:44.059Z",
+        "originallyPublishedAt": null,
+        "isLive": false,
+        "account": {
+          "id": 26,
+          "displayName": "SurfGrrl",
+          "name": "surf.grrl",
+          "url": "https://blurt.media/accounts/surf.grrl",
+          "host": "blurt.media",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/d6956c2e-7b6a-4179-8616-5645d0ae7ba9.jpg",
+              "createdAt": "2025-01-14T23:05:08.610Z",
+              "updatedAt": "2025-01-14T23:05:08.610Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/5f702786-2b77-4924-af16-ba05f0f77bf5.jpg",
+              "createdAt": "2025-01-14T23:05:08.609Z",
+              "updatedAt": "2025-01-14T23:05:08.609Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/d68c18dd-96e6-4704-8b0a-19b16d051d36.jpg",
+              "createdAt": "2025-01-14T23:05:08.609Z",
+              "updatedAt": "2025-01-14T23:05:08.609Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/93244dad-2253-4a49-a0f3-752ecae975cb.jpg",
+              "createdAt": "2025-01-14T23:05:08.607Z",
+              "updatedAt": "2025-01-14T23:05:08.607Z"
+            }
+          ]
+        },
+        "channel": {
+          "id": 25,
+          "name": "surfgrrl",
+          "displayName": "SurfGrrl",
+          "url": "https://blurt.media/video-channels/surfgrrl",
+          "host": "blurt.media",
+          "avatars": [
+            {
+              "width": 48,
+              "path": "/lazy-static/avatars/811bc59d-1f4b-4b0f-a2ee-c239b548f8eb.jpg",
+              "createdAt": "2025-01-14T23:04:51.412Z",
+              "updatedAt": "2025-01-14T23:04:51.412Z"
+            },
+            {
+              "width": 120,
+              "path": "/lazy-static/avatars/732606b4-5910-4fe3-922d-80ac921c13e3.jpg",
+              "createdAt": "2025-01-14T23:04:51.411Z",
+              "updatedAt": "2025-01-14T23:04:51.411Z"
+            },
+            {
+              "width": 600,
+              "path": "/lazy-static/avatars/fc692eb8-50a4-422e-a45a-eb0767ceb8ec.jpg",
+              "createdAt": "2025-01-14T23:04:51.409Z",
+              "updatedAt": "2025-01-14T23:04:51.409Z"
+            },
+            {
+              "width": 1500,
+              "path": "/lazy-static/avatars/5d96d7cb-adff-4ada-9477-cd2d9c63082f.jpg",
+              "createdAt": "2025-01-14T23:04:51.408Z",
+              "updatedAt": "2025-01-14T23:04:51.408Z"
+            }
+          ]
+        },
+        "pluginData": {
+          "demoMode": false,
+          "showReputationComments": true,
+          "showDownvoteComments": true,
+          "showPayoutsTooltip": true,
+          "additionalPercent": "90",
+          "mapped": true,
+          "c": 1,
+          "ha": "agorise",
+          "ba": "agorise",
+          "mt": "",
+          "bmapped": true,
+          "permLinkObj": {
+            "a": "blurt.media",
+            "p": "spooky-halloween-interviews-yjnod9phg4l",
+            "pp": "halloween"
+          },
+          "blurt-permLinkObj": {
+            "a": "blurt.media",
+            "p": "spooky-halloween-interviews-lqd69m7ykyr",
+            "pp": "halloween"
+          },
+          "usernameObj": "surfgrrl",
+          "tip": {},
+          "blurt-usernameObj": "surfgrrl",
+          "blurt-tip": {},
+          "ucfg": {
+            "hive": "surfgrrl",
+            "blurt": "surfgrrl"
+          },
+          "defaultObj": "agorise",
+          "blurt-defaultObj": "agorise"
+        }
+      }
+    ]
+  }
+}

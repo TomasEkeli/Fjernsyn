@@ -1,0 +1,318 @@
+{
+  "recordedAt": "2026-09-27T14:27:30.121Z",
+  "url": "https://makertube.net/api/v1/videos/cb6fa58d-4981-4a4b-9a28-8af37d40f271",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "75",
+    "x-ratelimit-remaining": "74",
+    "x-ratelimit-reset": "1790519261"
+  },
+  "body": {
+    "id": 252874,
+    "uuid": "cb6fa58d-4981-4a4b-9a28-8af37d40f271",
+    "shortUUID": "r82zDAKQPtDRAFhKfwUsMp",
+    "url": "https://makertube.net/videos/watch/cb6fa58d-4981-4a4b-9a28-8af37d40f271",
+    "name": "Tschüss, USA: Europäische Alternativen",
+    "category": {
+      "id": 15,
+      "label": "Science & Technology"
+    },
+    "licence": {
+      "id": 3,
+      "label": "Attribution - No Derivatives"
+    },
+    "language": {
+      "id": "de",
+      "label": "German"
+    },
+    "privacy": {
+      "id": 1,
+      "label": "Public"
+    },
+    "nsfw": false,
+    "nsfwFlags": 0,
+    "nsfwSummary": null,
+    "truncatedDescription": "=== Anzeige / Sponsorenhinweis === \r\nSichere dir 4 EXTRA-Monate auf ein 2-Jahresabo über https://nordvpn.com/ct3003. Teste NordVPN jetzt risikofrei mit der 30 Tage Geld-Zurück-Garantie.\r\n=== Sponsorenhinweis Ende ===\r\n► Wie sich dieser Channel fin...",
+    "description": "=== Anzeige / Sponsorenhinweis === \r\nSichere dir 4 EXTRA-Monate auf ein 2-Jahresabo über https://nordvpn.com/ct3003. Teste NordVPN jetzt risikofrei mit der 30 Tage Geld-Zurück-Garantie.\r\n=== Sponsorenhinweis Ende ===\r\n► Wie sich dieser Channel finanziert: https://www.youtube.com/watch?v=xWLRoMP3rLU&t \r\n\r\nDieses Video geht an alle, die sich mal mit europäischen Alternativen zu großen US-Diensten wie Google, Meta, Microsoft oder Apple beschäftigen wollen.\r\n\r\n► Alle Links aus dem Video:\r\n\r\n1. E-Mail-Anbieter:\r\n • Tutanota: https://tutanota.com\r\n • ProtonMail: https://protonmail.com\r\n • Posteo: https://posteo.de\r\n • Mailbox.org: https://mailbox.org\r\n • GMX: https://www.gmx.net\r\n • Web.de: https://web.de\r\n\r\n2. Suchmaschinen:\r\n • Ecosia: https://www.ecosia.org\r\n • Qwant: https://www.qwant.com\r\n • Startpage: https://www.startpage.com\r\n • Good Search: https://www.good-search.org\r\n\r\n3. Karten- und Navigations-Apps:\r\n • Here WeGo: https://wego.here.com\r\n • Sygic GPS Navigation: https://www.sygic.com\r\n • TomTom GO Navigation: https://www.tomtom.com\r\n • OsmAnd: https://osmand.net\r\n • Organic Maps: https://organicmaps.app\r\n\r\n4. Messenger:\r\n • Threema: https://threema.ch\r\n • Olvid: https://olvid.io\r\n • ginlo: https://ginlo.net\r\n • SKRED: https://skred.mobi\r\n\r\n5. Kollaborations- und Office-Lösungen:\r\n • Nextcloud: https://nextcloud.com\r\n • kSuite von Infomaniak: https://www.infomaniak.com\r\n • CryptPad: https://cryptpad.fr\r\n • Jitsi Meet: https://meet.jit.si\r\n • OpenTalk: https://www.opentalk.eu\r\n • Stackfield: https://www.stackfield.com\r\n\r\n6. Soziale Netzwerke:\r\n • Mastodon: https://joinmastodon.org\r\n • Pixelfed: https://pixelfed.org\r\n • BeReal: https://bere.al\r\n • Xing: https://www.xing.com\r\n\r\n\r\n► DER 3003-HYPE-NEWSLETTER: https://ct.de/hype\r\n\r\n\r\n► Alle Newsletter von Heise: https://www.heise.de/newsletter/\r\n\r\n► Hier geht es zum c't-WhatsApp-Kanal: https://whatsapp.com/channel/0029VaCU...\r\n\r\n► Keno auf Instagram: https://www.instagram.com/elektroelvis/\r\n\r\n► c't Magazin: http://ct.de \r\n► und TOTAL CRAZY auf Papier! Überall wo es Zeitschriften gibt!\r\n\r\n► Credits:\r\nKonzept & Redaktion: Jan-Keno Janssen, Lukas Rumpler\r\nSchnitt: Sahin Erengil\r\nHost: Jan-Keno Janssen\r\n\r\n#DigitaleSouveränität #EuropäischeAlternativen #Datenschutz",
+    "isLocal": true,
+    "duration": 1302,
+    "aspectRatio": 1.7778,
+    "views": 14787,
+    "viewers": 0,
+    "downloads": 77,
+    "likes": 352,
+    "dislikes": 0,
+    "thumbnailPath": "/lazy-static/thumbnails/65377a3e-a115-4790-9d9e-5dedb6fc2c1e.jpg",
+    "previewPath": "/lazy-static/thumbnails/17b86401-d48c-426d-a46a-5c94f2705956.jpg",
+    "thumbnails": [
+      {
+        "height": 157,
+        "width": 280,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://makertube.net/lazy-static/thumbnails/65377a3e-a115-4790-9d9e-5dedb6fc2c1e.jpg"
+      },
+      {
+        "height": 1080,
+        "width": 1920,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://makertube.net/lazy-static/thumbnails/17b86401-d48c-426d-a46a-5c94f2705956.jpg"
+      },
+      {
+        "height": 720,
+        "width": 1280,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://makertube.net/lazy-static/thumbnails/283a10f9-017d-4896-b2c2-6c997a7a0f49.jpg"
+      },
+      {
+        "height": 480,
+        "width": 850,
+        "aspectRatio": "16:9",
+        "fileUrl": "https://makertube.net/lazy-static/thumbnails/140b3d64-1dac-4994-8078-01f2a869e2bd.jpg"
+      },
+      {
+        "height": 1400,
+        "width": 1400,
+        "aspectRatio": "1:1",
+        "fileUrl": "https://makertube.net/lazy-static/thumbnails/0b9683cf-7b7d-4b61-b67e-3e6c303da7d4.jpg"
+      }
+    ],
+    "embedPath": "/videos/embed/r82zDAKQPtDRAFhKfwUsMp",
+    "createdAt": "2025-03-21T16:18:50.922Z",
+    "updatedAt": "2026-09-27T10:27:28.328Z",
+    "publishedAt": "2025-03-21T17:42:07.958Z",
+    "originallyPublishedAt": null,
+    "isLive": false,
+    "account": {
+      "url": "https://makertube.net/accounts/ct_3003_channel",
+      "name": "ct_3003_channel",
+      "host": "makertube.net",
+      "avatars": [
+        {
+          "height": 48,
+          "width": 48,
+          "path": "/lazy-static/avatars/a77b665b-ed35-40e3-ab33-0e951f1bdcf9.jpg",
+          "fileUrl": "https://makertube.net/lazy-static/avatars/a77b665b-ed35-40e3-ab33-0e951f1bdcf9.jpg",
+          "createdAt": "2025-03-21T16:38:04.120Z",
+          "updatedAt": "2025-03-21T16:38:04.120Z"
+        },
+        {
+          "height": 120,
+          "width": 120,
+          "path": "/lazy-static/avatars/0f72b940-6d64-42fd-ad9e-58cd8e1fd340.jpg",
+          "fileUrl": "https://makertube.net/lazy-static/avatars/0f72b940-6d64-42fd-ad9e-58cd8e1fd340.jpg",
+          "createdAt": "2025-03-21T16:38:04.100Z",
+          "updatedAt": "2025-03-21T16:38:04.100Z"
+        },
+        {
+          "height": 600,
+          "width": 600,
+          "path": "/lazy-static/avatars/086a74f9-9d88-4b0b-a5d3-5918dcf39f32.jpg",
+          "fileUrl": "https://makertube.net/lazy-static/avatars/086a74f9-9d88-4b0b-a5d3-5918dcf39f32.jpg",
+          "createdAt": "2025-03-21T16:38:04.053Z",
+          "updatedAt": "2025-03-21T16:38:04.053Z"
+        },
+        {
+          "height": 1500,
+          "width": 1500,
+          "path": "/lazy-static/avatars/8f92b230-49d2-4f85-8d55-e8fa7bd4be30.jpg",
+          "fileUrl": "https://makertube.net/lazy-static/avatars/8f92b230-49d2-4f85-8d55-e8fa7bd4be30.jpg",
+          "createdAt": "2025-03-21T16:38:03.992Z",
+          "updatedAt": "2025-03-21T16:38:03.992Z"
+        }
+      ],
+      "id": 637494,
+      "hostRedundancyAllowed": false,
+      "followingCount": 0,
+      "followersCount": 221,
+      "createdAt": "2025-03-20T18:56:00.940Z",
+      "displayName": "c't 3003",
+      "description": "Direkt von Europas größtem IT & Tech-Magazin. Die Videos sind eigenständige Inhalte und unabhängig von den Artikeln.\n\nWir moderieren die Kommentare auf unserem Kanal nach den Nutzungsbedingungen von heise online, nachzulesen unter\nhttps://heise.de/-4947138\n\nImpressum: https://www.heise.de/impressum.html\n\nSie haben Interesse an Sponsoring?\nDann informieren Sie sich bei unserer Kollegin Hanna Isl (hai@heise.de) über die Möglichkeiten und Konditionen, um Ihre Zielgruppe in unseren reichweitenstarken Formaten anzusprechen.\n\nHeise Medien GmbH & Co. KG\nKarl-Wiechert-Allee 10\n30625 Hannover\nPostfach 61 04 07\n30604 Hannover\n\nKontakt:\nTel.: +49 [0]511 5352-0\n\nDatenschutzerklärung: https://www.heise.de/Datenschutzerklaerung-der-Heise-Medien-GmbH-Co-KG-4860.html\n\nHerausgeber:\nChristian Heise\nAnsgar Heise\nChristian Persson\n\nHeise Medien GmbH & Co. KG\nGeschäftsführer:\nAnsgar Heise\nBeate Gerold\n\nAmtsgericht Hannover HRA 26709\nUST-Id.: DE 813 501 887",
+      "updatedAt": "2025-03-21T16:38:38.748Z",
+      "userId": 1864
+    },
+    "channel": {
+      "url": "https://makertube.net/video-channels/ct_3003_und_heise",
+      "name": "ct_3003_und_heise",
+      "host": "makertube.net",
+      "avatars": [],
+      "id": 9037,
+      "hostRedundancyAllowed": false,
+      "followingCount": 0,
+      "followersCount": 380,
+      "createdAt": "2025-03-20T18:56:00.942Z",
+      "banners": [],
+      "displayName": "c't 3003 und heise",
+      "description": null,
+      "support": null,
+      "publicEmail": null,
+      "isLocal": true,
+      "updatedAt": "2025-06-06T13:52:37.777Z",
+      "ownerAccount": {
+        "url": "https://makertube.net/accounts/ct_3003_channel",
+        "name": "ct_3003_channel",
+        "host": "makertube.net",
+        "avatars": [
+          {
+            "height": 48,
+            "width": 48,
+            "path": "/lazy-static/avatars/a77b665b-ed35-40e3-ab33-0e951f1bdcf9.jpg",
+            "fileUrl": "https://makertube.net/lazy-static/avatars/a77b665b-ed35-40e3-ab33-0e951f1bdcf9.jpg",
+            "createdAt": "2025-03-21T16:38:04.120Z",
+            "updatedAt": "2025-03-21T16:38:04.120Z"
+          },
+          {
+            "height": 120,
+            "width": 120,
+            "path": "/lazy-static/avatars/0f72b940-6d64-42fd-ad9e-58cd8e1fd340.jpg",
+            "fileUrl": "https://makertube.net/lazy-static/avatars/0f72b940-6d64-42fd-ad9e-58cd8e1fd340.jpg",
+            "createdAt": "2025-03-21T16:38:04.100Z",
+            "updatedAt": "2025-03-21T16:38:04.100Z"
+          },
+          {
+            "height": 600,
+            "width": 600,
+            "path": "/lazy-static/avatars/086a74f9-9d88-4b0b-a5d3-5918dcf39f32.jpg",
+            "fileUrl": "https://makertube.net/lazy-static/avatars/086a74f9-9d88-4b0b-a5d3-5918dcf39f32.jpg",
+            "createdAt": "2025-03-21T16:38:04.053Z",
+            "updatedAt": "2025-03-21T16:38:04.053Z"
+          },
+          {
+            "height": 1500,
+            "width": 1500,
+            "path": "/lazy-static/avatars/8f92b230-49d2-4f85-8d55-e8fa7bd4be30.jpg",
+            "fileUrl": "https://makertube.net/lazy-static/avatars/8f92b230-49d2-4f85-8d55-e8fa7bd4be30.jpg",
+            "createdAt": "2025-03-21T16:38:03.992Z",
+            "updatedAt": "2025-03-21T16:38:03.992Z"
+          }
+        ],
+        "id": 637494,
+        "hostRedundancyAllowed": false,
+        "followingCount": 0,
+        "followersCount": 221,
+        "createdAt": "2025-03-20T18:56:00.940Z",
+        "displayName": "c't 3003",
+        "description": "Direkt von Europas größtem IT & Tech-Magazin. Die Videos sind eigenständige Inhalte und unabhängig von den Artikeln.\n\nWir moderieren die Kommentare auf unserem Kanal nach den Nutzungsbedingungen von heise online, nachzulesen unter\nhttps://heise.de/-4947138\n\nImpressum: https://www.heise.de/impressum.html\n\nSie haben Interesse an Sponsoring?\nDann informieren Sie sich bei unserer Kollegin Hanna Isl (hai@heise.de) über die Möglichkeiten und Konditionen, um Ihre Zielgruppe in unseren reichweitenstarken Formaten anzusprechen.\n\nHeise Medien GmbH & Co. KG\nKarl-Wiechert-Allee 10\n30625 Hannover\nPostfach 61 04 07\n30604 Hannover\n\nKontakt:\nTel.: +49 [0]511 5352-0\n\nDatenschutzerklärung: https://www.heise.de/Datenschutzerklaerung-der-Heise-Medien-GmbH-Co-KG-4860.html\n\nHerausgeber:\nChristian Heise\nAnsgar Heise\nChristian Persson\n\nHeise Medien GmbH & Co. KG\nGeschäftsführer:\nAnsgar Heise\nBeate Gerold\n\nAmtsgericht Hannover HRA 26709\nUST-Id.: DE 813 501 887",
+        "updatedAt": "2025-03-21T16:38:38.748Z",
+        "userId": 1864
+      }
+    },
+    "comments": 91,
+    "pluginData": {},
+    "blacklisted": false,
+    "blacklistedReason": null,
+    "streamingPlaylists": [
+      {
+        "id": 2111985,
+        "type": 1,
+        "playlistUrl": "https://media.makertube.net/streaming-playlists/hls/cb6fa58d-4981-4a4b-9a28-8af37d40f271/6f83b29a-f4cf-4f13-aef4-1a1baaea9e62-master.m3u8",
+        "segmentsSha256Url": "https://media.makertube.net/streaming-playlists/hls/cb6fa58d-4981-4a4b-9a28-8af37d40f271/5bdd728b-bab2-4b4e-bd68-ea76f14586fb-segments-sha256.json",
+        "redundancies": [
+          {
+            "baseUrl": "https://pneumanode.com/static/redundancy/hls/cb6fa58d-4981-4a4b-9a28-8af37d40f271"
+          },
+          {
+            "baseUrl": "https://cache.makertube.net/static/redundancy/hls/cb6fa58d-4981-4a4b-9a28-8af37d40f271"
+          },
+          {
+            "baseUrl": "https://video.mycrowd.ca/static/redundancy/hls/cb6fa58d-4981-4a4b-9a28-8af37d40f271"
+          }
+        ],
+        "files": [
+          {
+            "id": 814500,
+            "resolution": {
+              "id": 2160,
+              "label": "2160p"
+            },
+            "width": 3840,
+            "height": 2160,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fmakertube.net%2Flazy-static%2Ftorrents%2F7ce3ba0d-ea49-40d2-acd8-dad3b88c6291-2160-hls.torrent&xt=urn:btih:603d37e77472a3387eb5dcdd0d0c87c9c7f7b938&dn=Tsch%C3%BCss%2C+USA%3A+Europ%C3%A4ische+Alternativen&tr=https%3A%2F%2Fmakertube.net%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fmakertube.net%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fmedia.makertube.net%2Fstreaming-playlists%2Fhls%2Fcb6fa58d-4981-4a4b-9a28-8af37d40f271%2Fcc579609-4c8b-4137-b0d3-d29c90bb561f-2160-fragmented.mp4",
+            "size": 1019354447,
+            "fps": 30,
+            "torrentUrl": "https://makertube.net/lazy-static/torrents/7ce3ba0d-ea49-40d2-acd8-dad3b88c6291-2160-hls.torrent",
+            "torrentDownloadUrl": "https://makertube.net/download/torrents/7ce3ba0d-ea49-40d2-acd8-dad3b88c6291-2160-hls.torrent",
+            "fileUrl": "https://media.makertube.net/streaming-playlists/hls/cb6fa58d-4981-4a4b-9a28-8af37d40f271/cc579609-4c8b-4137-b0d3-d29c90bb561f-2160-fragmented.mp4",
+            "fileDownloadUrl": "https://makertube.net/download/streaming-playlists/hls/videos/cb6fa58d-4981-4a4b-9a28-8af37d40f271-2160-fragmented.mp4",
+            "metadataUrl": "https://makertube.net/api/v1/videos/cb6fa58d-4981-4a4b-9a28-8af37d40f271/metadata/814500",
+            "hasAudio": true,
+            "hasVideo": true,
+            "playlistUrl": "https://media.makertube.net/streaming-playlists/hls/cb6fa58d-4981-4a4b-9a28-8af37d40f271/cc579609-4c8b-4137-b0d3-d29c90bb561f-2160.m3u8",
+            "storage": 1
+          },
+          {
+            "id": 814491,
+            "resolution": {
+              "id": 1080,
+              "label": "1080p"
+            },
+            "width": 1920,
+            "height": 1080,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fmakertube.net%2Flazy-static%2Ftorrents%2Ff938f351-2d85-4ac0-a724-23cf8e8fc91b-1080-hls.torrent&xt=urn:btih:684a0801f71f3ccde216aae53367ad7f7b9698d1&dn=Tsch%C3%BCss%2C+USA%3A+Europ%C3%A4ische+Alternativen&tr=https%3A%2F%2Fmakertube.net%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fmakertube.net%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fmedia.makertube.net%2Fstreaming-playlists%2Fhls%2Fcb6fa58d-4981-4a4b-9a28-8af37d40f271%2F1dc1848e-a9ab-4d6e-83c6-a9e5c52c0c76-1080-fragmented.mp4",
+            "size": 302550633,
+            "fps": 30,
+            "torrentUrl": "https://makertube.net/lazy-static/torrents/f938f351-2d85-4ac0-a724-23cf8e8fc91b-1080-hls.torrent",
+            "torrentDownloadUrl": "https://makertube.net/download/torrents/f938f351-2d85-4ac0-a724-23cf8e8fc91b-1080-hls.torrent",
+            "fileUrl": "https://media.makertube.net/streaming-playlists/hls/cb6fa58d-4981-4a4b-9a28-8af37d40f271/1dc1848e-a9ab-4d6e-83c6-a9e5c52c0c76-1080-fragmented.mp4",
+            "fileDownloadUrl": "https://makertube.net/download/streaming-playlists/hls/videos/cb6fa58d-4981-4a4b-9a28-8af37d40f271-1080-fragmented.mp4",
+            "metadataUrl": "https://makertube.net/api/v1/videos/cb6fa58d-4981-4a4b-9a28-8af37d40f271/metadata/814491",
+            "hasAudio": true,
+            "hasVideo": true,
+            "playlistUrl": "https://media.makertube.net/streaming-playlists/hls/cb6fa58d-4981-4a4b-9a28-8af37d40f271/1dc1848e-a9ab-4d6e-83c6-a9e5c52c0c76-1080.m3u8",
+            "storage": 1
+          },
+          {
+            "id": 814485,
+            "resolution": {
+              "id": 720,
+              "label": "720p"
+            },
+            "width": 1280,
+            "height": 720,
+            "magnetUri": "magnet:?xs=https%3A%2F%2Fmakertube.net%2Flazy-static%2Ftorrents%2F40e37097-98ac-4c3c-8e01-b052718dd316-720-hls.torrent&xt=urn:btih:be7f961d620731254e636016920f57ffc9ce6b2e&dn=Tsch%C3%BCss%2C+USA%3A+Europ%C3%A4ische+Alternativen&tr=https%3A%2F%2Fmakertube.net%2Ftracker%2Fannounce&tr=wss%3A%2F%2Fmakertube.net%3A443%2Ftracker%2Fsocket&ws=https%3A%2F%2Fmedia.makertube.net%2Fstreaming-playlists%2Fhls%2Fcb6fa58d-4981-4a4b-9a28-8af37d40f271%2F0c19a9c7-58a2-4a47-94dc-02f2b3d03639-720-fragmented.mp4",
+            "size": 147464828,
+            "fps": 30,
+            "torrentUrl": "https://makertube.net/lazy-static/torrents/40e37097-98ac-4c3c-8e01-b052718dd316-720-hls.torrent",
+            "torrentDownloadUrl": "https://makertube.net/download/torrents/40e37097-98ac-4c3c-8e01-b052718dd316-720-hls.torrent",
+            "fileUrl": "https://media.makertube.net/streaming-playlists/hls/cb6fa58d-4981-4a4b-9a28-8af37d40f271/0c19a9c7-58a2-4a47-94dc-02f2b3d03639-720-fragmented.mp4",
+            "fileDownloadUrl": "https://makertube.net/download/streaming-playlists/hls/videos/cb6fa58d-4981-4a4b-9a28-8af37d40f271-720-fragmented.mp4",
+            "metadataUrl": "https://makertube.net/api/v1/videos/cb6fa58d-4981-4a4b-9a28-8af37d40f271/metadata/814485",
+            "hasAudio": true,
+            "hasVideo": true,
+            "playlistUrl": "https://media.makertube.net/streaming-playlists/hls/cb6fa58d-4981-4a4b-9a28-8af37d40f271/0c19a9c7-58a2-4a47-94dc-02f2b3d03639-720.m3u8",
+            "storage": 1
+          }
+        ]
+      }
+    ],
+    "files": [],
+    "liveSchedules": [],
+    "support": null,
+    "tags": [
+      "alternative",
+      "europa",
+      "fediverse",
+      "mastodon",
+      "technik"
+    ],
+    "commentsPolicy": {
+      "id": 1,
+      "label": "Enabled"
+    },
+    "downloadEnabled": true,
+    "waitTranscoding": true,
+    "inputFileUpdatedAt": null,
+    "state": {
+      "id": 1,
+      "label": "Published"
+    },
+    "trackerUrls": [
+      "https://makertube.net/tracker/announce",
+      "wss://makertube.net:443/tracker/socket"
+    ],
+    "embedPrivacyPolicy": {
+      "id": 1,
+      "label": "All allowed"
+    }
+  }
+}

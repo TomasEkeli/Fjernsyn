@@ -1,0 +1,15 @@
+{
+  "recordedAt": "2026-09-27T14:27:30.616Z",
+  "url": "https://tilvids.com/api/v1/videos/1ed60f7c-1c42-45dc-9eb9-9006964e5ae9/captions",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "48",
+    "x-ratelimit-reset": "1790519261"
+  },
+  "body": {
+    "total": 0,
+    "data": []
+  }
+}

@@ -1,0 +1,451 @@
+{
+  "recordedAt": "2026-09-27T14:28:51.018Z",
+  "url": "https://blurt.media/api/v1/config",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "49",
+    "x-ratelimit-reset": "1790519342"
+  },
+  "body": {
+    "client": {
+      "videos": {
+        "miniature": {
+          "displayAuthorAvatar": false,
+          "preferAuthorDisplayName": true
+        },
+        "resumableUpload": {
+          "maxChunkSize": 0
+        }
+      },
+      "menu": {
+        "login": {
+          "redirectOnSingleExternalAuth": false
+        }
+      }
+    },
+    "defaults": {
+      "publish": {
+        "downloadEnabled": true,
+        "commentsPolicy": 1,
+        "commentsEnabled": true,
+        "privacy": 1,
+        "licence": null
+      },
+      "p2p": {
+        "webapp": {
+          "enabled": true
+        },
+        "embed": {
+          "enabled": true
+        }
+      }
+    },
+    "webadmin": {
+      "configuration": {
+        "edition": {
+          "allowed": true
+        }
+      }
+    },
+    "instance": {
+      "name": "Blurt.media",
+      "shortDescription": "On this network, you can say whatever the hell you want. Blurt it out! Demonetization is literally impossible too, so contribute value here and start earning :) ",
+      "isNSFW": false,
+      "defaultNSFWPolicy": "do_not_list",
+      "defaultClientRoute": "/home",
+      "customizations": {
+        "javascript": "",
+        "css": ""
+      },
+      "avatars": [
+        {
+          "width": 48,
+          "path": "/lazy-static/avatars/0a26a314-99c8-492b-ba9f-b81c98ae7c00.png",
+          "createdAt": "2024-12-10T18:54:24.242Z",
+          "updatedAt": "2024-12-10T18:54:24.242Z"
+        },
+        {
+          "width": 120,
+          "path": "/lazy-static/avatars/2ebb5d9a-ec9f-40ce-898f-71b1ce020b09.png",
+          "createdAt": "2024-12-10T18:54:24.241Z",
+          "updatedAt": "2024-12-10T18:54:24.241Z"
+        },
+        {
+          "width": 600,
+          "path": "/lazy-static/avatars/1db25e73-1a90-4d66-8c16-7310c88095f5.png",
+          "createdAt": "2024-12-10T18:54:24.239Z",
+          "updatedAt": "2024-12-10T18:54:24.239Z"
+        },
+        {
+          "width": 1500,
+          "path": "/lazy-static/avatars/bddbfb15-9ec0-46da-b378-23927b8dcc4b.png",
+          "createdAt": "2024-12-10T18:54:24.237Z",
+          "updatedAt": "2024-12-10T18:54:24.237Z"
+        }
+      ],
+      "banners": [
+        {
+          "width": 600,
+          "path": "/lazy-static/banners/ff03fd20-696b-4458-9257-10a2ba5f955f.png",
+          "createdAt": "2025-12-13T04:58:28.476Z",
+          "updatedAt": "2025-12-13T04:58:28.476Z"
+        },
+        {
+          "width": 1920,
+          "path": "/lazy-static/banners/f10055c6-e11c-4945-808d-d0be2ed8c9fe.png",
+          "createdAt": "2025-12-13T04:58:28.475Z",
+          "updatedAt": "2025-12-13T04:58:28.475Z"
+        }
+      ]
+    },
+    "search": {
+      "remoteUri": {
+        "users": true,
+        "anonymous": false
+      },
+      "searchIndex": {
+        "enabled": false,
+        "url": "",
+        "disableLocalSearch": false,
+        "isDefaultSearch": false
+      }
+    },
+    "plugin": {
+      "registered": [
+        {
+          "npmName": "peertube-plugin-blurt-media",
+          "name": "blurt-media",
+          "version": "1.0.1",
+          "description": "This is the dynamic styling used on the blurt.media website",
+          "clientScripts": {
+            "client/common-client-plugin.js": {
+              "script": "client/common-client-plugin.js",
+              "scopes": [
+                "common"
+              ]
+            }
+          }
+        },
+        {
+          "npmName": "peertube-plugin-peerhub",
+          "name": "peerhub",
+          "version": "9.25.11",
+          "description": "Peerhub adds cross-network user-engagement (audience talk increases views), monetization options for Creators AND their audience, and MASSIVE Syndication, far beyond the Fediverse. Reach Millions of new Subscribers for FREE across multiple networks.",
+          "clientScripts": {
+            "dist/common-client-plugin.js": {
+              "script": "dist/common-client-plugin.js",
+              "scopes": [
+                "common"
+              ]
+            }
+          }
+        }
+      ],
+      "registeredExternalAuths": [
+        {
+          "npmName": "peertube-plugin-peerhub",
+          "name": "peerhub",
+          "version": "9.25.11",
+          "authName": "mastodon-like-mastodon.social",
+          "authDisplayName": "Mastodon like for \"mastodon.social\""
+        },
+        {
+          "npmName": "peertube-plugin-peerhub",
+          "name": "peerhub",
+          "version": "9.25.11",
+          "authName": "mastodon-like-pixelfed.de",
+          "authDisplayName": "Mastodon like for \"pixelfed.de\""
+        },
+        {
+          "npmName": "peertube-plugin-peerhub",
+          "name": "peerhub",
+          "version": "9.25.11",
+          "authName": "mastodon-like-troet.cafe",
+          "authDisplayName": "Mastodon like for \"troet.cafe\""
+        }
+      ],
+      "registeredIdAndPassAuths": [
+        {
+          "npmName": "peertube-plugin-peerhub",
+          "name": "peerhub",
+          "version": "9.25.11",
+          "authName": "lemmy-like-peerhub",
+          "weight": 60
+        }
+      ]
+    },
+    "theme": {
+      "registered": [],
+      "default": "default"
+    },
+    "email": {
+      "enabled": true
+    },
+    "contactForm": {
+      "enabled": true
+    },
+    "serverVersion": "6.3.3",
+    "serverCommit": "",
+    "transcoding": {
+      "remoteRunners": {
+        "enabled": true
+      },
+      "hls": {
+        "enabled": true
+      },
+      "web_videos": {
+        "enabled": false
+      },
+      "enabledResolutions": [
+        0,
+        144,
+        240,
+        360,
+        480,
+        720,
+        1080,
+        1440,
+        2160
+      ],
+      "profile": "default",
+      "availableProfiles": [
+        "default"
+      ]
+    },
+    "live": {
+      "enabled": true,
+      "allowReplay": true,
+      "latencySetting": {
+        "enabled": false
+      },
+      "maxDuration": -1,
+      "maxInstanceLives": 8,
+      "maxUserLives": 2,
+      "transcoding": {
+        "enabled": true,
+        "remoteRunners": {
+          "enabled": false
+        },
+        "enabledResolutions": [
+          0,
+          144,
+          240,
+          360,
+          480,
+          720,
+          1080
+        ],
+        "profile": "default",
+        "availableProfiles": [
+          "default"
+        ]
+      },
+      "rtmp": {
+        "port": 1935
+      }
+    },
+    "videoStudio": {
+      "enabled": true,
+      "remoteRunners": {
+        "enabled": true
+      }
+    },
+    "videoFile": {
+      "update": {
+        "enabled": true
+      }
+    },
+    "videoTranscription": {
+      "enabled": true,
+      "remoteRunners": {
+        "enabled": false
+      }
+    },
+    "import": {
+      "videos": {
+        "http": {
+          "enabled": false
+        },
+        "torrent": {
+          "enabled": false
+        }
+      },
+      "videoChannelSynchronization": {
+        "enabled": false
+      },
+      "users": {
+        "enabled": true
+      }
+    },
+    "export": {
+      "users": {
+        "enabled": true,
+        "exportExpiration": 172800000,
+        "maxUserVideoQuota": 10737418240
+      }
+    },
+    "autoBlacklist": {
+      "videos": {
+        "ofUsers": {
+          "enabled": false
+        }
+      }
+    },
+    "avatar": {
+      "file": {
+        "size": {
+          "max": 4194304
+        },
+        "extensions": [
+          ".png",
+          ".jpeg",
+          ".jpg",
+          ".gif",
+          ".webp"
+        ]
+      }
+    },
+    "banner": {
+      "file": {
+        "size": {
+          "max": 4194304
+        },
+        "extensions": [
+          ".png",
+          ".jpeg",
+          ".jpg",
+          ".gif",
+          ".webp"
+        ]
+      }
+    },
+    "video": {
+      "image": {
+        "extensions": [
+          ".png",
+          ".jpg",
+          ".jpeg",
+          ".webp"
+        ],
+        "size": {
+          "max": 4194304
+        }
+      },
+      "file": {
+        "extensions": [
+          ".webm",
+          ".ogv",
+          ".ogg",
+          ".mp4",
+          ".mkv",
+          ".mov",
+          ".qt",
+          ".mqv",
+          ".m4v",
+          ".flv",
+          ".f4v",
+          ".wmv",
+          ".avi",
+          ".3gp",
+          ".3gpp",
+          ".3g2",
+          ".3gpp2",
+          ".nut",
+          ".mts",
+          ".m2ts",
+          ".mpv",
+          ".m2v",
+          ".m1v",
+          ".mpg",
+          ".mpe",
+          ".mpeg",
+          ".vob",
+          ".mxf",
+          ".mp3",
+          ".wma",
+          ".wav",
+          ".flac",
+          ".aac",
+          ".m4a",
+          ".ac3"
+        ]
+      }
+    },
+    "videoCaption": {
+      "file": {
+        "size": {
+          "max": 20971520
+        },
+        "extensions": [
+          ".vtt",
+          ".srt"
+        ]
+      }
+    },
+    "user": {
+      "videoQuota": -1,
+      "videoQuotaDaily": 10737418240
+    },
+    "videoChannels": {
+      "maxPerUser": 4
+    },
+    "trending": {
+      "videos": {
+        "intervalDays": 7,
+        "algorithms": {
+          "enabled": [
+            "hot",
+            "most-viewed",
+            "most-liked"
+          ],
+          "default": "most-viewed"
+        }
+      }
+    },
+    "tracker": {
+      "enabled": true
+    },
+    "followings": {
+      "instance": {
+        "autoFollowIndex": {
+          "indexUrl": ""
+        }
+      }
+    },
+    "broadcastMessage": {
+      "enabled": true,
+      "message": "A note to all video Creators: If you're not getting many views, then you're not getting many upvotes either. You must share your videos on other platforms like X, Facebook, email signatures, etc to help get more eyes onto your content. Just a friendly tip ♥️♥️",
+      "level": "info",
+      "dismissable": true
+    },
+    "homepage": {
+      "enabled": true
+    },
+    "openTelemetry": {
+      "metrics": {
+        "enabled": false,
+        "playbackStatsInterval": 15000
+      }
+    },
+    "views": {
+      "videos": {
+        "watchingInterval": {
+          "anonymous": 5000,
+          "users": 5000
+        }
+      }
+    },
+    "storyboards": {
+      "enabled": true
+    },
+    "signup": {
+      "allowed": false,
+      "allowedForCurrentIP": true,
+      "minimumAge": 16,
+      "requiresApproval": true,
+      "requiresEmailVerification": false
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "recordedAt": "2026-09-27T14:25:32.964Z",
+  "url": "https://peertube.f-si.org/api/v1/videos/8934b209-5a98-4314-a143-73e567cacd1c/comment-threads?start=0&count=5",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "50",
+    "x-ratelimit-remaining": "47",
+    "x-ratelimit-reset": "1790519142"
+  },
+  "body": {
+    "total": 0,
+    "data": [],
+    "totalNotDeletedComments": 0
+  }
+}
