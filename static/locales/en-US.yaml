@@ -1405,6 +1405,8 @@ PeerTube:
     Copy channel link: Copy channel link
     Open channel in browser: Open channel in browser
     Channel link copied: Channel link copied
+  Links:
+    Could not reach: Could not reach {host} to open this PeerTube link. Try again in a moment
   Watch:
     Refused:
       Private: This video is private on {host}.
