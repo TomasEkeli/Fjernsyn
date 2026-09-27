@@ -230,6 +230,14 @@ export default defineComponent({
       type: Number,
       default: null
     },
+    /**
+     * Which platform the video comes from. Anything but `'youtube'` switches
+     * off the behaviour that only makes sense for YouTube videos.
+     */
+    platform: {
+      type: String,
+      default: 'youtube'
+    },
   },
   emits: [
     'error',
@@ -566,7 +574,8 @@ export default defineComponent({
 
     /** @type {import('vue').ComputedRef<boolean>} */
     const useSponsorBlock = computed(() => {
-      return store.getters.getUseSponsorBlock
+      // SponsorBlock only knows YouTube video ids, so it is never asked about another platform's
+      return props.platform === 'youtube' && store.getters.getUseSponsorBlock
     })
 
     /** @type {import('vue').ComputedRef<boolean>} */
@@ -784,6 +793,12 @@ export default defineComponent({
 
     const seekingIsPossible = computed(() => {
       if (props.manifestMimeType !== 'application/x-mpegurl') {
+        return true
+      }
+
+      // The duration rule below reads YouTube's HLS URLs. Other platforms' HLS
+      // is seekable, and shaka keeps a live stream within its seek range itself.
+      if (props.platform !== 'youtube') {
         return true
       }
 
