@@ -203,6 +203,17 @@ describe('LayerComments, loading', () => {
     expect(wrapper.find('.commentThumbnailHidden').text()).toBe('A')
   })
 
+  it('shows the author\'s initial in place of an avatar that fails to load', async () => {
+    layer.getComments.mockResolvedValue({ items: [comment({ author: 'Alice' })], cursor: null })
+    const wrapper = await mountComments()
+    await showComments(wrapper)
+
+    await wrapper.find('img.commentThumbnail').trigger('error')
+
+    expect(wrapper.find('img.commentThumbnail').exists()).toBe(false)
+    expect(wrapper.find('.commentThumbnailHidden').text()).toBe('A')
+  })
+
   it('says so when there are no comments', async () => {
     layer.getComments.mockResolvedValue({ items: [], cursor: null })
     const wrapper = await mountComments()
@@ -228,6 +239,67 @@ describe('LayerComments, the text', () => {
     expect(text.find('a').attributes('href')).toBe('https://blender.org/')
     expect(text.find('img').exists()).toBe(false)
     expect(text.text()).toContain('<img src=x onerror=steal()>')
+  })
+
+  // PeerTube's own client renders a comment's Markdown with HTML allowed, so
+  // authors write `<br />` for a line break and expect to see one
+  it.each([
+    ['<br />'],
+    ['<br/>'],
+    ['<br>'],
+    ['<BR >'],
+    ['<br / >'],
+  ])('breaks the line at a %s in a PeerTube comment\'s Markdown', async (tag) => {
+    layer.getComments.mockResolvedValue({ items: [comment({ text: `Erste Zeile${tag}Zweite Zeile` })], cursor: null })
+    const wrapper = await mountComments()
+
+    await showComments(wrapper)
+
+    const text = wrapper.find('.commentText')
+    expect(text.findAll('br')).toHaveLength(1)
+    expect(text.text()).not.toMatch(/<\s*br/i)
+    expect(text.text()).toContain('Erste Zeile')
+    expect(text.text()).toContain('Zweite Zeile')
+  })
+
+  it('shows no trailing <br /> as text at the end of a PeerTube comment', async () => {
+    const source = 'Sehr sehr gut, das Ihr hier auch Videos hochladet und es benutzt. Danke<br />'
+    layer.getComments.mockResolvedValue({ items: [comment({ text: source })], cursor: null })
+    const wrapper = await mountComments()
+
+    await showComments(wrapper)
+
+    expect(wrapper.find('.commentText').text()).toBe('Sehr sehr gut, das Ihr hier auch Videos hochladet und es benutzt. Danke')
+  })
+
+  it('starts a new paragraph at a <br /><br /> in a PeerTube comment', async () => {
+    const source = 'Genau passend natürlich, hier den Kanal aufzumachen.<br /><br />Schaut euch mal um, falls ihr ganz neu seid.'
+    layer.getComments.mockResolvedValue({ items: [comment({ text: source })], cursor: null })
+    const wrapper = await mountComments()
+
+    await showComments(wrapper)
+
+    const text = wrapper.find('.commentText')
+    expect(text.findAll('p').map(paragraph => paragraph.text())).toEqual([
+      'Genau passend natürlich, hier den Kanal aufzumachen.',
+      'Schaut euch mal um, falls ihr ganz neu seid.',
+    ])
+    expect(text.text()).not.toContain('<br')
+  })
+
+  it('still shows every other tag in a PeerTube comment\'s Markdown as text', async () => {
+    const source = 'Keep <b>x</b> and <script>steal()</script> as text<br />please'
+    layer.getComments.mockResolvedValue({ items: [comment({ text: source })], cursor: null })
+    const wrapper = await mountComments()
+
+    await showComments(wrapper)
+
+    const text = wrapper.find('.commentText')
+    expect(text.find('b').exists()).toBe(false)
+    expect(text.find('script').exists()).toBe(false)
+    expect(text.text()).toContain('<b>x</b>')
+    expect(text.text()).toContain('<script>steal()</script>')
+    expect(text.findAll('br')).toHaveLength(1)
   })
 
   it('renders a federated comment\'s HTML, sanitised, with no script, handler or remote image surviving', async () => {

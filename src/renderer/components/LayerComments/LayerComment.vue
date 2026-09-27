@@ -6,6 +6,7 @@
       :src="comment.authorThumbnail"
       alt=""
       class="commentThumbnail"
+      @error="avatarFailed = true"
     >
     <div
       v-else
@@ -47,7 +48,7 @@
     <LayerMarkdown
       v-else
       class="commentText"
-      :source="comment.text"
+      :source="markdown"
       :base-url="baseUrl"
     />
     <p
@@ -110,7 +111,7 @@
 </template>
 
 <script setup>
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import FtButton from '../FtButton/FtButton.vue'
@@ -120,7 +121,7 @@ import store from '../../store/index'
 import { vSaferHtml } from '../../directives/vSaferHtml'
 import { getLocalesWithFallback, getRelativeTimeFromDate } from '../../helpers/utils'
 import { usePlatformLayer } from '../../platform/vue'
-import { cleanCommentHtml, forwardClickToLink } from './commentHtml'
+import { brTagsToNewlines, cleanCommentHtml, forwardClickToLink } from './commentHtml'
 
 const props = defineProps({
   /**
@@ -150,7 +151,14 @@ const layer = usePlatformLayer()
 
 const hideCommentPhotos = computed(() => store.getters.getHideCommentPhotos)
 
-const showAvatar = computed(() => !hideCommentPhotos.value && !props.comment.isDeleted && !!props.comment.authorThumbnail)
+/** Whether the avatar could not be loaded (an instance's copy of an unreachable remote's times out), for the initial in its place */
+const avatarFailed = ref(false)
+
+watch(() => props.comment.authorThumbnail, () => {
+  avatarFailed.value = false
+})
+
+const showAvatar = computed(() => !hideCommentPhotos.value && !props.comment.isDeleted && !!props.comment.authorThumbnail && !avatarFailed.value)
 
 const initial = computed(() => (props.comment.isDeleted ? '' : Array.from(props.comment.author ?? '')[0] ?? ''))
 
@@ -169,6 +177,8 @@ const exactDate = computed(() => {
 })
 
 const html = computed(() => cleanCommentHtml(props.comment.text, props.baseUrl))
+
+const markdown = computed(() => brTagsToNewlines(props.comment.text))
 
 const showReplies = ref(false)
 const repliesLoading = ref(false)

@@ -6,6 +6,16 @@
   flex: 1 1 20em;
 }
 
+/*
+  The section pads only its div children (FtSettingsSection.scss), so a
+  paragraph placed directly in it is centred and inset the way upstream's
+  experimental warning is (ExperimentalSettings.css)
+*/
+.invalidSource,
+.hint {
+  padding-inline: 4%;
+}
+
 .invalidSource {
   color: var(--accent-color);
   font-weight: bold;
@@ -13,5 +23,4 @@
 
 .hint {
   color: var(--tertiary-text-color);
-  max-inline-size: 60em;
 }

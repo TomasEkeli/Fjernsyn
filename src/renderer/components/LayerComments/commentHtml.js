@@ -149,6 +149,25 @@ export function cleanCommentHtml(html, baseUrl = '') {
   return document.body.innerHTML
 }
 
+// `<br>`, `<br/>`, `<br />`, in any case and with any spaces
+const BR_TAG = /<\s*br\s*\/?\s*>/gi
+
+/**
+ * A PeerTube comment's Markdown with each `<br>` tag made a newline.
+ *
+ * PeerTube's own client renders a comment's Markdown with HTML allowed, so
+ * authors write `<br />` for a line break. LayerMarkdown escapes raw HTML and
+ * breaks the line at a single newline (as PeerTube does), so a newline in the
+ * tag's place shows the break the author meant, two in a row a new
+ * paragraph, while every other tag still reads as the text it is.
+ *
+ * @param {string} markdown
+ * @returns {string}
+ */
+export function brTagsToNewlines(markdown) {
+  return typeof markdown === 'string' ? markdown.replaceAll(BR_TAG, '\n') : ''
+}
+
 /**
  * A click inside a link (on a span in a Mastodon mention, say), or a middle
  * click, handed to the link itself, because the app's handlers that open

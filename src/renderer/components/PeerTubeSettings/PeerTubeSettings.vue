@@ -21,12 +21,12 @@
     </FtFlexBox>
     <p
       v-if="problem"
-      class="invalidSource"
+      class="invalidSource center"
       role="alert"
     >
       {{ problemMessage }}
     </p>
-    <p class="hint">
+    <p class="hint center">
       {{ t('PeerTube.Settings.Search source hint') }}
     </p>
     <FtFlexBox>
