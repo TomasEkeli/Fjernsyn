@@ -10,6 +10,9 @@
 //   `./nsfw.js`); a page the filter empties is followed by the next (see
 //   `fetchSkippingEmpty`). Lives and scheduled lives are listed with their flags.
 // - A handle the instance does not know is `notFound` (see `./client.js`).
+// - An account's channels (`listAccountChannels`) are asked of the account's
+//   host, `/api/v1/accounts/{name@host}/video-channels`, all at once: 100 is
+//   PeerTube's largest page, far more channels than an account keeps.
 
 import { PlatformError } from '../errors'
 import { PLATFORM_PEERTUBE, parseChannelHandle, peerTubeChannelRef } from '../refs'
@@ -25,6 +28,9 @@ import { nsfwFilter, nsfwParam } from './nsfw'
 import { PAGE_COUNT, fetchSkippingEmpty, pageOf, startOf } from './paging'
 
 /** The sorts a channel's videos can be listed in, and PeerTube's name for each */
+/** How many of an account's channels are asked for, PeerTube's largest page */
+const ACCOUNT_CHANNELS_COUNT = 100
+
 export const CHANNEL_VIDEO_SORTS = Object.freeze({
   newest: '-publishedAt',
   popular: '-views',
@@ -32,15 +38,18 @@ export const CHANNEL_VIDEO_SORTS = Object.freeze({
 })
 
 /**
+ * An actor's handle (a channel's or an account's, both `name@host`), parsed.
+ *
  * @param {unknown} handle
+ * @param {string} [what] for the error
  * @returns {{ host: string, handle: string }}
  */
-function channelOf(handle) {
+function channelOf(handle, what = 'channel') {
   const parsed = parseChannelHandle(handle)
   const ref = parsed && peerTubeChannelRef(parsed.name, parsed.host)
 
   if (!ref) {
-    throw new PlatformError('invalid', 'Not a PeerTube channel handle')
+    throw new PlatformError('invalid', `Not a PeerTube ${what} handle`)
   }
 
   return { host: parsed.host, handle: ref }
@@ -144,5 +153,20 @@ export function createChannelReader({ client, config }) {
     return pageOf(body, start, playlist => playlistSummary(playlist, host))
   }
 
-  return Object.freeze({ getChannel, listChannelVideos, listChannelPlaylists })
+  /**
+   * @param {string} accountHandle `name@host`
+   * @returns {Promise<import('../shapes').ChannelSummary[]>}
+   */
+  async function listAccountChannels(accountHandle) {
+    const { host, handle } = channelOf(accountHandle, 'account')
+    const body = await client.get(host, `/accounts/${handle}/video-channels`, { count: ACCOUNT_CHANNELS_COUNT })
+
+    if (!Array.isArray(body?.data)) {
+      throw new PlatformError('unavailable', `${host} answered without a list of channels`, { status: 200, host })
+    }
+
+    return body.data.map(channel => channelSummary(channel, host)).filter(channel => channel !== null)
+  }
+
+  return Object.freeze({ getChannel, listChannelVideos, listChannelPlaylists, listAccountChannels })
 }

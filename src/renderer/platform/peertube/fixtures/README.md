@@ -123,3 +123,4 @@ no files.
 | `synthesised--video-private.json` | anonymous GET of a private, internal or blocked video: 401 "Authentication is required", no `code` |
 | `synthesised--rate-limited.json` | 429, `retry-after` seconds, `x-ratelimit-*`, plain-text body |
 | `synthesised--video-live-ended.json` | see Lives |
+| `synthesised--account-video-channels.json` | `GET /accounts/blender@video.blender.org/video-channels?count=100`: `{ total: 2, data }`, the recorded `blender_studio` channel unedited plus a copy (`blender_developers`) with no avatars or banners; written by `.scratch/platform-layer/synthesise-account-channels.mjs` |

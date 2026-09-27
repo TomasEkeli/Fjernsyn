@@ -4,6 +4,8 @@ import { PlatformError } from '../errors'
 import { createPlatformLayer } from '../index'
 import { createFakeFetch } from './testing/fakeFetch'
 
+import accountChannels from './fixtures/synthesised--account-video-channels.json'
+
 import blenderChannel from './fixtures/video.blender.org--channel.json'
 import blenderNewest from './fixtures/video.blender.org--channel-videos-newest.json'
 import blenderNewestPage2 from './fixtures/video.blender.org--channel-videos-newest-page2.json'
@@ -463,5 +465,87 @@ describe('listChannelPlaylists (PeerTube)', () => {
 
     expect(items[0].thumbnail).toBe('https://video.blender.org/lazy-static/thumbnails/playlist-759335bd-eed5-41ce-9a83-cca8f60201d6.png')
     expect(items[1].thumbnail).toBe('')
+  })
+})
+
+describe('listAccountChannels (PeerTube)', () => {
+  const ACCOUNT = 'blender@video.blender.org'
+  const ACCOUNT_CHANNELS_URL = `https://video.blender.org/api/v1/accounts/${ACCOUNT}/video-channels?count=100`
+
+  it('lists every channel of an account, from the account\'s instance, as channel summaries', async () => {
+    const { fake, layer } = setUp()
+    fake.respond(ACCOUNT_CHANNELS_URL, accountChannels)
+
+    const channels = await layer.listAccountChannels(ACCOUNT)
+
+    expect(fake.urls()).toEqual([ACCOUNT_CHANNELS_URL])
+    expect(channels).toEqual([
+      {
+        platform: 'peertube',
+        host: 'video.blender.org',
+        id: 'blender_studio@video.blender.org',
+        handle: 'blender_studio@video.blender.org',
+        name: 'Blender Studio',
+        thumbnail: 'https://video.blender.org/lazy-static/avatars/e2519482-f087-4965-899b-cc8b7a2921f0.webp',
+        url: 'https://video.blender.org/video-channels/blender_studio',
+        subscriberCount: 33,
+      },
+      {
+        platform: 'peertube',
+        host: 'video.blender.org',
+        id: 'blender_developers@video.blender.org',
+        handle: 'blender_developers@video.blender.org',
+        name: 'Blender Developers',
+        thumbnail: '',
+        url: 'https://video.blender.org/video-channels/blender_developers',
+        subscriberCount: 7,
+      },
+    ])
+  })
+
+  it('accepts the handle with a leading @ and any case of host', async () => {
+    const { fake, layer } = setUp()
+    fake.respond(ACCOUNT_CHANNELS_URL, accountChannels)
+
+    expect(await layer.listAccountChannels('@blender@Video.Blender.org')).toHaveLength(2)
+    expect(fake.urls()).toEqual([ACCOUNT_CHANNELS_URL])
+  })
+
+  it('leaves out a channel that cannot be named, and is empty for an account with none', async () => {
+    const odd = copy(accountChannels)
+    odd.body.data[1].name = 'not a name'
+    const { fake, layer } = setUp()
+    fake.respond(ACCOUNT_CHANNELS_URL, odd)
+
+    expect((await layer.listAccountChannels(ACCOUNT)).map(channel => channel.handle)).toEqual(['blender_studio@video.blender.org'])
+
+    fake.respond(ACCOUNT_CHANNELS_URL, { status: 200, body: { total: 0, data: [] } })
+    expect(await layer.listAccountChannels(ACCOUNT)).toEqual([])
+  })
+
+  it('is not found when the instance has no such account', async () => {
+    const { fake, layer } = setUp()
+    fake.respond(ACCOUNT_CHANNELS_URL, blenderNotFound)
+
+    expect(await failure(layer.listAccountChannels(ACCOUNT))).toMatchObject({ kind: 'notFound', status: 404 })
+  })
+
+  it('is unavailable when the instance answers without a list', async () => {
+    const { fake, layer } = setUp()
+    fake.respond(ACCOUNT_CHANNELS_URL, { status: 200, body: { detail: 'odd' } })
+
+    expect((await failure(layer.listAccountChannels(ACCOUNT))).kind).toBe('unavailable')
+  })
+
+  it.each([
+    ['blender'],
+    ['blender@www.youtube.com'],
+    ['https://video.blender.org/accounts/blender'],
+    [null],
+  ])('refuses %s as a handle, without a request', async (handle) => {
+    const { fake, layer } = setUp()
+
+    expect((await failure(layer.listAccountChannels(handle))).kind).toBe('invalid')
+    expect(fake.requests).toHaveLength(0)
   })
 })

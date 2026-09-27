@@ -223,6 +223,24 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   }
 
   /**
+   * Every video channel of a PeerTube account, from the account's own
+   * instance, as channel summaries: `handle` (`name@host`, also `id`), `name`
+   * (the display name), `thumbnail` (the avatar a subscription stub holds,
+   * `''` when none) and `host` (the channel's origin), plus its `url` and
+   * follower count. Following an account means following all its videos, so
+   * this is what an account becomes when it is followed (NewPipe stores its
+   * PeerTube subscriptions as accounts). The ref is the account's
+   * `name@host` handle; anything else rejects as `invalid`, without a
+   * request. An account the instance does not know is `notFound`.
+   *
+   * @param {string} accountHandle
+   * @returns {Promise<import('./shapes').ChannelSummary[]>}
+   */
+  function listAccountChannels(accountHandle) {
+    return channels.listAccountChannels(accountHandle)
+  }
+
+  /**
    * A page of PeerTube search results from the configured search source
    * (`peertubeSearchSource`: SepiaSearch by default, or any index or instance
    * speaking PeerTube's search API; see `./peertube/search.js`). Videos are
@@ -274,6 +292,7 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
     getChannel,
     listChannelVideos,
     listChannelPlaylists,
+    listAccountChannels,
     search,
     getComments,
     getCommentReplies,
