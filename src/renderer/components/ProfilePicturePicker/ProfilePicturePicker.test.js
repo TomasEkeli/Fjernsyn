@@ -4,13 +4,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { mountWithApp } from '../../testing/mount'
 import ProfilePicturePicker from './ProfilePicturePicker.vue'
 
-// The icon pack stands in for the real one, which the picker loads with a
-// dynamic import. A factory that throws is called again on the next import,
+// A small icon pack stands in for the real one, which the picker loads with a
+// dynamic import, under the name it imports it by (see icons.js for the
+// query). A factory that throws is called again on the next import,
 // and one that returns is not, so the pack can be made to fail to load only
 // until it has once loaded: the test of a failed load comes first.
 const pack = vi.hoisted(() => ({ fail: false }))
 
-vi.mock('@fortawesome/free-solid-svg-icons', () => {
+vi.mock('@fortawesome/free-solid-svg-icons?picker', () => {
   if (pack.fail) {
     throw new Error('Loading chunk icons-solid failed')
   }
