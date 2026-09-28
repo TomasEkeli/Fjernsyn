@@ -190,6 +190,11 @@ const state = {
   // applies only while that is the channel's one profile, and is dropped the
   // next time one is added once it no longer does.
   profileSuggestionKeeps: {},
+  // Each profile's picture, drawn in its bubble in place of its initial:
+  // profile id to a symbol, an icon or an image (see
+  // helpers/profilePictures.js). Read through readProfilePicture, never
+  // directly; a deleted profile's entry is dropped by the next write.
+  profilePictures: {},
   disableSmoothScrolling: false,
   disableChannelLinks: false,
   displayVideoPlayButton: false,
