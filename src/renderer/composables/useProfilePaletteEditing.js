@@ -13,8 +13,11 @@ import { deepCopy, showToast } from '../helpers/utils'
 
 const COLOUR_VALUES = colors.map(colour => colour.value)
 
-function focusNewProfile() {
-  document.querySelector('.palette .newProfile')?.focus()
+/**
+ * @param {FocusOptions} [options]
+ */
+function focusNewProfile(options) {
+  document.querySelector('.palette .newProfile')?.focus(options)
 }
 
 /**
@@ -22,14 +25,15 @@ function focusNewProfile() {
  * when it has none, as a profile deleted in another window no longer does:
  * the focus would otherwise fall to the page itself.
  * @param {string} profileId
+ * @param {FocusOptions} [options]
  */
-export function focusBubble(profileId) {
+export function focusBubble(profileId, options) {
   const bubble = document.querySelector(`.palette [data-profile-id="${CSS.escape(profileId)}"] [role="button"]`)
 
   if (bubble) {
-    bubble.focus()
+    bubble.focus(options)
   } else {
-    focusNewProfile()
+    focusNewProfile(options)
   }
 }
 
@@ -298,15 +302,29 @@ export function useProfilePaletteEditing({ profileList, afterPendingChanges, ope
   }
 
   /**
-   * @param {boolean} returnFocus
+   * @param {boolean} returnFocus false when closed by something outside it:
+   *   the focus going elsewhere, a click, a scroll
    */
   function closePictureMenu(returnFocus) {
     const profileId = pictureMenu.value?.profileId
     pictureMenu.value = null
 
-    if (returnFocus && profileId) {
+    if (!profileId) { return }
+
+    if (returnFocus) {
       focusBubble(profileId)
+      return
     }
+
+    // The focus was in the menu, which is gone. Back to the bubble, unless
+    // what closed it put the focus somewhere, as a click on a control does;
+    // looked at once that click has done so, and without scrolling the page
+    // back to the bubble after a scroll closed it.
+    setTimeout(() => {
+      if (document.activeElement === null || document.activeElement === document.body) {
+        focusBubble(profileId, { preventScroll: true })
+      }
+    })
   }
 
   /**
