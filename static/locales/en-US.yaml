@@ -250,8 +250,10 @@ Channels:
     No Profiles Yet: Channels are sorted into profiles, and there are none yet. Make one with New profile above.
     Rename Profile: Rename
     Change Profile Colour: Change colour
+    Change Profile Picture: Change picture
     Remove Profile: Remove
     Profile Colours: Colours for {profile}
+    Profile Picture For: Picture for {profile}
     Profile Moved: Moved {profile} to position {position} of {count}
     Reorder Hint: Drag to reorder, or Ctrl+Shift+Arrow
     # Proposed columns: where the page suggests channels could go, worked out
@@ -1019,6 +1021,20 @@ Profile:
   Channels Moved: Channels are sorted into profiles on the Channels page.
   Go to Channels: Go to Channels
   Sort Channels: Sort channels into {profile}
+  # What a profile's bubble shows: a character, its initial unless another
+  # is typed or pasted in, an icon, or an image from a local file
+  Picture: Picture
+  Picture Kinds: Kind of picture
+  Picture Character: Character
+  Picture Icon: Icon
+  Picture Image: Image
+  Character Placeholder: Type or paste a character or emoji
+  Search Icons: Search icons
+  Loading Icons: Loading icons
+  Icons Could Not Load: The icons could not be loaded
+  No Icons Found: No icons match {query}
+  Choose Image: Choose image
+  Image Unusable: That image could not be used
 #On Channel Page
 Channel:
   Subscribe: Subscribe

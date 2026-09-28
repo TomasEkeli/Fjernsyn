@@ -68,13 +68,13 @@
         >
           <div
             class="colorOption"
-            :style="{ background: profile.bgColor, color: profile.textColor }"
+            :style="rowBubble(profile).style"
           >
             <div
               class="initial"
               dir="auto"
             >
-              {{ isProfileSubscribed(profile) ? $t('checkmark') : profileInitials[profile._id] }}
+              {{ rowBubble(profile).text }}
             </div>
           </div>
           <p
@@ -103,6 +103,7 @@ import store from '../../store/index'
 import { MAIN_PROFILE_ID } from '../../../constants'
 import { showToast } from '../../helpers/utils'
 import { getFirstCharacter } from '../../helpers/strings'
+import { profileBubble, readProfilePicture } from '../../helpers/profilePictures'
 
 const { locale, t } = useI18n()
 
@@ -183,6 +184,21 @@ const profileInitials = computed(() => {
     return accumulator
   }, {})
 })
+
+/**
+ * Fjernsyn: a row's circle, with the profile's picture, except behind the
+ * checkmark of a subscribed row, which would be hard to read over an image
+ * @param {Profile} profile
+ */
+function rowBubble(profile) {
+  const subscribed = isProfileSubscribed(profile)
+
+  return profileBubble(subscribed ? null : readProfilePicture(store.getters.getProfilePictures, profile._id), {
+    bgColor: profile.bgColor,
+    textColor: profile.textColor,
+    initial: subscribed ? t('checkmark') : profileInitials.value[profile._id]
+  })
+}
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const hideChannelSubscriptions = computed(() => {

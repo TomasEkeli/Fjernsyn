@@ -15,14 +15,14 @@
   >
     <div
       class="bubble"
-      :style="{ background: bgColor, color: textColor }"
+      :style="bubble.style"
       aria-hidden="true"
     >
       <div
         class="initial"
         dir="auto"
       >
-        {{ initial }}
+        {{ bubble.text }}
       </div>
     </div>
     <input
@@ -47,6 +47,7 @@ import { useI18n } from 'vue-i18n'
 
 import { calculateColorLuminance } from '../../helpers/colors'
 import { getFirstCharacter } from '../../helpers/strings'
+import { profileBubble } from '../../helpers/profilePictures'
 
 const props = defineProps({
   initialName: {
@@ -65,6 +66,15 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  /**
+   * The profile's picture, drawn in place of the initial: a renamed
+   * profile's, and none for a new one
+   * @type {import('vue').PropType<import('../../helpers/profilePictures').ProfilePicture | null>}
+   */
+  picture: {
+    type: Object,
+    default: null
   }
 })
 
@@ -82,6 +92,12 @@ const initial = computed(() => {
 
   return trimmed === '' ? '' : getFirstCharacter(trimmed, locale.value)
 })
+
+const bubble = computed(() => profileBubble(props.picture, {
+  bgColor: props.bgColor,
+  textColor: textColor.value,
+  initial: initial.value
+}))
 
 /** Enter, and then the blur as the field goes away, would otherwise both finish it */
 let finished = false

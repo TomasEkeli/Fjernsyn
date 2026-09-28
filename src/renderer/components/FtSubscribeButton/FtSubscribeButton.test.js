@@ -25,6 +25,7 @@ vi.mock('../../store/index', async () => {
         getActiveProfile: ALL_CHANNELS,
         getHideChannelSubscriptions: false,
         getUnsubscriptionPopupStatus: false,
+        getProfilePictures: {},
       },
     }),
   }
@@ -47,6 +48,7 @@ beforeEach(() => {
   store.dispatched.length = 0
   store.setGetter('getProfileList', [{ ...ALL_CHANNELS, subscriptions: [] }])
   store.setGetter('getActiveProfile', store.getters.getProfileList[0])
+  store.setGetter('getProfilePictures', {})
 })
 
 function dispatched(type) {
@@ -102,5 +104,40 @@ describe('the subscribe button', () => {
       },
       profileIds: ['allChannels'],
     }])
+  })
+})
+
+describe('the profile dropdown', () => {
+  const CHANNEL = { id: 'UCSMOQeBJ2RAnuFungnQOxLg', name: 'Blender', thumbnail: '' }
+  const IMAGE_SRC = 'data:image/webp;base64,UklGRhYAAABXRUJQVlA4TAoAAAAvAAAAAEX/I/of'
+
+  it('draws a profile\'s picture in its row, and a subscribed row\'s checkmark on the plain colour', async () => {
+    const allChannels = { ...ALL_CHANNELS, subscriptions: [CHANNEL] }
+    const music = { _id: 'music', name: 'Music', bgColor: '#3F51B5', textColor: '#FFFFFF', subscriptions: [] }
+
+    store.setGetter('getProfileList', [allChannels, music])
+    store.setGetter('getActiveProfile', allChannels)
+    store.setGetter('getProfilePictures', {
+      allChannels: { kind: 'symbol', text: '★' },
+      music: { kind: 'image', src: IMAGE_SRC },
+    })
+
+    const wrapper = mountWithApp(FtSubscribeButton, {
+      store,
+      props: { channelId: CHANNEL.id, channelName: CHANNEL.name },
+    })
+
+    await wrapper.find('.profileDropdownToggle').trigger('click')
+
+    const rows = wrapper.findAll('.profile')
+    const subscribedRow = rows.find(row => row.attributes('aria-checked') === 'true')
+    const musicRow = rows.find(row => row.text().includes('Music'))
+
+    expect(musicRow.find('.initial').text()).toBe('')
+    expect(musicRow.find('.colorOption').attributes('style')).toContain(IMAGE_SRC)
+
+    expect(subscribedRow.find('.initial').text()).toBe('✓')
+    expect(subscribedRow.find('.colorOption').attributes('style')).not.toContain('url(')
+    expect(subscribedRow.find('.colorOption').element.style.backgroundColor).toBe('rgb(0, 0, 0)')
   })
 })

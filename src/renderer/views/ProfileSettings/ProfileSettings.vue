@@ -12,6 +12,7 @@
           :profile-name="profile.name"
           :background-color="profile.bgColor"
           :text-color="profile.textColor"
+          :picture="profilePictures.get(profile._id)"
           :class="{ openedProfile: openSettingsProfile?._id === profile._id }"
           @click="openSettingsForProfileWithId(profile._id)"
         />
@@ -66,6 +67,7 @@ import FtProfileEdit from '../../components/FtProfileEdit/FtProfileEdit.vue'
 import store from '../../store/index'
 
 import { calculateColorLuminance, getRandomColor } from '../../helpers/colors'
+import { readProfilePicture } from '../../helpers/profilePictures'
 import { MAIN_PROFILE_ID } from '../../../constants'
 
 /**
@@ -96,6 +98,13 @@ const profileList = computed(() => {
 watch(profileList, () => {
   openSettingsProfile.value = getProfileById(openSettingsProfileId.value)
 }, { deep: true })
+
+// Fjernsyn: each profile's picture, by id
+const profilePictures = computed(() => {
+  const pictures = store.getters.getProfilePictures
+
+  return new Map(profileList.value.map(profile => [profile._id, readProfilePicture(pictures, profile._id)]))
+})
 
 const isMainProfile = computed(() => {
   return MAIN_PROFILE_ID === openSettingsProfileId.value

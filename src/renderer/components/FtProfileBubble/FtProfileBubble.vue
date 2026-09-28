@@ -9,13 +9,13 @@
   >
     <div
       class="bubble"
-      :style="{ background: backgroundColor, color: textColor }"
+      :style="bubble.style"
     >
       <div
         class="initial"
         dir="auto"
       >
-        {{ profileInitial }}
+        {{ bubble.text }}
       </div>
     </div>
     <div
@@ -33,6 +33,7 @@ import { computed, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { getFirstCharacter } from '../../helpers/strings'
+import { profileBubble } from '../../helpers/profilePictures'
 
 const props = defineProps({
   profileName: {
@@ -50,6 +51,12 @@ const props = defineProps({
   textColor: {
     type: String,
     required: true
+  },
+  // Fjernsyn: the profile's picture, from readProfilePicture, drawn in place
+  // of the initial; callers that pass none get the initial as before
+  picture: {
+    type: Object,
+    default: null
   }
 })
 
@@ -66,6 +73,12 @@ const profileInitial = computed(() => {
     ? getFirstCharacter(translatedProfileName.value, locale.value)
     : ''
 })
+
+const bubble = computed(() => profileBubble(props.picture, {
+  bgColor: props.backgroundColor,
+  textColor: props.textColor,
+  initial: profileInitial.value
+}))
 
 const emit = defineEmits(['click'])
 

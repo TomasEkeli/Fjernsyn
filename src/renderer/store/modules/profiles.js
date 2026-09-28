@@ -3,6 +3,7 @@ import { DBProfileHandlers, DBSettingHandlers } from '../../../datastores/handle
 import { calculateColorLuminance, getRandomColor } from '../../helpers/colors'
 import { deepCopy } from '../../helpers/utils'
 import { appendToOrder, orderProfiles } from '../../helpers/channelsOverview'
+import { withProfilePicture } from '../../helpers/profilePictures'
 
 const state = {
   profileList: [{
@@ -248,6 +249,27 @@ const actions = {
 
     try {
       await DBSettingHandlers.upsert('profileSuggestionKeeps', keeps)
+    } catch (errMessage) {
+      console.error(errMessage)
+    }
+  },
+
+  // A setting, not a field on the profile, as the profile is rebuilt from
+  // named fields and written back whole in more places than can be kept
+  // patched. Shown at once, then written, as the order is. Each write keeps
+  // only the pictures of profiles that exist, which sweeps out deleted ones.
+  async saveProfilePicture({ commit, rootState, state }, { profileId, picture }) {
+    const pictures = withProfilePicture(
+      rootState.settings.profilePictures,
+      state.profileList.map(profile => profile._id),
+      profileId,
+      picture
+    )
+
+    commit('setProfilePictures', pictures)
+
+    try {
+      await DBSettingHandlers.upsert('profilePictures', pictures)
     } catch (errMessage) {
       console.error(errMessage)
     }

@@ -5,14 +5,20 @@ import { MAIN_PROFILE_ID } from '../../constants'
 import store from '../store/index'
 import { calculateColorLuminance, colors } from '../helpers/colors'
 import { moveInOrder, pickUnusedColour, profileOrderIds } from '../helpers/channelsOverview'
+import { readProfilePicture } from '../helpers/profilePictures'
+import { getFirstCharacter } from '../helpers/strings'
 import { deepCopy, showToast } from '../helpers/utils'
 
 /** @import { Profile } from '../helpers/channelsOverview' */
+/** @import { ProfilePicture } from '../helpers/profilePictures' */
 
 const COLOUR_VALUES = colors.map(colour => colour.value)
 
-function focusNewProfile() {
-  document.querySelector('.palette .newProfile')?.focus()
+/**
+ * @param {FocusOptions} [options]
+ */
+function focusNewProfile(options) {
+  document.querySelector('.palette .newProfile')?.focus(options)
 }
 
 /**
@@ -20,22 +26,23 @@ function focusNewProfile() {
  * when it has none, as a profile deleted in another window no longer does:
  * the focus would otherwise fall to the page itself.
  * @param {string} profileId
+ * @param {FocusOptions} [options]
  */
-export function focusBubble(profileId) {
+export function focusBubble(profileId, options) {
   const bubble = document.querySelector(`.palette [data-profile-id="${CSS.escape(profileId)}"] [role="button"]`)
 
   if (bubble) {
-    bubble.focus()
+    bubble.focus(options)
   } else {
-    focusNewProfile()
+    focusNewProfile(options)
   }
 }
 
 /**
- * Making, renaming, recolouring and reordering profiles from the palette on
- * the Channels page. The palette says what was done to it; this works out what
- * that means for the store, and holds what is half done: a new profile being
- * named, a profile being renamed, a menu open over a bubble.
+ * Making, renaming, recolouring, picturing and reordering profiles from the
+ * palette on the Channels page. The palette says what was done to it; this
+ * works out what that means for the store, and holds what is half done: a new
+ * profile being named, a profile being renamed, a menu open over a bubble.
  *
  * @param {object} options
  * @param {import('vue').ComputedRef<Profile[]>} options.profileList every profile, in order
@@ -43,7 +50,7 @@ export function focusBubble(profileId) {
  * @param {(profileId: string) => void} options.openColumn
  */
 export function useProfilePaletteEditing({ profileList, afterPendingChanges, openColumn }) {
-  const { t } = useI18n()
+  const { locale, t } = useI18n()
 
   /**
    * The new profile being named, at the end of the palette. Null while there
@@ -181,8 +188,21 @@ export function useProfilePaletteEditing({ profileList, afterPendingChanges, ope
   const profileMenuItems = computed(() => [
     { value: 'rename', label: t('Channels.Overview.Rename Profile') },
     { value: 'colour', label: t('Channels.Overview.Change Profile Colour') },
+    { value: 'picture', label: t('Channels.Overview.Change Profile Picture') },
     { value: 'remove', label: t('Channels.Overview.Remove Profile'), destructive: true }
   ])
+
+  /**
+   * Where a menu over a profile's bubble opens: beside the bubble, wherever
+   * the one it was chosen from was.
+   * @param {string} profileId
+   * @returns {{ rect: DOMRect } | null} null when the bubble is gone
+   */
+  function bubbleAnchor(profileId) {
+    const bubble = document.querySelector(`.palette [data-profile-id="${CSS.escape(profileId)}"]`)
+
+    return bubble ? { rect: bubble.getBoundingClientRect() } : null
+  }
 
   /**
    * @param {string} value
@@ -196,10 +216,23 @@ export function useProfilePaletteEditing({ profileList, afterPendingChanges, ope
       renamingProfileId.value = profileId
     } else if (value === 'colour') {
       const profile = profileList.value.find(candidate => candidate._id === profileId)
-      const bubble = document.querySelector(`.palette [data-profile-id="${CSS.escape(profileId)}"]`)
+      const anchor = bubbleAnchor(profileId)
 
-      if (profile && bubble) {
-        colourMenu.value = { profileId, name: profile.name, bgColor: profile.bgColor, anchor: { rect: bubble.getBoundingClientRect() } }
+      if (profile && anchor) {
+        colourMenu.value = { profileId, name: profile.name, bgColor: profile.bgColor, anchor }
+      }
+    } else if (value === 'picture') {
+      const profile = profileList.value.find(candidate => candidate._id === profileId)
+      const anchor = bubbleAnchor(profileId)
+
+      if (profile && anchor) {
+        pictureMenu.value = {
+          profileId,
+          name: profile.name,
+          initial: getFirstCharacter(profile.name, locale.value),
+          picture: readProfilePicture(store.getters.getProfilePictures, profileId),
+          anchor
+        }
       }
     } else if (value === 'remove') {
       const profile = profileList.value.find(candidate => candidate._id === profileId)
@@ -249,6 +282,53 @@ export function useProfilePaletteEditing({ profileList, afterPendingChanges, ope
     if (returnFocus && profileId) {
       focusBubble(profileId)
     }
+  }
+
+  /**
+   * The picture picker over a bubble. Null while it is closed.
+   * @type {import('vue').ShallowRef<{ profileId: string, name: string, initial: string, picture: ProfilePicture | null, anchor: object } | null>}
+   */
+  const pictureMenu = shallowRef(null)
+
+  /**
+   * Saved at once, as a colour is. A setting and not the profile, so it does
+   * not wait on the queue of profile writes.
+   * @param {ProfilePicture | null} picture null for the letter
+   */
+  function choosePicture(picture) {
+    const profileId = pictureMenu.value?.profileId
+
+    if (profileId) {
+      // The menu can stay open after a pick, and shows it as the current one
+      pictureMenu.value = { ...pictureMenu.value, picture }
+      store.dispatch('saveProfilePicture', { profileId, picture })
+    }
+  }
+
+  /**
+   * @param {boolean} returnFocus false when closed by something outside it:
+   *   the focus going elsewhere, a click, a scroll
+   */
+  function closePictureMenu(returnFocus) {
+    const profileId = pictureMenu.value?.profileId
+    pictureMenu.value = null
+
+    if (!profileId) { return }
+
+    if (returnFocus) {
+      focusBubble(profileId)
+      return
+    }
+
+    // The focus was in the menu, which is gone. Back to the bubble, unless
+    // what closed it put the focus somewhere, as a click on a control does;
+    // looked at once that click has done so, and without scrolling the page
+    // back to the bubble after a scroll closed it.
+    setTimeout(() => {
+      if (document.activeElement === null || document.activeElement === document.body) {
+        focusBubble(profileId, { preventScroll: true })
+      }
+    })
   }
 
   /**
@@ -324,6 +404,9 @@ export function useProfilePaletteEditing({ profileList, afterPendingChanges, ope
     colourMenu,
     chooseColour,
     closeColourMenu,
+    pictureMenu,
+    choosePicture,
+    closePictureMenu,
     reorder
   }
 }

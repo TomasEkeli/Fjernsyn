@@ -1,0 +1,15 @@
+/* A column, so that when the window leaves it little height the icon grid
+   gives way and scrolls, rather than the whole menu */
+.pictureMenu {
+  position: fixed;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  max-inline-size: calc(100vw - 16px);
+  padding: 10px;
+  overflow-y: auto;
+  border-radius: 6px;
+  background-color: var(--card-bg-color);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 35%);
+}
