@@ -4,7 +4,7 @@
       ref="iconButton"
       class="colorOption"
       :title="$t('Profile.Toggle Profile List')"
-      :style="{ background: activeProfile.bgColor, color: activeProfile.textColor }"
+      :style="activeProfileBubble.style"
       tabindex="0"
       role="button"
       :aria-expanded="profileListShown"
@@ -17,7 +17,7 @@
         class="initial"
         dir="auto"
       >
-        {{ activeProfileInitial }}
+        {{ activeProfileBubble.text }}
       </div>
     </div>
     <FtCard
@@ -60,13 +60,13 @@
         >
           <div
             class="colorOption"
-            :style="{ background: profile.bgColor, color: profile.textColor }"
+            :style="profileBubbles[profile._id].style"
           >
             <div
               class="initial"
               dir="auto"
             >
-              {{ profileInitials[profile._id] }}
+              {{ profileBubbles[profile._id].text }}
             </div>
           </div>
           <p
@@ -95,6 +95,7 @@ import store from '../../store/index'
 import { showToast } from '../../helpers/utils'
 import { MAIN_PROFILE_ID } from '../../../constants'
 import { getFirstCharacter } from '../../helpers/strings'
+import { profileBubble, readProfilePicture } from '../../helpers/profilePictures'
 
 /**
  * @typedef {object} Profile
@@ -137,6 +138,30 @@ const profileInitials = computed(() => {
 
     return initials
   }, {})
+})
+
+// Fjernsyn: each profile's circle, with its picture if it has one
+/** @type {import('vue').ComputedRef<Record<Profile['_id'], ReturnType<typeof profileBubble>>>} */
+const profileBubbles = computed(() => {
+  const pictures = store.getters.getProfilePictures
+
+  return profileList.value.reduce((bubbles, profile) => {
+    bubbles[profile._id] = profileBubble(readProfilePicture(pictures, profile._id), {
+      bgColor: profile.bgColor,
+      textColor: profile.textColor,
+      initial: profileInitials.value[profile._id]
+    })
+
+    return bubbles
+  }, {})
+})
+
+const activeProfileBubble = computed(() => {
+  return profileBubble(readProfilePicture(store.getters.getProfilePictures, activeProfile.value?._id), {
+    bgColor: activeProfile.value?.bgColor,
+    textColor: activeProfile.value?.textColor,
+    initial: activeProfileInitial.value
+  })
 })
 
 /**

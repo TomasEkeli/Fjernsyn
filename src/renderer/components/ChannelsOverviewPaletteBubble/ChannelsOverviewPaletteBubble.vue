@@ -31,6 +31,7 @@
       v-if="editing"
       :initial-name="profile.name"
       :bg-color="profile.bgColor"
+      :picture="picture"
       :label="t('Channels.Overview.Rename Profile')"
       @commit="(name, hadFocus) => finishRename(name, hadFocus)"
       @cancel="(hadFocus) => finishRename(null, hadFocus)"
@@ -43,6 +44,7 @@
         :is-main-profile="false"
         :background-color="profile.bgColor"
         :text-color="calculateColorLuminance(profile.bgColor)"
+        :picture="picture"
         :aria-pressed="open ? 'true' : 'false'"
         @click="emit('toggle')"
       />
@@ -76,7 +78,9 @@ import { useI18n } from 'vue-i18n'
 import FtProfileBubble from '../FtProfileBubble/FtProfileBubble.vue'
 import ChannelsOverviewProfileNameField from '../ChannelsOverviewProfileNameField/ChannelsOverviewProfileNameField.vue'
 
+import store from '../../store/index'
 import { calculateColorLuminance } from '../../helpers/colors'
+import { readProfilePicture } from '../../helpers/profilePictures'
 
 import { useChannelDropTarget } from '../../composables/useChannelDropTarget'
 
@@ -130,6 +134,9 @@ const props = defineProps({
 const emit = defineEmits(['toggle', 'drop-channels', 'rename', 'menu', 'drag-profile', 'move'])
 
 const { t } = useI18n()
+
+/** Drawn in the bubble in place of the initial, if the profile has one */
+const picture = computed(() => readProfilePicture(store.getters.getProfilePictures, props.profile._id))
 
 /** The counts in words, for the tooltip and for a screen reader */
 const summary = computed(() => {
