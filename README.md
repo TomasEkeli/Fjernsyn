@@ -86,6 +86,8 @@ A channel in more than one profile sorts to the top of each column it is in. Whe
 
 Double-click a channel to visit its page. Click a column's heading to make that profile active.
 
+<img src="_screenshots/profile-pictures.webp" align="right" width="250" alt="The profile selector in the top bar: All Channels with its initial, then AI, Cars, Comedy, Documentaries, Engineering, Fun and Gaming, each with an icon for its picture">
+
 Click New profile at the end of the strip and type its name there. New profiles go at the end. Right-click a bubble to rename it, change its colour or picture, or remove it. Removing a profile leaves its channels subscribed, and those in no other profile go back to Unassigned.
 
 A profile's picture takes the place of its initial everywhere the profile is shown: a symbol or emoji you type or paste, any of Font Awesome's solid icons, or an image from a file on your machine, cropped to a square. The profile settings can set it too. Pictures are kept with the settings, so a settings export carries them and a profile export does not.
