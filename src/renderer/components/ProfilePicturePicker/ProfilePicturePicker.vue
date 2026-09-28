@@ -9,35 +9,36 @@
   Choosing a kind shows its panel, and nothing is picked until something is
   chosen in it. The icons are loaded the first time the Icon panel opens.
 
-  From the keyboard, in the icon grid: the arrow keys move by one and by a
-  row, Home and End go to the first and last icon, Enter or Space picks. Down
-  from the search field goes to the grid, and Up from its first row back.
+  From the keyboard, in the kinds and in the icon grid alike, the arrow keys
+  move the focus and choose nothing, Home and End go to the first and last,
+  and Enter or Space chooses. In the grid Up and Down move by a row; Down from
+  the search field goes to the grid, and Up from its first row back.
 -->
 <template>
-  <div
-    ref="root"
-    class="profilePicturePicker"
-  >
+  <div class="profilePicturePicker">
+    <!-- Not native radios, which choose as the arrow keys reach them, and
+         wrap round: arrowing past Letter would remove the picture -->
     <div
+      ref="kindGroup"
       class="kinds"
       role="radiogroup"
+      tabindex="-1"
       :aria-label="t('Profile.Picture Kinds')"
+      @keydown="onKindKeydown"
     >
-      <label
-        v-for="option in kindOptions"
+      <button
+        v-for="(option, index) in kindOptions"
         :key="option.value"
+        type="button"
+        role="radio"
         class="kind"
+        :data-kind="option.value"
+        :aria-checked="kind === option.value ? 'true' : 'false'"
+        :tabindex="index === kindFocusIndex ? 0 : -1"
+        @click="chooseKind(option.value, index)"
       >
-        <input
-          class="kindInput"
-          type="radio"
-          :name="id"
-          :value="option.value"
-          :checked="kind === option.value"
-          @change="chooseKind(option.value)"
-        >
-        <span class="kindLabel">{{ option.label }}</span>
-      </label>
+        {{ option.label }}
+      </button>
     </div>
     <div
       v-if="kind === 'symbol'"
@@ -142,7 +143,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref, shallowRef, useId, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import FtButton from '../FtButton/FtButton.vue'
@@ -174,8 +175,6 @@ const emit = defineEmits(['pick'])
 
 const { locale, t } = useI18n()
 
-const id = useId()
-
 const kindOptions = computed(() => [
   { value: 'letter', label: t('Profile.Picture Letter') },
   { value: 'symbol', label: t('Profile.Picture Symbol') },
@@ -186,14 +185,61 @@ const kindOptions = computed(() => [
 /** @type {import('vue').Ref<'letter' | 'symbol' | 'icon' | 'image'>} */
 const kind = ref(KINDS.includes(props.picture?.kind) ? props.picture.kind : 'letter')
 
+/** The one kind Tab reaches, and where the arrow keys move from: the checked one to begin with */
+const kindFocusIndex = ref(KINDS.indexOf(kind.value))
+
+const kindGroup = useTemplateRef('kindGroup')
+
 /**
  * @param {'letter' | 'symbol' | 'icon' | 'image'} value
+ * @param {number} index
  */
-function chooseKind(value) {
+function chooseKind(value, index) {
+  kindFocusIndex.value = index
   kind.value = value
 
   if (value === 'letter') {
     emit('pick', null)
+  }
+}
+
+/**
+ * Moves the focus along the kinds, and chooses nothing: Enter or Space does,
+ * as they click the button.
+ * @param {KeyboardEvent} event
+ */
+function onKindKeydown(event) {
+  const forward = getComputedStyle(event.currentTarget).direction === 'rtl' ? -1 : 1
+  let next
+
+  switch (event.key) {
+    case 'ArrowRight':
+      next = kindFocusIndex.value + forward
+      break
+    case 'ArrowDown':
+      next = kindFocusIndex.value + 1
+      break
+    case 'ArrowLeft':
+      next = kindFocusIndex.value - forward
+      break
+    case 'ArrowUp':
+      next = kindFocusIndex.value - 1
+      break
+    case 'Home':
+      next = 0
+      break
+    case 'End':
+      next = KINDS.length - 1
+      break
+    default:
+      return
+  }
+
+  event.preventDefault()
+
+  if (next >= 0 && next < KINDS.length) {
+    kindFocusIndex.value = next
+    kindGroup.value?.children[next]?.focus()
   }
 }
 
@@ -421,14 +467,12 @@ async function onFileChosen(event) {
   emit('pick', picture)
 }
 
-const root = useTemplateRef('root')
-
 /**
  * Where the focus goes when the picker is opened: the kind checked now.
  */
 async function focus() {
   await nextTick()
-  root.value?.querySelector('.kindInput:checked')?.focus()
+  kindGroup.value?.children[kindFocusIndex.value]?.focus()
 }
 
 defineExpose({ focus })

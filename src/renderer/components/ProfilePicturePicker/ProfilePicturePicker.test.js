@@ -48,8 +48,16 @@ function mountPicker(picture = null) {
  * @param {import('@vue/test-utils').VueWrapper} wrapper
  * @param {'letter' | 'symbol' | 'icon' | 'image'} kind
  */
+function kindButton(wrapper, kind) {
+  return wrapper.find(`.kinds [role="radio"][data-kind="${kind}"]`)
+}
+
+/**
+ * @param {import('@vue/test-utils').VueWrapper} wrapper
+ * @param {'letter' | 'symbol' | 'icon' | 'image'} kind
+ */
 async function chooseKind(wrapper, kind) {
-  await wrapper.find(`input[type="radio"][value="${kind}"]`).setValue()
+  await kindButton(wrapper, kind).trigger('click')
   await flushPromises()
 }
 
@@ -64,7 +72,7 @@ describe('the icon panel, when the icons cannot be loaded', () => {
     expect(logged).toHaveBeenCalledOnce()
     logged.mockRestore()
     expect(wrapper.text()).toContain('The icons could not be loaded')
-    expect(wrapper.findAll('[role="radio"]')).toHaveLength(0)
+    expect(wrapper.findAll('.iconCell')).toHaveLength(0)
     expect(wrapper.emitted('pick')).toBeUndefined()
 
     pack.fail = false
@@ -78,8 +86,9 @@ describe('the icon panel, when the icons cannot be loaded', () => {
 
 describe('the kind of picture', () => {
   it('starts at the current picture\'s kind, and at Letter when there is none', () => {
-    expect(mountPicker().find('input[value="letter"]').element.checked).toBe(true)
-    expect(mountPicker({ kind: 'symbol', text: '★' }).find('input[value="symbol"]').element.checked).toBe(true)
+    expect(kindButton(mountPicker(), 'letter').attributes('aria-checked')).toBe('true')
+    expect(kindButton(mountPicker({ kind: 'symbol', text: '★' }), 'symbol').attributes('aria-checked')).toBe('true')
+    expect(kindButton(mountPicker({ kind: 'symbol', text: '★' }), 'letter').attributes('aria-checked')).toBe('false')
   })
 
   it('emits null for Letter', async () => {
@@ -88,6 +97,22 @@ describe('the kind of picture', () => {
     await chooseKind(wrapper, 'letter')
 
     expect(wrapper.emitted('pick')).toEqual([[null]])
+  })
+
+  it('is moved between with the arrow keys without choosing one, so passing Letter removes nothing', async () => {
+    const wrapper = mountPicker({ kind: 'symbol', text: '★' })
+    const kinds = wrapper.find('.kinds')
+
+    await kinds.trigger('keydown', { key: 'ArrowLeft' })
+    await kinds.trigger('keydown', { key: 'ArrowLeft' })
+    await kinds.trigger('keydown', { key: 'End' })
+    await kinds.trigger('keydown', { key: 'ArrowRight' })
+    await kinds.trigger('keydown', { key: 'Home' })
+
+    expect(wrapper.emitted('pick')).toBeUndefined()
+    expect(kindButton(wrapper, 'symbol').attributes('aria-checked')).toBe('true')
+    expect(kindButton(wrapper, 'letter').attributes('tabindex')).toBe('0')
+    expect(kindButton(wrapper, 'symbol').attributes('tabindex')).toBe('-1')
   })
 
   it('emits nothing for another kind until something is chosen in it', async () => {

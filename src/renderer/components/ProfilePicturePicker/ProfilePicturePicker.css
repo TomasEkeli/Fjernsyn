@@ -15,35 +15,23 @@
 }
 
 .kind {
-  position: relative;
-}
-
-/* Over its label, so that a click on the label is a click on the radio */
-.kindInput {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.kindLabel {
-  display: block;
   padding-block: 4px;
   padding-inline: 12px;
   border: 1px solid var(--primary-color);
   border-radius: 999px;
+  background: none;
   color: var(--primary-text-color);
+  font: inherit;
   font-size: 14px;
-  user-select: none;
+  cursor: pointer;
 }
 
-.kindInput:checked + .kindLabel {
+.kind[aria-checked='true'] {
   background-color: var(--primary-color);
   color: var(--text-with-main-color);
 }
 
-.kindInput:focus-visible + .kindLabel {
+.kind:focus-visible {
   outline: 2px solid var(--primary-text-color);
   outline-offset: 2px;
 }

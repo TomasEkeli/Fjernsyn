@@ -75,16 +75,15 @@ const { position } = useAnchoredOverlay({
 })
 
 /**
- * What Tab and Shift+Tab reach inside it: of the radios, only the checked one
+ * What Tab and Shift+Tab reach inside it. Of each group of radios, the
+ * picker leaves only one in the tab order.
  * @returns {HTMLElement[]}
  */
 function tabStops() {
   /** @type {NodeListOf<HTMLElement>} */
   const candidates = menu.value?.querySelectorAll('input, button, [tabindex]') ?? []
 
-  return [...candidates].filter(element => element.tabIndex >= 0 &&
-    !element.hasAttribute('disabled') &&
-    !(element instanceof HTMLInputElement && element.type === 'radio' && !element.checked))
+  return [...candidates].filter(element => element.tabIndex >= 0 && !element.hasAttribute('disabled'))
 }
 
 /**
