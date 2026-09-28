@@ -197,11 +197,14 @@ const profileInitial = computed(() => {
 
 // Fjernsyn: the profile's picture, a setting of its own rather than a field
 // of the profile, as chosen here and shown in the preview until it is saved
-// with the rest of the profile
-const storedPicture = computed(() => readProfilePicture(store.getters.getProfilePictures, profileId.value))
+// with the rest of the profile. Saved only when it differs from what the
+// editor last had stored, and not from the setting now: a picture changed in
+// another window since would otherwise be put back by a save that never
+// touched it.
+let savedPicture = readProfilePicture(store.getters.getProfilePictures, profileId.value)
 
 /** @type {import('vue').ShallowRef<import('../../helpers/profilePictures').ProfilePicture | null>} */
-const profilePicture = shallowRef(storedPicture.value)
+const profilePicture = shallowRef(savedPicture)
 
 const previewBubble = computed(() => profileBubble(profilePicture.value, {
   bgColor: profileBgColor.value,
@@ -246,11 +249,12 @@ async function saveProfile() {
     showToast(t('Profile.Profile has been created'))
     emit('new-profile-created')
   } else {
-    store.dispatch('updateProfile', profile)
+    await store.dispatch('updateProfile', profile)
 
-    // Fjernsyn
-    if (!sameProfilePicture(profilePicture.value, storedPicture.value)) {
-      store.dispatch('saveProfilePicture', { profileId: profileId.value, picture: profilePicture.value })
+    // Fjernsyn: the picture beside the profile, as it is not in the record
+    if (!sameProfilePicture(profilePicture.value, savedPicture)) {
+      savedPicture = profilePicture.value
+      store.dispatch('saveProfilePicture', { profileId: profileId.value, picture: savedPicture })
     }
 
     showToast(t('Profile.Profile has been updated'))
