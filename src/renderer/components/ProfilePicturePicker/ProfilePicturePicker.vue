@@ -245,7 +245,16 @@ function onKindKeydown(event) {
 
 // Symbol
 
-const symbolText = ref(props.picture?.kind === 'symbol' ? props.picture.text : '')
+/** The picture's symbol, if it is one: a symbol given up since is not shown as if it were still chosen */
+const currentSymbol = () => props.picture?.kind === 'symbol' ? props.picture.text : ''
+
+const symbolText = ref(currentSymbol())
+
+watch(kind, (value) => {
+  if (value === 'symbol') {
+    symbolText.value = currentSymbol()
+  }
+})
 
 /** An input method editor mid-composition fires `input` too, with text that is not finished */
 let composing = false

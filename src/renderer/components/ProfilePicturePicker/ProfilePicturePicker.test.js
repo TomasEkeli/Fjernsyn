@@ -139,6 +139,18 @@ describe('a symbol', () => {
     expect(field.element.value).toBe('👨‍👩‍👧‍👦')
   })
 
+  it('is shown in the field only while it is the picture, not after it was given up', async () => {
+    const wrapper = mountPicker({ kind: 'symbol', text: '★' })
+
+    expect(wrapper.find('input[type="text"]').element.value).toBe('★')
+
+    await chooseKind(wrapper, 'letter')
+    await wrapper.setProps({ picture: null })
+    await chooseKind(wrapper, 'symbol')
+
+    expect(wrapper.find('input[type="text"]').element.value).toBe('')
+  })
+
   it('is not emitted for an empty field', async () => {
     const wrapper = mountPicker()
 
