@@ -88,7 +88,7 @@ Double-click a channel to visit its page. Click a column's heading to make that 
 
 Click New profile at the end of the strip and type its name there. New profiles go at the end. Right-click a bubble to rename it, change its colour or picture, or remove it. Removing a profile leaves its channels subscribed, and those in no other profile go back to Unassigned.
 
-A profile's picture takes the place of its initial everywhere the profile is shown: a symbol or emoji you type or paste, any of Font Awesome's solid icons, or an image from a file on your machine, cropped to a square. The profile settings can set it too. Pictures stay in the data folder and are not part of a profile export.
+A profile's picture takes the place of its initial everywhere the profile is shown: a symbol or emoji you type or paste, any of Font Awesome's solid icons, or an image from a file on your machine, cropped to a square. The profile settings can set it too. Pictures are kept with the settings, so a settings export carries them and a profile export does not.
 
 Drag bubbles to put profiles in your own order, or move the focused one with Ctrl+Shift+Left and Right. Every profile list in the app follows that order. A bar shows where a dragged bubble will land. Chromium sometimes loses drops, so Fjernsyn catches those itself.
 
