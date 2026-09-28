@@ -84,6 +84,30 @@
   scrollbar-gutter: stable;
 }
 
+/* A scrollbar that shows: the app's own thumb is close to the card's colour
+   in the dark themes and has no track, which leaves nothing to say there are
+   more icons below, and nothing to drag where the wheel does not work */
+.iconGrid::-webkit-scrollbar {
+  inline-size: 12px;
+}
+
+.iconGrid::-webkit-scrollbar-track {
+  border-radius: 6px;
+  background-color: var(--side-nav-hover-color);
+}
+
+.iconGrid::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: var(--tertiary-text-color);
+  background-clip: padding-box;
+}
+
+.iconGrid::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-text-color);
+  background-clip: padding-box;
+}
+
 /* Rendered all, painted only when in sight */
 .iconCell {
   display: flex;
