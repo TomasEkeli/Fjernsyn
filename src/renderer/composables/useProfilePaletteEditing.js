@@ -5,9 +5,11 @@ import { MAIN_PROFILE_ID } from '../../constants'
 import store from '../store/index'
 import { calculateColorLuminance, colors } from '../helpers/colors'
 import { moveInOrder, pickUnusedColour, profileOrderIds } from '../helpers/channelsOverview'
+import { readProfilePicture } from '../helpers/profilePictures'
 import { deepCopy, showToast } from '../helpers/utils'
 
 /** @import { Profile } from '../helpers/channelsOverview' */
+/** @import { ProfilePicture } from '../helpers/profilePictures' */
 
 const COLOUR_VALUES = colors.map(colour => colour.value)
 
@@ -32,10 +34,10 @@ export function focusBubble(profileId) {
 }
 
 /**
- * Making, renaming, recolouring and reordering profiles from the palette on
- * the Channels page. The palette says what was done to it; this works out what
- * that means for the store, and holds what is half done: a new profile being
- * named, a profile being renamed, a menu open over a bubble.
+ * Making, renaming, recolouring, picturing and reordering profiles from the
+ * palette on the Channels page. The palette says what was done to it; this
+ * works out what that means for the store, and holds what is half done: a new
+ * profile being named, a profile being renamed, a menu open over a bubble.
  *
  * @param {object} options
  * @param {import('vue').ComputedRef<Profile[]>} options.profileList every profile, in order
@@ -181,8 +183,21 @@ export function useProfilePaletteEditing({ profileList, afterPendingChanges, ope
   const profileMenuItems = computed(() => [
     { value: 'rename', label: t('Channels.Overview.Rename Profile') },
     { value: 'colour', label: t('Channels.Overview.Change Profile Colour') },
+    { value: 'picture', label: t('Channels.Overview.Change Profile Picture') },
     { value: 'remove', label: t('Channels.Overview.Remove Profile'), destructive: true }
   ])
+
+  /**
+   * Where a menu over a profile's bubble opens: beside the bubble, wherever
+   * the one it was chosen from was.
+   * @param {string} profileId
+   * @returns {{ rect: DOMRect } | null} null when the bubble is gone
+   */
+  function bubbleAnchor(profileId) {
+    const bubble = document.querySelector(`.palette [data-profile-id="${CSS.escape(profileId)}"]`)
+
+    return bubble ? { rect: bubble.getBoundingClientRect() } : null
+  }
 
   /**
    * @param {string} value
@@ -196,10 +211,22 @@ export function useProfilePaletteEditing({ profileList, afterPendingChanges, ope
       renamingProfileId.value = profileId
     } else if (value === 'colour') {
       const profile = profileList.value.find(candidate => candidate._id === profileId)
-      const bubble = document.querySelector(`.palette [data-profile-id="${CSS.escape(profileId)}"]`)
+      const anchor = bubbleAnchor(profileId)
 
-      if (profile && bubble) {
-        colourMenu.value = { profileId, name: profile.name, bgColor: profile.bgColor, anchor: { rect: bubble.getBoundingClientRect() } }
+      if (profile && anchor) {
+        colourMenu.value = { profileId, name: profile.name, bgColor: profile.bgColor, anchor }
+      }
+    } else if (value === 'picture') {
+      const profile = profileList.value.find(candidate => candidate._id === profileId)
+      const anchor = bubbleAnchor(profileId)
+
+      if (profile && anchor) {
+        pictureMenu.value = {
+          profileId,
+          name: profile.name,
+          picture: readProfilePicture(store.getters.getProfilePictures, profileId),
+          anchor
+        }
       }
     } else if (value === 'remove') {
       const profile = profileList.value.find(candidate => candidate._id === profileId)
@@ -245,6 +272,37 @@ export function useProfilePaletteEditing({ profileList, afterPendingChanges, ope
   function closeColourMenu(returnFocus) {
     const profileId = colourMenu.value?.profileId
     colourMenu.value = null
+
+    if (returnFocus && profileId) {
+      focusBubble(profileId)
+    }
+  }
+
+  /**
+   * The picture picker over a bubble. Null while it is closed.
+   * @type {import('vue').ShallowRef<{ profileId: string, name: string, picture: ProfilePicture | null, anchor: object } | null>}
+   */
+  const pictureMenu = shallowRef(null)
+
+  /**
+   * Saved at once, as a colour is. A setting and not the profile, so it does
+   * not wait on the queue of profile writes.
+   * @param {ProfilePicture | null} picture null for the letter
+   */
+  function choosePicture(picture) {
+    const profileId = pictureMenu.value?.profileId
+
+    if (profileId) {
+      store.dispatch('saveProfilePicture', { profileId, picture })
+    }
+  }
+
+  /**
+   * @param {boolean} returnFocus
+   */
+  function closePictureMenu(returnFocus) {
+    const profileId = pictureMenu.value?.profileId
+    pictureMenu.value = null
 
     if (returnFocus && profileId) {
       focusBubble(profileId)
@@ -324,6 +382,9 @@ export function useProfilePaletteEditing({ profileList, afterPendingChanges, ope
     colourMenu,
     chooseColour,
     closeColourMenu,
+    pictureMenu,
+    choosePicture,
+    closePictureMenu,
     reorder
   }
 }

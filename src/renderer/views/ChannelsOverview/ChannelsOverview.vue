@@ -2,11 +2,12 @@
   The Channels page: where subscriptions are sorted into profiles.
 
   Every profile is a bubble in the strip at the top, where profiles are also
-  made, renamed, recoloured and put in order, and a few of them at a time are
-  open as columns below. The primary profile is never a column, as it holds
-  every subscription. Its place, pinned leftmost, goes to the channels no other
-  profile has claimed, and that column is there to be emptied: once it is, it
-  goes away, and it only comes back when something new lands in it.
+  made, renamed, recoloured, given pictures and put in order, and a few of
+  them at a time are open as columns below. The primary profile is never a
+  column, as it holds every subscription. Its place, pinned leftmost, goes to
+  the channels no other profile has claimed, and that column is there to be
+  emptied: once it is, it goes away, and it only comes back when something
+  new lands in it.
 
   Suggest profiles adds proposed columns after the pool: channels the app
   thinks belong in one of the profiles, or together in a new one, from what
@@ -262,6 +263,14 @@
       @choose="chooseColour"
       @close="closeColourMenu"
     />
+    <ChannelsOverviewPictureMenu
+      v-if="pictureMenu !== null"
+      :label="t('Channels.Overview.Profile Picture For', { profile: pictureMenu.name })"
+      :current="pictureMenu.picture"
+      :anchor="pictureMenu.anchor"
+      @choose="choosePicture"
+      @close="closePictureMenu"
+    />
     <FtPrompt
       v-if="unsubscribeChannelIds.length > 0"
       :label="t('Channels.Overview.Unsubscribe Prompt', { count: unsubscribeChannelIds.length }, unsubscribeChannelIds.length)"
@@ -289,6 +298,7 @@ import ChannelsOverviewColumn from '../../components/ChannelsOverviewColumn/Chan
 import ChannelsOverviewPalette from '../../components/ChannelsOverviewPalette/ChannelsOverviewPalette.vue'
 import ChannelsOverviewMenu from '../../components/ChannelsOverviewMenu/ChannelsOverviewMenu.vue'
 import ChannelsOverviewMenuButton from '../../components/ChannelsOverviewMenuButton/ChannelsOverviewMenuButton.vue'
+import ChannelsOverviewPictureMenu from '../../components/ChannelsOverviewPictureMenu/ChannelsOverviewPictureMenu.vue'
 import ChannelsOverviewTrash from '../../components/ChannelsOverviewTrash/ChannelsOverviewTrash.vue'
 
 import store from '../../store/index'
@@ -1063,6 +1073,9 @@ const {
   colourMenu,
   chooseColour,
   closeColourMenu,
+  pictureMenu,
+  choosePicture,
+  closePictureMenu,
   reorder
 } = useProfilePaletteEditing({ profileList, afterPendingChanges, openColumn })
 
