@@ -62,7 +62,7 @@
   color: var(--tertiary-text-color);
 }
 
-.symbolField {
+.characterField {
   max-inline-size: 280px;
   text-align: center;
 }

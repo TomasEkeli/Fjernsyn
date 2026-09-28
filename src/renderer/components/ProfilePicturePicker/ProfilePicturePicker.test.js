@@ -36,17 +36,20 @@ vi.mock('../../helpers/utils', async (importOriginal) => ({
 }))
 
 const HOUSE = { kind: 'icon', name: 'house', width: 576, height: 512, path: 'M575.8 255.5c0 18-15 32.1-32 32.1z' }
+const IMAGE = { kind: 'image', src: 'data:image/webp;base64,UklGRhYAAABXRUJQVlA4TAoAAAAvAAAAAEX/I/of' }
+const STAR = { kind: 'symbol', text: '★' }
 
 /**
  * @param {import('../../helpers/profilePictures').ProfilePicture | null} [picture]
+ * @param {string} [initial] the profile's initial
  */
-function mountPicker(picture = null) {
-  return mountWithApp(ProfilePicturePicker, { props: { picture } })
+function mountPicker(picture = null, initial = 'M') {
+  return mountWithApp(ProfilePicturePicker, { props: { picture, initial } })
 }
 
 /**
  * @param {import('@vue/test-utils').VueWrapper} wrapper
- * @param {'letter' | 'symbol' | 'icon' | 'image'} kind
+ * @param {'character' | 'icon' | 'image'} kind
  */
 function kindButton(wrapper, kind) {
   return wrapper.find(`.kinds [role="radio"][data-kind="${kind}"]`)
@@ -54,11 +57,18 @@ function kindButton(wrapper, kind) {
 
 /**
  * @param {import('@vue/test-utils').VueWrapper} wrapper
- * @param {'letter' | 'symbol' | 'icon' | 'image'} kind
+ * @param {'character' | 'icon' | 'image'} kind
  */
 async function chooseKind(wrapper, kind) {
   await kindButton(wrapper, kind).trigger('click')
   await flushPromises()
+}
+
+/**
+ * @param {import('@vue/test-utils').VueWrapper} wrapper
+ */
+function characterField(wrapper) {
+  return wrapper.find('input[type="text"]')
 }
 
 describe('the icon panel, when the icons cannot be loaded', () => {
@@ -76,7 +86,7 @@ describe('the icon panel, when the icons cannot be loaded', () => {
     expect(wrapper.emitted('pick')).toBeUndefined()
 
     pack.fail = false
-    await chooseKind(wrapper, 'symbol')
+    await chooseKind(wrapper, 'image')
     await chooseKind(wrapper, 'icon')
 
     expect(wrapper.find('[aria-label="house"]').exists()).toBe(true)
@@ -85,22 +95,16 @@ describe('the icon panel, when the icons cannot be loaded', () => {
 })
 
 describe('the kind of picture', () => {
-  it('starts at the current picture\'s kind, and at Letter when there is none', () => {
-    expect(kindButton(mountPicker(), 'letter').attributes('aria-checked')).toBe('true')
-    expect(kindButton(mountPicker({ kind: 'symbol', text: '★' }), 'symbol').attributes('aria-checked')).toBe('true')
-    expect(kindButton(mountPicker({ kind: 'symbol', text: '★' }), 'letter').attributes('aria-checked')).toBe('false')
+  it('starts at the current picture\'s kind, and at Character for none or a symbol', () => {
+    expect(kindButton(mountPicker(), 'character').attributes('aria-checked')).toBe('true')
+    expect(kindButton(mountPicker(STAR), 'character').attributes('aria-checked')).toBe('true')
+    expect(kindButton(mountPicker(HOUSE), 'icon').attributes('aria-checked')).toBe('true')
+    expect(kindButton(mountPicker(IMAGE), 'image').attributes('aria-checked')).toBe('true')
+    expect(kindButton(mountPicker(IMAGE), 'character').attributes('aria-checked')).toBe('false')
   })
 
-  it('emits null for Letter', async () => {
-    const wrapper = mountPicker({ kind: 'symbol', text: '★' })
-
-    await chooseKind(wrapper, 'letter')
-
-    expect(wrapper.emitted('pick')).toEqual([[null]])
-  })
-
-  it('is moved between with the arrow keys without choosing one, so passing Letter removes nothing', async () => {
-    const wrapper = mountPicker({ kind: 'symbol', text: '★' })
+  it('is moved between with the arrow keys without choosing one', async () => {
+    const wrapper = mountPicker(IMAGE)
     const kinds = wrapper.find('.kinds')
 
     await kinds.trigger('keydown', { key: 'ArrowLeft' })
@@ -110,15 +114,14 @@ describe('the kind of picture', () => {
     await kinds.trigger('keydown', { key: 'Home' })
 
     expect(wrapper.emitted('pick')).toBeUndefined()
-    expect(kindButton(wrapper, 'symbol').attributes('aria-checked')).toBe('true')
-    expect(kindButton(wrapper, 'letter').attributes('tabindex')).toBe('0')
-    expect(kindButton(wrapper, 'symbol').attributes('tabindex')).toBe('-1')
+    expect(kindButton(wrapper, 'image').attributes('aria-checked')).toBe('true')
+    expect(kindButton(wrapper, 'character').attributes('tabindex')).toBe('0')
+    expect(kindButton(wrapper, 'image').attributes('tabindex')).toBe('-1')
   })
 
-  it('emits nothing for another kind until something is chosen in it', async () => {
+  it('emits nothing for Icon or Image until something is chosen in it', async () => {
     const wrapper = mountPicker()
 
-    await chooseKind(wrapper, 'symbol')
     await chooseKind(wrapper, 'icon')
     await chooseKind(wrapper, 'image')
 
@@ -126,46 +129,76 @@ describe('the kind of picture', () => {
   })
 })
 
-describe('a symbol', () => {
-  it('is the first character typed or pasted, which the field is cut to', async () => {
+describe('a character', () => {
+  it('starts as the profile\'s initial, and follows it while it is no picture', async () => {
+    const wrapper = mountPicker(null, 'M')
+
+    expect(characterField(wrapper).element.value).toBe('M')
+
+    await wrapper.setProps({ initial: 'S' })
+
+    expect(characterField(wrapper).element.value).toBe('S')
+  })
+
+  it('starts as the profile\'s symbol, if it has one', () => {
+    expect(characterField(mountPicker(STAR, 'M')).element.value).toBe('★')
+  })
+
+  it('is the first character typed or pasted, which the field is cut to, and is done', async () => {
     const wrapper = mountPicker()
+    const field = characterField(wrapper)
 
-    await chooseKind(wrapper, 'symbol')
-
-    const field = wrapper.find('input[type="text"]')
     await field.setValue('  👨‍👩‍👧‍👦 family')
 
-    expect(wrapper.emitted('pick')).toEqual([[{ kind: 'symbol', text: '👨‍👩‍👧‍👦' }]])
+    expect(wrapper.emitted('pick')).toEqual([[{ kind: 'symbol', text: '👨‍👩‍👧‍👦' }, true]])
     expect(field.element.value).toBe('👨‍👩‍👧‍👦')
   })
 
-  it('is shown in the field only while it is the picture, not after it was given up', async () => {
-    const wrapper = mountPicker({ kind: 'symbol', text: '★' })
+  it('is no picture when it is the initial, so that the bubble goes on following the name', async () => {
+    const wrapper = mountPicker(STAR, 'M')
 
-    expect(wrapper.find('input[type="text"]').element.value).toBe('★')
+    await characterField(wrapper).setValue('M')
 
-    await chooseKind(wrapper, 'letter')
-    await wrapper.setProps({ picture: null })
-    await chooseKind(wrapper, 'symbol')
-
-    expect(wrapper.find('input[type="text"]').element.value).toBe('')
+    expect(wrapper.emitted('pick')).toEqual([[null, true]])
   })
 
-  it('is not emitted for an empty field', async () => {
-    const wrapper = mountPicker()
+  it('is applied when chosen from another kind, not done, and is the initial rather than a symbol given up since', async () => {
+    const wrapper = mountPicker(STAR, 'M')
 
-    await chooseKind(wrapper, 'symbol')
-    await wrapper.find('input[type="text"]').setValue('   ')
+    await chooseKind(wrapper, 'icon')
+    await wrapper.find('[role="radio"][aria-label="house"]').trigger('click')
+    await wrapper.setProps({ picture: HOUSE })
+    await chooseKind(wrapper, 'character')
+
+    expect(wrapper.emitted('pick')).toEqual([[HOUSE, true], [null, false]])
+    expect(characterField(wrapper).element.value).toBe('M')
+  })
+
+  it('is picked, and done, with Enter', async () => {
+    const wrapper = mountPicker(null, 'M')
+
+    await characterField(wrapper).trigger('keydown', { key: 'Enter' })
+
+    expect(wrapper.emitted('pick')).toEqual([[null, true]])
+  })
+
+  it('is not emitted for an empty field, which shows the character again when left', async () => {
+    const wrapper = mountPicker(STAR, 'M')
+    const field = characterField(wrapper)
+
+    await field.setValue('   ')
 
     expect(wrapper.emitted('pick')).toBeUndefined()
+
+    await field.trigger('blur')
+
+    expect(field.element.value).toBe('★')
   })
 
   it('is not emitted while an input method is still composing it, only once it is done', async () => {
     const wrapper = mountPicker()
+    const field = characterField(wrapper)
 
-    await chooseKind(wrapper, 'symbol')
-
-    const field = wrapper.find('input[type="text"]')
     await field.trigger('compositionstart')
     await field.setValue('に')
     await field.setValue('にほ')
@@ -174,7 +207,7 @@ describe('a symbol', () => {
 
     await field.trigger('compositionend')
 
-    expect(wrapper.emitted('pick')).toEqual([[{ kind: 'symbol', text: 'に' }]])
+    expect(wrapper.emitted('pick')).toEqual([[{ kind: 'symbol', text: 'に' }, true]])
   })
 })
 
@@ -185,7 +218,7 @@ describe('an icon', () => {
     await chooseKind(wrapper, 'icon')
     await wrapper.find('[role="radio"][aria-label="house"]').trigger('click')
 
-    expect(wrapper.emitted('pick')).toEqual([[HOUSE]])
+    expect(wrapper.emitted('pick')).toEqual([[HOUSE, true]])
   })
 
   it('is found by searching its aliases', async () => {

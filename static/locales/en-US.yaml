@@ -1021,15 +1021,14 @@ Profile:
   Channels Moved: Channels are sorted into profiles on the Channels page.
   Go to Channels: Go to Channels
   Sort Channels: Sort channels into {profile}
-  # What a profile's bubble shows in place of its initial: a symbol typed
-  # or pasted in, an icon, or an image from a local file
+  # What a profile's bubble shows: a character, its initial unless another
+  # is typed or pasted in, an icon, or an image from a local file
   Picture: Picture
   Picture Kinds: Kind of picture
-  Picture Letter: Letter
-  Picture Symbol: Symbol
+  Picture Character: Character
   Picture Icon: Icon
   Picture Image: Image
-  Symbol Placeholder: Type or paste a character or emoji
+  Character Placeholder: Type or paste a character or emoji
   Search Icons: Search icons
   Loading Icons: Loading icons
   Icons Could Not Load: The icons could not be loaded

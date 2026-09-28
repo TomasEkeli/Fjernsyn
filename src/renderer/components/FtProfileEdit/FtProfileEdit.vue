@@ -39,6 +39,7 @@
             <h3>{{ $t("Profile.Picture") }}</h3>
             <ProfilePicturePicker
               :picture="profilePicture"
+              :initial="profileInitial"
               @pick="profilePicture = $event"
             />
           </div>

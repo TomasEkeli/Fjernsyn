@@ -267,6 +267,7 @@
       v-if="pictureMenu !== null"
       :label="t('Channels.Overview.Profile Picture For', { profile: pictureMenu.name })"
       :current="pictureMenu.picture"
+      :initial="pictureMenu.initial"
       :anchor="pictureMenu.anchor"
       @choose="choosePicture"
       @close="closePictureMenu"

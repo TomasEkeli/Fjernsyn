@@ -1,7 +1,9 @@
 <!--
   A profile's picture, chosen next to its bubble on the Channels page: the
   picker, in a menu placed and closed as the colour grid is. Picking is the
-  change, and closes it; there is nothing to confirm.
+  change; there is nothing to confirm. A pick that is done closes it, and one
+  that is not, going back to Character, leaves it open for a character to be
+  typed.
 
   Escape, tabbing out of it, a click outside it or a scroll under it closes
   it. A scroll inside it, the icon grid's, does not. Nor does the system's
@@ -23,6 +25,7 @@
       <ProfilePicturePicker
         ref="picker"
         :picture="current"
+        :initial="initial"
         @pick="choose"
       />
     </div>
@@ -53,6 +56,11 @@ const props = defineProps({
   current: {
     type: Object,
     default: null
+  },
+  /** The profile's initial, its character while it has no picture */
+  initial: {
+    type: String,
+    default: ''
   },
   /** @type {import('vue').PropType<{ rect: DOMRect } | { x: number, y: number }>} */
   anchor: {
@@ -128,12 +136,16 @@ function handleFocusOut(event) {
 
 /**
  * @param {import('../../helpers/profilePictures').ProfilePicture | null} picture
+ * @param {boolean} done
  */
-function choose(picture) {
+function choose(picture, done) {
   // The choice first: whoever opened the menu may forget what it was for
   // once it is closed
   emit('choose', picture)
-  emit('close', true)
+
+  if (done) {
+    emit('close', true)
+  }
 }
 
 onMounted(() => {

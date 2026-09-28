@@ -1,13 +1,17 @@
 <!--
-  How a profile's picture is chosen: the letter it always had, a symbol typed
-  or pasted in, an icon from Font Awesome's solid set, or an image from a
-  local file, and nothing from anywhere else. It says what was chosen with
-  `pick`, null for the letter, and saves nothing itself: the profile editor
-  keeps the choice until the profile is saved, the palette's menu saves it at
-  once.
+  How a profile's picture is chosen: a character, which is the profile's
+  initial until another is typed or pasted in, an icon from Font Awesome's
+  solid set, or an image from a local file, and nothing from anywhere else.
+  It says what was chosen with `pick`, null for the initial, and saves
+  nothing itself: the profile editor keeps the choice until the profile is
+  saved, the palette's menu saves it at once.
 
-  Choosing a kind shows its panel, and nothing is picked until something is
-  chosen in it. The icons are loaded the first time the Icon panel opens.
+  `pick` also says whether the choice is done. Typing a character, pressing
+  Enter in its field, and picking an icon or an image are. Going back to
+  Character from another kind applies the character in the field, usually
+  the initial, and is not done, so that the palette's menu stays open for one
+  to be typed. Choosing Icon or Image picks nothing until something is chosen
+  in its panel. The icons are loaded the first time the Icon panel opens.
 
   From the keyboard, in the kinds and in the icon grid alike, the arrow keys
   move the focus and choose nothing, Home and End go to the first and last,
@@ -17,7 +21,7 @@
 <template>
   <div class="profilePicturePicker">
     <!-- Not native radios, which choose as the arrow keys reach them, and
-         wrap round: arrowing past Letter would remove the picture -->
+         wrap round: arrowing through the kinds would apply the initial -->
     <div
       ref="kindGroup"
       class="kinds"
@@ -41,26 +45,29 @@
       </button>
     </div>
     <div
-      v-if="kind === 'symbol'"
+      v-if="kind === 'character'"
+      ref="panel"
       class="panel"
     >
       <input
-        class="field symbolField"
+        class="field characterField"
         type="text"
         dir="auto"
-        :value="symbolText"
-        :placeholder="t('Profile.Symbol Placeholder')"
-        :aria-label="t('Profile.Symbol Placeholder')"
-        @focus="onSymbolFocus"
-        @mouseup="onSymbolMouseUp"
-        @blur="selectedOnFocus = false"
-        @input="onSymbolInput"
+        :value="characterText"
+        :placeholder="t('Profile.Character Placeholder')"
+        :aria-label="t('Profile.Character Placeholder')"
+        @focus="onCharacterFocus"
+        @mouseup="onCharacterMouseUp"
+        @blur="onCharacterBlur"
+        @input="onCharacterInput"
+        @keydown.enter.prevent="onCharacterEnter"
         @compositionstart="onCompositionStart"
         @compositionend="onCompositionEnd"
       >
     </div>
     <div
       v-else-if="kind === 'icon'"
+      ref="panel"
       class="panel iconPanel"
     >
       <input
@@ -121,6 +128,7 @@
     </div>
     <div
       v-else-if="kind === 'image'"
+      ref="panel"
       class="panel"
     >
       <FtButton
@@ -148,7 +156,7 @@ import { useI18n } from 'vue-i18n'
 
 import FtButton from '../FtButton/FtButton.vue'
 
-import { firstSymbol, searchIcons, validProfilePicture } from '../../helpers/profilePictures'
+import { firstSymbol, sameProfilePicture, searchIcons, validProfilePicture } from '../../helpers/profilePictures'
 import { showToast } from '../../helpers/utils'
 import { loadIcons } from './icons'
 import { pictureFromFile } from './pictureFromFile'
@@ -158,49 +166,69 @@ import { pictureFromFile } from './pictureFromFile'
 /** Icons per row of the grid; the width in ProfilePicturePicker.css follows it */
 const COLUMNS = 10
 
-const KINDS = ['letter', 'symbol', 'icon', 'image']
+const KINDS = ['character', 'icon', 'image']
 
 const props = defineProps({
   /**
-   * The picture now, from readProfilePicture, or null for the letter
+   * The picture now, from readProfilePicture, or null for the initial
    * @type {import('vue').PropType<ProfilePicture | null>}
    */
   picture: {
     type: Object,
     default: null
+  },
+  /** The profile's initial, which is its character while it has no picture */
+  initial: {
+    type: String,
+    default: ''
   }
 })
 
+/**
+ * `pick`: the picture chosen, or null for the initial, and whether choosing
+ * is done
+ */
 const emit = defineEmits(['pick'])
 
 const { locale, t } = useI18n()
 
 const kindOptions = computed(() => [
-  { value: 'letter', label: t('Profile.Picture Letter') },
-  { value: 'symbol', label: t('Profile.Picture Symbol') },
+  { value: 'character', label: t('Profile.Picture Character') },
   { value: 'icon', label: t('Profile.Picture Icon') },
   { value: 'image', label: t('Profile.Picture Image') }
 ])
 
-/** @type {import('vue').Ref<'letter' | 'symbol' | 'icon' | 'image'>} */
-const kind = ref(KINDS.includes(props.picture?.kind) ? props.picture.kind : 'letter')
+/** @type {import('vue').Ref<'character' | 'icon' | 'image'>} */
+const kind = ref(props.picture?.kind === 'icon' || props.picture?.kind === 'image' ? props.picture.kind : 'character')
 
 /** The one kind Tab reaches, and where the arrow keys move from: the checked one to begin with */
 const kindFocusIndex = ref(KINDS.indexOf(kind.value))
 
 const kindGroup = useTemplateRef('kindGroup')
+const panel = useTemplateRef('panel')
 
 /**
- * @param {'letter' | 'symbol' | 'icon' | 'image'} value
+ * Shows the kind's panel, with the focus in it. Back to Character from
+ * another kind, its character is applied at once, but not as done.
+ * @param {'character' | 'icon' | 'image'} value
  * @param {number} index
  */
-function chooseKind(value, index) {
+async function chooseKind(value, index) {
+  const changed = kind.value !== value
+
   kindFocusIndex.value = index
   kind.value = value
 
-  if (value === 'letter') {
-    emit('pick', null)
+  if (value === 'character' && changed) {
+    const picture = characterPicture(characterText.value)
+
+    if (picture !== undefined && !sameProfilePicture(picture, props.picture)) {
+      emit('pick', picture, false)
+    }
   }
+
+  await nextTick()
+  panel.value?.querySelector('input, button')?.focus()
 }
 
 /**
@@ -243,32 +271,42 @@ function onKindKeydown(event) {
   }
 }
 
-// Symbol
+// Character
 
-/** The picture's symbol, if it is one: a symbol given up since is not shown as if it were still chosen */
-const currentSymbol = () => props.picture?.kind === 'symbol' ? props.picture.text : ''
+/**
+ * What the field shows: the profile's symbol, or else its initial, which it
+ * follows as the name changes. A symbol given up since is not shown as if it
+ * were still chosen.
+ */
+const characterText = computed(() => props.picture?.kind === 'symbol' ? props.picture.text : props.initial)
 
-const symbolText = ref(currentSymbol())
-
-watch(kind, (value) => {
-  if (value === 'symbol') {
-    symbolText.value = currentSymbol()
+/**
+ * The picture a character in the field stands for. The initial, or nothing,
+ * is no picture, so that the bubble goes on following the name.
+ * @param {string} text one grapheme, or ''
+ * @returns {ProfilePicture | null | undefined} undefined for one that cannot be stored
+ */
+function characterPicture(text) {
+  if (text === '' || text === props.initial) {
+    return null
   }
-})
+
+  return validProfilePicture({ kind: 'symbol', text }) ?? undefined
+}
 
 /** An input method editor mid-composition fires `input` too, with text that is not finished */
 let composing = false
 
 /**
  * Selected when the field takes the focus, so that what is typed or pasted
- * replaces the symbol rather than being cut off after it.
+ * replaces the character rather than being cut off after it.
  */
 const selectedOnFocus = ref(false)
 
 /**
  * @param {FocusEvent} event
  */
-function onSymbolFocus(event) {
+function onCharacterFocus(event) {
   event.target.select()
   selectedOnFocus.value = true
 }
@@ -278,7 +316,7 @@ function onSymbolFocus(event) {
  * landed, undoing the selection.
  * @param {MouseEvent} event
  */
-function onSymbolMouseUp(event) {
+function onCharacterMouseUp(event) {
   if (selectedOnFocus.value) {
     event.preventDefault()
     selectedOnFocus.value = false
@@ -286,30 +324,64 @@ function onSymbolMouseUp(event) {
 }
 
 /**
+ * Left empty, the field shows the character it stands for again.
+ * @param {FocusEvent} event
+ */
+function onCharacterBlur(event) {
+  selectedOnFocus.value = false
+
+  if (event.target.value.trim() === '') {
+    event.target.value = characterText.value
+  }
+}
+
+/**
+ * Cuts the field to its first character, and picks that as done. An empty
+ * field picks nothing, as it is on its way to another character.
  * @param {HTMLInputElement} field
  */
-function takeSymbol(field) {
-  const symbol = firstSymbol(field.value, locale.value)
+function takeCharacter(field) {
+  const text = firstSymbol(field.value, locale.value)
 
-  field.value = symbol
-  symbolText.value = symbol
+  field.value = text
 
-  const picture = validProfilePicture({ kind: 'symbol', text: symbol })
+  if (text === '') { return }
 
-  if (picture !== null) {
-    emit('pick', picture)
+  const picture = characterPicture(text)
+
+  if (picture !== undefined) {
+    emit('pick', picture, true)
   }
 }
 
 /**
  * @param {InputEvent} event
  */
-function onSymbolInput(event) {
+function onCharacterInput(event) {
   selectedOnFocus.value = false
 
   if (composing || event.isComposing) { return }
 
-  takeSymbol(event.target)
+  takeCharacter(event.target)
+}
+
+/**
+ * Picks what the field holds, as done: the way back to the initial from
+ * another kind. An empty field is the initial.
+ * @param {KeyboardEvent} event
+ */
+function onCharacterEnter(event) {
+  if (composing || event.isComposing) { return }
+
+  const field = event.target
+  const text = firstSymbol(field.value, locale.value)
+  const picture = characterPicture(text)
+
+  field.value = text === '' ? props.initial : text
+
+  if (picture !== undefined) {
+    emit('pick', picture, true)
+  }
 }
 
 function onCompositionStart() {
@@ -321,7 +393,7 @@ function onCompositionStart() {
  */
 function onCompositionEnd(event) {
   composing = false
-  takeSymbol(event.target)
+  takeCharacter(event.target)
 }
 
 // Icon
@@ -431,7 +503,7 @@ function onGridKeydown(event) {
  */
 function pickIcon({ name, width, height, path }, index) {
   focusIndex.value = index
-  emit('pick', { kind: 'icon', name, width, height, path })
+  emit('pick', { kind: 'icon', name, width, height, path }, true)
 }
 
 // Image
@@ -473,7 +545,7 @@ async function onFileChosen(event) {
     return
   }
 
-  emit('pick', picture)
+  emit('pick', picture, true)
 }
 
 /**

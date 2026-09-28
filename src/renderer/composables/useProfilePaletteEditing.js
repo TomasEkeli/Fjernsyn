@@ -6,6 +6,7 @@ import store from '../store/index'
 import { calculateColorLuminance, colors } from '../helpers/colors'
 import { moveInOrder, pickUnusedColour, profileOrderIds } from '../helpers/channelsOverview'
 import { readProfilePicture } from '../helpers/profilePictures'
+import { getFirstCharacter } from '../helpers/strings'
 import { deepCopy, showToast } from '../helpers/utils'
 
 /** @import { Profile } from '../helpers/channelsOverview' */
@@ -49,7 +50,7 @@ export function focusBubble(profileId, options) {
  * @param {(profileId: string) => void} options.openColumn
  */
 export function useProfilePaletteEditing({ profileList, afterPendingChanges, openColumn }) {
-  const { t } = useI18n()
+  const { locale, t } = useI18n()
 
   /**
    * The new profile being named, at the end of the palette. Null while there
@@ -228,6 +229,7 @@ export function useProfilePaletteEditing({ profileList, afterPendingChanges, ope
         pictureMenu.value = {
           profileId,
           name: profile.name,
+          initial: getFirstCharacter(profile.name, locale.value),
           picture: readProfilePicture(store.getters.getProfilePictures, profileId),
           anchor
         }
@@ -284,7 +286,7 @@ export function useProfilePaletteEditing({ profileList, afterPendingChanges, ope
 
   /**
    * The picture picker over a bubble. Null while it is closed.
-   * @type {import('vue').ShallowRef<{ profileId: string, name: string, picture: ProfilePicture | null, anchor: object } | null>}
+   * @type {import('vue').ShallowRef<{ profileId: string, name: string, initial: string, picture: ProfilePicture | null, anchor: object } | null>}
    */
   const pictureMenu = shallowRef(null)
 
@@ -297,6 +299,8 @@ export function useProfilePaletteEditing({ profileList, afterPendingChanges, ope
     const profileId = pictureMenu.value?.profileId
 
     if (profileId) {
+      // The menu can stay open after a pick, and shows it as the current one
+      pictureMenu.value = { ...pictureMenu.value, picture }
       store.dispatch('saveProfilePicture', { profileId, picture })
     }
   }
