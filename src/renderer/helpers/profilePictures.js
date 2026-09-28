@@ -109,6 +109,28 @@ export function readProfilePicture(pictures, profileId) {
 }
 
 /**
+ * @param {ProfilePicture | null} a
+ * @param {ProfilePicture | null} b
+ * @returns {boolean} whether they draw the same, null being no picture
+ */
+export function sameProfilePicture(a, b) {
+  if (a === null || b === null) {
+    return a === b
+  }
+
+  switch (a.kind) {
+    case 'symbol':
+      return b.kind === 'symbol' && a.text === b.text
+    case 'icon':
+      return b.kind === 'icon' && a.name === b.name && a.width === b.width && a.height === b.height && a.path === b.path
+    case 'image':
+      return b.kind === 'image' && a.src === b.src
+    default:
+      return false
+  }
+}
+
+/**
  * The setting with one profile's picture changed. It holds only entries for
  * profiles that exist and read as valid, so each write sweeps out those of
  * deleted profiles, as the profile order's writes do.

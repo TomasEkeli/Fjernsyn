@@ -40,6 +40,10 @@ h3 {
   margin-block-start: 5px;
 }
 
+.pictureSection {
+  margin-block: 15px;
+}
+
 .colorOption {
   inline-size: 40px;
   block-size: 40px;

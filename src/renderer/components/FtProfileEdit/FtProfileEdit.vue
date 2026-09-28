@@ -35,6 +35,13 @@
             :show-action-button="false"
             :disabled="true"
           />
+          <div class="pictureSection">
+            <h3>{{ $t("Profile.Picture") }}</h3>
+            <ProfilePicturePicker
+              :picture="profilePicture"
+              @pick="profilePicture = $event"
+            />
+          </div>
         </div>
         <div class="secondEditRow">
           <div>
@@ -55,13 +62,13 @@
             <div class="profilePreviewSection">
               <div
                 class="colorOption"
-                :style="{ background: profileBgColor, color: profileTextColor }"
+                :style="previewBubble.style"
               >
                 <div
                   class="initial"
                   dir="auto"
                 >
-                  {{ profileInitial }}
+                  {{ previewBubble.text }}
                 </div>
               </div>
               <FtFlexBox>
@@ -108,7 +115,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import FtCard from '../ft-card/ft-card.vue'
@@ -116,6 +123,7 @@ import FtPrompt from '../FtPrompt/FtPrompt.vue'
 import FtFlexBox from '../ft-flex-box/ft-flex-box.vue'
 import FtInput from '../FtInput/FtInput.vue'
 import FtButton from '../FtButton/FtButton.vue'
+import ProfilePicturePicker from '../ProfilePicturePicker/ProfilePicturePicker.vue'
 
 import store from '../../store/index'
 
@@ -123,6 +131,7 @@ import { MAIN_PROFILE_ID } from '../../../constants'
 import { calculateColorLuminance, colors } from '../../helpers/colors'
 import { deepCopy, showToast } from '../../helpers/utils'
 import { getFirstCharacter } from '../../helpers/strings'
+import { profileBubble, readProfilePicture, sameProfilePicture } from '../../helpers/profilePictures'
 
 /**
  * @typedef {object} Profile
@@ -186,6 +195,20 @@ const profileInitial = computed(() => {
     : ''
 })
 
+// Fjernsyn: the profile's picture, a setting of its own rather than a field
+// of the profile, as chosen here and shown in the preview until it is saved
+// with the rest of the profile
+const storedPicture = computed(() => readProfilePicture(store.getters.getProfilePictures, profileId.value))
+
+/** @type {import('vue').ShallowRef<import('../../helpers/profilePictures').ProfilePicture | null>} */
+const profilePicture = shallowRef(storedPicture.value)
+
+const previewBubble = computed(() => profileBubble(profilePicture.value, {
+  bgColor: profileBgColor.value,
+  textColor: profileTextColor.value,
+  initial: profileInitial.value
+}))
+
 const editOrCreateProfileLabel = computed(() => {
   return props.isNew ? t('Profile.Create Profile') : t('Profile.Edit Profile')
 })
@@ -194,7 +217,7 @@ const editOrCreateProfileNameLabel = computed(() => {
   return props.isNew ? t('Profile.Create Profile Name') : t('Profile.Edit Profile Name')
 })
 
-function saveProfile() {
+async function saveProfile() {
   if (profileName.value === '') {
     showToast(t('Profile.Your profile name cannot be empty'))
     return
@@ -212,11 +235,24 @@ function saveProfile() {
   }
 
   if (props.isNew) {
-    store.dispatch('createProfile', profile)
+    const picture = profilePicture.value
+    const created = await store.dispatch('createProfile', profile)
+
+    // Fjernsyn: keyed by the id the profile has only now
+    if (created && picture !== null) {
+      store.dispatch('saveProfilePicture', { profileId: created._id, picture })
+    }
+
     showToast(t('Profile.Profile has been created'))
     emit('new-profile-created')
   } else {
     store.dispatch('updateProfile', profile)
+
+    // Fjernsyn
+    if (!sameProfilePicture(profilePicture.value, storedPicture.value)) {
+      store.dispatch('saveProfilePicture', { profileId: profileId.value, picture: profilePicture.value })
+    }
+
     showToast(t('Profile.Profile has been updated'))
   }
 }

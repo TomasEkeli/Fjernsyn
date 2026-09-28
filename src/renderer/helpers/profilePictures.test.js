@@ -4,6 +4,7 @@ import {
   firstSymbol,
   profileBubble,
   readProfilePicture,
+  sameProfilePicture,
   searchIcons,
   squareCrop,
   uniqueIcons,
@@ -316,6 +317,24 @@ describe('squareCrop', () => {
   it('starts on a whole pixel when the difference is odd', () => {
     expect(squareCrop(101, 100)).toEqual({ sx: 0, sy: 0, size: 100 })
     expect(squareCrop(100, 103)).toEqual({ sx: 0, sy: 1, size: 100 })
+  })
+})
+
+describe('sameProfilePicture', () => {
+  it('is the same for equal pictures, however they were made', () => {
+    expect(sameProfilePicture(null, null)).toBe(true)
+    expect(sameProfilePicture(SYMBOL, { text: '🎵', kind: 'symbol' })).toBe(true)
+    expect(sameProfilePicture(ICON, { ...ICON })).toBe(true)
+    expect(sameProfilePicture(IMAGE, { ...IMAGE })).toBe(true)
+  })
+
+  it('differs for another kind, another value, or none', () => {
+    expect(sameProfilePicture(SYMBOL, null)).toBe(false)
+    expect(sameProfilePicture(null, IMAGE)).toBe(false)
+    expect(sameProfilePicture(SYMBOL, { kind: 'symbol', text: '★' })).toBe(false)
+    expect(sameProfilePicture(ICON, { ...ICON, path: 'M0 0z' })).toBe(false)
+    expect(sameProfilePicture(ICON, { ...ICON, width: 448 })).toBe(false)
+    expect(sameProfilePicture(IMAGE, { kind: 'image', src: 'data:image/png;base64,iVBORw0KGgo=' })).toBe(false)
   })
 })
 
