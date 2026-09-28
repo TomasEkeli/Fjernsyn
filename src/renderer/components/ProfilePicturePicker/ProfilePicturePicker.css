@@ -1,0 +1,135 @@
+/* A column that can shrink inside a menu of limited height, the icon grid
+   giving way and scrolling */
+.profilePicturePicker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-block-size: 0;
+}
+
+.kinds {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.kind {
+  position: relative;
+}
+
+/* Over its label, so that a click on the label is a click on the radio */
+.kindInput {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.kindLabel {
+  display: block;
+  padding-block: 4px;
+  padding-inline: 12px;
+  border: 1px solid var(--primary-color);
+  border-radius: 999px;
+  color: var(--primary-text-color);
+  font-size: 14px;
+  user-select: none;
+}
+
+.kindInput:checked + .kindLabel {
+  background-color: var(--primary-color);
+  color: var(--text-with-main-color);
+}
+
+.kindInput:focus-visible + .kindLabel {
+  outline: 2px solid var(--primary-text-color);
+  outline-offset: 2px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 0;
+}
+
+.field {
+  inline-size: 100%;
+  max-inline-size: 340px;
+  box-sizing: border-box;
+  padding-block: 6px;
+  padding-inline: 10px;
+  border: 0;
+  border-radius: 5px;
+  background-color: var(--search-bar-color);
+  color: var(--secondary-text-color);
+  font: inherit;
+  font-size: 15px;
+}
+
+.field::placeholder {
+  color: var(--tertiary-text-color);
+}
+
+.symbolField {
+  max-inline-size: 280px;
+  text-align: center;
+}
+
+.message {
+  margin: 0;
+  color: var(--tertiary-text-color);
+}
+
+/* Ten 32px cells with 2px between, as COLUMNS in the component */
+.iconGrid {
+  display: grid;
+  grid-template-columns: repeat(10, 32px);
+  gap: 2px;
+  min-block-size: 0;
+  max-block-size: 240px;
+  padding: 2px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+/* Rendered all, painted only when in sight */
+.iconCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 32px;
+  padding: 7px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--primary-text-color);
+  cursor: pointer;
+  content-visibility: auto;
+  contain-intrinsic-size: 32px 32px;
+}
+
+.iconCell:hover {
+  background-color: var(--side-nav-hover-color);
+  color: var(--side-nav-hover-text-color);
+}
+
+.iconCell:focus-visible {
+  outline: 2px solid var(--primary-text-color);
+  outline-offset: -2px;
+}
+
+.iconCell[aria-checked='true'] {
+  background-color: var(--primary-color);
+  color: var(--text-with-main-color);
+}
+
+.iconSvg {
+  inline-size: 100%;
+  block-size: 100%;
+}
