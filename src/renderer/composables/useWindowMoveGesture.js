@@ -11,7 +11,6 @@ import { HOLD_MS, IDLE, transition } from './windowMoveGesture'
  * bar and menus rather than its controls container, which covers the video.
  */
 const EXCLUDED_TARGETS = [
-  '[draggable="true"]',
   // A button with its own long press, as back and forward have for their history
   '[data-long-press]',
   'input',
@@ -59,6 +58,26 @@ export function isOnScrollbar(target, event) {
 }
 
 /**
+ * The nearest element around the target that the page really drags, if any.
+ * A video card marks its thumbnail, its buttons and its text draggable only
+ * so that it can cancel their drags (all but its link's, see FtListVideo's
+ * onDragStart), so those are passed over. Where every card is edge to edge,
+ * as in the wall density, they would otherwise leave nothing to move the
+ * window by. A list that reorders its cards makes the item around the card
+ * draggable, which still counts.
+ * @param {Element} target
+ */
+function closestDragSurface(target) {
+  let draggable = target.closest('[draggable="true"]')
+
+  while (draggable !== null && draggable.parentElement?.closest('.ft-list-video')) {
+    draggable = draggable.parentElement.closest('[draggable="true"]')
+  }
+
+  return draggable
+}
+
+/**
  * @param {PointerEvent} event
  */
 export function isAllowedTarget(event) {
@@ -67,7 +86,9 @@ export function isAllowedTarget(event) {
     return false
   }
 
-  return target.closest(EXCLUDED_TARGETS) === null && !isOnScrollbar(target, event)
+  return closestDragSurface(target) === null &&
+    target.closest(EXCLUDED_TARGETS) === null &&
+    !isOnScrollbar(target, event)
 }
 
 /**

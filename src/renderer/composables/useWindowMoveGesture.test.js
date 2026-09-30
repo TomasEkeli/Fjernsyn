@@ -220,6 +220,10 @@ describe('isAllowedTarget', () => {
 
   it.each([
     ['a draggable card', '<div draggable="true"><span id="t">x</span></div>', false],
+    ['a video card\'s thumbnail, draggable only so its drags can be cancelled', '<div class="ft-list-video"><div class="videoThumbnail" draggable="true"><a href="#x"><img id="t"></a></div></div>', true],
+    ['a video card\'s buttons on the thumbnail', '<div class="ft-list-video"><div draggable="true"><span class="playlistIcons" draggable="true"><button id="t"></button></span></div></div>', true],
+    ['a video card\'s title and channel', '<div class="ft-list-video"><div class="info" draggable="true"><span id="t">x</span></div></div>', true],
+    ['a video card in a list it is dragged to reorder', '<div draggable="true"><div class="ft-list-video"><div draggable="true"><span id="t">x</span></div></div></div>', false],
     ['a button with its own long press', '<button data-long-press="true"><svg id="t"></svg></button>', false],
     ['an input', '<input id="t">', false],
     ['a textarea', '<textarea id="t"></textarea>', false],
