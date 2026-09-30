@@ -38,12 +38,23 @@
         @change="handleShowNsfw"
       />
     </FtFlexBox>
+    <FtFlexBox v-if="layerSearchEnabled">
+      <FtSelect
+        class="defaultSearchScope"
+        :placeholder="t('Layer Search.Settings.Default scope')"
+        :value="defaultSearchScope"
+        :select-names="scopeNames"
+        :select-values="SCOPES"
+        @change="handleDefaultSearchScope"
+      />
+    </FtFlexBox>
   </FtSettingsSection>
 </template>
 
 <script setup>
-// The PeerTube settings: where PeerTube search goes, and whether NSFW content
-// is shown. Both are store settings; the platform layer is rebuilt from them
+// The PeerTube settings: where PeerTube search goes, whether NSFW content is
+// shown, and (while the layer's search page is on) where the search box
+// searches by default. Both are store settings; the platform layer is rebuilt from them
 // when they change (platform/vue.js). The settings page shows this section
 // only while PeerTube is switched on (./section.js).
 
@@ -53,11 +64,14 @@ import { useI18n } from 'vue-i18n'
 import FtButton from '../FtButton/FtButton.vue'
 import FtFlexBox from '../ft-flex-box/ft-flex-box.vue'
 import FtInput from '../FtInput/FtInput.vue'
+import FtSelect from '../FtSelect/FtSelect.vue'
 import FtSettingsSection from '../FtSettingsSection/FtSettingsSection.vue'
 import FtToggleSwitch from '../FtToggleSwitch/FtToggleSwitch.vue'
 
 import store from '../../store/index'
 import { DEFAULT_SEARCH_SOURCE, checkSearchSource } from './searchSource'
+import { scopeLabel } from '../../platform/search/labels'
+import { SCOPES } from '../../platform/search/query'
 
 const { t } = useI18n()
 
@@ -130,6 +144,23 @@ function resetSearchSource() {
  */
 function handleShowNsfw(value) {
   store.dispatch('updatePeerTubeShowNsfw', value)
+}
+
+// Where the search box searches by default, on the search page on the layer:
+// a choice only while PeerTube is on, so offered here
+/** @type {import('vue').ComputedRef<boolean>} */
+const layerSearchEnabled = computed(() => store.getters.getEnableLayerSearch === true)
+
+/** @type {import('vue').ComputedRef<string>} */
+const defaultSearchScope = computed(() => SCOPES.includes(store.getters.getDefaultSearchScope) ? store.getters.getDefaultSearchScope : SCOPES[0])
+
+const scopeNames = computed(() => SCOPES.map(scope => scopeLabel(t, scope)))
+
+/**
+ * @param {string} value
+ */
+function handleDefaultSearchScope(value) {
+  store.dispatch('updateDefaultSearchScope', value)
 }
 </script>
 

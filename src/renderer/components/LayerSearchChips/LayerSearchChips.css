@@ -1,0 +1,171 @@
+.chipBar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  align-items: center;
+  background-color: var(--search-bar-color);
+  border: 1px solid transparent;
+  border-radius: 16px;
+  display: inline-flex;
+  gap: 2px;
+  min-block-size: 32px;
+  padding-block: 0;
+  padding-inline: 4px;
+  position: relative;
+}
+
+.chip.set {
+  background-color: var(--accent-color-opacity3);
+  border-color: var(--accent-color);
+}
+
+/* Set, but a platform in scope did not apply it: said, not hidden */
+.chip.muted {
+  border-style: dashed;
+  opacity: 0.7;
+}
+
+.chipSelect,
+.chipButton {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 16px;
+  color: var(--primary-text-color);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  padding-block: 6px;
+  padding-inline: 10px;
+}
+
+.chipSelect {
+  /* Room for the arrow the appearance reset took away */
+  background-image: linear-gradient(45deg, transparent 50%, currentcolor 50%), linear-gradient(135deg, currentcolor 50%, transparent 50%);
+  background-position: calc(100% - 12px) 55%, calc(100% - 7px) 55%;
+  background-repeat: no-repeat;
+  background-size: 5px 5px, 5px 5px;
+  padding-inline-end: 24px;
+}
+
+.chipSelect option {
+  background-color: var(--card-bg-color);
+  color: var(--primary-text-color);
+}
+
+.chipClear {
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  color: var(--primary-text-color);
+  cursor: pointer;
+  font-size: 13px;
+  block-size: 24px;
+  inline-size: 24px;
+}
+
+.chipClear:hover {
+  background-color: var(--side-nav-hover-color);
+}
+
+.chipSelect:focus-visible,
+.chipButton:focus-visible,
+.chipClear:focus-visible {
+  outline: 2px solid var(--accent-color);
+}
+
+.liveChip.set .chipButton {
+  font-weight: bold;
+}
+
+.rangeChip {
+  gap: 8px;
+  padding-inline: 10px 4px;
+}
+
+.rangeLabel {
+  align-items: center;
+  display: inline-flex;
+  font-size: 13px;
+  gap: 4px;
+}
+
+.rangeInput {
+  background-color: var(--card-bg-color);
+  border: 1px solid var(--tertiary-text-color);
+  border-radius: 4px;
+  color: var(--primary-text-color);
+  font: inherit;
+  font-size: 13px;
+  padding-block: 2px;
+  padding-inline: 4px;
+}
+
+.rangeApply {
+  background-color: var(--accent-color);
+  border: 0;
+  border-radius: 12px;
+  color: var(--text-with-accent-color);
+  cursor: pointer;
+  font-size: 13px;
+  padding-block: 4px;
+  padding-inline: 10px;
+}
+
+.rangeApply:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.languagePanel {
+  background-color: var(--card-bg-color);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 35%);
+  inset-block-start: calc(100% + 4px);
+  inset-inline-start: 0;
+  inline-size: 260px;
+  padding-block: 8px;
+  padding-inline: 8px;
+  position: absolute;
+  z-index: 20;
+}
+
+.languageFilter {
+  background-color: var(--search-bar-color);
+  border: 0;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: var(--primary-text-color);
+  font: inherit;
+  inline-size: 100%;
+  padding-block: 6px;
+  padding-inline: 8px;
+}
+
+.languageOptions {
+  list-style: none;
+  margin-block: 6px 0;
+  margin-inline: 0;
+  max-block-size: 260px;
+  overflow-y: auto;
+  padding-block: 0;
+  padding-inline: 0;
+}
+
+.languageOption {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  font-size: 14px;
+  gap: 8px;
+  padding-block: 4px;
+  padding-inline: 4px;
+}
+
+.languageOption:hover {
+  background-color: var(--side-nav-hover-color);
+}

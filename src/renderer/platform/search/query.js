@@ -46,7 +46,8 @@ export const FILTER_NAMES = Object.freeze([
 const PEERTUBE_ONLY = Object.freeze(['instance', 'after', 'before', 'language', 'nsfw'])
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-const LANGUAGE_PATTERN = /^[a-z]{2,3}$/
+// PeerTube's codes: ISO 639 with, for a few, a region or script (`pt-PT`, `zh-Hans`)
+const LANGUAGE_PATTERN = /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/
 // A bare host name, lower case, no port: what `instance` may hold
 const HOST_PATTERN = /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/
 
@@ -137,7 +138,8 @@ function validLanguages(value) {
   const codes = []
 
   for (const item of list) {
-    const code = typeof item === 'string' ? item.trim().toLowerCase() : ''
+    const [primary = '', ...rest] = typeof item === 'string' ? item.trim().split('-') : []
+    const code = [primary.toLowerCase(), ...rest].join('-')
     if (LANGUAGE_PATTERN.test(code) && !codes.includes(code)) {
       codes.push(code)
     }
@@ -469,12 +471,13 @@ export function readRemembered(stored, { peertubeEnabled = false } = {}) {
  *
  * @param {SearchParameters} params
  * @param {(key: string, values?: Record<string, unknown>) => string} t the app's translation function
- * @param {{ languageName?: (code: string) => string }} [options]
+ * @param {{ languageName?: (code: string) => string, withScope?: boolean }} [options]
+ *   `withScope: false` leaves the scope out, for a list of filters alone
  * @returns {string}
  */
-export function describe(params, t, { languageName = code => code } = {}) {
+export function describe(params, t, { languageName = code => code, withScope = true } = {}) {
   const q = normalise(params)
-  const words = [scopeWord(t, q.scope)]
+  const words = withScope ? [scopeWord(t, q.scope)] : []
 
   if (q.instance !== null) {
     words.push(t('Layer Search.Words.Instance', { host: q.instance }))

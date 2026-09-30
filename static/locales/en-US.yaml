@@ -1493,6 +1493,7 @@ Layer Search:
   Clear tooltip: Search again without filters
   Apply last filters: 'Apply last filters: {filters}'
   Not applied: Not applied to {platform}
+  Not applied here: 'Not applied to {platform}: {filters}'
   Remove filter: Remove this filter
   No results: No results.
   YouTube failed: YouTube could not be searched.

@@ -35,7 +35,7 @@
     },
     {
       "path": "src/renderer/components/ExperimentalSettings/ExperimentalSettings.vue",
-      "reason": "the experimental PeerTube toggle"
+      "reason": "the experimental PeerTube toggle, and the switch of the search page on the layer (enableLayerSearch)"
     },
     {
       "path": "src/renderer/components/FtListChannel/FtListChannel.vue",
@@ -79,15 +79,11 @@
     },
     {
       "path": "src/renderer/router/index.js",
-      "reason": "the PeerTube routes (the layer's watch view, and the channel and search views to come) spread in from src/renderer/platform/routes.js"
+      "reason": "the PeerTube routes (the layer's watch, channel and search views) spread in from src/renderer/platform/routes.js; `/search/:query` renders the search surface switch (`searchSurface(SearchPage)`, src/renderer/platform/routes.js) instead of SearchPage directly"
     },
     {
       "path": "src/renderer/store/modules/settings.js",
-      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw"
-    },
-    {
-      "path": "src/renderer/views/SearchPage/SearchPage.vue",
-      "reason": "a \"Search PeerTube\" link in the heading row, to the layer's search view for the same query, shown only while PeerTube is on (isPeerTubeEnabled); YouTube search unchanged"
+      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw; the layer search page's: enableLayerSearch, defaultSearchScope, searchRememberedParameters, searchLatched"
     },
     {
       "path": "src/renderer/views/Settings/Settings.vue",
@@ -95,8 +91,23 @@
     },
     {
       "path": "static/locales/en-US.yaml",
-      "reason": "the fork-only PeerTube strings"
+      "reason": "the fork-only PeerTube and Layer Search strings"
     }
   ],
-  "shadowed": {}
+  "shadowed": {
+    "enableLayerSearch": [
+      {
+        "path": "src/renderer/views/SearchPage/SearchPage.vue",
+        "reason": "upstream's search page, not rendered while the layer's search page is on (src/renderer/views/LayerSearchPage); its backend fallback, paging and search history are ported to the layer's YouTube search (src/renderer/platform/youtube/search.js) and the new page. Also touched: a \"Search PeerTube\" link in the heading row, to the layer's PeerTube search view for the same query, shown only while PeerTube is on (isPeerTubeEnabled)"
+      },
+      {
+        "path": "src/renderer/components/FtSearchFilters/FtSearchFilters.vue",
+        "reason": "the search filters modal, never opened while the layer's search page is on: its button in the top bar gives way to the pill (src/renderer/components/LayerSearchPill), and the filters are the chip bar (src/renderer/components/LayerSearchChips)"
+      },
+      {
+        "path": "src/renderer/store/modules/utils.js",
+        "reason": "its `searchSettings` state and mutations only (the filters the modal writes and the top bar reads), unused while the layer's search page is on; the search query lives in the route (src/renderer/platform/search/query.js). The rest of the module is used as before"
+      }
+    ]
+  }
 }
