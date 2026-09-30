@@ -1013,8 +1013,10 @@ function runApp() {
       return {}
     }
 
+    // The traffic lights are placed in the middle of the 60 pixel top bar,
+    // which makes room for them (see windowMove.css)
     return process.platform === 'darwin'
-      ? { titleBarStyle: 'hidden' }
+      ? { titleBarStyle: 'hidden', trafficLightPosition: { x: 14, y: 22 } }
       : { frame: false }
   }
 

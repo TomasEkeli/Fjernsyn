@@ -9,3 +9,13 @@
   cursor: grabbing !important;
   user-select: none !important;
 }
+
+/*
+ * On macOS a frameless window keeps its traffic lights, drawn over the start
+ * of the top bar (see frameOptions in src/main/index.js); the bar's own
+ * buttons begin after them. Physical left, as macOS draws them there in
+ * every layout direction.
+ */
+:root.mac-traffic-lights .topNav {
+  padding-left: 76px; /* stylelint-disable-line liberty/use-logical-spec */
+}
