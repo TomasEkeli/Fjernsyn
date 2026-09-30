@@ -19,7 +19,7 @@
 //   as the cause.
 
 import { PlatformError } from '../errors'
-import { appliedFilters } from '../search/capabilities'
+import { appliedFilters, honours } from '../search/capabilities'
 
 const DURATIONS = Object.freeze({
   short: 'under_three_mins',
@@ -35,17 +35,20 @@ const DURATIONS = Object.freeze({
  */
 
 /**
- * The upstream filters object for a query.
+ * The upstream filters object for a query: what YouTube honours of it, and
+ * nothing it does not (a channel search is sent no time, say).
  *
  * @param {import('../search/query').SearchQuery} query
  */
 export function youtubeFilters(query) {
+  const sent = name => honours('youtube', name, query)
+
   return {
     prioritize: query.sort === 'views' ? 'popularity' : 'relevance',
-    time: query.time ?? '',
+    time: query.time !== null && sent('time') ? query.time : '',
     type: query.type ?? 'all',
-    duration: query.length === null ? '' : DURATIONS[query.length],
-    features: query.live ? ['live'] : [],
+    duration: query.length !== null && sent('length') ? DURATIONS[query.length] : '',
+    features: query.live && sent('live') ? ['live'] : [],
   }
 }
 

@@ -148,7 +148,10 @@ describe('the search page', () => {
     expect(layer.searchQuery).toHaveBeenCalledTimes(1)
     expect(layer.searchQuery).toHaveBeenCalledWith({ ...defaults('youtube'), text: 'blender' }, { cursor: null })
     expect(cards(wrapper)).toEqual(['YouTube 1', 'YouTube 2'])
-    expect(wrapper.find('h2').text()).toBe('Results for “blender”')
+    // The search box shows the text; the page heads with its scope and density
+    expect(wrapper.find('h2').exists()).toBe(false)
+    expect(wrapper.find('.headingRow .tabs').exists()).toBe(true)
+    expect(wrapper.find('.headingRow .densitySwitch').exists()).toBe(true)
   })
 
   it('titles the window and keeps the text in the search history', async () => {
@@ -332,12 +335,32 @@ describe('the chips', () => {
     expect(router.currentRoute.value.query).toEqual({ scope: 'peertube', after: '2024-06-01', before: '2024-06-30' })
   })
 
-  it('leave out what channels have not', async () => {
-    const { wrapper } = await openSearchPage('/search/blender?scope=peertube&type=channel')
+  it('stay for channels, and a filter channel search does not take is kept and muted', async () => {
+    const { wrapper, router } = await openSearchPage('/search/blender?scope=peertube&time=week')
 
-    expect(wrapper.find('.liveChip').exists()).toBe(false)
-    expect(wrapper.find('.timeChip').exists()).toBe(false)
-    expect(wrapper.find('.lengthChip').exists()).toBe(false)
+    await wrapper.find('.typeChip select').setValue('channel')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ scope: 'peertube', time: 'week', type: 'channel' })
+    for (const chip of ['.sortChip', '.timeChip', '.lengthChip', '.liveChip', '.languageChip', '.nsfwChip']) {
+      expect(wrapper.find(chip).exists(), chip).toBe(true)
+    }
+    expect(wrapper.find('.timeChip').classes()).toContain('muted')
+    expect(wrapper.find('.timeChip').attributes('title')).toBe('Not applied to PeerTube')
+
+    await wrapper.find('.typeChip select').setValue('')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ scope: 'peertube', time: 'week' })
+    expect(wrapper.find('.timeChip').classes()).not.toContain('muted')
+  })
+
+  it('shows the two platforms side by side in the All scope, and one alone otherwise', async () => {
+    const all = await openSearchPage('/search/blender?scope=all')
+    expect(all.wrapper.find('.sections').classes()).toContain('sideBySide')
+
+    const one = await openSearchPage('/search/blender?scope=youtube')
+    expect(one.wrapper.find('.sections').classes()).not.toContain('sideBySide')
   })
 
   it('take a custom date range in the PeerTube scope', async () => {

@@ -183,14 +183,13 @@ export function defaults(scope = SCOPE_YOUTUBE) {
  *
  * 1. `instance` needs scope `peertube`; otherwise dropped.
  * 2. `after` or `before` set clears `time` (the dates are the more specific).
- * 3. `type: 'channel'` clears `time`, `after`, `before`, `length` and `live`.
- * 4. `type: 'shorts'` clears `length`.
- * 5. `sort: 'relevance'` becomes `null`.
+ * 3. `sort: 'relevance'` becomes `null`.
  *
  * Every value is also checked, and one that is not a value of its parameter is
  * unset, so anything built from outside (a stored set, an operator) is safe.
- * A filter one platform cannot honour is kept: that platform reports it
- * unapplied.
+ * A filter one platform cannot honour is kept, the time of a channel search
+ * included: that platform reports it unapplied, and it applies again when
+ * the type changes back.
  *
  * @template {Partial<SearchQuery>} T
  * @param {T} query
@@ -219,18 +218,6 @@ export function normalise(query) {
 
   if (result.after !== null || result.before !== null) {
     result.time = null
-  }
-
-  if (result.type === 'channel') {
-    result.time = null
-    result.after = null
-    result.before = null
-    result.length = null
-    result.live = false
-  }
-
-  if (result.type === 'shorts') {
-    result.length = null
   }
 
   return /** @type {any} */ (result)

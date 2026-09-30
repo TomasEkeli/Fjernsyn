@@ -90,6 +90,15 @@ describe('YouTube search through the layer', () => {
     expect(page.applied).toEqual(['time'])
   })
 
+  it('sends a channel search none of what it does not take, and says so', async () => {
+    const { layer, youtube } = setUp()
+
+    const page = await layer.searchQuery(youtubeQuery({ time: 'week', length: 'long', live: true, type: 'channel' }))
+
+    expect(youtube.getLocalSearchResults).toHaveBeenCalledWith('blender', { ...PLAIN, type: 'channel' }, false)
+    expect(page.applied).toEqual(['type'])
+  })
+
   it('lists what it honoured as applied', async () => {
     const { layer } = setUp()
 

@@ -1479,7 +1479,6 @@ Layer Search:
       PeerTube side by side while PeerTube is on. The last filters you used are remembered, and a button beside the
       search box applies them to your next search.
     Default scope: Search by default on
-  Results for: Results for “{query}”
   Scope:
     Scope: Search on
     youtube: YouTube

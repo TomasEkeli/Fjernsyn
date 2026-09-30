@@ -154,7 +154,6 @@
       </div>
     </span>
     <span
-      v-if="current.type !== 'channel'"
       class="chip liveChip"
       :class="{ set: current.live, muted: mutedBy('live').length > 0 }"
       :title="mutedTooltip(mutedBy('live'))"
@@ -285,7 +284,7 @@ const rangeAfter = ref('')
 const rangeBefore = ref('')
 
 const hasRange = computed(() => current.value.after !== null || current.value.before !== null)
-const rangeOffered = computed(() => scope.value === SCOPE_PEERTUBE && current.value.type !== 'channel')
+const rangeOffered = computed(() => scope.value === SCOPE_PEERTUBE)
 const showRange = computed(() => hasRange.value || (rangeChosen.value && rangeOffered.value))
 
 watch(() => [current.value.after, current.value.before], ([after, before]) => {
@@ -354,54 +353,50 @@ const selectChips = computed(() => {
     labelOf: value => sortLabel(t, value),
   }))
 
-  if (q.type !== 'channel' || q.time !== null) {
-    const timeChip = selectChip({
-      name: 'time',
-      label: t('Layer Search.Chips.Time'),
-      values: [null, ...TIMES],
-      labelOf: value => timeLabel(t, value),
-    })
+  const timeChip = selectChip({
+    name: 'time',
+    label: t('Layer Search.Chips.Time'),
+    values: [null, ...TIMES],
+    labelOf: value => timeLabel(t, value),
+  })
 
-    if (rangeOffered.value) {
-      timeChip.options.push({ value: 'custom', label: t('Layer Search.Chips.Custom range') })
+  if (rangeOffered.value) {
+    timeChip.options.push({ value: 'custom', label: t('Layer Search.Chips.Custom range') })
 
-      if (hasRange.value || rangeChosen.value) {
-        timeChip.value = 'custom'
-        // A bucket still holds until a range is applied
-        timeChip.set = hasRange.value || q.time !== null
-        timeChip.clear = () => hasRange.value ? clearRange() : clear('time')
-      }
-
-      timeChip.choose = (option) => {
-        if (option === 'custom') {
-          rangeChosen.value = true
-        } else {
-          rangeChosen.value = false
-          change('time', option === '' ? null : option)
-        }
-      }
+    if (hasRange.value || rangeChosen.value) {
+      timeChip.value = 'custom'
+      // A bucket still holds until a range is applied
+      timeChip.set = hasRange.value || q.time !== null
+      timeChip.clear = () => hasRange.value ? clearRange() : clear('time')
     }
 
-    chips.push(timeChip)
+    timeChip.choose = (option) => {
+      if (option === 'custom') {
+        rangeChosen.value = true
+      } else {
+        rangeChosen.value = false
+        change('time', option === '' ? null : option)
+      }
+    }
   }
 
-  chips.push(selectChip({
-    name: 'type',
-    label: t('Layer Search.Chips.Type'),
-    values: optionsFor('type', scope.value),
-    labelOf: value => typeLabel(t, value),
-  }))
-
-  if ((q.type !== 'channel' && q.type !== 'shorts') || q.length !== null) {
-    chips.push(selectChip({
+  chips.push(
+    timeChip,
+    selectChip({
+      name: 'type',
+      label: t('Layer Search.Chips.Type'),
+      values: optionsFor('type', scope.value),
+      labelOf: value => typeLabel(t, value),
+    }),
+    selectChip({
       name: 'length',
       label: t('Layer Search.Chips.Length'),
       values: [null, ...LENGTHS],
       labelOf: value => lengthLabel(t, value),
-    }))
-  }
+    })
+  )
 
-  if (q.nsfw !== null || (offeredIn('nsfw', scope.value) && q.type !== 'channel')) {
+  if (q.nsfw !== null || offeredIn('nsfw', scope.value)) {
     chips.push(selectChip({
       name: 'nsfw',
       label: t('Layer Search.Chips.NSFW'),
@@ -421,7 +416,7 @@ const languageFilter = ref('')
 const languageChip = useTemplateRef('languageChip')
 
 const showLanguage = computed(() => {
-  return current.value.language.length > 0 || (offeredIn('language', scope.value) && current.value.type !== 'channel')
+  return current.value.language.length > 0 || offeredIn('language', scope.value)
 })
 
 const allLanguages = computed(() => languageList(props.locale))

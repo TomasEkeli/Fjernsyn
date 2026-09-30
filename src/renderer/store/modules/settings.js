@@ -212,7 +212,7 @@ const state = {
   // platform/search/query.js `readRemembered`), and whether the next search
   // from the search box gets them
   enableLayerSearch: false,
-  defaultSearchScope: 'youtube',
+  defaultSearchScope: 'all',
   searchRememberedParameters: null,
   searchLatched: false,
   enableSearchSuggestions: true,

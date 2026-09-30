@@ -28,6 +28,13 @@ describe('appliedFilters', () => {
     expect(appliedFilters('youtube', everything)).toEqual(['sort', 'time', 'type', 'length', 'live'])
   })
 
+  it('leaves out what YouTube\'s channel and shorts searches do not take', () => {
+    const filtered = { ...defaults('youtube'), time: 'week', length: 'long', live: true }
+
+    expect(appliedFilters('youtube', { ...filtered, type: 'channel' })).toEqual(['type'])
+    expect(appliedFilters('youtube', { ...filtered, type: 'shorts' })).toEqual(['time', 'type', 'live'])
+  })
+
   it('leaves out a sort YouTube does not have', () => {
     expect(appliedFilters('youtube', { ...defaults('all'), sort: 'date' })).toEqual([])
     expect(appliedFilters('youtube', { ...defaults('all'), sort: 'trending' })).toEqual([])

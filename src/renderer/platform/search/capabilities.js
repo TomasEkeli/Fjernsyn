@@ -5,7 +5,8 @@
 //
 // YouTube, as youtubei.js and Invidious offer it now: `prioritize` relevance
 // or popularity (no sort by date, and no rating), upload date buckets, every
-// type, three duration buckets, and the `live` feature.
+// type, three duration buckets, and the `live` feature. A channel search takes
+// neither time, length nor live, and a shorts search no length.
 //
 // PeerTube: every sort, time as a start date, exact dates, video or channel
 // search, duration bounds, languages, live, NSFW and a single instance. On the
@@ -50,11 +51,13 @@ export function honours(platform, name, query) {
     switch (name) {
       case 'sort':
         return query.sort === null || query.sort === 'views'
-      case 'time':
       case 'type':
-      case 'length':
-      case 'live':
         return true
+      case 'time':
+      case 'live':
+        return query.type !== 'channel'
+      case 'length':
+        return query.type !== 'channel' && query.type !== 'shorts'
       default:
         return false
     }

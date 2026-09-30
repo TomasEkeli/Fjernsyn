@@ -1,36 +1,30 @@
 <template>
-  <div>
+  <div class="layerSearchPage">
     <FtCard class="card">
+      <!-- The search box already shows the text, so the scope tabs head the page, beside the density -->
       <div class="headingRow">
-        <h2>
-          <FontAwesomeIcon
-            :icon="['fas', 'search']"
-            class="headingIcon"
-          />
-          {{ t('Layer Search.Results for', { query: query.text }) }}
-        </h2>
-        <FtDensitySwitch />
-      </div>
-      <nav
-        v-if="peertubeEnabled"
-        class="tabs"
-        role="tablist"
-        :aria-label="t('Layer Search.Scope.Scope')"
-      >
-        <button
-          v-for="scope in SCOPES"
-          :id="`${scope}ScopeTab`"
-          :key="scope"
-          type="button"
-          class="tab"
-          :class="{ selectedTab: query.scope === scope }"
-          role="tab"
-          :aria-selected="query.scope === scope"
-          @click="changeScope(scope)"
+        <nav
+          v-if="peertubeEnabled"
+          class="tabs"
+          role="tablist"
+          :aria-label="t('Layer Search.Scope.Scope')"
         >
-          {{ scopeLabel(t, scope) }}
-        </button>
-      </nav>
+          <button
+            v-for="scope in SCOPES"
+            :id="`${scope}ScopeTab`"
+            :key="scope"
+            type="button"
+            class="tab"
+            :class="{ selectedTab: query.scope === scope }"
+            role="tab"
+            :aria-selected="query.scope === scope"
+            @click="changeScope(scope)"
+          >
+            {{ scopeLabel(t, scope) }}
+          </button>
+        </nav>
+        <FtDensitySwitch class="densitySwitch" />
+      </div>
       <div
         v-if="query.scope === 'peertube'"
         class="sourceRow"
@@ -129,61 +123,76 @@
           </button>
         </template>
       </LayerSearchChips>
-      <section
-        v-for="platform in shownPlatforms"
-        :key="platform"
-        class="resultsSection"
-        :class="`${platform}Section`"
+      <div
+        class="sections"
+        :class="{ sideBySide: isAll }"
       >
-        <header
-          v-if="isAll"
-          class="sectionHeaderRow"
+        <section
+          v-for="platform in shownPlatforms"
+          :key="platform"
+          class="resultsSection"
+          :class="`${platform}Section`"
         >
-          <h3 class="sectionHeading">
-            <button
-              type="button"
-              class="sectionHeader"
-              :title="t('Layer Search.Narrow to', { platform: platformName(t, platform) })"
-              @click="changeScope(platform)"
-            >
-              {{ sectionHeading(t, platform) }}
-              <FontAwesomeIcon :icon="['fas', 'angle-right']" />
-            </button>
-          </h3>
-          <p
-            v-if="unappliedWords(platform) !== ''"
-            class="notApplied"
+          <header
+            v-if="isAll"
+            class="sectionHeaderRow"
           >
-            {{ t('Layer Search.Not applied here', { platform: platformName(t, platform), filters: unappliedWords(platform) }) }}
+            <h3 class="sectionHeading">
+              <button
+                type="button"
+                class="sectionHeader"
+                :title="t('Layer Search.Narrow to', { platform: platformName(t, platform) })"
+                @click="changeScope(platform)"
+              >
+                {{ sectionHeading(t, platform) }}
+                <FontAwesomeIcon :icon="['fas', 'angle-right']" />
+              </button>
+            </h3>
+            <p
+              v-if="unappliedWords(platform) !== ''"
+              class="notApplied"
+            >
+              {{ t('Layer Search.Not applied here', { platform: platformName(t, platform), filters: unappliedWords(platform) }) }}
+            </p>
+          </header>
+          <FtElementList :data="sectionOf(platform).items" />
+          <p
+            v-if="isFinishedAndEmpty(platform)"
+            class="message"
+          >
+            {{ t('Layer Search.No results') }}
           </p>
-        </header>
-        <FtElementList :data="sectionOf(platform).items" />
-        <p
-          v-if="isFinishedAndEmpty(platform)"
-          class="message"
-        >
-          {{ t('Layer Search.No results') }}
-        </p>
-        <FtLoader v-if="sectionOf(platform).loading" />
-        <div
-          v-else-if="sectionOf(platform).error"
-          class="sectionError"
-        >
-          <p class="message">
-            {{ errorMessage(platform, sectionOf(platform).error) }}
-          </p>
-          <FtButton
-            :label="t('Video.Try Again')"
-            :icon="['fas', 'sync']"
-            class="retryButton"
-            @click="load(platform)"
-          />
-        </div>
-        <FtAutoLoadNextPageWrapper
-          v-else-if="hasMore(platform) && !isAll && !autoLoadPaused(platform)"
-          @load-next-page="load(platform)"
-        >
+          <FtLoader v-if="sectionOf(platform).loading" />
           <div
+            v-else-if="sectionOf(platform).error"
+            class="sectionError"
+          >
+            <p class="message">
+              {{ errorMessage(platform, sectionOf(platform).error) }}
+            </p>
+            <FtButton
+              :label="t('Video.Try Again')"
+              :icon="['fas', 'sync']"
+              class="retryButton"
+              @click="load(platform)"
+            />
+          </div>
+          <FtAutoLoadNextPageWrapper
+            v-else-if="hasMore(platform) && !isAll && !autoLoadPaused(platform)"
+            @load-next-page="load(platform)"
+          >
+            <div
+              class="getNextPage"
+              role="button"
+              tabindex="0"
+              @click="load(platform)"
+              @keydown.enter.space.prevent="load(platform)"
+            >
+              <FontAwesomeIcon :icon="['fas', 'search']" /> {{ t('Search Filters.Fetch more results') }}
+            </div>
+          </FtAutoLoadNextPageWrapper>
+          <div
+            v-else-if="hasMore(platform)"
             class="getNextPage"
             role="button"
             tabindex="0"
@@ -192,18 +201,8 @@
           >
             <FontAwesomeIcon :icon="['fas', 'search']" /> {{ t('Search Filters.Fetch more results') }}
           </div>
-        </FtAutoLoadNextPageWrapper>
-        <div
-          v-else-if="hasMore(platform)"
-          class="getNextPage"
-          role="button"
-          tabindex="0"
-          @click="load(platform)"
-          @keydown.enter.space.prevent="load(platform)"
-        >
-          <FontAwesomeIcon :icon="['fas', 'search']" /> {{ t('Search Filters.Fetch more results') }}
-        </div>
-      </section>
+        </section>
+      </div>
     </FtCard>
   </div>
 </template>

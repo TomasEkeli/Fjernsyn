@@ -1,27 +1,32 @@
+/*
+ * Always the full width, whatever the density and whether or not cards have
+ * come yet: the width does not jump when a search starts. Wall's full bleed
+ * for this page, before any card is there, is in density.css.
+ */
 .card {
-  inline-size: 85%;
+  box-sizing: border-box;
+  inline-size: 100%;
   margin-block: 0 60px;
-  margin-inline: auto;
+  margin-inline: 0;
 }
 
-/* As on upstream's search page: the heading carries the density switch */
+/* The scope tabs and the density switch share the page's first row */
 .headingRow {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 0 16px;
   justify-content: space-between;
+  margin-block-end: 10px;
 }
 
-.headingIcon {
-  color: var(--primary-color);
+.densitySwitch {
+  margin-inline-start: auto;
 }
 
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  margin-block-end: 10px;
-  padding-block: 0 0.3em;
 }
 
 .tab {
@@ -108,7 +113,19 @@
   margin-block-end: 16px;
 }
 
-.resultsSection + .resultsSection {
+/* The All scope: a column per platform, side by side, each paged on its own */
+.sections.sideBySide {
+  align-items: start;
+  column-gap: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.sideBySide .resultsSection {
+  min-inline-size: 0;
+}
+
+.sections:not(.sideBySide) .resultsSection + .resultsSection {
   margin-block-start: 32px;
 }
 
@@ -169,8 +186,9 @@
   color: var(--side-nav-hover-text-color);
 }
 
-@media only screen and (width <= 680px) {
-  .card {
-    inline-size: 90%;
+@media only screen and (width <= 900px) {
+  .sections.sideBySide {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 32px;
   }
 }

@@ -152,7 +152,7 @@ function handleShowNsfw(value) {
 const layerSearchEnabled = computed(() => store.getters.getEnableLayerSearch === true)
 
 /** @type {import('vue').ComputedRef<string>} */
-const defaultSearchScope = computed(() => SCOPES.includes(store.getters.getDefaultSearchScope) ? store.getters.getDefaultSearchScope : SCOPES[0])
+const defaultSearchScope = computed(() => SCOPES.includes(store.getters.getDefaultSearchScope) ? store.getters.getDefaultSearchScope : 'all')
 
 const scopeNames = computed(() => SCOPES.map(scope => scopeLabel(t, scope)))
 

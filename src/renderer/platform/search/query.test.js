@@ -153,15 +153,11 @@ describe('normalise', () => {
     expect(normalise({ ...defaults('peertube'), time: 'year', before: '2024-01-01' })).toMatchObject({ time: null, before: '2024-01-01' })
   })
 
-  it('clears what channels have not for type channel', () => {
+  it('keeps what channels and shorts have not, for when the type changes back', () => {
     const query = normalise({ ...defaults('peertube'), type: 'channel', time: 'week', length: 'long', live: true, sort: 'date' })
 
-    expect(query).toMatchObject({ type: 'channel', time: null, length: null, live: false, sort: 'date' })
-    expect(normalise({ ...defaults('peertube'), type: 'channel', after: '2024-01-01' }).after).toBeNull()
-  })
-
-  it('clears the length for shorts', () => {
-    expect(normalise({ ...defaults(), type: 'shorts', length: 'long' }).length).toBeNull()
+    expect(query).toMatchObject({ type: 'channel', time: 'week', length: 'long', live: true, sort: 'date' })
+    expect(normalise({ ...defaults(), type: 'shorts', length: 'long' }).length).toBe('long')
   })
 
   it('makes relevance the unset sort', () => {
@@ -267,6 +263,6 @@ describe('describe', () => {
 
   it('names one date alone, and both scopes', () => {
     expect(describeParameters({ ...defaults('all'), after: '2024-06-01', nsfw: true }, t)).toBe('YouTube and PeerTube · from 2024-06-01 · with NSFW')
-    expect(describeParameters({ ...defaults('youtube'), before: '2024-06-01', type: 'channel' }, t)).toBe('YouTube · channels')
+    expect(describeParameters({ ...defaults('youtube'), before: '2024-06-01', type: 'channel' }, t)).toBe('YouTube · until 2024-06-01 · channels')
   })
 })

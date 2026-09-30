@@ -196,6 +196,26 @@ body[data-density='wall'] .ft-list-item.grid .videoThumbnail .videoDuration {
 /* stylelint-enable selector-max-compound-selectors */
 
 /*
+ * The layer's search page is full bleed under wall from the start, not only
+ * once a grid of cards is there, so that starting a search does not narrow
+ * it and widen it again. Its controls keep a little room from the edge.
+ */
+body[data-density='wall'] .routerView:has(.layerSearchPage) {
+  margin-inline: 0;
+}
+
+body[data-density='wall'] .layerSearchPage .ft-card {
+  padding-inline: 0;
+}
+
+body[data-density='wall'] .layerSearchPage .headingRow,
+body[data-density='wall'] .layerSearchPage .sourceRow,
+body[data-density='wall'] .layerSearchPage .chips,
+body[data-density='wall'] .layerSearchPage .sectionHeaderRow {
+  padding-inline: 8px;
+}
+
+/*
  * Full bleed. Three layers of chrome stand between the viewport edge and a
  * grid — the router view's margins, the page card's own margin and padding,
  * and each page's scoped rule centring that card at 85% — and wall flattens
@@ -231,3 +251,4 @@ body[data-density='wall'] .ft-card:has(.ft-list-item.grid) .controlRow {
 body[data-density='wall'] .shelfContainer:has(.ft-list-item.grid) {
   max-inline-size: none;
 }
+
