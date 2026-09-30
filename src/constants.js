@@ -15,6 +15,9 @@ const IpcChannels = {
   // The fork's long press move of a frameless window, see src/main/windowGeometry.js
   WINDOW_MOVE_START: 'window-move-start',
   WINDOW_MOVE_END: 'window-move-end',
+  // The fork's fit of the window to the video in the full window player, likewise
+  WINDOW_FIT_TO_VIDEO: 'window-fit-to-video',
+  WINDOW_RELEASE_FIT: 'window-release-fit',
 
   SEARCH_INPUT_HANDLING_READY: 'search-input-handling-ready',
   UPDATE_SEARCH_INPUT_TEXT: 'update-search-input-text',
