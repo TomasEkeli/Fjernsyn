@@ -23,11 +23,17 @@ const RATIO_TOLERANCE = 0.01
 // as fitted; window managers round a size to their own liking
 const SIZE_TOLERANCE_PX = 2
 
+// How long a resize by hand has to be still before it counts as finished.
+// Linux reports no end of a drag, only each size on the way.
+const SNAP_SETTLE_MS = 250
+
 /**
  * @typedef {object} WindowGeometryDependencies
  * @property {Pick<Electron.Screen, 'getCursorScreenPoint' | 'getDisplayMatching'>} [screen]
  * @property {typeof setInterval} [setInterval]
  * @property {typeof clearInterval} [clearInterval]
+ * @property {typeof setTimeout} [setTimeout]
+ * @property {typeof clearTimeout} [clearTimeout]
  */
 
 /**
@@ -61,6 +67,8 @@ export function createWindowGeometry(dependencies = {}) {
   const getScreen = () => dependencies.screen ?? electronScreen
   const startInterval = dependencies.setInterval ?? setInterval
   const stopInterval = dependencies.clearInterval ?? clearInterval
+  const startTimeout = dependencies.setTimeout ?? setTimeout
+  const stopTimeout = dependencies.clearTimeout ?? clearTimeout
 
   /** @type {Map<Electron.BrowserWindow, { interval: ReturnType<typeof setInterval>, follow: () => void, dispose: () => void }>} */
   const moves = new Map()
@@ -171,10 +179,17 @@ export function createWindowGeometry(dependencies = {}) {
   }
 
   /**
-   * One entry per fitted window. `restore` is the content size from before
-   * the first fit, `fitted` the content size the last fit asked for.
-   * @type {Map<Electron.BrowserWindow, { restore: { width: number, height: number }, fitted: { width: number, height: number }, dispose: () => void }>}
+   * @typedef {{ width: number, height: number }} Size
+   * @typedef {object} Fit
+   * @property {number} ratio the video's, width over height
+   * @property {Size} restore the content size from before the first fit
+   * @property {Size} fitted the content size the last fit asked for
+   * @property {Size} settled the content size when the window was last still at the ratio
+   * @property {Size | null} snappedFrom the size the last snap started from, until the window reaches the ratio
+   * @property {() => void} dispose
    */
+
+  /** @type {Map<Electron.BrowserWindow, Fit>} */
   const fits = new Map()
 
   /**
@@ -201,37 +216,74 @@ export function createWindowGeometry(dependencies = {}) {
 
   /**
    * Gives the window's content the size, centred on where the content's centre
-   * is now, and moved as little as needed to keep the whole window, frame and
-   * all, inside the work area of its display.
+   * is now or keeping its top left corner, and moved as little as needed to
+   * keep the whole window, frame and all, inside the work area of its display.
    * @param {Electron.BrowserWindow} win
-   * @param {{ width: number, height: number }} size
+   * @param {Size} size
+   * @param {'centre' | 'topLeft'} [anchor]
    */
-  function placeContent(win, { width, height }) {
+  function placeContent(win, { width, height }, anchor = 'centre') {
     const content = win.getContentBounds()
     const frame = frameOf(win)
     const { workArea } = getScreen().getDisplayMatching(win.getBounds())
 
-    const centreX = content.x + content.width / 2
-    const centreY = content.y + content.height / 2
+    const wantedX = anchor === 'centre' ? Math.round(content.x + (content.width - width) / 2) : content.x
+    const wantedY = anchor === 'centre' ? Math.round(content.y + (content.height - height) / 2) : content.y
 
     const clamp = (value, min, max) => Math.max(min, Math.min(value, max))
-    const x = clamp(Math.round(centreX - width / 2), workArea.x + frame.left, workArea.x + workArea.width - (frame.width - frame.left) - width)
-    const y = clamp(Math.round(centreY - height / 2), workArea.y + frame.top, workArea.y + workArea.height - (frame.height - frame.top) - height)
+    const x = clamp(wantedX, workArea.x + frame.left, workArea.x + workArea.width - (frame.width - frame.left) - width)
+    const y = clamp(wantedY, workArea.y + frame.top, workArea.y + workArea.height - (frame.height - frame.top) - height)
 
     win.setContentBounds({ x, y, width, height })
   }
 
   /**
-   * @param {{ width: number, height: number }} a
-   * @param {{ width: number, height: number }} b
+   * The smallest and largest content the window can have: its minimum size,
+   * and the work area of its display, both less the frame.
+   * @param {Electron.BrowserWindow} win
+   */
+  function contentLimits(win) {
+    const frame = frameOf(win)
+    const [minWidth, minHeight] = win.getMinimumSize()
+    const { workArea } = getScreen().getDisplayMatching(win.getBounds())
+
+    return {
+      minWidth: minWidth - frame.width,
+      minHeight: minHeight - frame.height,
+      maxWidth: workArea.width - frame.width,
+      maxHeight: workArea.height - frame.height,
+    }
+  }
+
+  /**
+   * @param {Size} a
+   * @param {Size} b
    */
   function sameSize(a, b) {
     return Math.abs(a.width - b.width) <= SIZE_TOLERANCE_PX && Math.abs(a.height - b.height) <= SIZE_TOLERANCE_PX
   }
 
   /**
+   * @param {Size} size
+   * @param {number} ratio
+   */
+  function hasRatio({ width, height }, ratio) {
+    return Math.abs(width / height - ratio) / ratio <= RATIO_TOLERANCE
+  }
+
+  /**
+   * @param {Electron.BrowserWindow} win
+   * @returns {Size}
+   */
+  function contentSize(win) {
+    const { width, height } = win.getContentBounds()
+    return { width, height }
+  }
+
+  /**
    * Reshapes the window's content to the video's ratio, keeping its area and
-   * its centre, and locks the ratio so resizing by hand keeps it. The first
+   * its centre, and locks the ratio so resizing by hand keeps it (or, where
+   * the window manager ignores the lock, snaps to it; see snapToRatio). The first
    * fit remembers the size to return to; later fits, for the next video or
    * for a video that changes shape, do not replace it. Does nothing for a
    * window that is gone, maximised, fullscreen or minimised, or without a
@@ -247,35 +299,73 @@ export function createWindowGeometry(dependencies = {}) {
       return
     }
 
-    const content = win.getContentBounds()
-    const current = { width: content.width, height: content.height }
+    const current = contentSize(win)
 
     let fit = fits.get(win)
     if (!fit) {
-      fit = { restore: current, fitted: current, dispose: watchForRelease(win) }
+      fit = { ratio, restore: current, fitted: current, settled: current, snappedFrom: null, dispose: () => {} }
       fits.set(win, fit)
+      fit.dispose = watchFittedWindow(win)
     }
 
-    const currentRatio = current.width / current.height
-    if (Math.abs(currentRatio - ratio) / ratio > RATIO_TOLERANCE) {
-      const frame = frameOf(win)
-      const [minWidth, minHeight] = win.getMinimumSize()
-      const { workArea } = getScreen().getDisplayMatching(win.getBounds())
+    fit.ratio = ratio
+    fit.snappedFrom = null
 
-      const size = fitSize({
-        area: current.width * current.height,
-        ratio,
-        minWidth: minWidth - frame.width,
-        minHeight: minHeight - frame.height,
-        maxWidth: workArea.width - frame.width,
-        maxHeight: workArea.height - frame.height,
-      })
+    if (hasRatio(current, ratio)) {
+      fit.settled = current
+    } else {
+      const size = fitSize({ area: current.width * current.height, ratio, ...contentLimits(win) })
 
       placeContent(win, size)
       fit.fitted = size
+      fit.settled = size
     }
 
     win.setAspectRatio(ratio)
+  }
+
+  /**
+   * Does by hand what the ratio lock should have done during a resize, for
+   * window managers that ignore it, as WSLg's and every Wayland compositor do
+   * (Electron can only ask, through X11's size hints). Runs once a resize has
+   * been still for a moment. Keeps the side that was dragged, the one that
+   * changed the most since the window was last at the ratio, and the top
+   * left corner, as a lock would. A window manager that refuses the corrected
+   * size is not asked again for the same size, so a tiling one is not fought.
+   * Where the lock worked the window already has the ratio and this does
+   * nothing.
+   * @param {Electron.BrowserWindow} win
+   */
+  function snapToRatio(win) {
+    const fit = fits.get(win)
+
+    if (!fit || !isResizable(win)) {
+      return
+    }
+
+    const current = contentSize(win)
+
+    if (hasRatio(current, fit.ratio)) {
+      fit.settled = current
+      fit.snappedFrom = null
+      return
+    }
+
+    if (fit.snappedFrom && sameSize(current, fit.snappedFrom)) {
+      return
+    }
+
+    const widthChange = Math.abs(current.width - fit.settled.width) / fit.settled.width
+    const heightChange = Math.abs(current.height - fit.settled.height) / fit.settled.height
+    const kept = widthChange >= heightChange
+      ? { width: current.width, height: current.width / fit.ratio }
+      : { width: current.height * fit.ratio, height: current.height }
+
+    const size = fitSize({ area: kept.width * kept.height, ratio: fit.ratio, ...contentLimits(win) })
+
+    fit.snappedFrom = current
+    fit.settled = size
+    placeContent(win, size, 'topLeft')
   }
 
   /**
@@ -312,12 +402,26 @@ export function createWindowGeometry(dependencies = {}) {
   }
 
   /**
-   * Releases on its own what the renderer can no longer release: a renderer
-   * that crashed or reloaded, and a window that closed.
+   * Snaps a resize to the ratio once it has settled, and releases on its own
+   * what the renderer can no longer release: a renderer that crashed or
+   * reloaded, and a window that closed.
    * @param {Electron.BrowserWindow} win
-   * @returns {() => void} removes the listeners
+   * @returns {() => void} removes the listeners and drops a snap still waiting
    */
-  function watchForRelease(win) {
+  function watchFittedWindow(win) {
+    /** @type {ReturnType<typeof setTimeout> | null} */
+    let snapTimeout = null
+    const scheduleSnap = () => {
+      if (snapTimeout !== null) {
+        stopTimeout(snapTimeout)
+      }
+      snapTimeout = startTimeout(() => {
+        snapTimeout = null
+        snapToRatio(win)
+      }, SNAP_SETTLE_MS)
+    }
+    win.on('resize', scheduleSnap)
+
     const release = () => releaseFit(win)
     win.once('closed', release)
 
@@ -332,7 +436,12 @@ export function createWindowGeometry(dependencies = {}) {
     webContents?.on('did-start-navigation', releaseOnReload)
 
     return () => {
+      if (snapTimeout !== null) {
+        stopTimeout(snapTimeout)
+        snapTimeout = null
+      }
       if (!win.isDestroyed()) {
+        win.removeListener('resize', scheduleSnap)
         win.removeListener('closed', release)
       }
       if (webContents && !webContents.isDestroyed()) {
