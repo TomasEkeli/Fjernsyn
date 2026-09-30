@@ -209,6 +209,9 @@ const state = {
   enableSearchSuggestions: true,
   enableSubtitlesByDefault: false,
   enterFullscreenOnDisplayRotate: false,
+  // Reshape the window to the video's ratio while the player is in full
+  // window, so it has no black bars (see src/main/windowGeometry.js)
+  fitWindowToVideo: true,
   externalLinkHandling: '',
   externalPlayer: '',
   externalPlayerExecutable: '',
@@ -554,6 +557,7 @@ export const NON_TRANSFERABLE_SETTINGS = new Set([
   // Others
   'disableSmoothScrolling',
   'framelessWindow',
+  'fitWindowToVideo',
   'hideToTrayOnMinimize',
   'handleFreeTubeLinks',
   'screenshotAskPath',

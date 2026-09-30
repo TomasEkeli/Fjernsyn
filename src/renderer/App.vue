@@ -122,6 +122,16 @@ const dataReady = ref(false)
 // A frameless window has no title bar, so a long press and a drag moves it
 useWindowMoveGesture({ enabled: () => store.getters.getFramelessWindow })
 
+// The player keeps the window fitted to the video from one video to the next,
+// as it cannot tell the next video from leaving; this is the leaving
+if (process.env.IS_ELECTRON) {
+  watch(() => route.path, (path) => {
+    if (!path.startsWith('/watch/')) {
+      window.ftElectron.releaseWindowFit()
+    }
+  })
+}
+
 // macOS keeps its traffic lights in a frameless window, over the top bar
 if (process.env.IS_ELECTRON && process.platform === 'darwin') {
   watch(() => store.getters.getFramelessWindow, (frameless) => {
