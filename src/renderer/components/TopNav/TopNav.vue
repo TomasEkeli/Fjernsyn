@@ -221,7 +221,10 @@
           @clear="clearLastSuggestionQuery"
           @remove="removeSearchHistoryEntryInDbAndCache"
         />
+        <!-- Fjernsyn: the remembered filters, while the layer's search page is on -->
+        <LayerSearchPill v-if="layerSearchEnabled" />
         <button
+          v-else
           class="navFilterButton navButton"
           :class="{ filterChanged: searchFilterValueChanged }"
           :aria-label="t('Search Filters.Search Filters')"
@@ -250,6 +253,7 @@ import FtInput from '../FtInput/FtInput.vue'
 import FtProfileSelector from '../FtProfileSelector/FtProfileSelector.vue'
 import FtIconButton from '../FtIconButton/FtIconButton.vue'
 import FtYtDlpDownloads from '../FtYtDlpDownloads/FtYtDlpDownloads.vue'
+import LayerSearchPill from '../LayerSearchPill/LayerSearchPill.vue'
 
 import store from '../../store/index'
 
@@ -260,6 +264,8 @@ import { clearLocalSearchSuggestionsSession, getLocalClip, getLocalSearchSuggest
 import { getClipInvidious, getInvidiousSearchSuggestions } from '../../helpers/api/invidious'
 import packageDetails from '../../../../package.json'
 import { openPeerTubeEntry } from '../../platform/entryPoints'
+import { operatorSuggestions } from '../../platform/search/operators'
+import { layerSearchRoute } from '../LayerSearchPill/searchBox'
 
 // The wordmark beside the header icon: the app's name as text, which needs no
 // artwork per theme, and a name is not translated
@@ -429,10 +435,17 @@ const latestMatchingSearchHistoryNames = computed(() => {
 /** @type {import('vue').ComputedRef<string[]>} */
 const latestSearchHistoryNames = computed(() => store.getters.getLatestSearchHistoryNames)
 
+// Fjernsyn: an operator's values, once its key and colon are typed, on the layer's search page
+const operatorDataList = computed(() => layerSearchEnabled.value ? operatorSuggestions(lastSuggestionQuery.value) : [])
+
 const activeDataList = computed(() => {
   // show latest search history when the search bar is empty
   if (usingOnlySearchHistoryResults.value) {
     return latestSearchHistoryNames.value
+  }
+
+  if (operatorDataList.value.length > 0) {
+    return operatorDataList.value
   }
 
   const searchResults = [...latestMatchingSearchHistoryNames.value]
@@ -458,7 +471,7 @@ const activeDataList = computed(() => {
 const activeDataListProperties = computed(() => {
   const searchHistoryEntriesCount = usingOnlySearchHistoryResults.value
     ? latestSearchHistoryNames.value.length
-    : latestMatchingSearchHistoryNames.value.length
+    : operatorDataList.value.length > 0 ? 0 : latestMatchingSearchHistoryNames.value.length
 
   const properties = []
 
@@ -539,6 +552,9 @@ const searchInput = useTemplateRef('searchInput')
 
 /** @type {import('vue').ComputedRef<any>} */
 const searchSettings = computed(() => store.getters.getSearchSettings)
+
+/** @type {import('vue').ComputedRef<boolean>} Fjernsyn: the layer's search page */
+const layerSearchEnabled = computed(() => store.getters.getEnableLayerSearch === true)
 
 /**
  * @param {string} queryText
@@ -673,6 +689,13 @@ async function goToSearch(queryText, { event }) {
 
       case 'invalid_url':
       default: {
+        // Fjernsyn: the layer's search page takes its filters from the pill and the text
+        if (layerSearchEnabled.value) {
+          const { path, query } = layerSearchRoute(store, queryText, event)
+          openInternalPath({ path, query, doCreateNewWindow, searchQueryText: queryText })
+          break
+        }
+
         openInternalPath({
           path: `/search/${encodeURIComponent(queryText)}`,
           query: {

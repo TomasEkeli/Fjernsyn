@@ -63,7 +63,7 @@
     },
     {
       "path": "src/renderer/components/TopNav/TopNav.vue",
-      "reason": "the search bar (`goToSearch`, now async) hands its text to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `getYoutubeUrlInfo` only when that hands it back (always, while PeerTube is off); search suggestions unchanged"
+      "reason": "the search bar (`goToSearch`, now async) hands its text to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `getYoutubeUrlInfo` only when that hands it back (always, while PeerTube is off); while the layer's search page is on (enableLayerSearch): the pill (src/renderer/components/LayerSearchPill) in place of the filter button, a plain search goes to the route src/renderer/components/LayerSearchPill/searchBox.js builds instead of one from the store's searchSettings, and an operator's values are the suggestions once its key and colon are typed"
     },
     {
       "path": "src/renderer/components/WatchVideoPlaylist/WatchVideoPlaylist.vue",

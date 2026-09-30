@@ -1511,7 +1511,6 @@ Layer Search:
     Type: Any type
     Length: Any length
     Language: Language
-    Any language: Any language
     Find language: Find a language
     Live: Live
     NSFW: NSFW
@@ -1579,9 +1578,6 @@ Layer Search:
     Lit: 'Next search uses: {filters}. Click to search without them'
     Unlit: 'Next search is without filters. Click to use: {filters}'
     Edit: Change the remembered filters
-    Forget: Forget these filters
-  Operators:
-    Suggestion: '{operator}'
 
 Mini Player: Mini Player
 Comments:
