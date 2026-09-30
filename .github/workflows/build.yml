@@ -127,7 +127,11 @@ jobs:
           # each one overwrote the last as far as a filename could tell and
           # there was no way to know which artefact was which. The run number
           # orders them and links back to the run; the commit says which code.
-          version="${original_version}-main-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::9}"
+          # A branch built by hand (Run workflow) is named for its branch, so
+          # a test build cannot pass for one of main; slashes become dashes,
+          # as they cannot go in a file name.
+          branch="$(echo -E "$GITHUB_REF_NAME" | tr '/' '-' | tr -cd '[:alnum:]._-')"
+          version="${original_version}-${branch}-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::9}"
         fi
 
         package_json="$(jq --arg version "$version" '.version = $version' package.json)"
