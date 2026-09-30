@@ -243,15 +243,23 @@ export function installWindowMoveGesture({
  */
 export function useWindowMoveGesture({ enabled } = {}) {
   let uninstall = null
+  let unmounted = false
 
-  onMounted(() => {
+  onMounted(async () => {
     // The web build has no window to move
-    if (process.env.IS_ELECTRON) {
+    if (!process.env.IS_ELECTRON) {
+      return
+    }
+
+    // Nor does native Wayland let the app move one, so main keeps the frame there
+    const isWayland = await window.ftElectron.isWaylandPlatform?.().catch(() => false)
+    if (!isWayland && !unmounted) {
       uninstall = installWindowMoveGesture({ enabled })
     }
   })
 
   onBeforeUnmount(() => {
+    unmounted = true
     uninstall?.()
     uninstall = null
   })

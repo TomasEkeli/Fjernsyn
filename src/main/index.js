@@ -991,6 +991,17 @@ function runApp() {
   const htmlFullscreenWindowIds = new Set()
 
   /**
+   * Whether windows are created frameless. Not under native Wayland, whatever
+   * the setting: a Wayland client cannot place its own window, so the long
+   * press move could not work and the window could not be moved at all. The
+   * frame stays, drawn by Electron where the compositor does not draw one.
+   */
+  function isFramelessApplied() {
+    return framelessWindow &&
+      !(process.platform === 'linux' && app.commandLine.getSwitchValue('ozone-platform') === 'wayland')
+  }
+
+  /**
    * The window's frame options for the `framelessWindow` setting. Without a
    * frame the OS still resizes the window at its borders; moving it is the
    * renderer's long press gesture (see windowGeometry.js). macOS keeps its
@@ -998,7 +1009,7 @@ function runApp() {
    * @returns {Electron.BrowserWindowConstructorOptions}
    */
   function frameOptions() {
-    if (!framelessWindow) {
+    if (!isFramelessApplied()) {
       return {}
     }
 
@@ -1408,7 +1419,7 @@ function runApp() {
   // The window comes from the sender, so every window moves only itself
   ipcMain.on(IpcChannels.WINDOW_MOVE_START, (event) => {
     // A framed window has a title bar to move it by
-    if (!framelessWindow || !isFreeTubeUrl(event.senderFrame.url)) {
+    if (!isFramelessApplied() || !isFreeTubeUrl(event.senderFrame.url)) {
       return
     }
 
