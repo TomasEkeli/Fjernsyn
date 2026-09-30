@@ -1495,6 +1495,7 @@ Layer Search:
   Not applied here: 'Not applied to {platform}: {filters}'
   Remove filter: Remove this filter
   No results: No results.
+  End of results: No more results from {platform}.
   YouTube failed: YouTube could not be searched.
   Source:
     Source: Source

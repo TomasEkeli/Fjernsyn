@@ -162,6 +162,13 @@
           >
             {{ t('Layer Search.No results') }}
           </p>
+          <!-- Said, so that a list with no "more" at its end does not look broken -->
+          <p
+            v-else-if="isFinished(platform)"
+            class="message endOfResults"
+          >
+            {{ t('Layer Search.End of results', { platform: platformName(t, platform) }) }}
+          </p>
           <FtLoader v-if="sectionOf(platform).loading" />
           <div
             v-else-if="sectionOf(platform).error"
@@ -350,6 +357,16 @@ function hasMore(platform) {
 /** @param {string} platform */
 function autoLoadPaused(platform) {
   return sectionOf(platform).emptyPagesInARow >= MAX_EMPTY_AUTO_LOADS
+}
+
+/**
+ * Whether a section's list has ended, with something in it
+ *
+ * @param {string} platform
+ */
+function isFinished(platform) {
+  const section = sectionOf(platform)
+  return section.loaded && !section.loading && !section.error && section.cursor === null && section.items.length > 0
 }
 
 /** @param {string} platform */

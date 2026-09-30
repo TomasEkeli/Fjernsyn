@@ -450,6 +450,21 @@ describe('the All scope', () => {
     expect(wrapper.find('.youtubeSection .getNextPage').exists()).toBe(true)
   })
 
+  it('says where a section\'s list ended, and offers more only where there is more', async () => {
+    layer.searchQuery.mockImplementationOnce(async (query) => ({
+      sections: {
+        youtube: page('youtube', query, [youtubeVideo(1)], { backend: 'local', continuation: 'c' }),
+        peertube: page('peertube', query, [peertubeVideo(1)], null),
+      },
+    }))
+    const { wrapper } = await openSearchPage('/search/neanderthal?scope=all')
+
+    expect(wrapper.find('.youtubeSection .getNextPage').exists()).toBe(true)
+    expect(wrapper.find('.youtubeSection .endOfResults').exists()).toBe(false)
+    expect(wrapper.find('.peertubeSection .getNextPage').exists()).toBe(false)
+    expect(wrapper.find('.peertubeSection .endOfResults').text()).toBe('No more results from PeerTube.')
+  })
+
   it('shows one platform\'s failure in its section, beside the other\'s results, and tries it again', async () => {
     layer.searchQuery.mockImplementationOnce(async (query) => ({
       sections: {
