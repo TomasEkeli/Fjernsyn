@@ -21,7 +21,7 @@
           :label="$t('Settings.Theme Settings.Disable Smooth Scrolling')"
           compact
           :default-value="disableSmoothScrollingToggleValue"
-          @change="handleRestartPrompt"
+          @change="handleRestartPrompt('disableSmoothScrolling', $event)"
         />
       </div>
       <div class="switchColumn">
@@ -36,6 +36,14 @@
           compact
           :default-value="hideHeaderLogo"
           @change="updateHideHeaderLogo"
+        />
+        <FtToggleSwitch
+          v-if="usingElectron"
+          :label="$t('Settings.Theme Settings.Frameless Window')"
+          compact
+          :default-value="framelessWindowToggleValue"
+          :tooltip="$t('Settings.Theme Settings.Frameless Window Tooltip')"
+          @change="handleRestartPrompt('framelessWindow', $event)"
         />
       </div>
     </div>
@@ -88,7 +96,7 @@
       :label="$t('Settings[\'The app needs to restart for changes to take effect. Restart and apply change?\']')"
       :option-names="restartPromptNames"
       :option-values="RESTART_PROMPT_VALUES"
-      @click="handleSmoothScrolling"
+      @click="handleRestartChoice"
     />
   </FtSettingsSection>
 </template>
@@ -293,31 +301,54 @@ const restartPromptNames = computed(() => [
 
 /** @type {import('vue').Ref<boolean>} */
 const disableSmoothScrollingToggleValue = ref(store.getters.getDisableSmoothScrolling)
-const showRestartPrompt = ref(false)
+/** @type {import('vue').Ref<boolean>} */
+const framelessWindowToggleValue = ref(store.getters.getFramelessWindow)
 
 /**
+ * The settings that apply only after a restart, each with the value its
+ * toggle shows and the action that saves it. The toggle moves at once; the
+ * setting is saved only if the user agrees to restart, and the toggle moves
+ * back if they do not.
+ * @type {Record<string, { toggle: import('vue').Ref<boolean>, action: string }>}
+ */
+const restartSettings = {
+  disableSmoothScrolling: {
+    toggle: disableSmoothScrollingToggleValue,
+    action: 'updateDisableSmoothScrolling'
+  },
+  framelessWindow: {
+    toggle: framelessWindowToggleValue,
+    action: 'updateFramelessWindow'
+  }
+}
+
+/** @type {import('vue').Ref<string | null>} */
+const pendingRestartSetting = ref(null)
+const showRestartPrompt = computed(() => pendingRestartSetting.value !== null)
+
+/**
+ * @param {string} setting
  * @param {boolean} value
  */
-function handleRestartPrompt(value) {
-  disableSmoothScrollingToggleValue.value = value
-  showRestartPrompt.value = true
+function handleRestartPrompt(setting, value) {
+  restartSettings[setting].toggle.value = value
+  pendingRestartSetting.value = setting
 }
 
 /**
- * @param {'restart' | 'cancel' | null} value
+ * @param {'restart' | 'cancel' | null} choice
  */
-function handleSmoothScrolling(value) {
-  showRestartPrompt.value = false
+function handleRestartChoice(choice) {
+  const { toggle, action } = restartSettings[pendingRestartSetting.value]
+  pendingRestartSetting.value = null
 
-  if (value === null || value === 'cancel') {
-    disableSmoothScrollingToggleValue.value = !disableSmoothScrollingToggleValue.value
+  if (choice === null || choice === 'cancel') {
+    toggle.value = !toggle.value
     return
   }
 
   if (process.env.IS_ELECTRON) {
-    store.dispatch('updateDisableSmoothScrolling',
-      disableSmoothScrollingToggleValue.value
-    ).then(() => {
+    store.dispatch(action, toggle.value).then(() => {
       window.ftElectron.relaunch()
     })
   }

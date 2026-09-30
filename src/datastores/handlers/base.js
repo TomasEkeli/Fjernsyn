@@ -99,6 +99,7 @@ class Settings {
           'backendPreference',
           'hideToTrayOnMinimize',
           'handleFreeTubeLinks',
+          'framelessWindow',
         ]
       }
     })
