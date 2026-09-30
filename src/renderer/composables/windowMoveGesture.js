@@ -15,7 +15,9 @@ export const MOVE_THRESHOLD_PX = 4
 const HOLD_SLACK_MS = 50
 
 /**
- * @typedef {'idle' | 'pressing' | 'armed' | 'moving'} Phase
+ * `cancelled` is a move called off (by Escape, say) while the button is
+ * still down, waiting for the release so its click can be swallowed.
+ * @typedef {'idle' | 'pressing' | 'armed' | 'moving' | 'cancelled'} Phase
  *
  * @typedef {object} GestureState
  * @property {Phase} phase
@@ -32,6 +34,7 @@ const HOLD_SLACK_MS = 50
  *   | { type: 'holdElapsed' }
  *   | { type: 'dragstart' }
  *   | { type: 'selectstart' }
+ *   | { type: 'contextmenu' }
  *   | { type: 'cancel' }
  * )} GestureEvent
  *
@@ -81,6 +84,28 @@ function canArm(event) {
 }
 
 /**
+ * Calling the gesture off, from whatever phase it is in.
+ * @param {GestureState} state
+ * @returns {GestureResult}
+ */
+function cancel(state) {
+  switch (state.phase) {
+    case 'pressing':
+      return toIdle(['cancelTimer'])
+    case 'armed':
+      return toIdle(['disarm'])
+    case 'moving':
+      // The button is still down, and its release is not a click: the
+      // user was dragging a window, not pressing what is under the cursor
+      return { state: { phase: 'cancelled', pointerId: state.pointerId }, effects: ['sendEnd', 'disarm'] }
+    case 'cancelled':
+      return stay(state)
+    default:
+      return stay(state)
+  }
+}
+
+/**
  * @param {GestureState} state
  * @param {GestureEvent} event
  * @param {number} now milliseconds, on the same clock the timer runs on
@@ -89,16 +114,15 @@ function canArm(event) {
 export function transition(state, event, now) {
   // Whatever the phase, the gesture can be called off
   if (event.type === 'cancel') {
-    switch (state.phase) {
-      case 'pressing':
-        return toIdle(['cancelTimer'])
-      case 'armed':
-        return toIdle(['disarm'])
-      case 'moving':
-        return toIdle(['sendEnd', 'disarm'])
-      default:
-        return stay(state)
-    }
+    return cancel(state)
+  }
+
+  // A press while not idle means a release went missing, as it can when
+  // something else took the mouse. Start over rather than stay stuck.
+  if (event.type === 'pointerdown' && state.phase !== 'idle') {
+    const cancelled = cancel(state)
+    const pressed = transition(IDLE, event, now)
+    return { state: pressed.state, effects: [...cancelled.effects, ...pressed.effects] }
   }
 
   // Only the pointer that pressed moves the window
@@ -155,7 +179,9 @@ export function transition(state, event, now) {
           return toIdle(['disarm'])
         case 'dragstart':
         case 'selectstart':
-          // The window moves instead of a link, an image or a selection
+        case 'contextmenu':
+          // The window moves instead of a link, an image or a selection, and
+          // no menu opens to take the mouse away mid-move
           return stay(state, ['preventDefault'])
         default:
           return stay(state)
@@ -167,10 +193,18 @@ export function transition(state, event, now) {
           return toIdle(['sendEnd', 'disarm', 'suppressClick'])
         case 'dragstart':
         case 'selectstart':
+        case 'contextmenu':
           return stay(state, ['preventDefault'])
         default:
           return stay(state)
       }
+
+    case 'cancelled':
+      // Waiting for the release of a move that was called off, to swallow its click
+      if (event.type === 'pointerup') {
+        return toIdle(['suppressClick'])
+      }
+      return stay(state)
 
     default:
       return stay(state)

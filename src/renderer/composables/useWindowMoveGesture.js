@@ -4,13 +4,16 @@ import { HOLD_MS, IDLE, transition } from './windowMoveGesture'
 
 /**
  * Where a long press must not move the window, because the press already
- * means something there: the page's own drag-and-drop, anything typed into,
+ * means something there: the page's own drag-and-drop, a long press of its
+ * own, anything typed into,
  * a carousel that swipes, and the player's controls, menus and seek bar. The
  * video itself is left movable, which is why this names the player's control
  * bar and menus rather than its controls container, which covers the video.
  */
 const EXCLUDED_TARGETS = [
   '[draggable="true"]',
+  // A button with its own long press, as back and forward have for their history
+  '[data-long-press]',
   'input',
   'textarea',
   'select',
@@ -205,7 +208,7 @@ export function installWindowMoveGesture({
   }
 
   /** @param {Event} event */
-  function onDragOrSelectStart(event) {
+  function onPreventable(event) {
     if (state.phase !== 'idle') {
       feed({ type: event.type }, event)
     }
@@ -217,8 +220,9 @@ export function installWindowMoveGesture({
     ['pointerup', onPointerUp],
     ['pointercancel', onCancel],
     ['keydown', onKeyDown],
-    ['dragstart', onDragOrSelectStart],
-    ['selectstart', onDragOrSelectStart],
+    ['dragstart', onPreventable],
+    ['selectstart', onPreventable],
+    ['contextmenu', onPreventable],
   ]
 
   // Capture, so that nothing on the page can stop the gesture from seeing an event

@@ -8,13 +8,16 @@ vi.mock('electron', () => ({ screen: undefined }))
 
 function createStubWindow({ x = 100, y = 50, width = 800, height = 600, maximized = false, fullScreen = false } = {}) {
   const win = new EventEmitter()
-  const state = { x, y, width, height, maximized, fullScreen, destroyed: false }
+  const state = { x, y, width, height, maximized, fullScreen, minimized: false, destroyed: false }
+  const webContents = Object.assign(new EventEmitter(), { isDestroyed: () => state.destroyed })
 
   Object.assign(win, {
     state,
+    webContents,
     isDestroyed: () => state.destroyed,
     isMaximized: () => state.maximized,
     isFullScreen: () => state.fullScreen,
+    isMinimized: () => state.minimized,
     getPosition: () => [state.x, state.y],
     getSize: () => [state.width, state.height],
     setBounds: vi.fn((bounds) => Object.assign(state, bounds)),
@@ -163,12 +166,14 @@ describe('windowGeometry', () => {
 
     expect(intervals.size).toBe(0)
     expect(geometry.isMoving(win)).toBe(false)
-    for (const event of ['blur', 'closed', 'maximize', 'enter-full-screen']) {
+    for (const event of ['blur', 'closed', 'maximize', 'enter-full-screen', 'minimize', 'hide']) {
       expect(win.listenerCount(event)).toBe(0)
     }
+    expect(win.webContents.listenerCount('render-process-gone')).toBe(0)
+    expect(win.webContents.listenerCount('did-start-navigation')).toBe(0)
   })
 
-  it.each(['blur', 'closed', 'maximize', 'enter-full-screen'])('stops when the window emits %s', (event) => {
+  it.each(['blur', 'closed', 'maximize', 'enter-full-screen', 'minimize', 'hide'])('stops when the window emits %s', (event) => {
     const { geometry, intervals } = createHarness()
     const win = createStubWindow()
 
@@ -180,6 +185,52 @@ describe('windowGeometry', () => {
 
     expect(intervals.size).toBe(0)
     expect(geometry.isMoving(win)).toBe(false)
+  })
+
+  it('stops when the renderer goes away, as it cannot send the end', () => {
+    const { geometry, intervals } = createHarness()
+    const win = createStubWindow()
+
+    geometry.startMove(win)
+    win.webContents.emit('render-process-gone', {}, { reason: 'crashed' })
+
+    expect(intervals.size).toBe(0)
+  })
+
+  it('stops when the page reloads, but not on a navigation within it', () => {
+    const { geometry, intervals } = createHarness()
+    const win = createStubWindow()
+
+    geometry.startMove(win)
+    win.webContents.emit('did-start-navigation', { isMainFrame: true, isSameDocument: true })
+    win.webContents.emit('did-start-navigation', { isMainFrame: false, isSameDocument: false })
+    expect(intervals.size).toBe(1)
+
+    win.webContents.emit('did-start-navigation', { isMainFrame: true, isSameDocument: false })
+    expect(intervals.size).toBe(0)
+  })
+
+  it('lands where the cursor was let go, however recently it moved', () => {
+    const { geometry, moveCursor } = createHarness()
+    const win = createStubWindow({ x: 100, y: 50 })
+
+    geometry.startMove(win)
+    moveCursor(40, 30)
+    geometry.endMove(win)
+
+    expect(win.state).toMatchObject({ x: 140, y: 80 })
+  })
+
+  it('does not set the bounds of a window that was maximised under the move', () => {
+    const { geometry, moveCursor } = createHarness()
+    const win = createStubWindow()
+
+    geometry.startMove(win)
+    moveCursor(40, 30)
+    win.state.maximized = true
+    win.emit('maximize')
+
+    expect(win.setBounds).not.toHaveBeenCalled()
   })
 
   it('stops by itself when the window is destroyed under it', () => {

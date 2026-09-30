@@ -31,7 +31,7 @@ export function createWindowGeometry(dependencies = {}) {
   const startInterval = dependencies.setInterval ?? setInterval
   const stopInterval = dependencies.clearInterval ?? clearInterval
 
-  /** @type {Map<Electron.BrowserWindow, { interval: ReturnType<typeof setInterval>, dispose: () => void }>} */
+  /** @type {Map<Electron.BrowserWindow, { interval: ReturnType<typeof setInterval>, follow: () => void, dispose: () => void }>} */
   const moves = new Map()
 
   /**
@@ -56,12 +56,7 @@ export function createWindowGeometry(dependencies = {}) {
     let lastX = windowX
     let lastY = windowY
 
-    const interval = startInterval(() => {
-      if (win.isDestroyed()) {
-        endMove(win)
-        return
-      }
-
+    function follow() {
       const point = getScreen().getCursorScreenPoint()
       const x = Math.round(point.x - offset.x)
       const y = Math.round(point.y - offset.y)
@@ -71,19 +66,44 @@ export function createWindowGeometry(dependencies = {}) {
         lastY = y
         win.setBounds({ x, y, width, height })
       }
+    }
+
+    const interval = startInterval(() => {
+      if (win.isDestroyed()) {
+        endMove(win)
+        return
+      }
+
+      follow()
     }, MOVE_TICK_MS)
 
-    // A pointerup the renderer never sees, because focus went elsewhere or
-    // the window changed state under the move, must not leave it running
+    // A pointerup the renderer never sends, because focus went elsewhere, the
+    // window changed state under the move, or the renderer itself went away,
+    // must not leave the window following the cursor
     const stop = () => endMove(win)
-    const events = ['blur', 'closed', 'maximize', 'enter-full-screen']
-    events.forEach(event => win.once(event, stop))
+    const windowEvents = ['blur', 'closed', 'maximize', 'enter-full-screen', 'minimize', 'hide']
+    windowEvents.forEach(event => win.once(event, stop))
+
+    const webContents = win.webContents
+    /** @param {{ isMainFrame?: boolean, isSameDocument?: boolean }} details */
+    const stopOnReload = (details) => {
+      if (details?.isMainFrame && !details.isSameDocument) {
+        stop()
+      }
+    }
+    webContents?.once('render-process-gone', stop)
+    webContents?.on('did-start-navigation', stopOnReload)
 
     moves.set(win, {
       interval,
+      follow,
       dispose: () => {
         if (!win.isDestroyed()) {
-          events.forEach(event => win.removeListener(event, stop))
+          windowEvents.forEach(event => win.removeListener(event, stop))
+        }
+        if (webContents && !webContents.isDestroyed()) {
+          webContents.removeListener('render-process-gone', stop)
+          webContents.removeListener('did-start-navigation', stopOnReload)
         }
       }
     })
@@ -103,6 +123,13 @@ export function createWindowGeometry(dependencies = {}) {
     moves.delete(win)
     stopInterval(move.interval)
     move.dispose()
+
+    // Land where the cursor was let go, not up to a tick short of it; but
+    // never on a window that has just been maximised or made fullscreen,
+    // which setting its bounds would undo
+    if (!win.isDestroyed() && !win.isMaximized() && !win.isFullScreen() && !win.isMinimized()) {
+      move.follow()
+    }
   }
 
   /**

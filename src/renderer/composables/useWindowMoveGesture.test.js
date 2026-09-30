@@ -159,6 +159,27 @@ describe('installWindowMoveGesture', () => {
     expect(document.documentElement.classList.contains(ARMED_CLASS)).toBe(false)
   })
 
+  it('swallows the click when the button is released after Escape called the move off', () => {
+    pointer('pointerdown', button)
+    hold()
+    pointer('pointermove', button, { x: 80, y: 60 })
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    pointer('pointerup', button)
+    click(button)
+
+    expect(clicks).not.toHaveBeenCalled()
+  })
+
+  it('keeps the context menu shut during a move', () => {
+    pointer('pointerdown', button)
+    hold()
+    pointer('pointermove', button, { x: 80, y: 60 })
+    const contextmenu = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+    button.dispatchEvent(contextmenu)
+
+    expect(contextmenu.defaultPrevented).toBe(true)
+  })
+
   it('does nothing while disabled', () => {
     uninstall()
     uninstall = installWindowMoveGesture({ bridge: () => bridge, now: () => clock, enabled: () => false })
@@ -199,6 +220,7 @@ describe('isAllowedTarget', () => {
 
   it.each([
     ['a draggable card', '<div draggable="true"><span id="t">x</span></div>', false],
+    ['a button with its own long press', '<button data-long-press="true"><svg id="t"></svg></button>', false],
     ['an input', '<input id="t">', false],
     ['a textarea', '<textarea id="t"></textarea>', false],
     ['a select', '<select id="t"></select>', false],

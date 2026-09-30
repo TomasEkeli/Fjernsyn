@@ -339,6 +339,10 @@ function handleRestartPrompt(setting, value) {
  * @param {'restart' | 'cancel' | null} choice
  */
 function handleRestartChoice(choice) {
+  if (pendingRestartSetting.value === null) {
+    return
+  }
+
   const { toggle, action } = restartSettings[pendingRestartSetting.value]
   pendingRestartSetting.value = null
 

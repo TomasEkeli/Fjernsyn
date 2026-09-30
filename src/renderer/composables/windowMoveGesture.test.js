@@ -164,7 +164,7 @@ describe('windowMoveGesture', () => {
       expect(effects).not.toContain('suppressClick')
     })
 
-    it.each(['dragstart', 'selectstart'])('prevents a %s, so the window moves instead', (type) => {
+    it.each(['dragstart', 'selectstart', 'contextmenu'])('prevents a %s, so the window moves instead', (type) => {
       const { state, effects } = transition(armed(), { type }, HOLD_MS + 5)
 
       expect(state.phase).toBe('armed')
@@ -176,6 +176,13 @@ describe('windowMoveGesture', () => {
 
       expect(state.phase).toBe('idle')
       expect(effects).toEqual(['disarm'])
+    })
+
+    it('starts over on a press, when its release went missing', () => {
+      const { state, effects } = transition(armed(), pointerdown(), HOLD_MS + 5000)
+
+      expect(state.phase).toBe('pressing')
+      expect(effects).toEqual(['disarm', 'startTimer'])
     })
   })
 
@@ -194,18 +201,49 @@ describe('windowMoveGesture', () => {
       expect(effects).toEqual([])
     })
 
-    it.each(['dragstart', 'selectstart'])('prevents a %s', (type) => {
+    it.each(['dragstart', 'selectstart', 'contextmenu'])('prevents a %s', (type) => {
       const { state, effects } = transition(moving(), { type }, HOLD_MS + 50)
 
       expect(state.phase).toBe('moving')
       expect(effects).toEqual(['preventDefault'])
     })
 
-    it('sends end when called off, as by Escape, blur or pointercancel, without swallowing a click', () => {
+    it('sends end when called off, as by Escape, blur or pointercancel, and waits for the release', () => {
       const { state, effects } = transition(moving(), { type: 'cancel' }, HOLD_MS + 50)
 
-      expect(state.phase).toBe('idle')
+      expect(state.phase).toBe('cancelled')
       expect(effects).toEqual(['sendEnd', 'disarm'])
+    })
+
+    it('swallows the click of the release that follows a called off move', () => {
+      const cancelled = transition(moving(), { type: 'cancel' }, HOLD_MS + 50).state
+      const { state, effects } = transition(cancelled, pointerup(), HOLD_MS + 200)
+
+      expect(state.phase).toBe('idle')
+      expect(effects).toEqual(['suppressClick'])
+    })
+
+    it('starts over on the next press when a called off move never saw its release', () => {
+      const cancelled = transition(moving(), { type: 'cancel' }, HOLD_MS + 50).state
+      const { state, effects } = transition(cancelled, pointerdown(), HOLD_MS + 5000)
+
+      expect(state.phase).toBe('pressing')
+      expect(effects).toEqual(['startTimer'])
+    })
+
+    it('ignores everything else once called off', () => {
+      const cancelled = transition(moving(), { type: 'cancel' }, HOLD_MS + 50).state
+
+      for (const event of [pointermove(1, 1), { type: 'holdElapsed' }, { type: 'dragstart' }, { type: 'cancel' }]) {
+        expect(transition(cancelled, event, HOLD_MS + 100)).toEqual({ state: cancelled, effects: [] })
+      }
+    })
+
+    it('starts over on a press, ending the move, when its release went missing', () => {
+      const { state, effects } = transition(moving(), pointerdown({ x: 10, y: 10 }), HOLD_MS + 5000)
+
+      expect(state).toMatchObject({ phase: 'pressing', startX: 10, startY: 10, pressedAt: HOLD_MS + 5000 })
+      expect(effects).toEqual(['sendEnd', 'disarm', 'startTimer'])
     })
 
     it('ignores a stray hold timer', () => {
