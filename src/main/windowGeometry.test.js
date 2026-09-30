@@ -678,6 +678,76 @@ describe('snapping a resize the window manager did not lock', () => {
   })
 })
 
+describe('the normal size, the one the window has outside video views', () => {
+  function trackedWindow() {
+    const harness = createHarness()
+    const win = createStubWindow({ x: 360, y: 70, width: 1200, height: 900 })
+    harness.geometry.trackWindow(win)
+    return { ...harness, win }
+  }
+
+  it('is what a release gives back, even when an earlier give back was refused', () => {
+    const { geometry, win } = trackedWindow()
+
+    geometry.fitToVideo(win, 1080, 1920)
+    // The window manager refuses to give the size back, so no resize comes
+    const setContentBounds = win.setContentBounds.getMockImplementation()
+    win.setContentBounds.mockImplementation(() => {})
+    geometry.releaseFit(win)
+    win.setContentBounds.mockImplementation(setContentBounds)
+
+    geometry.fitToVideo(win, 1080, 1920)
+    geometry.releaseFit(win)
+
+    expect(win.getContentBounds()).toMatchObject({ width: 1200, height: 900 })
+  })
+
+  it('follows a resize made outside video views', () => {
+    const { geometry, win } = trackedWindow()
+
+    resizeByHand(win, 1000, 800)
+    win.emit('resize')
+    geometry.fitToVideo(win, 1080, 1920)
+    geometry.releaseFit(win)
+
+    expect(win.getContentBounds()).toMatchObject({ width: 1000, height: 800 })
+  })
+
+  it('does not follow a resize while fitted', () => {
+    const { geometry, win } = trackedWindow()
+
+    geometry.fitToVideo(win, 1920, 1080)
+    resizeByHand(win, 1600, 900)
+    win.emit('resize')
+    geometry.releaseFit(win)
+    geometry.fitToVideo(win, 1080, 1920)
+    geometry.releaseFit(win)
+
+    expect(win.getContentBounds()).toMatchObject({ width: 1200, height: 900 })
+  })
+
+  it('does not follow the size of a maximised window', () => {
+    const { geometry, win } = trackedWindow()
+
+    win.state.maximized = true
+    resizeByHand(win, 1920, 1040)
+    win.emit('resize')
+    win.state.maximized = false
+    geometry.fitToVideo(win, 1080, 1920)
+    geometry.releaseFit(win)
+
+    expect(win.getContentBounds()).toMatchObject({ width: 1200, height: 900 })
+  })
+
+  it('is what is saved for a window closed while fitted', () => {
+    const { geometry, win } = trackedWindow()
+
+    geometry.fitToVideo(win, 1080, 1920)
+
+    expect(geometry.persistableBounds(win, win.getBounds())).toMatchObject({ width: 1200, height: 900 })
+  })
+})
+
 describe('persistableBounds', () => {
   it('gives the size from before the fit, so a fitted size is never saved', () => {
     const { geometry } = createHarness()

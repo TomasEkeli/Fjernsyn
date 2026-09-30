@@ -184,7 +184,7 @@ export function createWindowGeometry(dependencies = {}) {
    * @typedef {{ width: number, height: number }} Size
    * @typedef {object} Fit
    * @property {number} ratio the video's, width over height
-   * @property {Size} restore the content size from before the first fit
+   * @property {Size} restore the size to give back: the normal size, or for an untracked window the size at the first fit
    * @property {Size} settled the content size when the window was last still at the ratio
    * @property {Size | null} snappedFrom the size the last snap started from, until the window reaches the ratio
    * @property {() => void} dispose
@@ -192,6 +192,34 @@ export function createWindowGeometry(dependencies = {}) {
 
   /** @type {Map<Electron.BrowserWindow, Fit>} */
   const fits = new Map()
+
+  /**
+   * Each tracked window's normal size: its content size outside video views,
+   * as the user last left it. It follows the window's resizes while nothing
+   * is fitted and it is neither maximised, fullscreen nor minimised, and
+   * never those made while fitted. A give back the window manager refuses
+   * brings no resize, so it cannot turn a video's shape into the normal size.
+   * @type {WeakMap<Electron.BrowserWindow, Size>}
+   */
+  const normalSizes = new WeakMap()
+
+  /**
+   * Starts keeping the window's normal size, which a release gives back and
+   * a window closed while fitted saves. Call once, as the window is created.
+   * @param {Electron.BrowserWindow} win
+   */
+  function trackWindow(win) {
+    if (!win || win.isDestroyed() || normalSizes.has(win)) {
+      return
+    }
+
+    normalSizes.set(win, contentSize(win))
+    win.on('resize', () => {
+      if (!fits.has(win) && isResizable(win)) {
+        normalSizes.set(win, contentSize(win))
+      }
+    })
+  }
 
   /**
    * @param {Electron.BrowserWindow} win
@@ -304,7 +332,7 @@ export function createWindowGeometry(dependencies = {}) {
 
     let fit = fits.get(win)
     if (!fit) {
-      fit = { ratio, restore: current, settled: current, snappedFrom: null, dispose: () => {} }
+      fit = { ratio, restore: normalSizes.get(win) ?? current, settled: current, snappedFrom: null, dispose: () => {} }
       fits.set(win, fit)
       fit.dispose = watchFittedWindow(win)
     }
@@ -528,7 +556,7 @@ export function createWindowGeometry(dependencies = {}) {
     return fits.has(win)
   }
 
-  return { startMove, endMove, isMoving, fitToVideo, releaseFit, persistableBounds, isFitted }
+  return { startMove, endMove, isMoving, trackWindow, fitToVideo, releaseFit, persistableBounds, isFitted }
 }
 
 const windowGeometry = createWindowGeometry()
@@ -538,3 +566,4 @@ export const endMove = windowGeometry.endMove
 export const fitToVideo = windowGeometry.fitToVideo
 export const releaseFit = windowGeometry.releaseFit
 export const persistableBounds = windowGeometry.persistableBounds
+export const trackWindow = windowGeometry.trackWindow

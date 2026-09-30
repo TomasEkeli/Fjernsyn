@@ -39,7 +39,8 @@ import {
   fitToVideo as fitWindowToVideo,
   persistableBounds as persistableWindowBounds,
   releaseFit as releaseWindowFit,
-  startMove as startWindowMove
+  startMove as startWindowMove,
+  trackWindow as trackWindowSize
 } from './windowGeometry'
 import { isRendererWritableYtDlpSetting, registerYtDlpHandlers } from './ytdlp/ipc'
 
@@ -1143,6 +1144,9 @@ function runApp() {
             height: 800
           }
     })
+
+    // The size outside video views, which leaving a video's full window gives back
+    trackWindowSize(newWindow)
 
     // Without this, a dead renderer only produces Electron's own one line notice,
     // which says nothing about why it died. The reason distinguishes the cases that
