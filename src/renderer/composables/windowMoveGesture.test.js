@@ -115,8 +115,14 @@ describe('windowMoveGesture', () => {
       expect(effects).toEqual(['arm'])
     })
 
-    it('does not arm on a timer that fires before the hold is up', () => {
-      const { state, effects } = transition(pressed(), { type: 'holdElapsed' }, HOLD_MS - 1)
+    it('arms on a timer that fires a few milliseconds early', () => {
+      const { state } = transition(pressed(), { type: 'holdElapsed' }, HOLD_MS - 5)
+
+      expect(state.phase).toBe('armed')
+    })
+
+    it('does not arm on a timer that fires well before the hold is up, as one from an earlier press would', () => {
+      const { state, effects } = transition(pressed(), { type: 'holdElapsed' }, HOLD_MS / 2)
 
       expect(state.phase).toBe('pressing')
       expect(effects).toEqual([])

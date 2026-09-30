@@ -12,6 +12,7 @@
 
 export const HOLD_MS = 400
 export const MOVE_THRESHOLD_PX = 4
+const HOLD_SLACK_MS = 50
 
 /**
  * @typedef {'idle' | 'pressing' | 'armed' | 'moving'} Phase
@@ -135,8 +136,9 @@ export function transition(state, event, now) {
           // The page's own drag began before the hold was up, so it is the page's
           return toIdle(['cancelTimer'])
         case 'holdElapsed':
-          // A timer from an earlier press cannot arm this one
-          if (now - state.pressedAt < HOLD_MS) {
+          // A timer from an earlier press cannot arm this one. The slack is
+          // for timers that fire a little early and clocks that round.
+          if (now - state.pressedAt < HOLD_MS - HOLD_SLACK_MS) {
             return stay(state)
           }
           return stay({ ...state, phase: 'armed' }, ['arm'])

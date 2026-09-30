@@ -1,0 +1,11 @@
+/*
+ * A long press has armed the window move (see composables/useWindowMoveGesture.js),
+ * which puts this class on the root element: the cursor says so everywhere,
+ * whatever each element would show, and nothing is selected while the window
+ * is dragged.
+ */
+:root.window-move-armed,
+:root.window-move-armed * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
