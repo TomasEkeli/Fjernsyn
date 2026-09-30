@@ -13,7 +13,7 @@
 //     time:     'today' | 'week' | 'month' | 'year' | null,
 //     after:    'YYYY-MM-DD' | null,  PeerTube only
 //     before:   'YYYY-MM-DD' | null,  PeerTube only
-//     type:     'video' | 'channel' | 'playlist' | 'shorts' | 'movie' | null,
+//     type:     'all' | 'channel' | 'playlist' | 'shorts' | 'movie' | null,   null: videos
 //     length:   'short' | 'medium' | 'long' | null,
 //     language: string[],             PeerTube's language codes
 //     live:     boolean,
@@ -34,7 +34,9 @@ export const SCOPE_ALL = 'all'
 export const SCOPES = Object.freeze([SCOPE_YOUTUBE, SCOPE_PEERTUBE, SCOPE_ALL])
 export const SORTS = Object.freeze(['date', 'views', 'trending'])
 export const TIMES = Object.freeze(['today', 'week', 'month', 'year'])
-export const TYPES = Object.freeze(['video', 'channel', 'playlist', 'shorts', 'movie'])
+// Unset is videos, a search's default; `all` is YouTube's mix of videos,
+// channels and playlists. `video` is read from a URL or operator as unset.
+export const TYPES = Object.freeze(['all', 'channel', 'playlist', 'shorts', 'movie'])
 export const LENGTHS = Object.freeze(['short', 'medium', 'long'])
 
 /** Every parameter but the text and the scope, in the order they are described */
@@ -60,7 +62,7 @@ const HOST_PATTERN = /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-
  * @property {'today' | 'week' | 'month' | 'year' | null} time
  * @property {string | null} after
  * @property {string | null} before
- * @property {'video' | 'channel' | 'playlist' | 'shorts' | 'movie' | null} type
+ * @property {'all' | 'channel' | 'playlist' | 'shorts' | 'movie' | null} type null: videos
  * @property {'short' | 'medium' | 'long' | null} length
  * @property {string[]} language
  * @property {boolean} live
@@ -183,7 +185,8 @@ export function defaults(scope = SCOPE_YOUTUBE) {
  *
  * 1. `instance` needs scope `peertube`; otherwise dropped.
  * 2. `after` or `before` set clears `time` (the dates are the more specific).
- * 3. `sort: 'relevance'` becomes `null`.
+ * 3. `sort: 'relevance'` becomes `null`, and `type: 'video'` becomes `null`
+ *    (the unset type is videos).
  *
  * Every value is also checked, and one that is not a value of its parameter is
  * unset, so anything built from outside (a stored set, an operator) is safe.
@@ -205,7 +208,7 @@ export function normalise(query) {
     time: oneOf(source.time, TIMES),
     after: validDate(source.after),
     before: validDate(source.before),
-    type: oneOf(source.type, TYPES),
+    type: source.type === 'video' ? null : oneOf(source.type, TYPES),
     length: oneOf(source.length, LENGTHS),
     language: validLanguages(source.language),
     live: source.live === true,

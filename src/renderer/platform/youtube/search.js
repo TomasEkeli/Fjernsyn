@@ -46,7 +46,7 @@ export function youtubeFilters(query) {
   return {
     prioritize: query.sort === 'views' ? 'popularity' : 'relevance',
     time: query.time !== null && sent('time') ? query.time : '',
-    type: query.type ?? 'all',
+    type: query.type ?? 'video',
     duration: query.length !== null && sent('length') ? DURATIONS[query.length] : '',
     features: query.live && sent('live') ? ['live'] : [],
   }

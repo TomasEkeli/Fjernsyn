@@ -9,7 +9,8 @@ const channel = { type: 'channel', id: 'UCaaaaaaaaaaaaaaaaaaaaaa', name: 'A chan
 const playlist = { type: 'playlist', playlistId: 'PL1', title: 'A playlist' }
 const hashtag = { type: 'hashtag', title: '#blender' }
 
-const PLAIN = { prioritize: 'relevance', time: '', type: 'all', duration: '', features: [] }
+// Unset, the type is videos
+const PLAIN = { prioritize: 'relevance', time: '', type: 'video', duration: '', features: [] }
 
 /**
  * @param {object} [options]
@@ -67,6 +68,7 @@ describe('YouTube search through the layer', () => {
     [{ time: 'week' }, { time: 'week' }],
     [{ type: 'shorts' }, { type: 'shorts' }],
     [{ type: 'movie' }, { type: 'movie' }],
+    [{ type: 'all' }, { type: 'all' }],
     [{ length: 'short' }, { duration: 'under_three_mins' }],
     [{ length: 'medium' }, { duration: 'three_to_twenty_mins' }],
     [{ length: 'long' }, { duration: 'over_twenty_mins' }],
@@ -102,7 +104,7 @@ describe('YouTube search through the layer', () => {
   it('lists what it honoured as applied', async () => {
     const { layer } = setUp()
 
-    const page = await layer.searchQuery(youtubeQuery({ sort: 'views', type: 'video', length: 'long', live: true }))
+    const page = await layer.searchQuery(youtubeQuery({ sort: 'views', type: 'all', length: 'long', live: true }))
 
     expect(page.applied).toEqual(['sort', 'type', 'length', 'live'])
   })

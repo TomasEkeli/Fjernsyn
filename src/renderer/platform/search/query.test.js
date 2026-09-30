@@ -28,7 +28,7 @@ function everything() {
     sort: 'date',
     after: '2024-06-01',
     before: '2024-06-30',
-    type: 'video',
+    type: 'all',
     length: 'medium',
     language: ['no', 'nb'],
     live: true,
@@ -49,7 +49,7 @@ describe('parse and toRoute', () => {
         sort: 'date',
         after: '2024-06-01',
         before: '2024-06-30',
-        type: 'video',
+        type: 'all',
         length: 'medium',
         lang: 'no,nb',
         live: '1',
@@ -95,7 +95,7 @@ describe('parse and toRoute', () => {
       time: 'decade',
       after: '2024-02-30',
       before: 'yesterday',
-      type: 'all',
+      type: 'mixed',
       length: 'epic',
       lang: 'NO,english,,nb,no',
       live: 'yes',
@@ -110,10 +110,14 @@ describe('parse and toRoute', () => {
     expect(parse({ sort: ['views', 'date'] }, 'x', ON).sort).toBe('views')
   })
 
-  it('read the old search page\'s time, and ignore its other fields', () => {
+  it('read the old search page\'s time and type, and ignore its other fields', () => {
     const query = parse({ prioritize: 'popularity', time: 'week', type: 'all', duration: 'over_twenty_mins', features: ['live'] }, 'x', ON)
 
-    expect(query).toEqual({ ...withText(defaults('youtube'), 'x'), time: 'week' })
+    expect(query).toEqual({ ...withText(defaults('youtube'), 'x'), time: 'week', type: 'all' })
+  })
+
+  it('read type video as the unset type, which is videos', () => {
+    expect(parse({ type: 'video' }, 'x', ON).type).toBeNull()
   })
 
   it('read every scope as YouTube, and drop the PeerTube-only filters, while PeerTube is off', () => {
@@ -123,7 +127,7 @@ describe('parse and toRoute', () => {
       ...withText(defaults('youtube'), 'blender'),
       sort: 'date',
       time: 'year',
-      type: 'video',
+      type: 'all',
       length: 'medium',
       live: true,
     })
@@ -180,7 +184,7 @@ describe('isPlain', () => {
   })
 
   it.each([
-    ['sort', 'date'], ['time', 'today'], ['type', 'video'], ['length', 'short'],
+    ['sort', 'date'], ['time', 'today'], ['type', 'all'], ['length', 'short'],
     ['language', ['no']], ['live', true], ['nsfw', false], ['after', '2024-01-01'],
   ])('is false with %s set', (name, value) => {
     expect(isPlain({ ...defaults('peertube'), [name]: value })).toBe(false)
@@ -258,7 +262,7 @@ describe('describe', () => {
 
   it('names every filter', () => {
     expect(describeParameters(parameters(everything()), t, { languageName }))
-      .toBe('PeerTube · on tilvids.com · newest · 2024-06-01 to 2024-06-30 · videos · 3 to 20 min · Norwegian, Norwegian Bokmål · live · without NSFW')
+      .toBe('PeerTube · on tilvids.com · newest · 2024-06-01 to 2024-06-30 · all types · 3 to 20 min · Norwegian, Norwegian Bokmål · live · without NSFW')
   })
 
   it('names one date alone, and both scopes', () => {

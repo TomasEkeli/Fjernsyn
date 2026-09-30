@@ -17,8 +17,8 @@ import { FILTER_NAMES, SCOPE_ALL, SCOPE_PEERTUBE, SCOPE_YOUTUBE, SORTS, TYPES, i
 export const PLATFORM_YOUTUBE = 'youtube'
 export const PLATFORM_PEERTUBE = 'peertube'
 
-/** The types PeerTube can search for; anything else searches its videos */
-const PEERTUBE_TYPES = Object.freeze(['video', 'channel'])
+/** The types PeerTube can search for besides videos (unset); anything else searches its videos */
+const PEERTUBE_TYPES = Object.freeze(['channel'])
 
 /**
  * The platforms a scope sends a query to.
@@ -118,12 +118,12 @@ export function offeredIn(name, scope) {
     time: 'week',
     after: '2000-01-01',
     before: '2000-01-01',
-    type: 'video',
+    type: 'all',
     length: 'short',
     language: ['en'],
     live: true,
     nsfw: true,
   }
 
-  return platformsOf(scope).some(platform => honours(platform, name, { ...probe, type: name === 'type' ? 'video' : null }))
+  return platformsOf(scope).some(platform => honours(platform, name, { ...probe, type: name === 'type' ? 'channel' : null }))
 }

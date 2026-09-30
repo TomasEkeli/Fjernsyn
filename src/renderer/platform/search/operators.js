@@ -4,7 +4,7 @@
 //   on:youtube|peertube|all     instance:<host>
 //   sort:relevance|date|views|trending
 //   time:today|week|month|year  after:YYYY-MM-DD  before:YYYY-MM-DD
-//   type:video|channel|playlist|shorts|movie     length:short|medium|long
+//   type:video|all|channel|playlist|shorts|movie length:short|medium|long
 //   lang:xx[,yy]                live:yes|no       nsfw:yes|no
 //
 // A word is an operator only when both its key and its value are known; any
@@ -23,7 +23,7 @@ import { validHost } from './query'
 const SCOPES = ['youtube', 'peertube', 'all']
 const SORTS = ['relevance', 'date', 'views', 'trending']
 const TIMES = ['today', 'week', 'month', 'year']
-const TYPES = ['video', 'channel', 'playlist', 'shorts', 'movie']
+const TYPES = ['video', 'all', 'channel', 'playlist', 'shorts', 'movie']
 const LENGTHS = ['short', 'medium', 'long']
 const YES_NO = ['yes', 'no']
 

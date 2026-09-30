@@ -1507,7 +1507,7 @@ Layer Search:
   Chips:
     Sort: Sort
     Time: Any time
-    Type: Any type
+    Type: Type
     Length: Any length
     Language: Language
     Find language: Find a language
@@ -1531,6 +1531,7 @@ Layer Search:
       year: This year
     Type:
       video: Videos
+      all: All types
       channel: Channels
       playlist: Playlists
       shorts: Shorts
@@ -1561,7 +1562,7 @@ Layer Search:
     Before: until {date}
     Between: '{after} to {before}'
     Type:
-      video: videos
+      all: all types
       channel: channels
       playlist: playlists
       shorts: shorts

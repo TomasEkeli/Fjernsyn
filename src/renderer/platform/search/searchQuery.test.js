@@ -94,7 +94,6 @@ describe('PeerTube search by query', () => {
     [{ language: ['no'] }, { 'languageOneOf[]': 'no', 'boostedLanguages[]': 'no' }],
     [{ language: ['no', 'nb'] }, { 'languageOneOf[]': ['no', 'nb'], 'boostedLanguages[]': ['no', 'nb'] }],
     [{ nsfw: true }, { nsfw: 'both' }],
-    [{ type: 'video' }, {}],
   ])('sends %o as %o', async (filters, fields) => {
     const { fake, layer } = setUp()
 
@@ -111,6 +110,9 @@ describe('PeerTube search by query', () => {
 
     expect(sentFields(fake).path).toBe('/api/v1/search/videos')
     expect(page.applied).toEqual([])
+
+    const mixed = setUp()
+    expect((await mixed.layer.searchQuery(queryOf('peertube', { type: 'all' }))).applied).toEqual([])
   })
 
   it('searches channels for type channel, with the text alone', async () => {

@@ -242,6 +242,9 @@ describe('the chips', () => {
     const { wrapper } = await openSearchPage('/search/blender?scope=youtube')
 
     expect(wrapper.findAll('.sortChip option').map(option => option.text())).toEqual(['Relevance', 'Most viewed'])
+    // Videos unless asked for more
+    expect(wrapper.findAll('.typeChip option').map(option => option.text())).toEqual(['Videos', 'All types', 'Channels', 'Playlists', 'Shorts', 'Movies'])
+    expect(wrapper.find('.typeChip').classes()).not.toContain('set')
     expect(wrapper.find('.nsfwChip').exists()).toBe(false)
     expect(wrapper.find('.languageChip').exists()).toBe(false)
   })

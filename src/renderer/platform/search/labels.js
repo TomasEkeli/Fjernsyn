@@ -69,12 +69,12 @@ export function timeLabel(t, time) {
  */
 export function typeLabel(t, type) {
   switch (type) {
-    case 'video': return t('Layer Search.Values.Type.video')
+    case 'all': return t('Layer Search.Values.Type.all')
     case 'channel': return t('Layer Search.Values.Type.channel')
     case 'playlist': return t('Layer Search.Values.Type.playlist')
     case 'shorts': return t('Layer Search.Values.Type.shorts')
     case 'movie': return t('Layer Search.Values.Type.movie')
-    default: return t('Layer Search.Chips.Type')
+    default: return t('Layer Search.Values.Type.video')
   }
 }
 
@@ -148,11 +148,11 @@ export function timeWord(t, time) {
  */
 export function typeWord(t, type) {
   switch (type) {
+    case 'all': return t('Layer Search.Words.Type.all')
     case 'channel': return t('Layer Search.Words.Type.channel')
     case 'playlist': return t('Layer Search.Words.Type.playlist')
     case 'shorts': return t('Layer Search.Words.Type.shorts')
-    case 'movie': return t('Layer Search.Words.Type.movie')
-    default: return t('Layer Search.Words.Type.video')
+    default: return t('Layer Search.Words.Type.movie')
   }
 }
 

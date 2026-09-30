@@ -17,7 +17,6 @@ describe('appliedFilters', () => {
     instance: 'tilvids.com',
     sort: 'views',
     time: 'week',
-    type: 'video',
     length: 'short',
     language: ['no'],
     live: true,
@@ -25,7 +24,8 @@ describe('appliedFilters', () => {
   }
 
   it('lists what YouTube honours: popularity, time, type, length and live', () => {
-    expect(appliedFilters('youtube', everything)).toEqual(['sort', 'time', 'type', 'length', 'live'])
+    expect(appliedFilters('youtube', everything)).toEqual(['sort', 'time', 'length', 'live'])
+    expect(appliedFilters('youtube', { ...everything, type: 'all' })).toEqual(['sort', 'time', 'type', 'length', 'live'])
   })
 
   it('leaves out what YouTube\'s channel and shorts searches do not take', () => {
@@ -41,11 +41,12 @@ describe('appliedFilters', () => {
   })
 
   it('lists every set filter for PeerTube videos', () => {
-    expect(appliedFilters('peertube', everything)).toEqual(['instance', 'sort', 'time', 'type', 'length', 'language', 'live', 'nsfw'])
+    expect(appliedFilters('peertube', everything)).toEqual(['instance', 'sort', 'time', 'length', 'language', 'live', 'nsfw'])
   })
 
   it('leaves out the types PeerTube has not', () => {
     expect(appliedFilters('peertube', { ...defaults('all'), type: 'playlist' })).toEqual([])
+    expect(appliedFilters('peertube', { ...defaults('all'), type: 'all' })).toEqual([])
     expect(appliedFilters('youtube', { ...defaults('all'), type: 'playlist' })).toEqual(['type'])
   })
 
@@ -71,9 +72,9 @@ describe('optionsFor', () => {
     expect(optionsFor('sort', 'all')).toEqual([null, 'date', 'views', 'trending'])
   })
 
-  it('offers PeerTube videos and channels, and YouTube every type', () => {
-    expect(optionsFor('type', 'peertube')).toEqual([null, 'video', 'channel'])
-    expect(optionsFor('type', 'youtube')).toEqual([null, 'video', 'channel', 'playlist', 'shorts', 'movie'])
+  it('offers PeerTube videos (unset) and channels, and YouTube every type', () => {
+    expect(optionsFor('type', 'peertube')).toEqual([null, 'channel'])
+    expect(optionsFor('type', 'youtube')).toEqual([null, 'all', 'channel', 'playlist', 'shorts', 'movie'])
   })
 })
 
