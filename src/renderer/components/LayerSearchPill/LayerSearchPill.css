@@ -1,8 +1,21 @@
+/* Lays the pill out as if it were the top bar's own child */
+.searchPillSlot {
+  display: contents;
+}
+
+/*
+ * As tall as the search box beside it, and level with it: the box is 45px,
+ * set 7px down in its component, which also carries 10px below it.
+ */
 .searchPill {
   align-items: center;
+  align-self: flex-start;
+  block-size: 45px;
   border: 1px solid var(--tertiary-text-color);
-  border-radius: 16px;
+  border-radius: 23px;
+  box-sizing: border-box;
   display: inline-flex;
+  margin-block-start: 7px;
   flex: 0 1 auto;
   margin-inline-start: 12px;
 
@@ -28,20 +41,20 @@
   font: inherit;
   font-size: 13px;
   gap: 6px;
-  min-block-size: 30px;
+  block-size: 100%;
   padding-block: 0;
 }
 
 .pillToggle {
-  border-end-start-radius: 16px;
-  border-start-start-radius: 16px;
+  border-end-start-radius: 23px;
+  border-start-start-radius: 23px;
   min-inline-size: 0;
   padding-inline: 12px 6px;
 }
 
 .pillExpand {
-  border-end-end-radius: 16px;
-  border-start-end-radius: 16px;
+  border-end-end-radius: 23px;
+  border-start-end-radius: 23px;
   padding-inline: 6px 10px;
 }
 

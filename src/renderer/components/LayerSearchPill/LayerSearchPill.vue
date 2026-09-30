@@ -1,45 +1,48 @@
 <template>
-  <div
-    v-if="remembered !== null"
-    ref="pill"
-    class="searchPill"
-    :class="{ lit: latched }"
-  >
-    <button
-      type="button"
-      class="pillToggle"
-      :aria-pressed="latched"
-      :title="latched ? t('Layer Search.Pill.Lit', { filters: words }) : t('Layer Search.Pill.Unlit', { filters: words })"
-      @click="toggle"
-    >
-      <FontAwesomeIcon
-        class="pillIcon"
-        :icon="['fas', 'filter']"
-      />
-      <span class="pillWords">{{ words }}</span>
-    </button>
-    <button
-      type="button"
-      class="pillExpand"
-      :aria-expanded="expanded"
-      :aria-label="t('Layer Search.Pill.Edit')"
-      :title="t('Layer Search.Pill.Edit')"
-      @click="expanded = !expanded"
-    >
-      <FontAwesomeIcon :icon="['fas', 'angle-down']" />
-    </button>
+  <!-- Always there while the switch is on, pill or not, so the top bar can widen the search box for it -->
+  <div class="searchPillSlot">
     <div
-      v-if="expanded"
-      class="pillPanel"
-      @keydown.esc="expanded = false"
+      v-if="remembered !== null"
+      ref="pill"
+      class="searchPill"
+      :class="{ lit: latched }"
     >
-      <LayerSearchChips
-        :parameters="remembered"
-        with-scope
-        :peertube-enabled="peertubeEnabled"
-        :locale="locale"
-        @update="edit"
-      />
+      <button
+        type="button"
+        class="pillToggle"
+        :aria-pressed="latched"
+        :title="latched ? t('Layer Search.Pill.Lit', { filters: words }) : t('Layer Search.Pill.Unlit', { filters: words })"
+        @click="toggle"
+      >
+        <FontAwesomeIcon
+          class="pillIcon"
+          :icon="['fas', 'filter']"
+        />
+        <span class="pillWords">{{ words }}</span>
+      </button>
+      <button
+        type="button"
+        class="pillExpand"
+        :aria-expanded="expanded"
+        :aria-label="t('Layer Search.Pill.Edit')"
+        :title="t('Layer Search.Pill.Edit')"
+        @click="expanded = !expanded"
+      >
+        <FontAwesomeIcon :icon="['fas', 'angle-down']" />
+      </button>
+      <div
+        v-if="expanded"
+        class="pillPanel"
+        @keydown.esc="expanded = false"
+      >
+        <LayerSearchChips
+          :parameters="remembered"
+          with-scope
+          :peertube-enabled="peertubeEnabled"
+          :locale="locale"
+          @update="edit"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -112,3 +115,14 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeOutside))
 </script>
 
 <style scoped src="./LayerSearchPill.css" />
+
+<!--
+  Unscoped, and only while the layer's search page is on: the top bar's search
+  box grows from upstream's 440px, since the pill takes some of it. Here rather
+  than in the top bar's styles, which are upstream's.
+-->
+<style>
+.topNav .middle:has(.searchPillSlot) {
+  max-inline-size: 760px;
+}
+</style>
