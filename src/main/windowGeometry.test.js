@@ -65,8 +65,6 @@ function createHarness({ workArea = { x: 0, y: 0, width: 1920, height: 1040 } } 
   const cursor = { x: 0, y: 0 }
   /** @type {Map<number, () => void>} */
   const intervals = new Map()
-  /** @type {Map<number, () => void>} */
-  const timeouts = new Map()
   let nextId = 1
 
   const geometry = createWindowGeometry({
@@ -80,25 +78,12 @@ function createHarness({ workArea = { x: 0, y: 0, width: 1920, height: 1040 } } 
       return id
     },
     clearInterval: (id) => intervals.delete(id),
-    setTimeout: (callback) => {
-      const id = nextId++
-      timeouts.set(id, callback)
-      return id
-    },
-    clearTimeout: (id) => timeouts.delete(id),
   })
 
   return {
     geometry,
     cursor,
     intervals,
-    timeouts,
-    // Runs the timeouts pending now, as time passing would
-    settle: () => {
-      const pending = [...timeouts.entries()]
-      timeouts.clear()
-      pending.forEach(([, callback]) => callback())
-    },
     tick: () => [...intervals.values()].forEach(callback => callback()),
     moveCursor: (x, y) => Object.assign(cursor, { x, y }),
   }
@@ -549,78 +534,116 @@ describe('fitting the window to a video', () => {
 })
 
 describe('snapping a resize the window manager did not lock', () => {
+  // The poll runs every 50 ms and a resize counts as over after 150 ms without one
+  const QUIET_TICKS = 3
+
   function fittedWindow() {
     const harness = createHarness()
     const win = createStubWindow({ x: 360, y: 70, width: 1200, height: 900 })
     harness.geometry.fitToVideo(win, 1920, 1080)
-    // The fit's own resize settles to the ratio, which asks for nothing
+    // The fit's own resize has the ratio, which asks for nothing
     win.emit('resize')
-    harness.settle()
+    for (let i = 0; i < QUIET_TICKS; i++) harness.tick()
     win.setContentBounds.mockClear()
-    return { ...harness, win }
+
+    const drag = (width, height) => {
+      resizeByHand(win, width, height)
+      win.emit('resize')
+    }
+    const wait = (ticks) => {
+      for (let i = 0; i < ticks; i++) harness.tick()
+    }
+
+    // Content is now x 267, y 130, 1386 by 780
+    return { ...harness, win, drag, wait }
   }
 
-  it('keeps the width that was dragged and the top left corner, once the drag has settled', () => {
-    const { win, settle } = fittedWindow()
+  it('waits while the cursor is on the edge being dragged, however long the drag is still', () => {
+    const { win, drag, wait, moveCursor } = fittedWindow()
 
-    resizeByHand(win, 1000, 780)
-    win.emit('resize')
+    drag(1000, 780)
+    moveCursor(1267, 500)
+    wait(40)
+
     expect(win.setContentBounds).not.toHaveBeenCalled()
+  })
 
-    settle()
+  it('snaps once the cursor has left the edge, keeping the width dragged and the top left corner', () => {
+    const { win, drag, wait, moveCursor } = fittedWindow()
+
+    drag(1000, 780)
+    moveCursor(1267, 500)
+    wait(QUIET_TICKS)
+    moveCursor(800, 500)
+    wait(1)
+
     expect(win.getContentBounds()).toEqual({ x: 267, y: 130, width: 1000, height: 563 })
   })
 
-  it('keeps the height when the height was dragged', () => {
-    const { win, settle } = fittedWindow()
+  it('snaps with the cursor away from the window altogether', () => {
+    const { win, drag, wait, moveCursor } = fittedWindow()
 
-    resizeByHand(win, 1386, 900)
-    win.emit('resize')
-    settle()
+    drag(1000, 780)
+    moveCursor(1800, 1000)
+    wait(QUIET_TICKS)
+
+    expect(win.setContentBounds).toHaveBeenCalledTimes(1)
+  })
+
+  it('waits for the resizing to stop, wherever the cursor is', () => {
+    const { win, drag, wait, moveCursor } = fittedWindow()
+    moveCursor(800, 500)
+
+    drag(1100, 780)
+    wait(QUIET_TICKS - 1)
+    drag(1000, 780)
+    wait(QUIET_TICKS - 1)
+    expect(win.setContentBounds).not.toHaveBeenCalled()
+
+    wait(1)
+    expect(win.setContentBounds).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the height when the height was dragged', () => {
+    const { win, drag, wait, moveCursor } = fittedWindow()
+    moveCursor(800, 500)
+
+    drag(1386, 900)
+    wait(QUIET_TICKS)
 
     expect(win.getContentBounds()).toEqual({ x: 267, y: 130, width: 1600, height: 900 })
   })
 
-  it('waits for the drag to be still, whatever the number of resizes on the way', () => {
-    const { win, timeouts } = fittedWindow()
+  it('does nothing, and stops watching, where the window manager kept the ratio', () => {
+    const { win, drag, wait, intervals, moveCursor } = fittedWindow()
+    moveCursor(800, 500)
 
-    resizeByHand(win, 1300, 780)
-    win.emit('resize')
-    resizeByHand(win, 1100, 780)
-    win.emit('resize')
-
-    expect(timeouts.size).toBe(1)
-  })
-
-  it('does nothing where the window manager kept the ratio', () => {
-    const { win, settle } = fittedWindow()
-
-    resizeByHand(win, 1600, 900)
-    win.emit('resize')
-    settle()
+    drag(1600, 900)
+    wait(QUIET_TICKS)
 
     expect(win.setContentBounds).not.toHaveBeenCalled()
+    expect(intervals.size).toBe(0)
   })
 
   it('gives up on a size the window manager refused, rather than fight it', () => {
-    const { win, settle } = fittedWindow()
+    const { win, drag, wait, moveCursor } = fittedWindow()
     win.setContentBounds.mockImplementation(() => {})
+    moveCursor(800, 500)
 
-    resizeByHand(win, 1000, 780)
+    drag(1000, 780)
+    wait(QUIET_TICKS)
     win.emit('resize')
-    settle()
-    win.emit('resize')
-    settle()
+    wait(QUIET_TICKS)
 
     expect(win.setContentBounds).toHaveBeenCalledTimes(1)
   })
 
   it('counts a snapped size as set by hand, so leaving full window keeps it', () => {
-    const { geometry, win, settle } = fittedWindow()
+    const { geometry, win, drag, wait, moveCursor } = fittedWindow()
+    moveCursor(800, 500)
 
-    resizeByHand(win, 1000, 780)
-    win.emit('resize')
-    settle()
+    drag(1000, 780)
+    wait(QUIET_TICKS)
     win.setContentBounds.mockClear()
     geometry.releaseFit(win)
 
@@ -628,24 +651,23 @@ describe('snapping a resize the window manager did not lock', () => {
   })
 
   it('leaves a maximised window alone', () => {
-    const { win, settle } = fittedWindow()
+    const { win, drag, wait, moveCursor } = fittedWindow()
+    moveCursor(800, 500)
 
     win.state.maximized = true
-    resizeByHand(win, 1920, 1040)
-    win.emit('resize')
-    settle()
+    drag(1920, 1040)
+    wait(QUIET_TICKS)
 
     expect(win.setContentBounds).not.toHaveBeenCalled()
   })
 
   it('stops watching on release, dropping a snap still waiting', () => {
-    const { geometry, win, timeouts } = fittedWindow()
+    const { geometry, win, drag, intervals } = fittedWindow()
 
-    resizeByHand(win, 1000, 780)
-    win.emit('resize')
+    drag(1000, 780)
     geometry.releaseFit(win)
 
-    expect(timeouts.size).toBe(0)
+    expect(intervals.size).toBe(0)
     expect(win.listenerCount('resize')).toBe(0)
   })
 })

@@ -23,17 +23,21 @@ const RATIO_TOLERANCE = 0.01
 // as fitted; window managers round a size to their own liking
 const SIZE_TOLERANCE_PX = 2
 
-// How long a resize by hand has to be still before it counts as finished.
-// Linux reports no end of a drag, only each size on the way.
-const SNAP_SETTLE_MS = 250
+// Linux reports no end of a resize by hand, only each size on the way, and
+// no mouse button state either. A resize counts as over once no size has come
+// for a while and the cursor is off the edge it was dragging by: a hand still
+// holding the edge keeps the cursor there, however long it pauses.
+const SNAP_POLL_MS = 50
+const SNAP_QUIET_MS = 150
+// How far either side of the window's border the cursor counts as on its
+// edge; the frame, if there is one, counts as edge throughout
+const EDGE_BAND_PX = 16
 
 /**
  * @typedef {object} WindowGeometryDependencies
  * @property {Pick<Electron.Screen, 'getCursorScreenPoint' | 'getDisplayMatching'>} [screen]
  * @property {typeof setInterval} [setInterval]
  * @property {typeof clearInterval} [clearInterval]
- * @property {typeof setTimeout} [setTimeout]
- * @property {typeof clearTimeout} [clearTimeout]
  */
 
 /**
@@ -67,8 +71,6 @@ export function createWindowGeometry(dependencies = {}) {
   const getScreen = () => dependencies.screen ?? electronScreen
   const startInterval = dependencies.setInterval ?? setInterval
   const stopInterval = dependencies.clearInterval ?? clearInterval
-  const startTimeout = dependencies.setTimeout ?? setTimeout
-  const stopTimeout = dependencies.clearTimeout ?? clearTimeout
 
   /** @type {Map<Electron.BrowserWindow, { interval: ReturnType<typeof setInterval>, follow: () => void, dispose: () => void }>} */
   const moves = new Map()
@@ -402,25 +404,70 @@ export function createWindowGeometry(dependencies = {}) {
   }
 
   /**
-   * Snaps a resize to the ratio once it has settled, and releases on its own
+   * Whether the cursor is on the window's border, where a hand dragging an
+   * edge holds it: within the band either side of the content's edge, or
+   * anywhere on the frame.
+   * @param {Electron.BrowserWindow} win
+   */
+  function isCursorOnEdge(win) {
+    const { x, y } = getScreen().getCursorScreenPoint()
+    const outer = win.getBounds()
+    const content = win.getContentBounds()
+
+    const withinOuter = x >= outer.x - EDGE_BAND_PX && x <= outer.x + outer.width + EDGE_BAND_PX &&
+      y >= outer.y - EDGE_BAND_PX && y <= outer.y + outer.height + EDGE_BAND_PX
+    const withinInner = x > content.x + EDGE_BAND_PX && x < content.x + content.width - EDGE_BAND_PX &&
+      y > content.y + EDGE_BAND_PX && y < content.y + content.height - EDGE_BAND_PX
+
+    return withinOuter && !withinInner
+  }
+
+  /**
+   * Snaps a resize to the ratio once it is over, and releases on its own
    * what the renderer can no longer release: a renderer that crashed or
    * reloaded, and a window that closed.
    * @param {Electron.BrowserWindow} win
    * @returns {() => void} removes the listeners and drops a snap still waiting
    */
   function watchFittedWindow(win) {
-    /** @type {ReturnType<typeof setTimeout> | null} */
-    let snapTimeout = null
-    const scheduleSnap = () => {
-      if (snapTimeout !== null) {
-        stopTimeout(snapTimeout)
+    /** @type {ReturnType<typeof setInterval> | null} */
+    let poll = null
+    let quietMs = 0
+
+    const stopPoll = () => {
+      if (poll !== null) {
+        stopInterval(poll)
+        poll = null
       }
-      snapTimeout = startTimeout(() => {
-        snapTimeout = null
-        snapToRatio(win)
-      }, SNAP_SETTLE_MS)
     }
-    win.on('resize', scheduleSnap)
+
+    const checkResize = () => {
+      quietMs += SNAP_POLL_MS
+      if (quietMs < SNAP_QUIET_MS) {
+        return
+      }
+
+      const fit = fits.get(win)
+      if (!fit || !isResizable(win) || hasRatio(contentSize(win), fit.ratio)) {
+        // Nothing to snap; snapToRatio notes a size at the ratio as settled
+        stopPoll()
+        snapToRatio(win)
+        return
+      }
+
+      if (!isCursorOnEdge(win)) {
+        stopPoll()
+        snapToRatio(win)
+      }
+    }
+
+    const onResize = () => {
+      quietMs = 0
+      if (poll === null) {
+        poll = startInterval(checkResize, SNAP_POLL_MS)
+      }
+    }
+    win.on('resize', onResize)
 
     const release = () => releaseFit(win)
     win.once('closed', release)
@@ -436,12 +483,9 @@ export function createWindowGeometry(dependencies = {}) {
     webContents?.on('did-start-navigation', releaseOnReload)
 
     return () => {
-      if (snapTimeout !== null) {
-        stopTimeout(snapTimeout)
-        snapTimeout = null
-      }
+      stopPoll()
       if (!win.isDestroyed()) {
-        win.removeListener('resize', scheduleSnap)
+        win.removeListener('resize', onResize)
         win.removeListener('closed', release)
       }
       if (webContents && !webContents.isDestroyed()) {
