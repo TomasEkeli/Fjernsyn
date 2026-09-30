@@ -499,6 +499,9 @@ Settings:
     Match Top Bar with Main Color: Match Top Bar with Main Color
     Expand Side Bar by Default: Expand Side Bar by Default
     Disable Smooth Scrolling: Disable Smooth Scrolling
+    Frameless Window: Frameless Window
+    Frameless Window Tooltip: Hides the system title bar. To move the window, press and hold anywhere
+      that does not already drag, then move the mouse. The window borders still resize it.
     UI Scale: UI Scale
     Hide Side Bar Labels: Hide Side Bar Labels
     Hide FreeTube Header Logo: Hide Fjernsyn Header Logo

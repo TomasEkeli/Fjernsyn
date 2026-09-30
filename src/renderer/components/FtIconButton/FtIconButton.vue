@@ -20,6 +20,7 @@
       }"
       :aria-disabled="disabled"
       :aria-expanded="dropdownShown"
+      :data-long-press="openOnRightOrLongClick || null"
       @pointerdown="handleIconPointerDown"
       @contextmenu.prevent
       @click="handleIconClick"

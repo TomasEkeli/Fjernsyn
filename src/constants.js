@@ -12,6 +12,9 @@ const IpcChannels = {
   APP_READY: 'app-ready',
   RELAUNCH_REQUEST: 'relaunch-request',
   SET_WINDOW_TITLE: 'set-window-title',
+  // The fork's long press move of a frameless window, see src/main/windowGeometry.js
+  WINDOW_MOVE_START: 'window-move-start',
+  WINDOW_MOVE_END: 'window-move-end',
 
   SEARCH_INPUT_HANDLING_READY: 'search-input-handling-ready',
   UPDATE_SEARCH_INPUT_TEXT: 'update-search-input-text',

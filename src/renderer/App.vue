@@ -82,6 +82,7 @@ import { loadLocale } from './i18n/index'
 import { getLocalClip } from './helpers/api/local.js'
 import { getClipInvidious } from './helpers/api/invidious.js'
 import { openPeerTubeEntry } from './platform/entryPoints'
+import { useWindowMoveGesture } from './composables/useWindowMoveGesture'
 
 const route = useRoute()
 const router = useRouter()
@@ -117,6 +118,16 @@ const landingPage = computed(() => '/' + store.getters.getLandingPage)
 const defaultInvidiousInstance = computed(() => store.getters.getDefaultInvidiousInstance)
 
 const dataReady = ref(false)
+
+// A frameless window has no title bar, so a long press and a drag moves it
+useWindowMoveGesture({ enabled: () => store.getters.getFramelessWindow })
+
+// macOS keeps its traffic lights in a frameless window, over the top bar
+if (process.env.IS_ELECTRON && process.platform === 'darwin') {
+  watch(() => store.getters.getFramelessWindow, (frameless) => {
+    document.documentElement.classList.toggle('mac-traffic-lights', frameless)
+  }, { immediate: true })
+}
 
 onMounted(async () => {
   await store.dispatch('grabUserSettings')
@@ -658,4 +669,5 @@ async function getClip(clipId) {
 <style src="./themes.css" />
 <style src="./density.css" />
 <style src="./layout.css" />
+<style src="./windowMove.css" />
 <style scoped src="./App.css" />

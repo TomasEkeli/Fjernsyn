@@ -129,6 +129,8 @@ You can change region on the page, and the last four you looked at stay a click 
 
 Navigation is in the top bar, which gives the page the full width of the window. The control row stays on screen while you scroll.
 
+The window has no title bar. To move it, hold the mouse button still for a moment anywhere that does not already drag, then move the mouse. The borders still resize it, and the system's own shortcuts (Win+arrows, F11, Alt+F4) work as before. Switch Frameless Window off in the theme settings to get the title bar back, after a restart. On Linux under Wayland an app cannot move its own window, so there the title bar stays.
+
 Cards come in tight, standard, spacious and wall density. Wall packs spacious-sized thumbnails edge to edge with the text over them. I use wall with full window as the default viewing mode, so the app mostly gets out of the way.
 
 Hover over a video card to show a tick beside the playlist buttons. Click it to mark the video as watched, or remove it from history if it is already there. I removed the external player button from the cards because I never used it.

@@ -34,6 +34,7 @@ import { registerPeerTubeDownloadHandlers } from './peertubeDownloads/ipc'
 import { createPeerTubeRequestHeaders, peerTubeUserAgent } from './peertubeRequests'
 import { generatePoToken } from './poTokenGenerator'
 import { buildProxyUrl, isFreeTubeUrl } from './utils'
+import { endMove as endWindowMove, startMove as startWindowMove } from './windowGeometry'
 import { isRendererWritableYtDlpSetting, registerYtDlpHandlers } from './ytdlp/ipc'
 
 const brotliDecompressAsync = promisify(brotliDecompress)
@@ -100,6 +101,8 @@ function runApp() {
 
   let backendPreference = 'local'
   let backendFallback = true
+  // Read once at startup, because a window's frame is fixed when it is created
+  let framelessWindow = true
 
   contextMenu({
     showSearchWithGoogle: false,
@@ -577,6 +580,9 @@ function runApp() {
           case 'handleFreeTubeLinks':
             handleFreeTubeLinks = doc.value
             break
+          case 'framelessWindow':
+            framelessWindow = doc.value
+            break
         }
       })
     }
@@ -984,6 +990,36 @@ function runApp() {
 
   const htmlFullscreenWindowIds = new Set()
 
+  /**
+   * Whether windows are created frameless. Not under native Wayland, whatever
+   * the setting: a Wayland client cannot place its own window, so the long
+   * press move could not work and the window could not be moved at all. The
+   * frame stays, drawn by Electron where the compositor does not draw one.
+   */
+  function isFramelessApplied() {
+    return framelessWindow &&
+      !(process.platform === 'linux' && app.commandLine.getSwitchValue('ozone-platform') === 'wayland')
+  }
+
+  /**
+   * The window's frame options for the `framelessWindow` setting. Without a
+   * frame the OS still resizes the window at its borders; moving it is the
+   * renderer's long press gesture (see windowGeometry.js). macOS keeps its
+   * traffic lights, since a hidden title bar there still draws them.
+   * @returns {Electron.BrowserWindowConstructorOptions}
+   */
+  function frameOptions() {
+    if (!isFramelessApplied()) {
+      return {}
+    }
+
+    // The traffic lights are placed in the middle of the 60 pixel top bar,
+    // which makes room for them (see windowMove.css)
+    return process.platform === 'darwin'
+      ? { titleBarStyle: 'hidden', trafficLightPosition: { x: 14, y: 22 } }
+      : { frame: false }
+  }
+
   async function createWindow(
     {
       replaceMainWindow = true,
@@ -1078,6 +1114,7 @@ function runApp() {
         ? path.join(__dirname, '../../_icons/iconColor.png')
         : path.join(__dirname, '../_icons/iconColor.png'),
       autoHideMenuBar: true,
+      ...frameOptions(),
       // useContentSize: true,
       webPreferences: {
         webSecurity: false,
@@ -1379,6 +1416,26 @@ function runApp() {
 
   ipcMain.once(IpcChannels.RELAUNCH_REQUEST, () => {
     relaunch()
+  })
+
+  // The window comes from the sender, so every window moves only itself
+  ipcMain.on(IpcChannels.WINDOW_MOVE_START, (event) => {
+    // A framed window has a title bar to move it by
+    if (!isFramelessApplied() || !isFreeTubeUrl(event.senderFrame.url)) {
+      return
+    }
+
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) {
+      startWindowMove(win)
+    }
+  })
+
+  ipcMain.on(IpcChannels.WINDOW_MOVE_END, (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) {
+      endWindowMove(win)
+    }
   })
 
   nativeTheme.on('updated', () => {

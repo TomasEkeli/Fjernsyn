@@ -196,6 +196,9 @@ const state = {
   // directly; a deleted profile's entry is dropped by the next write.
   profilePictures: {},
   disableSmoothScrolling: false,
+  // No title bar from the OS; the window moves by a long press and a drag.
+  // Read by the main process at startup, so a change applies on the next start.
+  framelessWindow: true,
   disableChannelLinks: false,
   displayVideoPlayButton: false,
   enableRegulatedStreaming: false,
@@ -550,6 +553,7 @@ export const NON_TRANSFERABLE_SETTINGS = new Set([
   'showAddedExternalPlayerCustomArgs',
   // Others
   'disableSmoothScrolling',
+  'framelessWindow',
   'hideToTrayOnMinimize',
   'handleFreeTubeLinks',
   'screenshotAskPath',

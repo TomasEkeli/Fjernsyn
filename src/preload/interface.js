@@ -155,6 +155,15 @@ export default {
     ipcRenderer.send(IpcChannels.RELAUNCH_REQUEST)
   },
 
+  // The window follows the cursor between these two; main tracks the cursor itself
+  startWindowMove: () => {
+    ipcRenderer.send(IpcChannels.WINDOW_MOVE_START)
+  },
+
+  endWindowMove: () => {
+    ipcRenderer.send(IpcChannels.WINDOW_MOVE_END)
+  },
+
   /**
    * @param {import('../main/externalPlayer').ExternalPlayerPayload} payload
    */
