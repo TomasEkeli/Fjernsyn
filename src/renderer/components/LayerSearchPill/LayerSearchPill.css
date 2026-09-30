@@ -3,8 +3,12 @@
   border: 1px solid var(--tertiary-text-color);
   border-radius: 16px;
   display: inline-flex;
+  flex: 0 1 auto;
   margin-inline-start: 12px;
-  max-inline-size: 22rem;
+
+  /* The search box beside it keeps most of the room; the words are in the title */
+  max-inline-size: 40%;
+  min-inline-size: 0;
   position: relative;
 }
 
@@ -72,10 +76,12 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgb(0 0 0 / 35%);
   color: var(--primary-text-color);
+  font-size: 14px;
   inline-size: max-content;
+  line-height: normal;
   inset-block-start: calc(100% + 6px);
   inset-inline-end: 0;
-  max-inline-size: min(90vw, 44rem);
+  max-inline-size: min(90vw, 60rem);
   padding-block: 10px;
   padding-inline: 10px;
   position: absolute;
