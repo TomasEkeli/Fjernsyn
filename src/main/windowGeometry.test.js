@@ -431,27 +431,34 @@ describe('fitting the window to a video', () => {
     expect(win.state.aspectRatio).toBe(0)
   })
 
-  it('keeps a size set by hand while fitted', () => {
+  it('restores the size from before even after a resize by hand, which lasts only as long as full window', () => {
     const { geometry } = createHarness()
     const win = createStubWindow({ x: 360, y: 70, width: 1200, height: 900 })
 
     geometry.fitToVideo(win, 1920, 1080)
     resizeByHand(win, 1600, 900)
-    win.setContentBounds.mockClear()
     geometry.releaseFit(win)
 
-    expect(win.setContentBounds).not.toHaveBeenCalled()
+    expect(win.getContentBounds()).toEqual({ x: 467, y: 130, width: 1200, height: 900 })
     expect(win.state.aspectRatio).toBe(0)
   })
 
-  it('does not forget a size set by hand when the same video fits again', () => {
+  it('restores the size from before when the window ended up a few pixels off the fit, as Windows scaling leaves it', () => {
     const { geometry } = createHarness()
     const win = createStubWindow({ x: 360, y: 70, width: 1200, height: 900 })
 
+    geometry.fitToVideo(win, 1080, 1920)
+    resizeByHand(win, 582, 1035)
+    geometry.releaseFit(win)
+
+    expect(win.getContentBounds()).toMatchObject({ width: 1200, height: 900 })
+  })
+
+  it('does not set the bounds on release when the window already has the size from before', () => {
+    const { geometry } = createHarness()
+    const win = createStubWindow({ width: 1280, height: 720 })
+
     geometry.fitToVideo(win, 1920, 1080)
-    resizeByHand(win, 1600, 900)
-    geometry.fitToVideo(win, 1920, 1080)
-    win.setContentBounds.mockClear()
     geometry.releaseFit(win)
 
     expect(win.setContentBounds).not.toHaveBeenCalled()
@@ -638,16 +645,15 @@ describe('snapping a resize the window manager did not lock', () => {
     expect(win.setContentBounds).toHaveBeenCalledTimes(1)
   })
 
-  it('counts a snapped size as set by hand, so leaving full window keeps it', () => {
+  it('restores the size from before after a snap, too', () => {
     const { geometry, win, drag, wait, moveCursor } = fittedWindow()
     moveCursor(800, 500)
 
     drag(1000, 780)
     wait(QUIET_TICKS)
-    win.setContentBounds.mockClear()
     geometry.releaseFit(win)
 
-    expect(win.setContentBounds).not.toHaveBeenCalled()
+    expect(win.getContentBounds()).toMatchObject({ width: 1200, height: 900 })
   })
 
   it('leaves a maximised window alone', () => {
@@ -690,14 +696,13 @@ describe('persistableBounds', () => {
     expect(geometry.persistableBounds(win, bounds)).toBe(bounds)
   })
 
-  it('passes the bounds through when the size was set by hand while fitted', () => {
+  it('gives the size from before the fit after a resize by hand too, centred on the window', () => {
     const { geometry } = createHarness()
     const win = createStubWindow({ x: 360, y: 70, width: 1200, height: 900 })
 
     geometry.fitToVideo(win, 1920, 1080)
     resizeByHand(win, 1600, 900)
-    const bounds = win.getBounds()
 
-    expect(geometry.persistableBounds(win, bounds)).toBe(bounds)
+    expect(geometry.persistableBounds(win, win.getBounds())).toEqual({ x: 467, y: 130, width: 1200, height: 900 })
   })
 })

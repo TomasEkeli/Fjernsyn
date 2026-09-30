@@ -19,8 +19,8 @@ const MOVE_TICK_MS = 16
 // few pixels off 16:9 does not make the window twitch
 const RATIO_TOLERANCE = 0.01
 
-// A window within this many pixels of the size it was fitted to still counts
-// as fitted; window managers round a size to their own liking
+// Sizes this many pixels apart count as the same; window managers and display
+// scaling round a size to their own liking
 const SIZE_TOLERANCE_PX = 2
 
 // Linux reports no end of a resize by hand, only each size on the way, and
@@ -185,7 +185,6 @@ export function createWindowGeometry(dependencies = {}) {
    * @typedef {object} Fit
    * @property {number} ratio the video's, width over height
    * @property {Size} restore the content size from before the first fit
-   * @property {Size} fitted the content size the last fit asked for
    * @property {Size} settled the content size when the window was last still at the ratio
    * @property {Size | null} snappedFrom the size the last snap started from, until the window reaches the ratio
    * @property {() => void} dispose
@@ -305,7 +304,7 @@ export function createWindowGeometry(dependencies = {}) {
 
     let fit = fits.get(win)
     if (!fit) {
-      fit = { ratio, restore: current, fitted: current, settled: current, snappedFrom: null, dispose: () => {} }
+      fit = { ratio, restore: current, settled: current, snappedFrom: null, dispose: () => {} }
       fits.set(win, fit)
       fit.dispose = watchFittedWindow(win)
     }
@@ -319,7 +318,6 @@ export function createWindowGeometry(dependencies = {}) {
       const size = fitSize({ area: current.width * current.height, ratio, ...contentLimits(win) })
 
       placeContent(win, size)
-      fit.fitted = size
       fit.settled = size
     }
 
@@ -371,10 +369,12 @@ export function createWindowGeometry(dependencies = {}) {
   }
 
   /**
-   * Unlocks the ratio and, unless the window was resized by hand while fitted,
-   * returns it to the size it had before the first fit, centred where it is
-   * now. A maximised or fullscreen window is only unlocked, since setting its
-   * bounds would undo that state. Does nothing if the window is not fitted.
+   * Unlocks the ratio and returns the window to the size it had before the
+   * first fit, centred where it is now. A resize by hand while fitted is
+   * undone too: it was a size for the video, and lasts only as long as full
+   * window does. A maximised or fullscreen window is only unlocked, since
+   * setting its bounds would undo that state. Does nothing if the window is
+   * not fitted.
    * @param {Electron.BrowserWindow} win
    */
   function releaseFit(win) {
@@ -397,8 +397,7 @@ export function createWindowGeometry(dependencies = {}) {
       return
     }
 
-    const content = win.getContentBounds()
-    if (sameSize(content, fit.fitted) && !sameSize(content, fit.restore)) {
+    if (!sameSize(contentSize(win), fit.restore)) {
       placeContent(win, fit.restore)
     }
   }
@@ -497,8 +496,8 @@ export function createWindowGeometry(dependencies = {}) {
 
   /**
    * The bounds to save for the next start: the window's own, unless it is
-   * still at the size a fit gave it, in which case the size it had before the
-   * fit, centred on the same point.
+   * fitted, in which case the size it had before the fit, centred on the same
+   * point, as releasing the fit would give it.
    * @param {Electron.BrowserWindow} win
    * @param {Electron.Rectangle} bounds the window's outer bounds, as they would be saved
    * @returns {Electron.Rectangle}
@@ -507,11 +506,6 @@ export function createWindowGeometry(dependencies = {}) {
     const fit = fits.get(win)
 
     if (!fit || win.isDestroyed()) {
-      return bounds
-    }
-
-    const content = win.getContentBounds()
-    if (!sameSize(content, fit.fitted)) {
       return bounds
     }
 
