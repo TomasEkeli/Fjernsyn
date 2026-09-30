@@ -10,7 +10,9 @@
  * wiring that feeds it DOM events and carries the effects out.
  */
 
-export const HOLD_MS = 400
+// Long enough that an ordinary click never arms, short enough not to feel
+// like waiting; 400 did, on Windows
+export const HOLD_MS = 200
 export const MOVE_THRESHOLD_PX = 4
 const HOLD_SLACK_MS = 50
 
