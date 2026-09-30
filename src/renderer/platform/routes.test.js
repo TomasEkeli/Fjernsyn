@@ -1,10 +1,12 @@
+import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createApp } from 'vue'
+import { createApp, h } from 'vue'
+import { RouterView } from 'vue-router'
 
 import { showToast } from '../helpers/utils'
-import { createFakeStore } from '../testing/store'
+import store from '../store/index'
 import { createTestRouter } from '../testing/router'
-import { peerTubeRouteGuard, peerTubeRoutes } from './routes.js'
+import { peerTubeRouteGuard, peerTubeRoutes, searchSurface } from './routes.js'
 import { installPlatformLayer } from './vue.js'
 
 vi.mock('./index.js', () => ({ createPlatformLayer: () => ({}) }))
@@ -18,6 +20,13 @@ vi.mock('../helpers/utils', () => ({
 vi.mock('../views/LayerWatch/LayerWatch.vue', () => ({ default: { name: 'LayerWatch', render: () => null } }))
 vi.mock('../views/LayerChannel/LayerChannel.vue', () => ({ default: { name: 'LayerChannel', render: () => null } }))
 vi.mock('../views/LayerSearch/LayerSearch.vue', () => ({ default: { name: 'LayerSearch', render: () => null } }))
+vi.mock('../views/LayerSearchPage/LayerSearchPage.vue', () => ({ default: { name: 'LayerSearchPage', render: () => h('p', { class: 'layerSearchPage' }) } }))
+
+// The surface switch reads the store module; the guards read the store installed
+vi.mock('../store/index', async () => {
+  const { createFakeStore } = await import('../testing/store')
+  return { default: createFakeStore({ getters: { getEnablePeerTube: false, getEnableLayerSearch: false } }) }
+})
 
 vi.mock('../i18n/index', async () => {
   const { createTestI18n } = await import('../testing/i18n')
@@ -26,11 +35,10 @@ vi.mock('../i18n/index', async () => {
 
 const SWITCHED_OFF = 'PeerTube is switched off. Switch it on in Experimental settings.'
 
-let store
-
 beforeEach(() => {
   showToast.mockClear()
-  store = createFakeStore({ getters: { getEnablePeerTube: false } })
+  store.setGetter('getEnablePeerTube', false)
+  store.setGetter('getEnableLayerSearch', false)
   installPlatformLayer(createApp({ render: () => null }), store)
 })
 
@@ -117,5 +125,71 @@ describe('the PeerTube routes', () => {
       expect(router.currentRoute.value.name, route.name).toBe('subscriptions')
       expect(showToast, route.name).toHaveBeenCalledWith(SWITCHED_OFF)
     }
+  })
+})
+
+describe('the search surface switch', () => {
+  const OldSearchPage = { name: 'SearchPage', render: () => h('p', { class: 'oldSearchPage' }) }
+
+  async function openSearch() {
+    const router = createTestRouter([{ path: '/search/:query', component: searchSurface(OldSearchPage) }])
+    await router.push('/search/blender')
+    const wrapper = mount({ render: () => h(RouterView) }, { global: { plugins: [router] } })
+    await flushPromises()
+    return wrapper
+  }
+
+  it('renders upstream\'s search page while it is off', async () => {
+    const wrapper = await openSearch()
+
+    expect(wrapper.find('.oldSearchPage').exists()).toBe(true)
+    expect(wrapper.find('.layerSearchPage').exists()).toBe(false)
+  })
+
+  it('renders the layer\'s search page while it is on, and swaps in place when it changes', async () => {
+    store.setGetter('getEnableLayerSearch', true)
+    const wrapper = await openSearch()
+
+    expect(wrapper.find('.layerSearchPage').exists()).toBe(true)
+
+    store.setGetter('getEnableLayerSearch', false)
+    await flushPromises()
+
+    expect(wrapper.find('.oldSearchPage').exists()).toBe(true)
+  })
+})
+
+describe('the PeerTube search route, while the search surface switch is on', () => {
+  it('redirects to the search page in scope PeerTube, carrying the query and its type', async () => {
+    store.setGetter('getEnablePeerTube', true)
+    store.setGetter('getEnableLayerSearch', true)
+    const router = createTestRouter([{ path: '/search/:query', name: 'search' }, ...peerTubeRoutes])
+
+    await router.push('/peertube/search/blender%20tutorials?type=channel')
+
+    const { path, params, query } = router.currentRoute.value
+    expect(path).toBe('/search/blender%20tutorials')
+    expect(params).toEqual({ query: 'blender tutorials' })
+    expect(query).toEqual({ scope: 'peertube', type: 'channel' })
+  })
+
+  it('does not redirect while the switch is off', async () => {
+    store.setGetter('getEnablePeerTube', true)
+    const router = createTestRouter([{ path: '/search/:query', name: 'search' }, ...peerTubeRoutes])
+
+    await router.push('/peertube/search/blender')
+
+    expect(router.currentRoute.value.name).toBe('peertubeSearch')
+  })
+
+  it('is refused while PeerTube is off, switch or no switch', async () => {
+    store.setGetter('getEnableLayerSearch', true)
+    const router = createTestRouter([{ path: '/subscriptions', name: 'subscriptions' }, ...peerTubeRoutes])
+    await router.push('/subscriptions')
+
+    await router.push('/peertube/search/blender')
+
+    expect(router.currentRoute.value.name).toBe('subscriptions')
+    expect(showToast).toHaveBeenCalledWith(SWITCHED_OFF)
   })
 })

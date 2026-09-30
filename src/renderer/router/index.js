@@ -14,7 +14,7 @@ import Channel from '../views/Channel/Channel.vue'
 import Watch from '../views/Watch/Watch.vue'
 import Hashtag from '../views/Hashtag/Hashtag.vue'
 import Post from '../views/Post.vue'
-import { peerTubeRoutes } from '../platform/routes'
+import { peerTubeRoutes, searchSurface } from '../platform/routes'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -111,7 +111,8 @@ const router = createRouter({
       meta: {
         title: 'Search Results'
       },
-      component: SearchPage
+      // Fjernsyn: upstream's search page, or the layer's behind its switch
+      component: searchSurface(SearchPage)
     },
     {
       path: '/playlist/:id',

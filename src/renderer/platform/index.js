@@ -4,6 +4,7 @@
 // replace them. See "Platforms" in docs/CONTEXT.md and ADR-0014.
 
 import { describe } from './describe'
+import { PlatformError } from './errors'
 import { createChannelReader } from './peertube/channels'
 import { createPeerTubeClient } from './peertube/client'
 import { createCommentReader } from './peertube/comments'
@@ -11,6 +12,8 @@ import { createFeedReader } from './peertube/feed'
 import { createSearcher } from './peertube/search'
 import { createUrlResolver, parsePeerTubeInput } from './peertube/urls'
 import { createVideoReader } from './peertube/videos'
+import { SCOPE_ALL, SCOPE_PEERTUBE, SCOPE_YOUTUBE, normalise } from './search/query'
+import { createYouTubeSearcher } from './youtube/search'
 
 // The wiring builds one client for the session with this and hands it to
 // every rebuild of the layer, so that what is known of each host survives
@@ -28,6 +31,8 @@ export { createPeerTubeClient }
  * @property {string} currentInvidiousInstanceUrl
  * @property {string} thumbnailPreference
  * @property {string} locale for ordering captions
+ * @property {boolean} showFamilyFriendlyOnly YouTube search's safety mode, on Local
+ * @property {boolean} supportsLocalApi false in the web build, where YouTube is Invidious alone
  */
 
 /** @type {Readonly<PlatformConfig>} */
@@ -40,6 +45,8 @@ export const DEFAULT_CONFIG = Object.freeze({
   currentInvidiousInstanceUrl: '',
   thumbnailPreference: '',
   locale: 'en-US',
+  showFamilyFriendlyOnly: false,
+  supportsLocalApi: true,
 })
 
 // The hosts whose URLs are YouTube's, handed to the YouTube parser and never
@@ -86,6 +93,9 @@ function hostOf(instanceUrl) {
  * @typedef {object} YouTubeDeps
  * @property {(url: string) => unknown} [resolveUrl] the existing YouTube URL
  *   parser; its answer is returned as it is
+ * @property {import('./youtube/search').YouTubeSearchDeps['getLocalSearchResults']} [getLocalSearchResults]
+ * @property {import('./youtube/search').YouTubeSearchDeps['getLocalSearchContinuation']} [getLocalSearchContinuation]
+ * @property {import('./youtube/search').YouTubeSearchDeps['getInvidiousSearchResults']} [getInvidiousSearchResults]
  */
 
 /**
@@ -100,6 +110,7 @@ function hostOf(instanceUrl) {
  * @param {YouTubeDeps} [deps.youtube] the existing YouTube functions the layer wraps
  * @param {Partial<PlatformConfig>} [deps.config]
  * @param {() => number} [deps.now] the clock, for rate limits of a new client
+ *   and for search's time buckets
  */
 export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, config = {}, now = Date.now }) {
   /** @type {Readonly<PlatformConfig>} */
@@ -110,7 +121,8 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   const urls = createUrlResolver({ client: peertube })
   const videos = createVideoReader({ client: peertube, config: frozenConfig })
   const channels = createChannelReader({ client: peertube, config: frozenConfig })
-  const searcher = createSearcher({ client: peertube, config: frozenConfig })
+  const searcher = createSearcher({ client: peertube, config: frozenConfig, now })
+  const youtubeSearcher = createYouTubeSearcher({ youtube, config: frozenConfig })
   const comments = createCommentReader({ client: peertube })
   const feeds = createFeedReader({ client: peertube, config: frozenConfig })
 
@@ -261,6 +273,63 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   }
 
   /**
+   * Results for a search query (`./search/query.js`), from the platforms its
+   * scope names, each page carrying `applied`: the filters that platform
+   * honoured (`./search/capabilities.js`), so that a view can say which were
+   * not. Filters a platform cannot honour are not dropped from the query.
+   *
+   * - Scope `youtube` or `peertube`: a page, `{ items, cursor, applied }`.
+   *   Hand the cursor back for the next.
+   * - Scope `all`: both platforms asked at once, answering
+   *   `{ sections: { youtube, peertube } }`, each a page or the
+   *   `PlatformError` that platform failed with; one failing never fails
+   *   the other. More of one section is this again with that section's
+   *   scope and cursor.
+   *
+   * YouTube goes through the backend preference and fallback
+   * (`./youtube/search.js`), PeerTube to the search source or the query's
+   * instance (`./peertube/search.js`). A scope naming PeerTube while PeerTube
+   * is off rejects as `invalid`, as does a cursor with scope `all`.
+   *
+   * @param {import('./search/query').SearchQuery} input
+   * @param {{ cursor?: unknown }} [options]
+   * @returns {Promise<any>}
+   */
+  async function searchQuery(input, { cursor = null } = {}) {
+    const query = normalise({ ...input, text: typeof input?.text === 'string' ? input.text : '' })
+
+    if (query.scope !== SCOPE_YOUTUBE && !frozenConfig.peertubeEnabled) {
+      throw new PlatformError('invalid', 'PeerTube is switched off')
+    }
+
+    if (query.scope === SCOPE_YOUTUBE) {
+      return youtubeSearcher.search(query, { cursor })
+    }
+
+    if (query.scope === SCOPE_PEERTUBE) {
+      return searcher.searchQuery(query, { cursor })
+    }
+
+    if (query.scope === SCOPE_ALL && cursor != null) {
+      throw new PlatformError('invalid', 'More of the All scope is asked of one section, by its scope')
+    }
+
+    const [youtubeAnswer, peertubeAnswer] = await Promise.allSettled([
+      youtubeSearcher.search({ ...query, scope: SCOPE_YOUTUBE }),
+      searcher.searchQuery({ ...query, scope: SCOPE_PEERTUBE }),
+    ])
+
+    const settled = (answer) => answer.status === 'fulfilled' ? answer.value : answer.reason
+
+    return {
+      sections: {
+        youtube: settled(youtubeAnswer),
+        peertube: settled(peertubeAnswer),
+      },
+    }
+  }
+
+  /**
    * A page of a video's comment threads, newest first, read only (see
    * `./peertube/comments.js`). A video whose details say comments are off
    * (`commentsEnabled: false`) is an empty page, without a request.
@@ -323,6 +392,7 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
     listChannelPlaylists,
     listAccountChannels,
     search,
+    searchQuery,
     getComments,
     getCommentReplies,
     fetchChannelFeed,

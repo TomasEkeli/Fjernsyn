@@ -24,6 +24,12 @@ vi.mock('../../store/index', async () => {
         getLatestMatchingSearchHistoryNames: () => [],
         getLatestSearchHistoryNames: [],
         getEnablePeerTube: false,
+        getEnableLayerSearch: false,
+        getDefaultSearchScope: 'youtube',
+        getSearchRememberedParameters: null,
+        getSearchLatched: false,
+        getRememberSearchHistory: false,
+        getSearchFilterValueChanged: false,
       },
     }),
   }
@@ -77,8 +83,8 @@ async function mountTopNav() {
 }
 
 /** @param {import('@vue/test-utils').VueWrapper} wrapper */
-async function search(wrapper, text, { shiftKey = false } = {}) {
-  wrapper.findComponent({ name: 'FtInput' }).vm.$emit('click', text, { event: { shiftKey } })
+async function search(wrapper, text, { shiftKey = false, ctrlKey = false } = {}) {
+  wrapper.findComponent({ name: 'FtInput' }).vm.$emit('click', text, { event: { shiftKey, ctrlKey } })
   await flushPromises()
 }
 
@@ -91,6 +97,10 @@ beforeEach(() => {
   }
   store.dispatched.length = 0
   store.setGetter('getEnablePeerTube', false)
+  store.setGetter('getEnableLayerSearch', false)
+  store.setGetter('getSearchRememberedParameters', null)
+  store.setGetter('getSearchLatched', false)
+  store.setGetter('getRememberSearchHistory', false)
   openInternalPath.mockClear()
   showToast.mockClear()
   openPeerTubeEntry.mockReset()
@@ -221,5 +231,106 @@ describe('the search bar, with PeerTube on', () => {
     expect(youtubeUrlInfoRequests()).toEqual([])
     expect(openInternalPath).not.toHaveBeenCalled()
     expect(showToast).toHaveBeenCalledOnce()
+  })
+})
+
+describe('the search bar, with the layer\'s search page on', () => {
+  const remembered = { scope: 'youtube', sort: 'views', time: 'week' }
+
+  beforeEach(() => {
+    store.setGetter('getEnableLayerSearch', true)
+    openPeerTubeEntry.mockResolvedValue(null)
+    youtubeUrlInfo = { urlType: 'invalid_url' }
+  })
+
+  it('shows the pill in place of the filter button, once something is remembered', async () => {
+    let wrapper = await mountTopNav()
+    expect(wrapper.find('.navFilterButton').exists()).toBe(false)
+    expect(wrapper.find('.searchPill').exists()).toBe(false)
+
+    store.setGetter('getSearchRememberedParameters', remembered)
+    wrapper = await mountTopNav()
+
+    expect(wrapper.find('.searchPill .pillWords').text()).toBe('YouTube · most viewed · this week')
+  })
+
+  it('searches the text without filters, in the default scope, while the pill is not lit', async () => {
+    store.setGetter('getSearchRememberedParameters', remembered)
+    const wrapper = await mountTopNav()
+
+    await search(wrapper, 'blender')
+
+    expect(openInternalPath).toHaveBeenCalledWith({
+      path: '/search/blender',
+      query: { scope: 'youtube' },
+      doCreateNewWindow: false,
+      searchQueryText: 'blender',
+    })
+  })
+
+  it('searches with the remembered set while the pill is lit', async () => {
+    store.setGetter('getSearchRememberedParameters', remembered)
+    store.setGetter('getSearchLatched', true)
+    const wrapper = await mountTopNav()
+
+    await search(wrapper, 'blender')
+
+    expect(openInternalPath.mock.calls[0][0].query).toEqual({ scope: 'youtube', sort: 'views', time: 'week' })
+  })
+
+  it('runs the opposite of the pill on Ctrl+Enter, this once, and leaves the pill as it was', async () => {
+    store.setGetter('getSearchRememberedParameters', remembered)
+    store.setGetter('getSearchLatched', true)
+    const wrapper = await mountTopNav()
+
+    await search(wrapper, 'blender', { ctrlKey: true })
+
+    expect(openInternalPath.mock.calls[0][0].query).toEqual({ scope: 'youtube' })
+    expect(store.dispatched.filter(({ type }) => type === 'updateSearchLatched')).toEqual([])
+  })
+
+  it('keeps Shift for a new window', async () => {
+    const wrapper = await mountTopNav()
+
+    await search(wrapper, 'blender', { shiftKey: true })
+
+    expect(openInternalPath.mock.calls[0][0]).toMatchObject({ path: '/search/blender', doCreateNewWindow: true })
+  })
+
+  it('reads operators out of the text, and makes what they set the remembered set', async () => {
+    store.setGetter('getRememberSearchHistory', true)
+    const wrapper = await mountTopNav()
+
+    await search(wrapper, 'blender sort:views time:year')
+
+    expect(openInternalPath.mock.calls[0][0]).toMatchObject({
+      path: '/search/blender',
+      query: { scope: 'youtube', sort: 'views', time: 'year' },
+      searchQueryText: 'blender sort:views time:year',
+    })
+    expect(store.dispatched).toContainEqual({
+      type: 'updateSearchRememberedParameters',
+      payload: expect.objectContaining({ scope: 'youtube', sort: 'views', time: 'year' }),
+    })
+    expect(store.dispatched).toContainEqual({ type: 'updateSearchLatched', payload: true })
+    expect(store.dispatched).toContainEqual({ type: 'updateSearchHistoryEntry', payload: expect.objectContaining({ _id: 'blender sort:views time:year' }) })
+  })
+
+  it('goes nowhere, and writes nothing, when only operators were typed', async () => {
+    const wrapper = await mountTopNav()
+
+    await search(wrapper, 'sort:date lang:no')
+
+    expect(openInternalPath).not.toHaveBeenCalled()
+    expect(store.dispatched.filter(({ type }) => type.startsWith('updateSearch'))).toEqual([])
+  })
+
+  it('still opens a YouTube URL as before', async () => {
+    youtubeUrlInfo = { urlType: 'video', videoId: 'dQw4w9WgXcQ' }
+    const wrapper = await mountTopNav()
+
+    await search(wrapper, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+
+    expect(openInternalPath.mock.calls[0][0].path).toBe('/watch/dQw4w9WgXcQ')
   })
 })

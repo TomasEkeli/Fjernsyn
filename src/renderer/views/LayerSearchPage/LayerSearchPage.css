@@ -1,0 +1,194 @@
+/*
+ * Always the full width, whatever the density and whether or not cards have
+ * come yet: the width does not jump when a search starts. Wall's full bleed
+ * for this page, before any card is there, is in density.css.
+ */
+.card {
+  box-sizing: border-box;
+  inline-size: 100%;
+  margin-block: 0 60px;
+  margin-inline: 0;
+}
+
+/* The scope tabs and the density switch share the page's first row */
+.headingRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+  justify-content: space-between;
+  margin-block-end: 10px;
+}
+
+.densitySwitch {
+  margin-inline-start: auto;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.tab {
+  background: transparent;
+  border: 0;
+  border-block-end: 3px solid transparent;
+  color: var(--tertiary-text-color);
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  padding: 15px;
+  text-align: center;
+}
+
+.tab:focus-visible,
+.tab:hover:not(.selectedTab) {
+  border-block-end: 3px solid var(--tertiary-text-color);
+  font-weight: bold;
+}
+
+.selectedTab {
+  border-block-end: 3px solid var(--primary-color);
+  box-sizing: border-box;
+  color: var(--primary-text-color);
+  font-weight: bold;
+}
+
+.sourceRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-block-end: 12px;
+}
+
+.sourceLabel {
+  align-items: center;
+  display: inline-flex;
+  font-size: 14px;
+  gap: 8px;
+}
+
+.sourceSelect,
+.otherInstanceInput {
+  background-color: var(--search-bar-color);
+  border: 0;
+  border-radius: 4px;
+  color: var(--primary-text-color);
+  font: inherit;
+  font-size: 14px;
+  padding-block: 6px;
+  padding-inline: 8px;
+}
+
+.otherInstance {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.otherInstanceSearch,
+.endAction {
+  background-color: var(--search-bar-color);
+  border: 1px solid var(--accent-color);
+  border-radius: 16px;
+  color: var(--primary-text-color);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  padding-block: 6px;
+  padding-inline: 12px;
+}
+
+.otherInstanceSearch:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.endAction:hover,
+.otherInstanceSearch:hover:not(:disabled) {
+  background-color: var(--accent-color-opacity3);
+}
+
+.chips {
+  margin-block-end: 16px;
+}
+
+/* The All scope: a column per platform, side by side, each paged on its own */
+.sections.sideBySide {
+  align-items: start;
+  column-gap: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.sideBySide .resultsSection {
+  min-inline-size: 0;
+}
+
+.sections:not(.sideBySide) .resultsSection + .resultsSection {
+  margin-block-start: 32px;
+}
+
+.sectionHeaderRow {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+}
+
+.sectionHeading {
+  margin-block: 8px;
+}
+
+.sectionHeader {
+  background: transparent;
+  border: 0;
+  color: var(--primary-text-color);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.sectionHeader:hover,
+.sectionHeader:focus-visible {
+  color: var(--accent-color);
+}
+
+.notApplied {
+  color: var(--tertiary-text-color);
+  font-size: 13px;
+  margin: 0;
+}
+
+.message {
+  color: var(--tertiary-text-color);
+}
+
+.sectionError {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.getNextPage {
+  background-color: var(--search-bar-color);
+  block-size: 45px;
+  cursor: pointer;
+  inline-size: 100%;
+  line-height: 45px;
+  margin-block-start: 16px;
+  text-align: center;
+}
+
+.getNextPage:hover,
+.getNextPage:focus {
+  background-color: var(--side-nav-hover-color);
+  color: var(--side-nav-hover-text-color);
+}
+
+@media only screen and (width <= 900px) {
+  .sections.sideBySide {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 32px;
+  }
+}

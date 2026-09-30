@@ -59,6 +59,8 @@ function readConfig(store) {
     backendFallback: getters.getBackendFallback,
     currentInvidiousInstanceUrl: getters.getCurrentInvidiousInstanceUrl,
     thumbnailPreference: getters.getThumbnailPreference,
+    showFamilyFriendlyOnly: getters.getShowFamilyFriendlyOnly,
+    supportsLocalApi: !!process.env.SUPPORTS_LOCAL_API,
     // The locale in use; the `currentLocale` setting may say `system`
     locale: unref(i18n.global.locale),
   }
@@ -92,6 +94,17 @@ function resolveYouTubeUrl(url) {
 }
 
 /**
+ * The existing YouTube search functions the layer wraps (see
+ * `./youtube/search.js`), loaded when first called: the API modules pull in
+ * youtubei.js, which nothing else here needs.
+ */
+const youtubeSearch = {
+  getLocalSearchResults: async (...args) => (await import('../helpers/api/local')).getLocalSearchResults(...args),
+  getLocalSearchContinuation: async (...args) => (await import('../helpers/api/local')).getLocalSearchContinuation(...args),
+  getInvidiousSearchResults: async (...args) => (await import('../helpers/api/invidious')).getInvidiousSearchResults(...args),
+}
+
+/**
  * The renderer's own fetch, looked up at call time. Main gives the requests
  * the layer marks the prescribed User-Agent (`src/main/peertubeRequests.js`).
  *
@@ -110,7 +123,7 @@ function buildLayer(store, peertubeClient) {
   return createPlatformLayer({
     fetch: rendererFetch,
     peertubeClient,
-    youtube: { resolveUrl: resolveYouTubeUrl },
+    youtube: { resolveUrl: resolveYouTubeUrl, ...youtubeSearch },
     config: readConfig(store),
   })
 }
@@ -173,4 +186,12 @@ export function getPlatformLayer() {
  */
 export function isPeerTubeEnabled() {
   return installedStore?.getters.getEnablePeerTube === true
+}
+
+/**
+ * Whether the search surface switch is on, for the PeerTube search route's
+ * redirect. False until the layer is installed.
+ */
+export function isLayerSearchEnabled() {
+  return installedStore?.getters.getEnableLayerSearch === true
 }

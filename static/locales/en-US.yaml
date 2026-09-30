@@ -1470,6 +1470,115 @@ PeerTube:
     Invalid source: Fjernsyn cannot search {source}. Check the search source in the PeerTube settings.
     Could not search: The search could not be completed.
 
+# The fork's own, for the same reason as above: the search page on the
+# platform layer, behind its switch in Experimental settings
+Layer Search:
+  Settings:
+    Enable layer search: New search page (experimental)
+    Enable layer search Tooltip: Search results with the filters on the page, one click each, and with YouTube and
+      PeerTube side by side while PeerTube is on. The last filters you used are remembered, and a button beside the
+      search box applies them to your next search.
+    Default scope: Search by default on
+  Scope:
+    Scope: Search on
+    youtube: YouTube
+    peertube: PeerTube
+    all: All
+  From:
+    youtube: From YouTube
+    peertube: From PeerTube
+  Narrow to: Show only results from {platform}
+  Clear: Clear
+  Clear tooltip: Search again without filters
+  Apply last filters: 'Apply last filters: {filters}'
+  Not applied: Not applied to {platform}
+  Not applied here: 'Not applied to {platform}: {filters}'
+  Remove filter: Remove this filter
+  No results: No results.
+  YouTube failed: YouTube could not be searched.
+  Source:
+    Source: Source
+    Search source: '{host} (search source)'
+    Followed: Instances of channels you follow
+    Recent: Recent
+    Other: Another instance
+    Other placeholder: tilvids.com
+    Search instance: Search
+  Chips:
+    Sort: Sort
+    Time: Any time
+    Type: Type
+    Length: Any length
+    Language: Language
+    Find language: Find a language
+    Live: Live
+    NSFW: NSFW
+    NSFW default: NSFW as set
+    Custom range: Custom range…
+    After: From
+    Before: To
+    Apply range: Apply
+  Values:
+    Sort:
+      relevance: Relevance
+      date: Newest
+      views: Most viewed
+      trending: Trending
+    Time:
+      today: Today
+      week: This week
+      month: This month
+      year: This year
+    Type:
+      video: Videos
+      all: All types
+      channel: Channels
+      playlist: Playlists
+      shorts: Shorts
+      movie: Movies
+    Length:
+      short: Under 3 minutes
+      medium: 3 to 20 minutes
+      long: Over 20 minutes
+    NSFW:
+      shown: Show NSFW
+      hidden: Hide NSFW
+  Words:
+    Scope:
+      youtube: YouTube
+      peertube: PeerTube
+      all: YouTube and PeerTube
+    Instance: on {host}
+    Sort:
+      date: newest
+      views: most viewed
+      trending: trending
+    Time:
+      today: today
+      week: this week
+      month: this month
+      year: this year
+    After: from {date}
+    Before: until {date}
+    Between: '{after} to {before}'
+    Type:
+      all: all types
+      channel: channels
+      playlist: playlists
+      shorts: shorts
+      movie: movies
+    Length:
+      short: under 3 min
+      medium: 3 to 20 min
+      long: over 20 min
+    Live: live
+    NSFW shown: with NSFW
+    NSFW hidden: without NSFW
+  Pill:
+    Lit: 'Next search uses: {filters}. Click to search without them'
+    Unlit: 'Next search is without filters. Click to use: {filters}'
+    Edit: Change the remembered filters
+
 Mini Player: Mini Player
 Comments:
   Comments: Comments
