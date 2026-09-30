@@ -1,6 +1,7 @@
 import { computed, defineComponent, nextTick, onBeforeUnmount, onMounted, onUnmounted, reactive, ref, shallowRef, watch } from 'vue'
 import shaka from 'shaka-player'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 
 import store from '../../store/index'
 import { KeyboardShortcuts } from '../../../constants'
@@ -254,6 +255,7 @@ export default defineComponent({
   ],
   setup: function (props, { emit, expose }) {
     const { locale, t } = useI18n()
+    const route = useRoute()
 
     /** @type {shaka.Player|null} */
     let player = null
@@ -2501,9 +2503,17 @@ export default defineComponent({
      * changes, which covers a video whose size is not known yet on entering;
      * main ignores a size of the shape the window already has. Nothing for an
      * audio only format, which has no video size.
+     *
+     * Nothing either once the route has left the watch view: the view fades
+     * out with this player still mounted after App.vue has released the fit,
+     * and a fit asked for then would have nothing to release it.
      */
     function fitWindowToVideo() {
       if (!process.env.IS_ELECTRON || !fullWindowEnabled.value || !store.getters.getFitWindowToVideo) {
+        return
+      }
+
+      if (!route?.path.startsWith('/watch/')) {
         return
       }
 
@@ -4066,6 +4076,9 @@ export default defineComponent({
      */
     async function destroyPlayer() {
       ignoreErrors = true
+
+      // A player on its way out has no business reshaping the window
+      video.value?.removeEventListener('resize', fitWindowToVideo)
 
       let uiState = { startNextVideoInFullscreen: false, startNextVideoInFullwindow: false, startNextVideoInPip: false }
 
