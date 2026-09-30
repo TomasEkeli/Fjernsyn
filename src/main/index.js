@@ -34,6 +34,7 @@ import { registerPeerTubeDownloadHandlers } from './peertubeDownloads/ipc'
 import { createPeerTubeRequestHeaders, peerTubeUserAgent } from './peertubeRequests'
 import { generatePoToken } from './poTokenGenerator'
 import { buildProxyUrl, isFreeTubeUrl } from './utils'
+import { endMove as endWindowMove, startMove as startWindowMove } from './windowGeometry'
 import { isRendererWritableYtDlpSetting, registerYtDlpHandlers } from './ytdlp/ipc'
 
 const brotliDecompressAsync = promisify(brotliDecompress)
@@ -1402,6 +1403,26 @@ function runApp() {
 
   ipcMain.once(IpcChannels.RELAUNCH_REQUEST, () => {
     relaunch()
+  })
+
+  // The window comes from the sender, so every window moves only itself
+  ipcMain.on(IpcChannels.WINDOW_MOVE_START, (event) => {
+    // A framed window has a title bar to move it by
+    if (!framelessWindow || !isFreeTubeUrl(event.senderFrame.url)) {
+      return
+    }
+
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) {
+      startWindowMove(win)
+    }
+  })
+
+  ipcMain.on(IpcChannels.WINDOW_MOVE_END, (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) {
+      endWindowMove(win)
+    }
   })
 
   nativeTheme.on('updated', () => {
