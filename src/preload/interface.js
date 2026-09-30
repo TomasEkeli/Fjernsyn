@@ -165,6 +165,20 @@ export default {
   },
 
   /**
+   * Reshapes the window to the video's ratio until {@linkcode releaseWindowFit}
+   * @param {number} videoWidth
+   * @param {number} videoHeight
+   */
+  fitWindowToVideo: (videoWidth, videoHeight) => {
+    ipcRenderer.send(IpcChannels.WINDOW_FIT_TO_VIDEO, videoWidth, videoHeight)
+  },
+
+  // Returns the window to its size from before the fit; a no-op if it is not fitted
+  releaseWindowFit: () => {
+    ipcRenderer.send(IpcChannels.WINDOW_RELEASE_FIT)
+  },
+
+  /**
    * @param {import('../main/externalPlayer').ExternalPlayerPayload} payload
    */
   openInExternalPlayer: (payload) => {

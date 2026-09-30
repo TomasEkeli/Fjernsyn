@@ -80,6 +80,13 @@
           @change="updateEnterFullscreenOnDisplayRotate"
         />
         <FtToggleSwitch
+          v-if="USING_ELECTRON"
+          :label="t('Settings.Player Settings.Fit Window to Video')"
+          :compact="true"
+          :default-value="fitWindowToVideo"
+          @change="updateFitWindowToVideo"
+        />
+        <FtToggleSwitch
           :label="t('Settings.Player Settings.Normalize Loudness')"
           :compact="true"
           :default-value="normalizeLoudness"
@@ -416,6 +423,16 @@ const enterFullscreenOnDisplayRotate = computed(() => store.getters.getEnterFull
  */
 function updateEnterFullscreenOnDisplayRotate(value) {
   store.dispatch('updateEnterFullscreenOnDisplayRotate', value)
+}
+
+/** @type {import('vue').ComputedRef<boolean>} */
+const fitWindowToVideo = computed(() => store.getters.getFitWindowToVideo)
+
+/**
+ * @param {boolean} value
+ */
+function updateFitWindowToVideo(value) {
+  store.dispatch('updateFitWindowToVideo', value)
 }
 
 /** @type {import('vue').ComputedRef<string>} */

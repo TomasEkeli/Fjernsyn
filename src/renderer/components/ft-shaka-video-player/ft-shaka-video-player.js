@@ -1,6 +1,7 @@
 import { computed, defineComponent, nextTick, onBeforeUnmount, onMounted, onUnmounted, reactive, ref, shallowRef, watch } from 'vue'
 import shaka from 'shaka-player'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 
 import store from '../../store/index'
 import { KeyboardShortcuts } from '../../../constants'
@@ -254,6 +255,7 @@ export default defineComponent({
   ],
   setup: function (props, { emit, expose }) {
     const { locale, t } = useI18n()
+    const route = useRoute()
 
     /** @type {shaka.Player|null} */
     let player = null
@@ -2495,6 +2497,32 @@ export default defineComponent({
       shakaOverflowMenu.registerElement('ft_pin_controls', new PinControlsButtonFactory())
     }
 
+    /**
+     * In full window, reshapes the app window to the video so it has no black
+     * bars. Called on entering full window and whenever the video's size
+     * changes, which covers a video whose size is not known yet on entering;
+     * main ignores a size of the shape the window already has. Nothing for an
+     * audio only format, which has no video size.
+     *
+     * Nothing either once the route has left the watch view: the view fades
+     * out with this player still mounted after App.vue has released the fit,
+     * and a fit asked for then would have nothing to release it.
+     */
+    function fitWindowToVideo() {
+      if (!process.env.IS_ELECTRON || !fullWindowEnabled.value || !store.getters.getFitWindowToVideo) {
+        return
+      }
+
+      if (!route?.path.startsWith('/watch/')) {
+        return
+      }
+
+      const video_ = video.value
+      if (video_?.videoWidth > 0 && video_.videoHeight > 0) {
+        window.ftElectron.fitWindowToVideo(video_.videoWidth, video_.videoHeight)
+      }
+    }
+
     function registerFullWindowButton() {
       events.addEventListener('setFullWindow', (/** @type {CustomEvent} */ event) => {
         if (event.detail) {
@@ -2505,10 +2533,21 @@ export default defineComponent({
 
         if (fullWindowEnabled.value) {
           document.body.classList.add('playerFullWindow')
+          fitWindowToVideo()
         } else {
           document.body.classList.remove('playerFullWindow')
+
+          if (process.env.IS_ELECTRON) {
+            window.ftElectron.releaseWindowFit()
+          }
         }
       })
+
+      // Unmounting does not release the fit: the watch view remounts the
+      // player for the next video, which starts in full window again, and the
+      // window would shrink and grow back in between. App.vue releases it
+      // when the route leaves the watch view.
+      video.value.addEventListener('resize', fitWindowToVideo)
 
       if (startInFullwindow) {
         events.dispatchEvent(new CustomEvent('setFullWindow', {
@@ -3964,6 +4003,7 @@ export default defineComponent({
     onBeforeUnmount(() => {
       hasLoaded.value = false
       document.body.classList.remove('playerFullWindow')
+      video.value?.removeEventListener('resize', fitWindowToVideo)
 
       document.removeEventListener('keydown', keyboardShortcutHandler)
       document.removeEventListener('fullscreenchange', fullscreenChangeHandler)
@@ -4036,6 +4076,9 @@ export default defineComponent({
      */
     async function destroyPlayer() {
       ignoreErrors = true
+
+      // A player on its way out has no business reshaping the window
+      video.value?.removeEventListener('resize', fitWindowToVideo)
 
       let uiState = { startNextVideoInFullscreen: false, startNextVideoInFullwindow: false, startNextVideoInPip: false }
 

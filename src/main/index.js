@@ -34,7 +34,14 @@ import { registerPeerTubeDownloadHandlers } from './peertubeDownloads/ipc'
 import { createPeerTubeRequestHeaders, peerTubeUserAgent } from './peertubeRequests'
 import { generatePoToken } from './poTokenGenerator'
 import { buildProxyUrl, isFreeTubeUrl } from './utils'
-import { endMove as endWindowMove, startMove as startWindowMove } from './windowGeometry'
+import {
+  endMove as endWindowMove,
+  fitToVideo as fitWindowToVideo,
+  persistableBounds as persistableWindowBounds,
+  releaseFit as releaseWindowFit,
+  startMove as startWindowMove,
+  trackWindow as trackWindowSize
+} from './windowGeometry'
 import { isRendererWritableYtDlpSetting, registerYtDlpHandlers } from './ytdlp/ipc'
 
 const brotliDecompressAsync = promisify(brotliDecompress)
@@ -1138,6 +1145,9 @@ function runApp() {
           }
     })
 
+    // The size outside video views, which leaving a video's full window gives back
+    trackWindowSize(newWindow)
+
     // Without this, a dead renderer only produces Electron's own one line notice,
     // which says nothing about why it died. The reason distinguishes the cases that
     // matter: `oom` is the machine running out of memory, `crashed` with exit code
@@ -1342,7 +1352,8 @@ function runApp() {
       }
 
       const value = {
-        ...newWindow.getNormalBounds(),
+        // A window still fitted to a video saves the size it had before the fit
+        ...persistableWindowBounds(newWindow, newWindow.getNormalBounds()),
         maximized: newWindow.isMaximized(),
 
         // Don't save the full screen state if it was triggered by an HTML API e.g. the video player
@@ -1435,6 +1446,24 @@ function runApp() {
     const win = BrowserWindow.fromWebContents(event.sender)
     if (win) {
       endWindowMove(win)
+    }
+  })
+
+  ipcMain.on(IpcChannels.WINDOW_FIT_TO_VIDEO, (event, videoWidth, videoHeight) => {
+    if (!isFreeTubeUrl(event.senderFrame.url) || typeof videoWidth !== 'number' || typeof videoHeight !== 'number') {
+      return
+    }
+
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) {
+      fitWindowToVideo(win, videoWidth, videoHeight)
+    }
+  })
+
+  ipcMain.on(IpcChannels.WINDOW_RELEASE_FIT, (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) {
+      releaseWindowFit(win)
     }
   })
 
