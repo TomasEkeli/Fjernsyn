@@ -316,6 +316,15 @@ describe('the search bar, with the layer\'s search page on', () => {
     expect(store.dispatched).toContainEqual({ type: 'updateSearchHistoryEntry', payload: expect.objectContaining({ _id: 'blender sort:views time:year' }) })
   })
 
+  it('goes nowhere, and writes nothing, when only operators were typed', async () => {
+    const wrapper = await mountTopNav()
+
+    await search(wrapper, 'sort:date lang:no')
+
+    expect(openInternalPath).not.toHaveBeenCalled()
+    expect(store.dispatched.filter(({ type }) => type.startsWith('updateSearch'))).toEqual([])
+  })
+
   it('still opens a YouTube URL as before', async () => {
     youtubeUrlInfo = { urlType: 'video', videoId: 'dQw4w9WgXcQ' }
     const wrapper = await mountTopNav()

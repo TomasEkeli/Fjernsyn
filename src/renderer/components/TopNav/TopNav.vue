@@ -691,8 +691,10 @@ async function goToSearch(queryText, { event }) {
       default: {
         // Fjernsyn: the layer's search page takes its filters from the pill and the text
         if (layerSearchEnabled.value) {
-          const { path, query } = layerSearchRoute(store, queryText, event)
-          openInternalPath({ path, query, doCreateNewWindow, searchQueryText: queryText })
+          const layerRoute = layerSearchRoute(store, queryText, event)
+          if (layerRoute) {
+            openInternalPath({ path: layerRoute.path, query: layerRoute.query, doCreateNewWindow, searchQueryText: queryText })
+          }
           break
         }
 

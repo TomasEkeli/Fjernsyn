@@ -226,7 +226,7 @@
 // its own error: one failing leaves the other. See .scratch/search-ux/spec.md.
 
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { computed, onMounted, shallowReactive, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, shallowReactive, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -264,7 +264,7 @@ import {
   validHost,
   withText,
 } from '../../platform/search/query'
-import { recall, recentInstances, remember, rememberInstance } from './resultsCache'
+import { forget, recall, recentInstances, remember, rememberInstance } from './resultsCache'
 
 /**
  * Empty pages in a row (each with a cursor) after which more results are
@@ -405,14 +405,41 @@ function unappliedWords(platform) {
   return words(only, { withScope: false })
 }
 
-/** The search in hand, told apart from the ones it replaced */
+/** The search in hand, told apart from the ones it replaced (and from none, once the page is left) */
 let generation = 0
 
+/**
+ * The key the search in hand is remembered under, fixed when it starts: by
+ * the time an answer comes, the route may be another page's. The settings
+ * that change what a search answers are part of it.
+ */
+let searchKey = ''
+
+function keyOf() {
+  const config = layer.config ?? {}
+  return [
+    routeKey(query.value),
+    config.peertubeSearchSource,
+    config.peertubeShowNsfw,
+    config.backendPreference,
+    config.showFamilyFriendlyOnly,
+  ].join('|')
+}
+
+/**
+ * Remembers the sections as they are, for the back button; not while one is
+ * loading, and not with a failure in them, which is tried afresh next time.
+ */
 function saveSnapshot() {
   const snapshot = {}
 
   for (const [platform, section] of Object.entries(sections.value)) {
     if (section.loading) {
+      return
+    }
+
+    if (section.error) {
+      forget(searchKey)
       return
     }
 
@@ -426,7 +453,7 @@ function saveSnapshot() {
     }
   }
 
-  remember(routeKey(query.value), snapshot)
+  remember(searchKey, snapshot)
 }
 
 /**
@@ -519,6 +546,7 @@ async function loadAll() {
 
 function search() {
   generation++
+  searchKey = keyOf()
 
   const text = query.value.text
   store.commit('setAppTitle', text)
@@ -539,7 +567,7 @@ function search() {
   }
 
   const platforms = platformsOf(query.value.scope)
-  const snapshot = recall(routeKey(query.value))
+  const snapshot = recall(searchKey)
 
   if (snapshot && platforms.every(platform => platform in snapshot)) {
     sections.value = Object.fromEntries(platforms.map(platform => [platform, freshSection(snapshot[platform])]))
@@ -703,6 +731,11 @@ watch(() => routeKey(query.value), () => {
 onMounted(() => {
   search()
   recent.value = recentInstances()
+})
+
+// An answer still coming is for a page no longer shown
+onBeforeUnmount(() => {
+  generation++
 })
 </script>
 

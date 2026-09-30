@@ -170,7 +170,8 @@ const SUGGESTED_VALUES = Object.freeze({
 /**
  * Completions for the last word of the search box's text when it is a known
  * key, its colon, and the start of a value (`sort:`, `sort:d`): the whole
- * text with each value that fits. Empty otherwise.
+ * text with each value that fits. Empty otherwise, and empty when there is no
+ * text to search for besides operators, since choosing a suggestion searches.
  *
  * @param {string} input
  * @returns {string[]}
@@ -189,6 +190,11 @@ export function operatorSuggestions(input) {
 
   const typed = match[3].toLowerCase()
   const before = input.slice(0, input.length - match[2].length - 1 - match[3].length)
+
+  // Choosing a suggestion searches at once, so there has to be something to search for
+  if (parseOperators(before).text === '') {
+    return []
+  }
 
   return values
     .filter(value => value.startsWith(typed) && value !== typed)

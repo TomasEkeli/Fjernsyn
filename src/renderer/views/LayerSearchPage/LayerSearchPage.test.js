@@ -311,6 +311,35 @@ describe('the chips', () => {
     expect(wrapper.find('.languageButton').text()).toBe('Norwegian')
   })
 
+  it('unset a custom range by the time chip\'s ×', async () => {
+    const { wrapper, router } = await openSearchPage('/search/blender?scope=peertube&after=2024-06-01&before=2024-06-30')
+
+    await wrapper.find('.timeChip .chipClear').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ scope: 'peertube' })
+  })
+
+  it('take a range given backwards the right way round', async () => {
+    const { wrapper, router } = await openSearchPage('/search/blender?scope=peertube')
+
+    await wrapper.find('.timeChip select').setValue('custom')
+    await wrapper.find('.rangeAfter').setValue('2024-06-30')
+    await wrapper.find('.rangeBefore').setValue('2024-06-01')
+    await wrapper.find('.rangeApply').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ scope: 'peertube', after: '2024-06-01', before: '2024-06-30' })
+  })
+
+  it('leave out what channels have not', async () => {
+    const { wrapper } = await openSearchPage('/search/blender?scope=peertube&type=channel')
+
+    expect(wrapper.find('.liveChip').exists()).toBe(false)
+    expect(wrapper.find('.timeChip').exists()).toBe(false)
+    expect(wrapper.find('.lengthChip').exists()).toBe(false)
+  })
+
   it('take a custom date range in the PeerTube scope', async () => {
     const { wrapper, router } = await openSearchPage('/search/blender?scope=peertube&time=week')
 
@@ -486,6 +515,37 @@ describe('going back', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.query).toEqual({ scope: 'youtube' })
+    expect(layer.searchQuery).toHaveBeenCalledTimes(2)
+    expect(cards(wrapper)).toEqual(['YouTube 1', 'YouTube 2'])
+  })
+
+  it('asks again for a search that failed, rather than showing the failure from memory', async () => {
+    layer.searchQuery.mockRejectedValueOnce(new PlatformError('unavailable', 'down', { host: 'sepiasearch.org' }))
+    const { wrapper, router } = await openSearchPage('/search/blender?scope=peertube')
+    expect(wrapper.find('.retryButton').exists()).toBe(true)
+
+    await router.push('/search/krita?scope=peertube')
+    await flushPromises()
+    router.back()
+    await flushPromises()
+    await new Promise(resolve => setTimeout(resolve, 0))
+    await flushPromises()
+
+    expect(layer.searchQuery).toHaveBeenCalledTimes(3)
+    expect(cards(wrapper)).toEqual(['PeerTube 1'])
+  })
+
+  it('drops an answer that comes after the page was left, and asks again on return', async () => {
+    let settle
+    layer.searchQuery.mockReturnValueOnce(new Promise((resolve) => { settle = resolve }))
+    const first = await openSearchPage('/search/blender?scope=youtube')
+    first.wrapper.unmount()
+    openPages.length = 0
+    settle({ items: [youtubeVideo(9)], cursor: null, applied: [] })
+    await flushPromises()
+
+    const { wrapper } = await openSearchPage('/search/blender?scope=youtube')
+
     expect(layer.searchQuery).toHaveBeenCalledTimes(2)
     expect(cards(wrapper)).toEqual(['YouTube 1', 'YouTube 2'])
   })

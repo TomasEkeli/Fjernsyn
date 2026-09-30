@@ -154,6 +154,7 @@
       </div>
     </span>
     <span
+      v-if="current.type !== 'channel'"
       class="chip liveChip"
       :class="{ set: current.live, muted: mutedBy('live').length > 0 }"
       :title="mutedTooltip(mutedBy('live'))"
@@ -296,12 +297,15 @@ watch(() => [current.value.after, current.value.before], ([after, before]) => {
 }, { immediate: true })
 
 function applyRange() {
-  emit('update', normalise({
-    ...current.value,
-    time: null,
-    after: rangeAfter.value || null,
-    before: rangeBefore.value || null,
-  }))
+  let after = rangeAfter.value || null
+  let before = rangeBefore.value || null
+
+  // Given backwards, meant forwards
+  if (after !== null && before !== null && after > before) {
+    [after, before] = [before, after]
+  }
+
+  emit('update', normalise({ ...current.value, time: null, after, before }))
 }
 
 function clearRange() {
@@ -363,7 +367,9 @@ const selectChips = computed(() => {
 
       if (hasRange.value || rangeChosen.value) {
         timeChip.value = 'custom'
-        timeChip.set = hasRange.value
+        // A bucket still holds until a range is applied
+        timeChip.set = hasRange.value || q.time !== null
+        timeChip.clear = () => hasRange.value ? clearRange() : clear('time')
       }
 
       timeChip.choose = (option) => {

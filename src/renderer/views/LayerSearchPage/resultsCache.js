@@ -37,6 +37,13 @@ export function remember(key, snapshot) {
 }
 
 /**
+ * @param {string} key
+ */
+export function forget(key) {
+  searches.delete(key)
+}
+
+/**
  * @param {string} host
  */
 export function rememberInstance(host) {

@@ -70,7 +70,13 @@ describe('operatorSuggestions', () => {
 
   it('narrows to what has been typed of the value', () => {
     expect(operatorSuggestions('blender time:w')).toEqual(['blender time:week'])
-    expect(operatorSuggestions('on:p')).toEqual(['on:peertube'])
+    expect(operatorSuggestions('krita on:p')).toEqual(['krita on:peertube'])
+  })
+
+  it('offers nothing when there is nothing to search for besides operators, since choosing one searches', () => {
+    expect(operatorSuggestions('sort:')).toEqual([])
+    expect(operatorSuggestions('time:week sort:')).toEqual([])
+    expect(operatorSuggestions('time:week blender sort:d')).toEqual(['time:week blender sort:date'])
   })
 
   it('offers nothing for a finished value, an unknown key, or a word without a colon', () => {
