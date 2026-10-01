@@ -2,11 +2,13 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "dev-runner (Electron)",
-      "type": "node",
+      // Run in a debug terminal rather than as a plain node launch, so the
+      // output can be teed to a file named for when the run started
+      "name": "dev-runner (Electron, log to /tmp/freetube-dev-<start time>.log)",
+      "type": "node-terminal",
       "request": "launch",
-      "program": "${workspaceFolder}/_scripts/dev-runner.js",
-      "args": ["--remote-debug"],
+      "command": "node _scripts/dev-runner.js --remote-debug 2>&1 | tee \"/tmp/freetube-dev-$(date +%Y-%m-%dT%H-%M-%S).log\"",
+      "cwd": "${workspaceFolder}",
       "env": {
         // The devcontainer has no user namespace for the Chromium sandbox
         "ELECTRON_DISABLE_SANDBOX": "1",

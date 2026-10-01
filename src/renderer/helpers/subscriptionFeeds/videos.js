@@ -71,6 +71,21 @@ async function getChannelVideosLocalScraper(channel, failedAttempts = 0) {
       })
     }
 
+    // YouTube sent some entries without a title, so the list is short, and
+    // the newest upload may be what is missing. RSS lists the newest with
+    // their titles, so ask it, unless RSS is how we got here: then the titled
+    // entries are the best there is.
+    if (result.untitled > 0 && failedAttempts === 0) {
+      traceFetchStatus(FEED, channel.id, {
+        rung: 'local-scraper',
+        status: 200,
+        attempt: failedAttempts,
+        note: `untitled=${result.untitled} asking RSS`
+      })
+
+      return await getChannelVideosLocalRSS(channel, failedAttempts + 1)
+    }
+
     return {
       status: FETCH_OK,
       entries: result.videos,
