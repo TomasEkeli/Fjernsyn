@@ -1354,7 +1354,7 @@ export async function getLocalChannelVideos(id) {
         const innertube = new Innertube(session)
         const playlist = await innertube.getPlaylist(getChannelPlaylistId(channelId, 'videos', 'newest'))
 
-        videos = playlist.items.map(parseLocalPlaylistVideo)
+        videos = parseLocalPlaylistVideos(playlist.items)
       } catch (error) {
         // If the channel doesn't exist, the API call to channel page above would have already failed,
         // so if we get an error that the playlist doesn't exist here, it just means that this artist topic channel
@@ -1918,6 +1918,16 @@ export function parseChannelHomeTab(homeTab, channelId, channelName) {
 /**
  * @param {import('youtubei.js').YTNodes.PlaylistVideo|import('youtubei.js').YTNodes.ReelItem|import('youtubei.js').YTNodes.ShortsLockupView} video
  */
+/**
+ * A playlist's items, minus the ones that cannot be shown: `parseLocalPlaylistVideo`
+ * answers null for those (an unplayable video, a members-only one, a mix).
+ *
+ * @param {import('youtubei.js').Helpers.YTNode[]} items
+ */
+export function parseLocalPlaylistVideos(items) {
+  return items.map(parseLocalPlaylistVideo).filter(video => video != null)
+}
+
 export function parseLocalPlaylistVideo(video) {
   if (video.type === 'ReelItem') {
     /** @type {import('youtubei.js').YTNodes.ReelItem} */
@@ -2194,6 +2204,14 @@ function isPublishTimeText(text) {
  * @param {string | undefined} channelName
  */
 function parseLockupView(lockupView, channelId = undefined, channelName = undefined) {
+  // YouTube lists videos the viewer cannot play (licensing-blocked music on a
+  // Topic channel's uploads, for one) without a title. youtubei.js cannot
+  // parse metadata without a title and drops all of it, which leaves nothing
+  // to show and nothing playable behind it, so skip the item.
+  if (lockupView.metadata == null) {
+    return null
+  }
+
   switch (lockupView.content_type) {
     case 'ALBUM':
     case 'PLAYLIST':
