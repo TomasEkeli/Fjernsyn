@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs'
+import { readdirSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 
@@ -29,8 +29,6 @@ const fromRoot = (path) => fileURLToPath(new URL(path, import.meta.url))
 const ProcessLocalesPlugin = require('./_scripts/ProcessLocalesPlugin.js')
 const { SHAKA_LOCALE_MAPPINGS, SHAKA_LOCALES_PREBUNDLED } = require('./_scripts/getShakaLocales.js')
 
-const { version: swiperVersion } = JSON.parse(readFileSync(fromRoot('./node_modules/swiper/package.json'), 'utf-8'))
-
 const { localeNames } = new ProcessLocalesPlugin({
   inputDir: fromRoot('./static/locales'),
   outputDir: 'static/locales',
@@ -47,7 +45,6 @@ const RENDERER_CONSTANTS = {
   SUPPORTS_LOCAL_API: true,
   LOCALE_NAMES: localeNames,
   GEOLOCATION_NAMES: readdirSync(fromRoot('./static/geolocations')).map(filename => filename.replace('.json', '')),
-  SWIPER_VERSION: swiperVersion,
   SHAKA_LOCALE_MAPPINGS,
   SHAKA_LOCALES_PREBUNDLED,
   FT_SUBS_TRACE: '',
