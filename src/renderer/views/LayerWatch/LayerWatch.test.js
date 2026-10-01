@@ -583,16 +583,42 @@ describe('the format ring', () => {
     findPlayer(wrapper).vm.$emit('error', new Error('adaptive failed'))
     await flushPromises()
 
-    // Leaving destroys the player again, and that finishes first
+    // Leaving waits for the destruction under way rather than starting another
     player.destroyGate = undefined
-    await router.push(`/peertube/watch/${HOST}/${OTHER_UUID}`)
+    const opening = router.push(`/peertube/watch/${HOST}/${OTHER_UUID}`)
     await flushPromises()
 
     finishDestroying()
+    await opening
     await flushPromises()
 
     expect(findPlayer(wrapper).props()).toMatchObject({ videoId: OTHER_UUID, format: 'dash' })
     expect(wrapper.text()).not.toContain('Fjernsyn cannot play this video.')
+  })
+
+  it.each([
+    ['another video is opened', `/peertube/watch/${HOST}/${OTHER_UUID}`],
+    ['the page is left', '/elsewhere'],
+  ])('keeps the position saved at the failure when %s while the failed player is being destroyed', async (_case, path) => {
+    const { wrapper, router } = await openWatchPage(ref => playableVideo({ videoId: ref.videoId }, { legacyFormats: [], audio: null }))
+    Object.assign(player, { hasLoaded: true, currentTime: 42.5 })
+    let finishDestroying
+    player.destroyGate = new Promise(resolve => { finishDestroying = resolve })
+
+    findPlayer(wrapper).vm.$emit('error', new Error('adaptive failed'))
+    await flushPromises()
+
+    // shaka has unloaded the video by now, so the element reads 0
+    player.currentTime = 0
+    const leaving = router.push(path)
+    await flushPromises()
+    finishDestroying()
+    await leaving
+    await flushPromises()
+
+    expect(dispatched('updateWatchProgress')).toEqual([{ videoId: UUID, watchProgress: 42.5 }])
+    // Destroyed once: a second ui.destroy() on a player on its way out
+    expect(player.events.filter(event => event === 'destroyed')).toEqual(['destroyed'])
   })
 
   it('offers to try again once nothing plays, asking the layer afresh', async () => {

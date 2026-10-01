@@ -233,6 +233,10 @@ let historyWritten = false
 let savedOnLeave = false
 /** Tells a load apart from the one that replaced it */
 let loadsStarted = 0
+/** The player whose destruction has begun, and that destruction */
+let destroyedPlayer = null
+/** @type {Promise<void>} */
+let destruction = Promise.resolve()
 
 /**
  * What the player plays from. A `sabr` source (YouTube Local, phase 3) is
@@ -654,7 +658,10 @@ function handleVideoLoaded() {
 }
 
 function saveWatchProgress() {
-  if (!canSaveWatchProgress.value || !player.value?.hasLoaded) {
+  // A player being destroyed, or destroyed and not yet unmounted, has had its
+  // video unloaded, so its position reads about 0 and would overwrite the one
+  // saved before the destruction began
+  if (!canSaveWatchProgress.value || !player.value?.hasLoaded || player.value === destroyedPlayer) {
     return
   }
 
@@ -695,16 +702,29 @@ function handleVideoEnded() {
  * The player's destruction is asynchronous, so it is destroyed before it is
  * unmounted, keeping the full screen, full window and picture in picture
  * state for the next video (as Watch.js's `destroyPlayer`).
+ *
+ * Once per player: leaving while a failed player is still being destroyed
+ * waits for that destruction instead of starting a second one, which would
+ * call `ui.destroy()` again on a player already on its way out.
  */
-async function destroyPlayer() {
-  if (!player.value) {
-    return
+function destroyPlayer() {
+  const instance = player.value
+
+  if (!instance) {
+    return Promise.resolve()
   }
 
-  const uiState = await player.value.destroyPlayer()
-  startInFullscreen.value = uiState.startNextVideoInFullscreen
-  startInFullwindow.value = uiState.startNextVideoInFullwindow
-  startInPip.value = uiState.startNextVideoInPip
+  if (instance !== destroyedPlayer) {
+    destroyedPlayer = instance
+    destruction = (async () => {
+      const uiState = await instance.destroyPlayer()
+      startInFullscreen.value = uiState.startNextVideoInFullscreen
+      startInFullwindow.value = uiState.startNextVideoInFullwindow
+      startInPip.value = uiState.startNextVideoInPip
+    })()
+  }
+
+  return destruction
 }
 
 onBeforeRouteLeave(async () => {
