@@ -68,8 +68,9 @@ const titled = lockupViewModel('N-wHLE3HRYQ', {
   }
 })
 
-// A video the viewer cannot play ("Video unavailable" from /player). YouTube
-// still lists it, but with no title, no avatar and a link to channel "UC".
+// The same playlist as YouTube sent it now and then: 74 of the 100 entries with
+// no title, no avatar and a link to channel "UC", all of them titled again on
+// the next request.
 const untitled = lockupViewModel('1O5nX9mv3Wk', {
   image: {
     decoratedAvatarViewModel: {

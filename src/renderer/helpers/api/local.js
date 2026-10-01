@@ -1325,6 +1325,11 @@ export async function getLocalChannel(id) {
 }
 
 /**
+ * `untitled` counts the entries left out because YouTube sent them without a
+ * title. It does that now and then, for videos that play fine and come back
+ * titled on the next request, so a caller that wants the whole list can tell
+ * that this one is short and ask elsewhere.
+ *
  * @param {string} id
  */
 export async function getLocalChannelVideos(id) {
@@ -1344,16 +1349,19 @@ export async function getLocalChannelVideos(id) {
     rememberChannelTags(channelId, name, videosTab.metadata)
 
     let videos
+    let untitled = 0
 
     // if the channel doesn't have a videos tab, YouTube returns the home tab instead
     // so we need to check that we got the right tab
     if (videosTab.current_tab?.endpoint.metadata.url?.endsWith('/videos')) {
+      untitled = countUntitledLockups(videosTab.videos)
       videos = parseLocalChannelVideos(videosTab.videos, channelId, name)
     } else if (name.endsWith('- Topic') && !!videosTab.metadata.music_artist_name) {
       try {
         const innertube = new Innertube(session)
         const playlist = await innertube.getPlaylist(getChannelPlaylistId(channelId, 'videos', 'newest'))
 
+        untitled = countUntitledLockups(playlist.items)
         videos = parseLocalPlaylistVideos(playlist.items)
       } catch (error) {
         // If the channel doesn't exist, the API call to channel page above would have already failed,
@@ -1372,7 +1380,8 @@ export async function getLocalChannelVideos(id) {
     return {
       name,
       thumbnailUrl,
-      videos
+      videos,
+      untitled
     }
   } catch (error) {
     console.error(error)
@@ -1382,6 +1391,16 @@ export async function getLocalChannelVideos(id) {
       throw error
     }
   }
+}
+
+/**
+ * How many of these items `parseLockupView` will leave out for having come
+ * without a title.
+ *
+ * @param {import('youtubei.js').Helpers.YTNode[]} items
+ */
+export function countUntitledLockups(items) {
+  return items.filter(item => item.type === 'LockupView' && item.metadata == null).length
 }
 
 /**
@@ -1920,7 +1939,7 @@ export function parseChannelHomeTab(homeTab, channelId, channelName) {
  */
 /**
  * A playlist's items, minus the ones that cannot be shown: `parseLocalPlaylistVideo`
- * answers null for those (an unplayable video, a members-only one, a mix).
+ * answers null for those (one sent without a title, a members-only video, a mix).
  *
  * @param {import('youtubei.js').Helpers.YTNode[]} items
  */
@@ -2204,10 +2223,10 @@ function isPublishTimeText(text) {
  * @param {string | undefined} channelName
  */
 function parseLockupView(lockupView, channelId = undefined, channelName = undefined) {
-  // YouTube lists videos the viewer cannot play (licensing-blocked music on a
-  // Topic channel's uploads, for one) without a title. youtubei.js cannot
-  // parse metadata without a title and drops all of it, which leaves nothing
-  // to show and nothing playable behind it, so skip the item.
+  // YouTube now and then sends a lockup without a title (74 of a Topic
+  // channel's 100 uploads at once, titled again on the next request).
+  // youtubei.js cannot parse metadata without a title and drops all of it,
+  // which leaves nothing to show, so skip the item rather than fail the list.
   if (lockupView.metadata == null) {
     return null
   }
