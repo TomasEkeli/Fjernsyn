@@ -35,6 +35,7 @@ import {
 import { AudioGainStage, loudnessDbToGain } from '../../helpers/player/audioGain'
 import { MANIFEST_TYPE_SABR } from '../../helpers/player/SabrManifestParser'
 import { sabrWallInjectionEnabled, shouldAbandonRefresh } from '../../helpers/player/sabrWallInjection'
+import { isWatchPath } from '../../helpers/watchRoute'
 
 /** @typedef {import('../../helpers/sponsorblock').SponsorBlockCategory} SponsorBlockCategory */
 
@@ -2504,7 +2505,8 @@ export default defineComponent({
      * main ignores a size of the shape the window already has. Nothing for an
      * audio only format, which has no video size.
      *
-     * Nothing either once the route has left the watch view: the view fades
+     * Nothing either once the route has left the watch view (YouTube's or
+     * PeerTube's, see `isWatchPath`): the view fades
      * out with this player still mounted after App.vue has released the fit,
      * and a fit asked for then would have nothing to release it.
      */
@@ -2513,7 +2515,7 @@ export default defineComponent({
         return
       }
 
-      if (!route?.path.startsWith('/watch/')) {
+      if (!isWatchPath(route?.path)) {
         return
       }
 

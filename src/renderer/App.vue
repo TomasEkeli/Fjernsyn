@@ -78,6 +78,7 @@ import store from './store/index'
 import packageDetails from '../../package.json'
 import { openExternalLink, openInternalPath, showToast } from './helpers/utils'
 import { translateWindowTitle } from './helpers/strings'
+import { isWatchPath } from './helpers/watchRoute'
 import { loadLocale } from './i18n/index'
 import { getLocalClip } from './helpers/api/local.js'
 import { getClipInvidious } from './helpers/api/invidious.js'
@@ -126,7 +127,7 @@ useWindowMoveGesture({ enabled: () => store.getters.getFramelessWindow })
 // as it cannot tell the next video from leaving; this is the leaving
 if (process.env.IS_ELECTRON) {
   watch(() => route.path, (path) => {
-    if (!path.startsWith('/watch/')) {
+    if (!isWatchPath(path)) {
       window.ftElectron.releaseWindowFit()
     }
   })
