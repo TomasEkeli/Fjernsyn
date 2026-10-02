@@ -109,6 +109,7 @@ const SETTINGS = vi.hoisted(() => ({
   getShowFamilyFriendlyOnly: false,
   // Recommendations and autoplay
   getHideRecommendedVideos: false,
+  getHideLiveChat: false,
   getPlayNextVideo: false,
   getDefaultInterval: 5,
   getDefaultAutoplayInterruptionIntervalHours: 3,
@@ -341,8 +342,9 @@ async function openWatchPage(answer, path = WATCH_PATH) {
       plugins: [createTestI18n(), router, store],
       provide: { [PLATFORM_LAYER_KEY]: layer },
       directives: { 'observe-visibility': {} },
-      // The playlist panel's items, whose cards are tested with the panel
-      stubs: { FtListVideoNumbered: true },
+      // The playlist panel's items, whose cards are tested with the panel;
+      // the live chat, which starts the handle it is given and polls YouTube
+      stubs: { FtListVideoNumbered: true, WatchVideoLiveChat: true },
     },
   })
   openPages.push(wrapper)
@@ -2344,6 +2346,43 @@ describe('a playlist', () => {
   })
 })
 
+describe('live chat', () => {
+  /** A stand-in for the chat handle Local answers, of the panel's prop type */
+  const HANDLE = new EventTarget()
+
+  const waiting = () => youtubeVideo({ liveStatus: 'waiting', isUpcoming: true, playbackSource: null, liveChat: HANDLE })
+
+  function findChat(wrapper) {
+    return wrapper.findComponent({ name: 'WatchVideoLiveChat' })
+  }
+
+  it.each([
+    ['a live', () => ({ ...youtubeLive(), liveChat: HANDLE })],
+    ['an upcoming video', waiting],
+  ])('is beside %s, opened from the very handle the layer answered', async (_what, answer) => {
+    store.setGetter('getHideRecommendedVideos', true)
+    const { wrapper } = await openWatchPage(answer(), YT_PATH)
+
+    expect(findChat(wrapper).props()).toEqual({ liveChat: HANDLE, videoId: YT_ID, channelId: YT_CHANNEL })
+    expect(findChat(wrapper).props('liveChat')).toBe(HANDLE)
+    expect(wrapper.find('.sidebarArea').isVisible()).toBe(true)
+  })
+
+  it.each([
+    ['without a handle, as Invidious answers', () => ({ ...youtubeLive(), liveChat: null }), () => {}],
+    ['while live chat is hidden', () => ({ ...youtubeLive(), liveChat: HANDLE }), () => store.setGetter('getHideLiveChat', true)],
+    ['for a video neither live nor upcoming', () => youtubeVideo({ liveChat: HANDLE }), () => {}],
+    ['for a PeerTube live, whose details have none', () => playableVideo({ liveStatus: 'live' }, { isLive: true }), () => {}],
+  ])('is absent %s', async (_what, answer, setUp) => {
+    setUp()
+    const video = answer()
+    const { wrapper } = await openWatchPage(video, video.platform === 'peertube' ? WATCH_PATH : YT_PATH)
+
+    expect(findPlayer(wrapper).exists()).toBe(true)
+    expect(findChat(wrapper).exists()).toBe(false)
+  })
+})
+
 describe('theatre mode', () => {
   const NEXT_ID = 'pCJ9JGG0GQI'
   const USER_ID = 'mine'
@@ -2367,6 +2406,11 @@ describe('theatre mode', () => {
       },
       answer: () => youtubeVideo({}, { chapters: [] }),
       path: `${YT_PATH}?playlistId=${USER_ID}&playlistType=user&playlistItemId=u1`,
+    },
+    'live chat': {
+      setUp: () => { store.setGetter('getHideRecommendedVideos', true) },
+      answer: () => ({ ...youtubeLive(), liveChat: new EventTarget() }),
+      path: YT_PATH,
     },
   }
 

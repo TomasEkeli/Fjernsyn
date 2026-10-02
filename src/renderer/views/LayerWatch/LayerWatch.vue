@@ -206,6 +206,15 @@
       v-show="sidebarShown"
       class="sidebarArea"
     >
+      <!-- As Watch.vue: first in the sidebar, sized as the playlist panel -->
+      <WatchVideoLiveChat
+        v-if="liveChatShown && !isLoading && !hiddenAsNotFamilyFriendly"
+        :key="video.videoId"
+        :live-chat="video.liveChat"
+        :video-id="video.videoId"
+        :channel-id="video.authorId"
+        class="watchVideoSidebar watchVideoPlaylist"
+      />
       <WatchVideoPlaylist
         v-if="playlist !== null"
         ref="playlistPanel"
@@ -250,7 +259,9 @@
 // query, as upstream's, and its panel is upstream's `WatchVideoPlaylist`,
 // which fetches a YouTube playlist itself; here it plays a user playlist
 // through both platforms, each video on its own route, with the router
-// keeping this view between the two. Upstream's Watch view (views/Watch) is the model for
+// keeping this view between the two. A live's chat is upstream's
+// `WatchVideoLiveChat`, handed the chat the details hold (YouTube Local's
+// only). Upstream's Watch view (views/Watch) is the model for
 // everything a viewer sees and for when history and progress are written; it
 // is not edited. A `sabr` source's regulator is hosted by `useSabrHosting`,
 // beside this view (ADR-0006, ADR-0016).
@@ -273,6 +284,7 @@ import LayerSubscribeButton from '../../components/LayerSubscribeButton/LayerSub
 import LayerVideoDescription from '../../components/LayerVideoDescription/LayerVideoDescription.vue'
 import LayerVideoInfo from '../../components/LayerVideoInfo/LayerVideoInfo.vue'
 import WatchVideoChapters from '../../components/WatchVideoChapters/WatchVideoChapters.vue'
+import WatchVideoLiveChat from '../../components/WatchVideoLiveChat/WatchVideoLiveChat.vue'
 import WatchVideoPlaylist from '../../components/WatchVideoPlaylist/WatchVideoPlaylist.vue'
 import WatchVideoRecommendations from '../../components/WatchVideoRecommendations/WatchVideoRecommendations.vue'
 import { toStoredPlainText } from '../../components/LayerMarkdown/plainText'
@@ -312,6 +324,7 @@ const hideChapters = computed(() => store.getters.getHideChapters)
 const hideVideoDescription = computed(() => store.getters.getHideVideoDescription)
 const showFamilyFriendlyOnly = computed(() => store.getters.getShowFamilyFriendlyOnly)
 const hideRecommendedVideos = computed(() => store.getters.getHideRecommendedVideos)
+const hideLiveChat = computed(() => store.getters.getHideLiveChat)
 const saveVideoHistoryWithLastViewedPlaylist = computed(() => store.getters.getSaveVideoHistoryWithLastViewedPlaylist)
 
 const isLoading = ref(true)
@@ -524,11 +537,20 @@ const chaptersShown = computed(() => !hideChapters.value && chapters.value.lengt
 const recommendationsShown = computed(() => !hideRecommendedVideos.value && Array.isArray(video.value?.related))
 
 /**
- * Whether the sidebar has a panel to show: the playlist, the chapters or the
- * recommendations. A new side panel (the live chat) joins here, and theatre
+ * As Watch.vue under `hideLiveChat`, for a live or upcoming video whose
+ * details hold a chat to open: YouTube's from Local. Invidious answers none,
+ * and so no panel. The handle is the details', handed on as it is.
+ */
+const liveChatShown = computed(() => {
+  return !hideLiveChat.value && video.value?.liveChat != null && (isLive.value || video.value.isUpcoming)
+})
+
+/**
+ * Whether the sidebar has a panel to show: the live chat, the playlist, the
+ * chapters or the recommendations. A new side panel joins here, and theatre
  * mode comes with it.
  */
-const hasSidePanel = computed(() => playlist.value !== null || chaptersShown.value || recommendationsShown.value)
+const hasSidePanel = computed(() => liveChatShown.value || playlist.value !== null || chaptersShown.value || recommendationsShown.value)
 
 /** The sidebar is shown with a side panel in it, once the video is in and shown */
 const sidebarShown = computed(() => {
