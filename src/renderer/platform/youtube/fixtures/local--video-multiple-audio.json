@@ -1,0 +1,75 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "getLocalVideoInfo('MuLtiAud10A')",
+  "notes": "A video with an original and a dubbed audio track, written from youtubei.js' Format shape (audio_track as Local's answer has it): nothing playable can be recorded from Node without a PO token. A loudness of 0, which is a real value",
+  "answer": {
+    "adEndTimeUnixMs": 1790000000000,
+    "info": {
+      "playability_status": {
+        "status": "OK"
+      },
+      "basic_info": {
+        "id": "MuLtiAud10A",
+        "title": "Dubbed",
+        "author": "A channel",
+        "channel_id": "UCaaaaaaaaaaaaaaaaaaaaaa",
+        "duration": 300,
+        "view_count": 10,
+        "is_live": false,
+        "is_upcoming": false,
+        "is_post_live_dvr": false,
+        "is_family_safe": true,
+        "short_description": "No chapters here"
+      },
+      "player_config": {
+        "audio_config": {
+          "loudness_db": 0
+        }
+      },
+      "page": [
+        {}
+      ],
+      "streaming_data": {
+        "expires": "2026-10-02T23:59:59.000Z",
+        "formats": [],
+        "adaptive_formats": [
+          {
+            "itag": 137,
+            "mime_type": "video/mp4; codecs=\"avc1.640028\"",
+            "has_video": true,
+            "has_audio": false,
+            "width": 1920,
+            "height": 1080,
+            "projection_type": "EQUIRECTANGULAR",
+            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=137"
+          },
+          {
+            "itag": 140,
+            "mime_type": "audio/mp4; codecs=\"mp4a.40.2\"",
+            "has_video": false,
+            "has_audio": true,
+            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=140",
+            "audio_track": {
+              "audio_is_default": true,
+              "id": "en.4",
+              "display_name": "English original"
+            }
+          },
+          {
+            "itag": 141,
+            "mime_type": "audio/mp4; codecs=\"mp4a.40.2\"",
+            "has_video": false,
+            "has_audio": true,
+            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=141",
+            "audio_track": {
+              "audio_is_default": false,
+              "id": "de.3",
+              "display_name": "German"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

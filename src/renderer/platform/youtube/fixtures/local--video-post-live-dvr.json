@@ -2,7 +2,7 @@
   "recordedAt": "2026-10-02",
   "source": "recorded",
   "call": "getLocalVideoInfo('jfKfPfyJRdk')",
-  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised; the one muxed format is synthesised, to show a post-live DVR keeps none",
+  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised; the one muxed format is synthesised, to show a post-live DVR keeps none; the adaptive formats and YouTube's HLS manifest URL synthesised",
   "answer": {
     "info": {
       "playability_status": {
@@ -99,7 +99,27 @@
             "freeTubeUrl": "https://rr4---sn.googlevideo.com/videoplayback?itag=18"
           }
         ],
-        "adaptive_formats": []
+        "adaptive_formats": [
+          {
+            "itag": 299,
+            "mime_type": "video/mp4; codecs=\"avc1.640028\"",
+            "has_video": true,
+            "has_audio": false,
+            "width": 1920,
+            "height": 1080,
+            "projection_type": "RECTANGULAR",
+            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=299"
+          },
+          {
+            "itag": 140,
+            "mime_type": "audio/mp4; codecs=\"mp4a.40.2\"",
+            "has_video": false,
+            "has_audio": true,
+            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=140"
+          }
+        ],
+        "expires": "2026-10-02T23:59:59.000Z",
+        "hls_manifest_url": "https://manifest.googlevideo.com/api/manifest/hls_variant/id/jfKfPfyJRdk"
       }
     }
   }

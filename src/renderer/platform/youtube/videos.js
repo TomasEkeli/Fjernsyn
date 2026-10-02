@@ -1,7 +1,8 @@
 // A YouTube video, fetched: its details and playback source in the common
 // `VideoDetails` shape (`../shapes.js`), from Local or Invidious through the
 // backend policy (`./policy.js`). The mapping is the `VideoDetails` table in
-// `./types.js`, read in `./videoDetails.js`.
+// `./types.js`, read in `./videoDetails.js`; the playback source and the
+// chapters' kind are built in `./playback.js`.
 //
 // - Local: `getLocalVideoInfo(id)`. A video YouTube will not play is not a
 //   thrown error there but a playability status, classified by
@@ -15,6 +16,7 @@
 
 import { PlatformError } from '../errors'
 import { classifyLocalPlayability, classifyYouTubeError } from './errors'
+import { invidiousPlayback, localPlayback } from './playback'
 import { invidiousVideoDetails, localVideoDetails } from './videoDetails'
 
 /**
@@ -61,7 +63,8 @@ export function createYouTubeVideoReader({ youtube, config, policy }) {
       throw refusal
     }
 
-    return localVideoDetails(id, answer, readers)
+    const details = localVideoDetails(id, answer, readers)
+    return { ...details, ...(await localPlayback(id, answer, readers, details.liveStatus)) }
   }
 
   /**
@@ -75,7 +78,8 @@ export function createYouTubeVideoReader({ youtube, config, policy }) {
       throw new PlatformError('unavailable', `YouTube (Invidious) answered no video for ${id}`)
     }
 
-    return invidiousVideoDetails(id, video, readers)
+    const details = invidiousVideoDetails(id, video, readers)
+    return { ...details, ...(await invidiousPlayback(id, video, readers, details.liveStatus)) }
   }
 
   /**

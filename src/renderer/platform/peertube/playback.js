@@ -315,7 +315,7 @@ function chaptersOf(response, duration) {
  * @param {import('../shapes').Chapter[]} chapters
  * @returns {string | null}
  */
-function chaptersSrcOf(chapters) {
+export function chaptersSrcOf(chapters) {
   if (chapters.length === 0) {
     return null
   }

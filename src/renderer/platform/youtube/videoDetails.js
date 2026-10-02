@@ -13,13 +13,17 @@
 // either), so a video's details are always `type: 'video'`; only lists know
 // shorts.
 //
-// The playback source here is a `manifest` source with the single-file
-// (legacy) formats only, and no manifest, captions, chapters or storyboard;
-// those come with the manifests. A live or a post-live DVR has no legacy
-// formats; a waiting live has nothing to play, except on Local where YouTube
-// put a trailer in its place, which the old view plays.
+// The playback source and the chapters' kind are not read here but in
+// `./playback.js`, which needs the live status read here and, for the
+// manifests, asynchronous calls: `./videos.js` puts the two together.
 
 import { getLocalVideoTitle } from '../../helpers/player/watchMetadata'
+
+/**
+ * The details, all but what `./playback.js` adds.
+ *
+ * @typedef {Omit<import('../shapes').VideoDetails, 'playbackSource' | 'chaptersKind'>} DetailsWithoutPlayback
+ */
 
 /** The old view's thumbnail preference names, by the frame YouTube keeps for each */
 const THUMBNAIL_FRAMES = Object.freeze({ start: 'maxres1', middle: 'maxres2', end: 'maxres3' })
@@ -32,7 +36,7 @@ const WATCH_NEXT_LOCKUP_CONTENT = new Set(['VIDEO', 'STATION'])
  * @param {unknown} value
  * @returns {value is number}
  */
-function isNumber(value) {
+export function isNumber(value) {
   return typeof value === 'number' && Number.isFinite(value)
 }
 
@@ -83,7 +87,7 @@ function textOf(value) {
  * @param {unknown} value
  * @returns {Date | null}
  */
-function dateOf(value) {
+export function dateOf(value) {
   if (value == null || value === '') {
     return null
   }
@@ -136,28 +140,6 @@ function liveStatusOf({ live, upcoming, postLiveDvr }) {
 function thumbnailFor(base, id, preference, fallback) {
   const frame = THUMBNAIL_FRAMES[preference]
   return frame ? `${base}/vi/${id}/${frame}.jpg` : fallback
-}
-
-/**
- * A manifest source with legacy formats only, until the manifests exist.
- *
- * @param {import('../shapes').LegacyFormat[]} legacyFormats
- * @param {boolean} isLive
- * @returns {import('../shapes').ManifestPlaybackSource}
- */
-function legacyOnlySource(legacyFormats, isLive) {
-  return {
-    transport: 'manifest',
-    manifestUrl: null,
-    manifestMimeType: null,
-    legacyFormats,
-    audio: null,
-    captions: [],
-    chapters: [],
-    chaptersSrc: null,
-    storyboard: null,
-    isLive,
-  }
 }
 
 /**
@@ -279,39 +261,12 @@ function localRelated(youtube, info) {
 }
 
 /**
- * @param {any} info
- * @param {import('./deps').YouTubeDeps} youtube
- * @param {'live' | 'waiting' | 'ended' | null} liveStatus
- * @returns {import('../shapes').ManifestPlaybackSource | null}
- */
-function localPlaybackSource(info, youtube, liveStatus) {
-  const formats = info.streaming_data?.formats
-
-  if (liveStatus === 'live' || liveStatus === 'ended') {
-    return legacyOnlySource([], liveStatus === 'live')
-  }
-
-  // A waiting live plays only where YouTube answered a trailer in its place,
-  // which `getLocalVideoInfo` swaps in and marks playable
-  if (liveStatus === 'waiting' && info.playability_status?.status !== 'OK') {
-    return null
-  }
-
-  // No streaming data at all: region locked, or the like
-  if (!info.streaming_data) {
-    return null
-  }
-
-  return legacyOnlySource(Array.isArray(formats) ? formats.map(format => youtube.mapLocalLegacyFormat(format)) : [], false)
-}
-
-/**
  * @param {string} id
  * @param {{ info: any }} answer what `getLocalVideoInfo` answered
  * @param {object} deps
  * @param {import('./deps').YouTubeDeps} deps.youtube
  * @param {Readonly<import('../index').PlatformConfig>} deps.config
- * @returns {import('../shapes').VideoDetails}
+ * @returns {DetailsWithoutPlayback}
  */
 export function localVideoDetails(id, { info }, { youtube, config }) {
   const basic = info.basic_info ?? {}
@@ -327,7 +282,7 @@ export function localVideoDetails(id, { info }, { youtube, config }) {
   const licence = info.secondary_info?.metadata?.rows
     ?.find(row => row?.title?.text === 'License')?.contents?.[0]?.text
 
-  /** @type {import('../shapes').VideoDetails} */
+  /** @type {DetailsWithoutPlayback} */
   const details = {
     ...youtubeConstants(id),
     title: getLocalVideoTitle(info),
@@ -347,7 +302,6 @@ export function localVideoDetails(id, { info }, { youtube, config }) {
     channel: channelOf(authorId || null, author, authorThumbnail, subscriberCountOf(youtube, owner?.subscriber_count?.text)),
     authorThumbnail,
     liveStatus,
-    playbackSource: localPlaybackSource(info, youtube, liveStatus),
     isUnlisted: !!basic.is_unlisted,
     related: localRelated(youtube, info),
   }
@@ -434,7 +388,7 @@ function invidiousDescription(video) {
  * @param {string} instance
  * @param {unknown} url
  */
-function onInstance(instance, url) {
+export function onInstance(instance, url) {
   if (typeof url !== 'string') {
     return ''
   }
@@ -469,7 +423,7 @@ function invidiousRelated(video) {
  * @param {object} deps
  * @param {import('./deps').YouTubeDeps} deps.youtube
  * @param {Readonly<import('../index').PlatformConfig>} deps.config
- * @returns {import('../shapes').VideoDetails}
+ * @returns {DetailsWithoutPlayback}
  */
 export function invidiousVideoDetails(id, video, { youtube, config }) {
   const instance = config.currentInvidiousInstanceUrl
@@ -482,17 +436,7 @@ export function invidiousVideoDetails(id, video, { youtube, config }) {
   const channelThumbnail = video.authorThumbnails?.[1]?.url
   const authorThumbnail = channelThumbnail ? youtube.youtubeImageUrlToInvidious(channelThumbnail, instance) : ''
 
-  /** @type {import('../shapes').ManifestPlaybackSource | null} */
-  let playbackSource = null
-
-  if (liveStatus === 'live' || liveStatus === 'ended') {
-    playbackSource = legacyOnlySource([], live)
-  } else if (liveStatus === null) {
-    const formats = Array.isArray(video.formatStreams) ? video.formatStreams : []
-    playbackSource = legacyOnlySource(formats.map(format => youtube.mapInvidiousLegacyFormat(format)), false)
-  }
-
-  /** @type {import('../shapes').VideoDetails} */
+  /** @type {DetailsWithoutPlayback} */
   const details = {
     ...youtubeConstants(id),
     title: typeof video.title === 'string' ? video.title : '',
@@ -510,7 +454,6 @@ export function invidiousVideoDetails(id, video, { youtube, config }) {
     channel: channelOf(authorId || null, author, authorThumbnail, subscriberCountOf(youtube, video.subCountText)),
     authorThumbnail,
     liveStatus,
-    playbackSource,
     isUnlisted: video.isListed === false,
     related: invidiousRelated(video),
   }

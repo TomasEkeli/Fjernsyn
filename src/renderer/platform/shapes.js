@@ -94,6 +94,9 @@
  * @property {string} timestamp `m:ss` or `h:mm:ss`, as `formatDurationAsTimestamp`
  * @property {number} startSeconds
  * @property {number} endSeconds the next chapter's start, the last one's the video's end
+ * @property {{ url: string, width?: number, height?: number }} [thumbnail] YouTube
+ *   Local only: the frame its player bar and key-moments panel show for the
+ *   chapter, which the chapter list shows; neither PeerTube nor Invidious has one
  */
 
 /**
@@ -104,8 +107,24 @@
  * @property {string} url a WebVTT file, absolute
  * @property {string} language BCP 47 code
  * @property {string} label the language's name, as the instance gives it
- * @property {string} mimeType `text/vtt`
+ * @property {string} mimeType `text/vtt`; `text/srt` for a YouTube Local
+ *   translated track, since YouTube answers a translation asked for as WebVTT
+ *   with HTTP 429
  * @property {boolean} [isAutomatic] generated rather than written
+ * @property {string} [id] YouTube Local: the track's own id (`vss_id`, with
+ *   the target language for a translation), which the player keys tracks by
+ *   and the SABR manifest carries
+ * @property {boolean} [isAutotranslated] YouTube Local: a track YouTube
+ *   translates on request into the display language, added when no track is
+ *   in it, and ordered after written and generated ones
+ * @property {{ language: string | null, originalLanguage: string }} [translation]
+ *   YouTube Local, on a translated track: what its label is made of, because
+ *   the label is a translated template (`Video.Player.TranslatedCaptionTemplate`)
+ *   that the layer, without i18n, cannot fill. `language` is the target
+ *   language's name, `null` when YouTube has no name for it, which the old view
+ *   fills with the display language's own name (`Locale Name`);
+ *   `originalLanguage` the translated track's name. `label` holds the English
+ *   template filled in, with the language code for a missing name
  */
 
 /**
@@ -154,9 +173,27 @@
  * @property {Chapter[]} chapters for the chapter list
  * @property {string | null} chaptersSrc the chapters as a `data:text/vtt,` URI, for the
  *   player's `chaptersSrc` (built as the Watch view builds its own); `null` without chapters
- * @property {string | null} storyboard a WebVTT thumbnails track as a
- *   `data:text/vtt;charset=utf-8,` URI, for the player's `storyboardSrc`
+ * @property {string | null} storyboard a WebVTT thumbnails track, for the
+ *   player's `storyboardSrc`: a `data:text/vtt;charset=utf-8,` URI built by the
+ *   layer (PeerTube, YouTube Local), or any URL answering one (YouTube
+ *   Invidious' `/api/v1/storyboards/{id}`, which the layer cannot build since
+ *   the instance has the sprites' layout)
  * @property {boolean} isLive a live that is live now
+ * @property {number | null} [loudnessDb] YouTube Local only: the loudness
+ *   YouTube measured, for the player's normalisation (`0` is a real value,
+ *   `null` unknown); absent where the backend never says (Invidious, PeerTube)
+ * @property {number} [delayLoadUntilMs] YouTube Local only: when the
+ *   pre-roll ad time YouTube counts against the response is over (ms since the
+ *   epoch), which the player waits out before loading, or legacy formats fail
+ * @property {Date | null} [expiresAt] YouTube: when the stream URLs expire, so
+ *   that a failure after it reads as an expired session rather than a broken
+ *   video; `null` when the backend did not say
+ * @property {'EQUIRECTANGULAR' | 'EQUIRECTANGULAR_THREED_TOP_BOTTOM' | 'MESH' | null} [vrProjection]
+ *   YouTube: the first video format's projection when it is not rectangular,
+ *   for the player's VR mode; `null` for a flat video
+ * @property {boolean} [isPostLiveDvr] YouTube: a finished broadcast served as
+ *   a seekable recording, which plays as a live does (no legacy formats) while
+ *   not live now, which `isLive` alone cannot say
  */
 
 /**
@@ -199,6 +236,7 @@
  *   isFamilyFriendly?: boolean,
  *   isUnlisted?: boolean,
  *   related?: VideoSummary[],
+ *   chaptersKind?: 'chapters' | 'keyMoments',
  * }} VideoDetails
  *
  * - `url`: the canonical URL on the origin, to share and open
@@ -216,6 +254,9 @@
  *   `showFamilyFriendlyOnly`; absent for PeerTube, whose flag is the
  *   summary's `nsfw`
  * - `isUnlisted`: YouTube only, shown on the watch page; absent for PeerTube
+ * - `chaptersKind`: YouTube only: `'keyMoments'` when the source's chapters
+ *   are YouTube's automatic key moments (Local's engagement panel) rather
+ *   than the uploader's, which the chapter list names differently
  * - `related`: YouTube's watch-next list, as summaries; absent for PeerTube,
  *   which has none
  */

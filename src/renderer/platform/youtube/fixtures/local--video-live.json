@@ -101,8 +101,15 @@
           }
         ],
         "adaptive_formats": [],
-        "hls_manifest_url": "https://manifest.googlevideo.com/api/manifest/hls_variant/id/ODio2-1aFa8"
+        "hls_manifest_url": "https://manifest.googlevideo.com/api/manifest/hls_variant/id/ODio2-1aFa8",
+        "expires": "2026-10-02T23:59:59.000Z"
+      },
+      "player_config": {
+        "audio_config": {
+          "loudness_db": -3
+        }
       }
-    }
+    },
+    "adEndTimeUnixMs": 1790000000000
   }
 }
