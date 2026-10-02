@@ -89,8 +89,9 @@ const SETTINGS = vi.hoisted(() => ({
   getUseSponsorBlock: false,
   getSponsorBlockExcludedChannels: '[]',
   getListDensity: 'standard',
-  // The about tab's tag links, as the search box runs a search
+  // The about tab's tag links, as the search box runs a search, and its featured channels
   getHideSearchBar: false,
+  getHideFeaturedChannels: false,
   getEnablePeerTube: false,
   getDefaultSearchScope: 'all',
   getSearchRememberedParameters: null,
@@ -1345,6 +1346,80 @@ describe('a YouTube channel', () => {
 
       expect(wrapper.find('a.aboutTagLink').exists()).toBe(false)
       expect(wrapper.findAll('.aboutTagLink').map(tag => tag.text())).toEqual(['3d modelling', 'open source'])
+    })
+
+    /** The about tab's details table, as rows of heading and value */
+    function detailRows(wrapper) {
+      return wrapper.findAll('#aboutPanel .aboutDetails tr').map(row => [row.find('th').text(), row.find('td').text()])
+    }
+
+    const FEATURED = [
+      { id: 'UCAsj9iReHzLEYv9QawGzIOg', name: 'Blender Developers', thumbnail: 'https://yt3.googleusercontent.com/developers=s176' },
+      { id: 'UCz75RVbH8q2jdBJ4SnwuZZQ', name: 'Blender Studio', thumbnail: '' },
+    ]
+
+    it('shows the joined date, views, videos and location in the old tab\'s details table', async () => {
+      layer.getChannel.mockResolvedValue(youTubeChannel({
+        joined: new Date(2008, 4, 29).getTime(),
+        viewCount: 133470200,
+        videoCount: 1588,
+        location: 'Netherlands',
+      }))
+      const { wrapper } = await openChannelPage(`${YT_PATH}/about`)
+
+      expect(wrapper.find('#aboutPanel').text()).toContain('Details')
+      expect(detailRows(wrapper)).toEqual([
+        ['Joined', 'May 29, 2008'],
+        ['Views', '133,470,200'],
+        ['Videos', '1,588'],
+        ['Location', 'Netherlands'],
+      ])
+    })
+
+    it('shows only the details the layer answered, and no table without any', async () => {
+      layer.getChannel.mockResolvedValue(youTubeChannel({ viewCount: 0 }))
+      const { wrapper } = await openChannelPage(`${YT_PATH}/about`)
+
+      // A count the layer answered is shown, even 0; an absent one is not
+      expect(detailRows(wrapper)).toEqual([['Views', '0']])
+
+      layer.getChannel.mockResolvedValue(youTubeChannel())
+      const { wrapper: bare } = await openChannelPage(`${YT_PATH}/about`)
+
+      expect(bare.find('#aboutPanel .aboutDetails').exists()).toBe(false)
+      expect(bare.find('#aboutPanel').text()).not.toContain('Details')
+    })
+
+    it('shows the featured channels as bubbles linking to their pages, a missing avatar as the icon', async () => {
+      layer.getChannel.mockResolvedValue(youTubeChannel({ featuredChannels: FEATURED }))
+      const { wrapper, router } = await openChannelPage(`${YT_PATH}/about`)
+
+      expect(wrapper.find('#aboutPanel').text()).toContain('Featured Channels')
+      const bubbles = wrapper.findAllComponents({ name: 'FtChannelBubble' })
+      expect(bubbles.map(bubble => bubble.props())).toMatchObject([
+        { channelId: FEATURED[0].id, channelName: 'Blender Developers', channelThumbnail: FEATURED[0].thumbnail },
+        { channelId: FEATURED[1].id, channelName: 'Blender Studio', channelThumbnail: null },
+      ])
+
+      await bubbles[1].find('a').trigger('click')
+      await flushPromises()
+
+      expect(router.currentRoute.value.path).toBe(`/channel/${FEATURED[1].id}`)
+    })
+
+    it('hides the featured channels under their setting, and has no heading for none', async () => {
+      store.setGetter('getHideFeaturedChannels', true)
+      layer.getChannel.mockResolvedValue(youTubeChannel({ featuredChannels: FEATURED }))
+      const { wrapper } = await openChannelPage(`${YT_PATH}/about`)
+
+      expect(wrapper.findAllComponents({ name: 'FtChannelBubble' })).toHaveLength(0)
+      expect(wrapper.find('#aboutPanel').text()).not.toContain('Featured Channels')
+
+      store.setGetter('getHideFeaturedChannels', false)
+      layer.getChannel.mockResolvedValue(youTubeChannel({ featuredChannels: [] }))
+      const { wrapper: none } = await openChannelPage(`${YT_PATH}/about`)
+
+      expect(none.find('#aboutPanel').text()).not.toContain('Featured Channels')
     })
   })
 

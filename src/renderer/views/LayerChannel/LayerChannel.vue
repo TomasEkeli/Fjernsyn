@@ -185,6 +185,11 @@
             v-if="currentTabInfo.about"
             :description="channel.description ?? ''"
             :tags="channel.tags ?? []"
+            :joined="channel.joined"
+            :view-count="channel.viewCount"
+            :video-count="channel.videoCount"
+            :location="channel.location"
+            :featured-channels="channel.featuredChannels ?? []"
           />
           <template v-else>
             <div
