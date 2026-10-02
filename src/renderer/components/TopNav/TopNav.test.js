@@ -20,16 +20,13 @@ vi.mock('../../store/index', async () => {
     default: createFakeStore({
       getters: {
         getLandingPage: 'subscriptions',
-        getSearchSettings: { prioritize: 'relevance', time: '', type: 'all', duration: '', features: [] },
         getLatestMatchingSearchHistoryNames: () => [],
         getLatestSearchHistoryNames: [],
         getEnablePeerTube: false,
-        getEnableLayerSearch: false,
         getDefaultSearchScope: 'youtube',
         getSearchRememberedParameters: null,
         getSearchLatched: false,
         getRememberSearchHistory: false,
-        getSearchFilterValueChanged: false,
       },
     }),
   }
@@ -97,7 +94,6 @@ beforeEach(() => {
   }
   store.dispatched.length = 0
   store.setGetter('getEnablePeerTube', false)
-  store.setGetter('getEnableLayerSearch', false)
   store.setGetter('getSearchRememberedParameters', null)
   store.setGetter('getSearchLatched', false)
   store.setGetter('getRememberSearchHistory', false)
@@ -198,7 +194,7 @@ describe('the search bar, with PeerTube on', () => {
 
   const searchFor = text => ({
     path: `/search/${encodeURIComponent(text)}`,
-    query: { prioritize: 'relevance', time: '', type: 'all', duration: '', features: [] },
+    query: { scope: 'youtube' },
     doCreateNewWindow: false,
     searchQueryText: text,
   })
@@ -234,11 +230,10 @@ describe('the search bar, with PeerTube on', () => {
   })
 })
 
-describe('the search bar, with the layer\'s search page on', () => {
+describe('the search bar, searching on the layer\'s search page', () => {
   const remembered = { scope: 'youtube', sort: 'views', time: 'week' }
 
   beforeEach(() => {
-    store.setGetter('getEnableLayerSearch', true)
     openPeerTubeEntry.mockResolvedValue(null)
     youtubeUrlInfo = { urlType: 'invalid_url' }
   })

@@ -51,15 +51,23 @@ const rejects = (value, pattern) => assert.throws(() => validateRegistry(value),
 
 // The committed registry
 check('the committed registry is well formed', () => {
-  const { touched } = readRegistry(DEFAULT_REGISTRY_PATH)
+  const { touched, shadowed } = readRegistry(DEFAULT_REGISTRY_PATH)
   assert.ok(touched.some(file => file.path === 'package.json'), 'package.json is listed as touched')
+
+  // Search has left its switch (ADR-0018); upstream's search page is unrouted, and still shadowed
+  const search = shadowed.find(({ group }) => group === 'unroutedSearch')
+  assert.deepEqual(search?.files.map(file => file.path), [
+    'src/renderer/views/SearchPage/SearchPage.vue',
+    'src/renderer/components/FtSearchFilters/FtSearchFilters.vue',
+    'src/renderer/store/modules/utils.js',
+  ], 'the search page, the filter modal and the search settings state are shadowed as unroutedSearch')
 })
 
 // Validating a registry
 check('a minimal registry is accepted and normalised', () => {
   assert.deepEqual(
     validateRegistry(registry({ touched: [entry('a.js')], shadowed: { enableX: [entry('b.vue')] } })),
-    { touched: [entry('a.js')], shadowed: [{ setting: 'enableX', files: [entry('b.vue')] }] }
+    { touched: [entry('a.js')], shadowed: [{ group: 'enableX', files: [entry('b.vue')] }] }
   )
 })
 check('a registry that is not an object is refused', () => rejects([], /JSON object/))
@@ -78,11 +86,11 @@ check('a path both touched and shadowed is refused', () => rejects(
   registry({ touched: [entry('a.js')], shadowed: { enableX: [entry('a.js')] } }),
   /shadowed\.enableX\[0\]\.path "a\.js": already listed at touched\[0\]/
 ))
-check('a path shadowed by two switches is refused', () => rejects(
+check('a path shadowed in two groups is refused', () => rejects(
   registry({ shadowed: { enableX: [entry('a.js')], enableY: [entry('a.js')] } }),
   /already listed at shadowed\.enableX\[0\]/
 ))
-check('a switch listing no files is refused', () => rejects(registry({ shadowed: { enableX: [] } }), /lists no files/))
+check('a group listing no files is refused', () => rejects(registry({ shadowed: { enableX: [] } }), /lists no files/))
 check('every problem is reported at once', () => rejects(
   registry({ about: '', touched: [{ path: 'a.js' }] }),
   /about[\s\S]*touched\[0\]\.reason/
@@ -135,7 +143,7 @@ check('a change to a touched file is listed with its reason, commits and diffsta
   assert.match(text, /Upstream changed 1 of 2 registered files in 111111111\.\.222222222\./)
 })
 
-check('a change to a shadowed file is listed under its switch as a candidate to port', () => {
+check('a change to a shadowed file is listed under its group as a candidate to port', () => {
   const text = report(
     registry({ shadowed: { enableLayerHistory: [entry('src/renderer/views/History/History.vue', 'old History view')] } }),
     fakeGit({
@@ -144,7 +152,7 @@ check('a change to a shadowed file is listed under its switch as a candidate to 
     })
   )
   const shadowed = text.slice(text.indexOf('Shadowed'), text.indexOf('Touched'))
-  assert.match(shadowed, /switch enableLayerHistory\n\s+src\/renderer\/views\/History\/History\.vue\n\s+why: old History view\n\s+abc1234 Fix history/)
+  assert.match(shadowed, /\n {2}enableLayerHistory\n\s+src\/renderer\/views\/History\/History\.vue\n\s+why: old History view\n\s+abc1234 Fix history/)
   assert.match(text, /Touched \(expect conflicts here\)\n\s+no touched files registered/)
 })
 
@@ -159,7 +167,7 @@ check('nothing changed is said explicitly', () => {
     fakeGit()
   )
   assert.match(text, /Upstream changed none of the registered files in 111111111\.\.222222222 \(3 registered\)\./)
-  assert.match(text, /switch enableX\n\s+1 registered file unchanged/)
+  assert.match(text, /\n {2}enableX\n\s+1 registered file unchanged/)
   assert.match(text, /Touched[^\n]*\n\s+2 registered files unchanged/)
   assert.doesNotMatch(text, /Warnings/)
 })
@@ -241,7 +249,7 @@ try {
     assert.match(stdout, /Range: a0cbafbe2\.\.9bb24b31c/)
 
     const shadowed = stdout.slice(stdout.indexOf('Shadowed'), stdout.indexOf('Touched'))
-    assert.match(shadowed, /switch fixtureSwitch\n\s+src\/sponsorBlockExcludedChannels\.js\n\s+why: added in the range/)
+    assert.match(shadowed, /\n {2}fixtureSwitch\n\s+src\/sponsorBlockExcludedChannels\.js\n\s+why: added in the range/)
     for (const commit of ['9f02c8fa1', 'beaf78ba4', 'ec71e632f', '16486b474', '83dc28269']) {
       assert.match(shadowed, new RegExp(`${commit} `))
     }

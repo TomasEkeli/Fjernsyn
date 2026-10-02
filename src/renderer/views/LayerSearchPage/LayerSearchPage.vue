@@ -215,9 +215,9 @@
 </template>
 
 <script setup>
-// The search page on the platform layer, behind the search surface switch
-// (`enableLayerSearch`; platform/routes.js `searchSurface`). The route is the
-// whole search (platform/search/query.js): its text, its scope and its
+// The search page on the platform layer, which `/search/:query` renders
+// (router/index.js; upstream's SearchPage stays in the tree, unrouted,
+// ADR-0018). The route is the whole search (platform/search/query.js): its text, its scope and its
 // filters. Every change on the page (a scope tab, a chip, `Clear`, `Apply last
 // filters`, a section header) is a push of the new query, so the back button
 // walks through them; loading more is not. A search runs when the route

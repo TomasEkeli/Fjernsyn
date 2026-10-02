@@ -1,10 +1,11 @@
-// A surface switch (ADR-0014): the component a route renders in place of a
-// surface's view, choosing between upstream's view and the platform layer's
-// from one experimental setting. The old view is not edited; while the setting
-// is off it renders exactly as it did, and it stays in the tree, shadowed,
-// while the setting is on. Changing the setting swaps the view in place.
+// A surface switch (ADR-0014, ADR-0018): the component a route renders in
+// place of a surface's view, choosing between upstream's view and the platform
+// layer's from one experimental setting. The old view is not edited; while the
+// setting is off it renders exactly as it did, and it stays in the tree,
+// shadowed, while the setting is on. Changing the setting swaps the view in
+// place.
 //
-//   component: surfaceSwitch({ name: 'SearchSurface', getter: 'getEnableLayerSearch', off: SearchPage, on: LayerSearchPage })
+//   component: surfaceSwitch({ name: 'ChannelSurface', getter: 'getEnableLayerSurfaces', off: Channel, on: LayerChannel })
 //
 // Attributes are passed through to whichever view renders.
 

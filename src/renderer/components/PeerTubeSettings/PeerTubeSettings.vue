@@ -38,7 +38,7 @@
         @change="handleShowNsfw"
       />
     </FtFlexBox>
-    <FtFlexBox v-if="layerSearchEnabled">
+    <FtFlexBox>
       <FtSelect
         class="defaultSearchScope"
         :placeholder="t('Layer Search.Settings.Default scope')"
@@ -53,9 +53,9 @@
 
 <script setup>
 // The PeerTube settings: where PeerTube search goes, whether NSFW content is
-// shown, and (while the layer's search page is on) where the search box
-// searches by default. Both are store settings; the platform layer is rebuilt from them
-// when they change (platform/vue.js). The settings page shows this section
+// shown, and where the search box searches by default. All are store
+// settings; the platform layer is rebuilt from the first two when they change
+// (platform/vue.js). The settings page shows this section
 // only while PeerTube is switched on (./section.js).
 
 import { computed, ref, watch } from 'vue'
@@ -146,11 +146,8 @@ function handleShowNsfw(value) {
   store.dispatch('updatePeerTubeShowNsfw', value)
 }
 
-// Where the search box searches by default, on the search page on the layer:
-// a choice only while PeerTube is on, so offered here
-/** @type {import('vue').ComputedRef<boolean>} */
-const layerSearchEnabled = computed(() => store.getters.getEnableLayerSearch === true)
-
+// Where the search box searches by default: a choice only while PeerTube is
+// on, so offered here
 /** @type {import('vue').ComputedRef<string>} */
 const defaultSearchScope = computed(() => SCOPES.includes(store.getters.getDefaultSearchScope) ? store.getters.getDefaultSearchScope : 'all')
 

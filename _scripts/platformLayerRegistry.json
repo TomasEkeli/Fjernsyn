@@ -1,5 +1,5 @@
 {
-  "about": "Every upstream file the platform layer work edits (touched) or no longer runs while a surface switch is on (shadowed), see ADR-0014. A change that touches or shadows an upstream file adds it here in the same commit; `pnpm run report-platform-layer-upstream` lists what upstream changed in them.",
+  "about": "Every upstream file the platform layer work edits (touched) or no longer runs while a surface switch is on (shadowed), see ADR-0014. Shadowed files are grouped by the setting of the switch that shadows them; a surface that has left its switch keeps its old files shadowed, unrouted, under `unrouted<Surface>` (ADR-0018). A change that touches or shadows an upstream file adds it here in the same commit; `pnpm run report-platform-layer-upstream` lists what upstream changed in them.",
   "touched": [
     {
       "path": "package.json",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/renderer/components/ExperimentalSettings/ExperimentalSettings.vue",
-      "reason": "the experimental PeerTube toggle, and the switch of the search page on the layer (enableLayerSearch)"
+      "reason": "the experimental PeerTube toggle"
     },
     {
       "path": "src/renderer/components/FtListChannel/FtListChannel.vue",
@@ -63,7 +63,7 @@
     },
     {
       "path": "src/renderer/components/TopNav/TopNav.vue",
-      "reason": "the search bar (`goToSearch`, now async) hands its text to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `getYoutubeUrlInfo` only when that hands it back (always, while PeerTube is off); while the layer's search page is on (enableLayerSearch): the pill (src/renderer/components/LayerSearchPill) in place of the filter button, a plain search goes to the route src/renderer/components/LayerSearchPill/searchBox.js builds instead of one from the store's searchSettings, and an operator's values are the suggestions once its key and colon are typed"
+      "reason": "the search bar (`goToSearch`, now async) hands its text to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `getYoutubeUrlInfo` only when that hands it back (always, while PeerTube is off); for the layer's search page: the pill (src/renderer/components/LayerSearchPill) in place of the filter button, a plain search goes to the route src/renderer/components/LayerSearchPill/searchBox.js builds instead of one from the store's searchSettings, and an operator's values are the suggestions once its key and colon are typed"
     },
     {
       "path": "src/renderer/components/WatchVideoPlaylist/WatchVideoPlaylist.vue",
@@ -79,11 +79,11 @@
     },
     {
       "path": "src/renderer/router/index.js",
-      "reason": "the PeerTube routes (the layer's watch, channel and search views) spread in from src/renderer/platform/routes.js; `/search/:query` renders the search surface switch (`searchSurface(SearchPage)`, src/renderer/platform/routes.js) instead of SearchPage directly"
+      "reason": "the PeerTube routes (the layer's watch, channel and search views) spread in from src/renderer/platform/routes.js; `/search/:query` renders the layer's search page (src/renderer/views/LayerSearchPage), imported in place of SearchPage, which stays in the tree unrouted (shadowed)"
     },
     {
       "path": "src/renderer/store/modules/settings.js",
-      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw; the layer search page's: enableLayerSearch, defaultSearchScope, searchRememberedParameters, searchLatched"
+      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw; the layer search page's: defaultSearchScope, searchRememberedParameters, searchLatched"
     },
     {
       "path": "src/renderer/views/Settings/Settings.vue",
@@ -95,18 +95,18 @@
     }
   ],
   "shadowed": {
-    "enableLayerSearch": [
+    "unroutedSearch": [
       {
         "path": "src/renderer/views/SearchPage/SearchPage.vue",
-        "reason": "upstream's search page, not rendered while the layer's search page is on (src/renderer/views/LayerSearchPage); its backend fallback, paging and search history are ported to the layer's YouTube search (src/renderer/platform/youtube/search.js) and the new page. Also touched: a \"Search PeerTube\" link in the heading row, to the layer's PeerTube search view for the same query, shown only while PeerTube is on (isPeerTubeEnabled)"
+        "reason": "upstream's search page, unrouted: `/search/:query` renders the layer's (src/renderer/views/LayerSearchPage); its backend fallback, paging and search history are ported to the layer's YouTube search (src/renderer/platform/youtube/search.js) and the new page. Also touched: a \"Search PeerTube\" link in the heading row, to the layer's PeerTube search view for the same query, shown only while PeerTube is on (isPeerTubeEnabled)"
       },
       {
         "path": "src/renderer/components/FtSearchFilters/FtSearchFilters.vue",
-        "reason": "the search filters modal, never opened while the layer's search page is on: its button in the top bar gives way to the pill (src/renderer/components/LayerSearchPill), and the filters are the chip bar (src/renderer/components/LayerSearchChips)"
+        "reason": "the search filters modal, never opened: its button in the top bar gives way to the pill (src/renderer/components/LayerSearchPill), and the filters are the chip bar (src/renderer/components/LayerSearchChips)"
       },
       {
         "path": "src/renderer/store/modules/utils.js",
-        "reason": "its `searchSettings` state and mutations only (the filters the modal writes and the top bar reads), unused while the layer's search page is on; the search query lives in the route (src/renderer/platform/search/query.js). The rest of the module is used as before"
+        "reason": "its `searchSettings` state and mutations only (the filters the modal writes and the top bar read), no longer read by the search box or the search page; the search query lives in the route (src/renderer/platform/search/query.js). The rest of the module is used as before"
       }
     ]
   }

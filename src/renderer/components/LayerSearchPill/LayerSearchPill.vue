@@ -1,5 +1,5 @@
 <template>
-  <!-- Always there while the switch is on, pill or not, so the top bar can widen the search box for it -->
+  <!-- Always there, pill or not, so the top bar can widen the search box for it -->
   <div class="searchPillSlot">
     <div
       v-if="remembered !== null"
@@ -48,8 +48,8 @@
 </template>
 
 <script setup>
-// The pill beside the search box, in place of the filter button while the
-// layer's search page is on: the remembered set in words, lit while the next
+// The pill beside the search box, in place of upstream's filter button: the
+// remembered set in words, lit while the next
 // search from the box gets it (`searchLatched`). A click toggles it. The caret
 // opens the chip bar on the set itself, so it can be changed before a search;
 // a change latches it, and one that leaves nothing set forgets it, which
@@ -117,7 +117,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeOutside))
 <style scoped src="./LayerSearchPill.css" />
 
 <!--
-  Unscoped, and only while the layer's search page is on: the top bar's search
+  Unscoped, and loaded with the pill: the top bar's search
   box grows from upstream's 440px, since the pill takes some of it. Here rather
   than in the top bar's styles, which are upstream's.
 -->

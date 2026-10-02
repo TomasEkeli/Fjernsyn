@@ -224,11 +224,3 @@ export function getPlatformLayer() {
 export function isPeerTubeEnabled() {
   return installedStore?.getters.getEnablePeerTube === true
 }
-
-/**
- * Whether the search surface switch is on, for the PeerTube search route's
- * redirect. False until the layer is installed.
- */
-export function isLayerSearchEnabled() {
-  return installedStore?.getters.getEnableLayerSearch === true
-}

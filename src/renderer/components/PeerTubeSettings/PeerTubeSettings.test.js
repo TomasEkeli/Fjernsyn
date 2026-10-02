@@ -15,7 +15,6 @@ vi.mock('../../store/index', async () => {
         getEnablePeerTube: true,
         getPeerTubeSearchSource: 'https://sepiasearch.org',
         getPeerTubeShowNsfw: false,
-        getEnableLayerSearch: false,
         getDefaultSearchScope: 'youtube',
       },
     }),
@@ -29,7 +28,6 @@ beforeEach(() => {
   store.dispatched.length = 0
   store.setGetter('getPeerTubeSearchSource', 'https://sepiasearch.org')
   store.setGetter('getPeerTubeShowNsfw', false)
-  store.setGetter('getEnableLayerSearch', false)
   store.setGetter('getDefaultSearchScope', 'youtube')
 })
 
@@ -211,10 +209,7 @@ describe('reading a search source', () => {
 })
 
 describe('the default search scope', () => {
-  it('is offered only while the search page on the layer is on', async () => {
-    expect(mountSettings().find('.defaultSearchScope').exists()).toBe(false)
-
-    store.setGetter('getEnableLayerSearch', true)
+  it('is offered, showing the scope as set', async () => {
     const wrapper = mountSettings()
 
     expect(wrapper.find('.defaultSearchScope select').element.value).toBe('youtube')
@@ -222,7 +217,6 @@ describe('the default search scope', () => {
   })
 
   it('is saved when chosen', async () => {
-    store.setGetter('getEnableLayerSearch', true)
     const wrapper = mountSettings()
 
     await wrapper.find('.defaultSearchScope select').setValue('all')

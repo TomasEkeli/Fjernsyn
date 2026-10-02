@@ -206,12 +206,10 @@ const state = {
   enablePeerTube: false,
   peerTubeSearchSource: 'https://sepiasearch.org',
   peerTubeShowNsfw: false,
-  // The search page on the platform layer (experimental): its switch, where
-  // the search box searches by default (`youtube`, `peertube` or `all`), the
-  // parameters of the last filtered search (`null` for none; read through
-  // platform/search/query.js `readRemembered`), and whether the next search
-  // from the search box gets them
-  enableLayerSearch: false,
+  // The search page on the platform layer: where the search box searches by
+  // default (`youtube`, `peertube` or `all`), the parameters of the last
+  // filtered search (`null` for none; read through platform/search/query.js
+  // `readRemembered`), and whether the next search from the search box gets them
   defaultSearchScope: 'all',
   searchRememberedParameters: null,
   searchLatched: false,

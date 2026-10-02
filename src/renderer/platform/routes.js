@@ -15,13 +15,12 @@
  *   handle `name@host`, the tab `videos` (the default) or `playlists`: the
  *   layer's channel view
  * - `/peertube/search/:query`, name `peertubeSearch`, query `type`, `video`
- *   (the default) or `channel`: the layer's PeerTube search view; while the
- *   search surface switch is on, a redirect to `/search/:query` in scope
+ *   (the default) or `channel`: a redirect to `/search/:query` in scope
  *   `peertube`, with its type, so links to it keep working
  *
- * And upstream's `/search/:query` renders `searchSurface(SearchPage)`: the
- * search surface switch, upstream's search page while `enableLayerSearch` is
- * off and the layer's (`views/LayerSearchPage`) while it is on.
+ * And upstream's `/search/:query` renders `LayerSearchPage`, the layer's
+ * search page, directly: search has left its surface switch (ADR-0018), and
+ * upstream's search page stays in the tree, unrouted.
  *
  * The views are imported statically, as `router/index.js` imports upstream's.
  * A view reaches the router again through `helpers/utils`, which is the same
@@ -29,20 +28,9 @@
  * on it reads the router while the modules are still being evaluated.
  */
 
-import { surfaceSwitch } from '../components/LayerSurfaceSwitch/surfaceSwitch'
 import LayerChannel from '../views/LayerChannel/LayerChannel.vue'
 import LayerSearch from '../views/LayerSearch/LayerSearch.vue'
-import LayerSearchPage from '../views/LayerSearchPage/LayerSearchPage.vue'
 import LayerWatch from '../views/LayerWatch/LayerWatch.vue'
-
-/**
- * The component `/search/:query` renders: the search surface switch.
- *
- * @param {import('vue').Component} SearchPage upstream's search page
- */
-export function searchSurface(SearchPage) {
-  return surfaceSwitch({ name: 'SearchSurface', getter: 'getEnableLayerSearch', off: SearchPage, on: LayerSearchPage })
-}
 
 /**
  * `beforeEnter` for every PeerTube route.
@@ -70,8 +58,8 @@ export async function peerTubeRouteGuard() {
 }
 
 /**
- * `beforeEnter` for the PeerTube search route: while the search surface
- * switch is on, the same search on the search page, in scope PeerTube.
+ * `beforeEnter` for the PeerTube search route: the same search on the search
+ * page, in scope PeerTube.
  *
  * @param {import('vue-router').RouteLocationNormalized} to
  * @returns {Promise<boolean | import('vue-router').RouteLocationRaw>}
@@ -81,12 +69,6 @@ export async function peerTubeSearchGuard(to) {
 
   if (!allowed) {
     return false
-  }
-
-  const { isLayerSearchEnabled } = await import('./vue.js')
-
-  if (!isLayerSearchEnabled()) {
-    return true
   }
 
   const query = { scope: 'peertube' }

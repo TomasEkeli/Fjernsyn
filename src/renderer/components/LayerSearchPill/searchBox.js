@@ -1,5 +1,5 @@
 // The search box's side of the layer's search page, for the top bar's
-// `goToSearch` while the search surface switch is on: the route a search from
+// `goToSearch`: the route a search from
 // the box goes to, built from the settings (platform/search/searchBox.js), and
 // the remembered set written when that search is filtered by operators typed
 // in it, as any filtered search is: the new set, latched, Ctrl+Enter or not
