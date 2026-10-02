@@ -27,7 +27,8 @@ wiring. The terms are defined under "Platforms" in the project's glossary
   rebuilds it when a setting it reads changes. `cards.js` and `entryPoints.js`
   are hooks for upstream's components and also reach the app; `records.js`,
   `routes.js` and `subscriptionExchange.js` are pure helpers for upstream's
-  code.
+  code; `subscriptionCache.js` is one for the channel view, the subscription
+  cache's entries from the layer's list items.
 
 ## The YouTube adapters
 
