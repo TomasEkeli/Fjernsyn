@@ -320,6 +320,35 @@ describe('a YouTube channel\'s videos', () => {
     expect(fake.callsOf('getLocalChannel')).toHaveLength(0)
   })
 
+  it.each(Object.keys(CHIPS))('says the first page is in the sort asked, %s, where the tab has the filter', async (sort) => {
+    const { layer } = setUp()
+
+    expect((await layer.listChannelVideos(BLENDER, { sort })).sort).toBe(sort)
+  })
+
+  it.each(['popular', 'oldest'])('answers newest first, and says so, for %s on a Local tab without the filter', async (sort) => {
+    const { layer } = setUp({
+      answers: {
+        getLocalChannel: async () => withMethods(localOrdinary, () => ({
+          getVideos: async () => ({ ...videosTab(CHIPS.newest), filters: [], applyFilter: async () => { throw new Error('no filter') } }),
+        })),
+      },
+    })
+
+    const page = await layer.listChannelVideos(BLENDER, { sort })
+
+    expect(page.sort).toBe('newest')
+    expect(page.items.map(item => item.videoId)).toEqual(['Latest-1a', 'Latest-1b'])
+  })
+
+  it('says every Invidious page is in the sort asked', async () => {
+    const { layer } = setUp({ config: { backendPreference: 'invidious' } })
+
+    const pages = await allPages(layer, BLENDER, { sort: 'oldest' })
+
+    expect(pages.map(page => page.sort)).toEqual(['oldest', 'oldest'])
+  })
+
   it.each([['newest', 'UULF'], ['popular', 'UULP']])('lists an artist topic channel\'s uploads playlist on Local, %s first', async (sort, prefix) => {
     const { layer, fake } = setUp()
     const playlistId = DAFT_PUNK_TOPIC.replace(/^UC/, prefix)
@@ -417,6 +446,19 @@ describe('a YouTube channel that is gone', () => {
 
     expect(await failure(layer.getChannel(BLENDER))).toMatchObject({ kind: 'refused', reason: 'ageRestricted' })
     expect(fake.callsOf('invidiousGetChannelInfo')).toHaveLength(0)
+  })
+
+  it('carries the name and avatar YouTube shows an age-gated channel with', async () => {
+    const ageGate = { channel_title: 'Grown-ups only', avatar: [{ url: '//yt3.ggpht.com/grown-ups=s88' }] }
+    const { layer } = setUp({
+      answers: { getLocalChannel: async () => withMethods(localOrdinary, () => ({ memo: new Map([['ChannelAgeGate', [ageGate]]]) })) },
+    })
+
+    expect((await failure(layer.getChannel(BLENDER))).channel).toEqual({
+      id: BLENDER,
+      name: 'Grown-ups only',
+      thumbnail: 'https://yt3.ggpht.com/grown-ups=s88',
+    })
   })
 })
 

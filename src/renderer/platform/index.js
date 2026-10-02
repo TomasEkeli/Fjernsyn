@@ -214,7 +214,9 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
    * `videos` (the default), or YouTube's `shorts` and `live` tabs, which a
    * channel without them, and every PeerTube channel, answers as an empty
    * page. Hand the page's `cursor` back for the next page, which keeps the
-   * first page's kind and sort; `null` is the end.
+   * first page's kind and sort; `null` is the end. A YouTube page says the
+   * sort it applied (`sort`), which on Local may be `newest` where the
+   * channel's tab has no filter for the sort asked.
    *
    * @param {import('./shapes').ChannelRef} ref
    * @param {{ kind?: 'videos' | 'shorts' | 'live', sort?: 'newest' | 'popular' | 'oldest', cursor?: unknown }} [options]

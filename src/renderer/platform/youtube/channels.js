@@ -24,6 +24,11 @@
 //   and `getInvidiousChannelPlaylists`. Each list's backend calls and item
 //   shapes are a row of `LISTS`; a cursor names its list, so a later page
 //   never needs the caller to repeat it.
+// - A page says which sort it is in (`Page.sort`), so that the view can tell
+//   when the sort asked was not applied: Local's first page of a tab without
+//   that filter answers `newest`, and an uploads playlist the sort asked;
+//   Invidious every page the sort asked, which it always applies. A later
+//   Local page, and an empty page for a missing tab, say none.
 // - A channel without a tab answers an empty page, without opening it: Local
 //   reads the channel's `has_*` flags; Invidious, which reports no such
 //   thing per tab, the channel's `tabs` when `getChannel` read them on this
@@ -333,9 +338,19 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       throw new PlatformError('notFound', `YouTube (Local): ${channel.alert}`)
     }
 
-    // The old view's age gate: YouTube shows the name and avatar only
+    // The old view's age gate: YouTube shows the name and avatar only, which
+    // the refusal carries for the page to show
     if (channel?.memo?.has?.('ChannelAgeGate')) {
-      throw new PlatformError('refused', 'This channel is age restricted', { reason: 'ageRestricted' })
+      const ageGate = channel.memo.get('ChannelAgeGate')?.[0]
+
+      throw new PlatformError('refused', 'This channel is age restricted', {
+        reason: 'ageRestricted',
+        channel: {
+          id,
+          name: typeof ageGate?.channel_title === 'string' ? ageGate.channel_title : '',
+          thumbnail: httpsUrl(ageGate?.avatar?.[0]?.url),
+        },
+      })
     }
 
     localChannels.set(id, channel)
@@ -479,7 +494,7 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       throw error
     }
 
-    return localPlaylistPage(playlist, kind)
+    return { ...localPlaylistPage(playlist, kind), sort }
   }
 
   /**
@@ -502,12 +517,14 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
     let tab = await list.openTab(channel)
 
     // A tab offering no such sort lists newest first, as the old view does
-    // when it hides the sort for want of filters
+    // when it hides the sort for want of filters, and the page says so
     const filter = sort === 'newest' ? undefined : tab.filters?.[CHANNEL_VIDEO_SORTS.indexOf(sort)]
 
     if (filter) {
       tab = await tab.applyFilter(filter)
     }
+
+    const applied = filter ? sort : 'newest'
 
     for (let followed = 0; list.followEmpty && followed < EMPTY_PAGES_FOLLOWED; followed++) {
       if ((list.localItems(tab)?.length ?? 0) > 0 || !tab.has_continuation) {
@@ -517,7 +534,7 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       tab = await tab.getContinuation()
     }
 
-    return localTabPage(tab, ownerOf(channel, id, kind), kind)
+    return { ...localTabPage(tab, ownerOf(channel, id, kind), kind), sort: applied }
   }
 
   /**
@@ -609,6 +626,8 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
     return {
       items: items.map(item => list.invidiousItem(item, config)),
       cursor: answer?.continuation ? { backend: 'invidious', continuation: answer.continuation, sort, kind } : null,
+      // Invidious applies the sort it is asked, on every page
+      sort,
     }
   }
 

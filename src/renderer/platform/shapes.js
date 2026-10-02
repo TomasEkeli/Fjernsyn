@@ -478,11 +478,20 @@
  * platform answered that the video's comments are off rather than that there
  * are none (YouTube; spec, "Phase 2 decisions", Q7). Absent otherwise.
  *
+ * `sort` is on a channel list's page, the sort the adapter applied, where it
+ * knows it (spec, "Phase 3 decisions", C1): YouTube Invidious the sort asked,
+ * YouTube Local `newest` on the first page of a tab that has no filter for
+ * the sort asked, which lists newest first. A view reads the first page's.
+ * Absent where the adapter does not say, which is the sort asked: PeerTube
+ * always applies it, and an empty page for a tab a channel lacks applied
+ * none.
+ *
  * @template T
  * @typedef {object} Page
  * @property {T[]} items
  * @property {unknown} cursor
  * @property {boolean} [commentsEnabled]
+ * @property {'newest' | 'popular' | 'oldest'} [sort]
  */
 
 export {}
