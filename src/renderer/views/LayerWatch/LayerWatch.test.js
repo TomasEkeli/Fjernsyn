@@ -739,7 +739,7 @@ describe('instead of a broken player', () => {
 })
 
 describe('history', () => {
-  it('is written when the player has loaded, with the old path\'s fields plus the platform, host and thumbnail', async () => {
+  it('is written when the player has loaded, with the old path\'s fields plus the platform, host, thumbnail and PeerTube category', async () => {
     const { wrapper } = await openWatchPage(playableVideo())
     expect(dispatched('updateHistory')).toEqual([])
 
@@ -748,7 +748,7 @@ describe('history', () => {
 
     const [record] = dispatched('updateHistory')
     expect(Object.keys(record).sort()).toEqual(
-      [...OLD_PATH_HISTORY_FIELDS, 'platform', 'host', 'thumbnail', 'authorThumbnail'].sort()
+      [...OLD_PATH_HISTORY_FIELDS, 'platform', 'host', 'thumbnail', 'authorThumbnail', 'peertubeCategory'].sort()
     )
     expect(record).toEqual({
       videoId: UUID,
@@ -767,7 +767,21 @@ describe('history', () => {
       host: HOST,
       thumbnail: THUMBNAIL,
       authorThumbnail: AVATAR,
+      peertubeCategory: 'Films',
     })
+    // YouTube's category field is the profile suggestions', never PeerTube's
+    expect(record).not.toHaveProperty('category')
+  })
+
+  it('carries no category at all for a PeerTube video without one', async () => {
+    const { wrapper } = await openWatchPage(playableVideo({ category: null }))
+
+    findPlayer(wrapper).vm.$emit('loaded')
+    await flushPromises()
+
+    const [record] = dispatched('updateHistory')
+    expect(record).not.toHaveProperty('category')
+    expect(record).not.toHaveProperty('peertubeCategory')
   })
 
   it('is written once per video, however often the player loads', async () => {

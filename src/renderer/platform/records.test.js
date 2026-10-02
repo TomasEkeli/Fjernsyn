@@ -70,6 +70,12 @@ describe('splitImportedPlatformFields', () => {
     expect(fields).toMatchObject({ platform: 'peertube', host: HOST })
   })
 
+  it('keeps a PeerTube history entry\'s category, and drops one that is not text', () => {
+    expect(splitImportedPlatformFields({ ...PEERTUBE_ENTRY, peertubeCategory: 'Films' }).fields.peertubeCategory).toBe('Films')
+    expect(splitImportedPlatformFields({ ...PEERTUBE_ENTRY, peertubeCategory: 7 }).fields).not.toHaveProperty('peertubeCategory')
+    expect(splitImportedPlatformFields({ ...PEERTUBE_ENTRY, peertubeCategory: 7 }).record).not.toHaveProperty('peertubeCategory')
+  })
+
   it('keeps a PeerTube record without thumbnails', () => {
     const { thumbnail, authorThumbnail, ...bare } = PEERTUBE_ENTRY
 

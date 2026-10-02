@@ -11,8 +11,10 @@
 import { isHostname, isUuid, parseChannelHandle, peerTubeChannelRef, PLATFORM_PEERTUBE, PLATFORM_YOUTUBE, platformOf } from './refs'
 
 // The fields a stored PeerTube video carries beyond a YouTube one
-const PLATFORM_KEYS = ['platform', 'host', 'thumbnail', 'authorThumbnail']
+const PLATFORM_KEYS = ['platform', 'host', 'thumbnail', 'authorThumbnail', 'peertubeCategory']
 const URL_KEYS = ['thumbnail', 'authorThumbnail']
+// A history entry's PeerTube category label, never YouTube's `category`
+const TEXT_KEYS = ['peertubeCategory']
 
 /**
  * @param {unknown} record
@@ -28,7 +30,8 @@ export function isYouTubeRecord(record) {
  * record needs a host name, a uuid for its `videoId` (stored in lower case,
  * as the layer writes one) and a channel handle for its `authorId` (stored as
  * `name@host`, the host in lower case); its thumbnails are kept only as
- * `https:` URLs, and dropped otherwise.
+ * `https:` URLs, and dropped otherwise, and its `peertubeCategory` only as
+ * a string that is not empty.
  *
  * @param {Record<string, any>} imported one record as parsed from the file; not changed
  * @returns {{ record: Record<string, any>, fields: Record<string, any> | null }}
@@ -59,6 +62,12 @@ export function splitImportedPlatformFields(imported) {
   const fields = { platform: PLATFORM_PEERTUBE, host: imported.host }
   for (const key of URL_KEYS) {
     if (isHttpsUrl(imported[key])) {
+      fields[key] = imported[key]
+    }
+  }
+
+  for (const key of TEXT_KEYS) {
+    if (typeof imported[key] === 'string' && imported[key] !== '') {
       fields[key] = imported[key]
     }
   }
