@@ -471,12 +471,16 @@
 
 /**
  * A YouTube channel, the common `ChannelDetails` (../shapes.js, which took
- * `tabs`, `tags`, `isFamilyFriendly` and `isArtistTopicChannel`). Implemented
+ * `tabs`, `tags`, `isFamilyFriendly` and `isArtistTopicChannel`, later
+ * `hasSearch` and the about tab's details). Implemented
  * in `./channels.js`. Local: `getLocalChannel(id)` (a `YT.Channel`, or
  * `{ alert }` for a terminated channel, which is `notFound`; an age gate is
  * `refused`, `ageRestricted`), read through `parseLocalChannelHeader`; the
  * description needs a second request, `channel.getAbout()`. Invidious:
- * `invidiousGetChannelInfo(id)`.
+ * `invidiousGetChannelInfo(id)`. The about page answers the joined date,
+ * counts and location too, and the featured channels are the channels on the
+ * home tab, which the `YT.Channel` already holds (`parseChannelHomeTab`, no
+ * request).
  *
  * | common               | L                                                  | I                                            |
  * | -------------------- | -------------------------------------------------- | -------------------------------------------- |
@@ -497,6 +501,11 @@
  * | isFamilyFriendly     | `metadata.is_family_safe === true`                 | `isFamilyFriendly === true`                  |
  * | isArtistTopicChannel | a name ending `- Topic` with `metadata.music_artist_name`, which changes where its videos come from | absent |
  * | hasSearch            | `has_search === true`                              | `true` (not reported; the old view offers search always) |
+ * | joined               | the about page's `joined_date.text` less `Joined`, by `Date.parse` (local midnight); absent when unreadable or without | `joined` × 1000; absent when 0 (unknown) |
+ * | viewCount            | `extractNumberFromString` of the about page's `view_count` (`.text` on the full metadata); absent without digits | `totalViews`; absent when 0 (unknown) |
+ * | videoCount           | the same of `video_count`; absent on the full metadata, which has none | absent (not reported) |
+ * | location             | the about page's `country` (`.text` on the full metadata); absent when blank | absent (not reported) |
+ * | featuredChannels     | the `type: 'channel'` items of `parseChannelHomeTab(channel)`, once each, as `{ id, name, thumbnail }`; absent without a home tab (`has_home`, or `tabs[0]` not `Videos`, the old view's test) or when it throws | `relatedChannels` as `{ id: authorId, name: author, thumbnail }`, the last `authorThumbnails` via `youtubeImageUrlToInvidious` |
  *
  * `tabs` uses the old view's names in its order (`videos`, `shorts`, `live`,
  * `releases`, `podcasts`, `courses`, `playlists`, `community`), without home

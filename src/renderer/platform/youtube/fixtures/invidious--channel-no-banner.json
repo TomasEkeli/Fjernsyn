@@ -18,7 +18,10 @@
     "isFamilyFriendly": false,
     "description": "",
     "tabs": ["videos"],
-    "tags": []
+    "tags": [],
+    "totalViews": 0,
+    "joined": 0,
+    "relatedChannels": []
   },
-  "notes": "From the Invidious API's /api/v1/channels/{id} shape: a channel with no banner answers an empty `authorBanners`."
+  "notes": "From the Invidious API's /api/v1/channels/{id} shape: a channel with no banner answers an empty `authorBanners`. `totalViews` and `joined` 0 (added for ticket 41) are what Invidious answers when it could not read them."
 }

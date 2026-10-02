@@ -1,0 +1,17 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "(await getLocalChannel('UCXuqSBlHAE6Xw-yeJA0Tunw')).getAbout()",
+  "answer": {
+    "type": "AboutChannel",
+    "metadata": {
+      "view_count": "9,873,760,676 views",
+      "video_count": "7,941 videos",
+      "joined_date": {
+        "text": "Joined Nov 25, 2008"
+      },
+      "country": "Canada"
+    }
+  },
+  "notes": "Trimmed to what the adapter reads; the description left out."
+}

@@ -352,6 +352,12 @@
  * - `hasSearch`: whether the channel can be searched (`searchChannel`), so
  *   that the page offers its search box where the old view does: Local's
  *   `has_search`, always on Invidious, which does not say.
+ * - What the about tab's details show (phase 3): `joined`, when the channel
+ *   joined YouTube (ms since epoch), `viewCount` and `videoCount`, and
+ *   `location`, the country as YouTube words it; and `featuredChannels`, the
+ *   channels it features, as summaries. Each is absent where the backend
+ *   does not say, never 0: Invidious has no video count or location, and
+ *   reads an unknown date or view count as 0.
  *
  * @typedef {ChannelSummary & {
  *   avatarLarge: string,
@@ -364,6 +370,11 @@
  *   isFamilyFriendly?: boolean,
  *   isArtistTopicChannel?: boolean,
  *   hasSearch?: boolean,
+ *   joined?: number,
+ *   viewCount?: number,
+ *   videoCount?: number,
+ *   location?: string,
+ *   featuredChannels?: ChannelSummary[],
  * }} ChannelDetails
  */
 

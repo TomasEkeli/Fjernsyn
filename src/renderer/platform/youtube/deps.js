@@ -22,6 +22,7 @@
 //   `getLocalArtistTopicChannelReleases(channel)` and
 //   `getLocalArtistTopicChannelReleasesContinuation(channel, continuation)`
 //   for its releases, `parseLocalCommunityPosts` for a page of its posts,
+//   `parseChannelHomeTab` for the featured channels on its home tab,
 //   and `getLocalChannelId(url)` for a channel link by name (a `UC` id, or
 //   `null` for any failure)
 // - comments: `getLocalComments(id)` (a `YT.Comments`), `parseLocalComment`
@@ -74,6 +75,7 @@ export const YOUTUBE_DEP_NAMES = Object.freeze({
     'getLocalArtistTopicChannelReleases',
     'getLocalArtistTopicChannelReleasesContinuation',
     'parseLocalCommunityPosts',
+    'parseChannelHomeTab',
     'getLocalChannelId',
     'getLocalComments',
     'parseLocalComment',

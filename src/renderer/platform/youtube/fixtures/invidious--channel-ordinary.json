@@ -21,7 +21,29 @@
     "isFamilyFriendly": true,
     "description": "Official YouTube channel for Blender, the Free and Open Source 3D Creation Suite.\n\nThe Freedom to Create\n",
     "tabs": ["videos", "shorts", "live", "podcasts", "playlists", "community"],
-    "tags": ["blender", "Blender Foundation", "3d"]
+    "tags": ["blender", "Blender Foundation", "3d"],
+    "totalViews": 133470200,
+    "joined": 1212019200,
+    "relatedChannels": [
+      {
+        "author": "Blender Developers",
+        "authorId": "UCAsj9iReHzLEYv9QawGzIOg",
+        "authorUrl": "/channel/UCAsj9iReHzLEYv9QawGzIOg",
+        "authorThumbnails": [
+          { "url": "https://yt3.googleusercontent.com/blender-developers=s32-c-k-c0x00ffffff-no-rj", "width": 32, "height": 32 },
+          { "url": "https://yt3.googleusercontent.com/blender-developers=s176-c-k-c0x00ffffff-no-rj", "width": 176, "height": 176 }
+        ]
+      },
+      {
+        "author": "Blender Studio",
+        "authorId": "UCz75RVbH8q2jdBJ4SnwuZZQ",
+        "authorUrl": "/channel/UCz75RVbH8q2jdBJ4SnwuZZQ",
+        "authorThumbnails": [
+          { "url": "https://yt3.googleusercontent.com/blender-studio=s32-c-k-c0x00ffffff-no-rj", "width": 32, "height": 32 },
+          { "url": "https://yt3.googleusercontent.com/blender-studio=s176-c-k-c0x00ffffff-no-rj", "width": 176, "height": 176 }
+        ]
+      }
+    ]
   },
-  "notes": "From the Invidious API's /api/v1/channels/{id} shape, after the module's own mapping of `streams` to `live` and `posts` to `community`."
+  "notes": "From the Invidious API's /api/v1/channels/{id} shape, after the module's own mapping of `streams` to `live` and `posts` to `community`. `totalViews`, `joined` (seconds) and `relatedChannels` added for ticket 41, the numbers and channels from the Local recordings of the same channel."
 }

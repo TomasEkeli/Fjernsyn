@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { parseLocalChannelHeader, parseLocalChannelShorts, parseLocalSubscriberCount } from '../../helpers/api/local'
+import { extractNumberFromString } from '../../helpers/utils'
 import { createPlatformLayer } from '../index'
 import { CHANNEL_CACHE_SIZE } from './channels'
 import { createFakeYouTube, withMethods } from './testing/fakeYouTube'
@@ -19,8 +20,12 @@ import localArtistTopicAbout from './fixtures/local--channel-artist-topic-about.
 import localArtistTopicReleasesContinuation from './fixtures/local--channel-artist-topic-releases-continuation.json'
 import localArtistTopicReleases from './fixtures/local--channel-artist-topic-releases.json'
 import localArtistTopic from './fixtures/local--channel-artist-topic.json'
+import localLocatedAbout from './fixtures/local--channel-located-about.json'
+import localLocatedHome from './fixtures/local--channel-located-home.json'
+import localLocated from './fixtures/local--channel-located.json'
 import localNoBanner from './fixtures/local--channel-no-banner.json'
 import localOrdinaryAbout from './fixtures/local--channel-ordinary-about.json'
+import localOrdinaryHome from './fixtures/local--channel-ordinary-home.json'
 import localOrdinary from './fixtures/local--channel-ordinary.json'
 import localPostsPoll from './fixtures/local--channel-posts-poll.json'
 import localPosts from './fixtures/local--channel-posts.json'
@@ -31,6 +36,7 @@ import localTerminated from './fixtures/local--channel-terminated.json'
 
 const BLENDER = 'UCSMOQeBJ2RAnuFungnQOxLg'
 const DAFT_PUNK_TOPIC = 'UCRr1xG_2WIDs18a6cIiCxeA'
+const LTT = 'UCXuqSBlHAE6Xw-yeJA0Tunw'
 const NO_BANNER = 'UCnobannernobannernoban0'
 const GONE = 'UCterminatedterminatedte'
 const INSTANCE = 'https://invidious.example'
@@ -192,6 +198,15 @@ function setUp({ config = {}, answers = {} } = {}) {
     parseLocalChannelHeader,
     parseLocalSubscriberCount,
     parseLocalChannelShorts,
+    extractNumberFromString,
+    // The module's parse of the channel's home tab, as recorded
+    parseChannelHomeTab: (channel) => {
+      const home = { [BLENDER]: localOrdinaryHome, [LTT]: localLocatedHome }[channel.metadata?.external_id]
+      if (!home) {
+        throw new Error(`no home tab recorded for ${channel.metadata?.external_id}`)
+      }
+      return structuredClone(home.answer)
+    },
     parseLocalChannelVideos: (videos, channelId, channelName) => videos.map(video => ({
       type: 'video',
       videoId: video.id,
@@ -222,6 +237,7 @@ function setUp({ config = {}, answers = {} } = {}) {
     getLocalChannel: async id => ({
       [BLENDER]: () => localChannel(localOrdinary, localOrdinaryAbout),
       [DAFT_PUNK_TOPIC]: () => localChannel(localArtistTopic, localArtistTopicAbout),
+      [LTT]: () => localChannel(localLocated, localLocatedAbout),
       [NO_BANNER]: () => localChannel(localNoBanner),
       [GONE]: () => structuredClone(localTerminated.answer),
     })[id]?.() ?? localChannel(localOrdinary, localOrdinaryAbout),
@@ -290,7 +306,7 @@ async function failure(promise) {
 }
 
 describe('a YouTube channel\'s details', () => {
-  it('reads a channel from Local, with its about page\'s description', async () => {
+  it('reads a channel from Local, with its about page\'s description and details, and the channels its home tab features', async () => {
     const { layer } = setUp()
 
     expect(await layer.getChannel(BLENDER)).toEqual({
@@ -309,7 +325,91 @@ describe('a YouTube channel\'s details', () => {
       isFamilyFriendly: true,
       isArtistTopicChannel: false,
       hasSearch: true,
+      // "Joined May 29, 2008", "133,470,200 views", "1,588 videos"; no country given
+      joined: new Date(2008, 4, 29).getTime(),
+      viewCount: 133470200,
+      videoCount: 1588,
+      featuredChannels: [
+        {
+          id: 'UCAsj9iReHzLEYv9QawGzIOg',
+          name: 'Blender Developers',
+          thumbnail: expect.stringMatching(/^https:\/\/yt3\.googleusercontent\.com\/.+=s176-/),
+        },
+        {
+          id: 'UCz75RVbH8q2jdBJ4SnwuZZQ',
+          name: 'Blender Studio',
+          thumbnail: expect.stringMatching(/^https:\/\/yt3\.googleusercontent\.com\/.+=s176-/),
+        },
+      ],
     })
+  })
+
+  it('reads a Local channel\'s location from its about page, and every channel its home tab features, once each', async () => {
+    const { layer, fake } = setUp({
+      answers: {
+        // The featured shelf repeated, as a home tab may show a channel twice
+        parseChannelHomeTab: () => [...structuredClone(localLocatedHome.answer), structuredClone(localLocatedHome.answer.at(-1))],
+      },
+    })
+
+    const channel = await layer.getChannel(LTT)
+
+    expect(channel).toMatchObject({ location: 'Canada', joined: new Date(2008, 10, 25).getTime(), viewCount: 9873760676, videoCount: 7941 })
+    expect(channel.featuredChannels).toHaveLength(12)
+    expect(channel.featuredChannels[0]).toEqual({
+      id: 'UCdBK94H6oZT2Q7l0-b0xmMg',
+      name: 'ShortCircuit',
+      thumbnail: expect.stringMatching(/^https:\/\/yt3\.googleusercontent\.com\//),
+    })
+    expect(fake.callsOf('getLocalChannel')).toEqual([[LTT]])
+  })
+
+  it('reads the older full about metadata on Local, which gives no video count', async () => {
+    const { layer } = setUp({
+      answers: {
+        getLocalChannel: async () => localChannel(localOrdinary, {
+          answer: {
+            type: 'ChannelAboutFullMetadata',
+            description: { text: 'Old about page' },
+            view_count: { text: '1,234 views' },
+            joined_date: { text: 'Joined Mar 3, 2010' },
+            country: { text: 'Netherlands' },
+          },
+        }),
+      },
+    })
+
+    const channel = await layer.getChannel(BLENDER)
+
+    expect(channel).toMatchObject({ description: 'Old about page', viewCount: 1234, joined: new Date(2010, 2, 3).getTime(), location: 'Netherlands' })
+    expect(channel).not.toHaveProperty('videoCount')
+  })
+
+  it('leaves out what a Local about page does not say, or says unreadably, rather than answering 0', async () => {
+    const { layer } = setUp({
+      answers: {
+        getLocalChannel: async () => localChannel(localOrdinary, {
+          // YouTube in another language, without counts or a country
+          answer: { type: 'AboutChannel', metadata: { description: 'Hei', joined_date: { text: 'Ble med 29. mai 2008' }, country: '' } },
+        }),
+      },
+    })
+
+    const channel = await layer.getChannel(BLENDER)
+
+    expect(channel.description).toBe('Hei')
+    for (const field of ['joined', 'viewCount', 'videoCount', 'location']) {
+      expect(channel).not.toHaveProperty(field)
+    }
+  })
+
+  it('answers a Local channel whose home tab cannot be read without featured channels, and the rest as ever', async () => {
+    const { layer } = setUp({ answers: { parseChannelHomeTab: () => { throw new TypeError('no shelves') } } })
+
+    const channel = await layer.getChannel(BLENDER)
+
+    expect(channel).not.toHaveProperty('featuredChannels')
+    expect(channel).toMatchObject({ name: 'Blender', viewCount: 133470200 })
   })
 
   it('knows an artist topic channel on Local, which lists videos and releases it has no tabs for', async () => {
@@ -331,7 +431,9 @@ describe('a YouTube channel\'s details', () => {
       answers: { getLocalChannel: async () => withMethods(localNoBanner, () => ({ getAbout: async () => { throw new Error('asked') } })) },
     })
 
-    expect(await layer.getChannel(NO_BANNER)).toMatchObject({
+    const channel = await layer.getChannel(NO_BANNER)
+
+    expect(channel).toMatchObject({
       name: 'A small channel',
       thumbnail: 'https://yt3.ggpht.com/small-channel=s176-c-k-c0x00ffffff-no-rj',
       banner: null,
@@ -342,10 +444,15 @@ describe('a YouTube channel\'s details', () => {
       isFamilyFriendly: false,
       hasSearch: false,
     })
+    // No about page and no home tab: none of what they would say
+    for (const field of ['joined', 'viewCount', 'videoCount', 'location', 'featuredChannels']) {
+      expect(channel).not.toHaveProperty(field)
+    }
+    expect(fake.callsOf('parseChannelHomeTab')).toHaveLength(0)
     expect(fake.calls.filter(call => call.name.startsWith('invidious'))).toHaveLength(0)
   })
 
-  it('reads a channel from Invidious, its page images moved onto the instance', async () => {
+  it('reads a channel from Invidious, its page images and featured channels\' avatars moved onto the instance', async () => {
     const { layer } = setUp({ config: { backendPreference: 'invidious' } })
 
     expect(await layer.getChannel(BLENDER)).toEqual({
@@ -363,13 +470,25 @@ describe('a YouTube channel\'s details', () => {
       tags: ['blender', 'Blender Foundation', '3d'],
       isFamilyFriendly: true,
       hasSearch: true,
+      // Invidious has no video count or location
+      joined: Date.UTC(2008, 4, 29),
+      viewCount: 133470200,
+      featuredChannels: [
+        { id: 'UCAsj9iReHzLEYv9QawGzIOg', name: 'Blender Developers', thumbnail: `${INSTANCE}/ggpht/blender-developers=s176-c-k-c0x00ffffff-no-rj` },
+        { id: 'UCz75RVbH8q2jdBJ4SnwuZZQ', name: 'Blender Studio', thumbnail: `${INSTANCE}/ggpht/blender-studio=s176-c-k-c0x00ffffff-no-rj` },
+      ],
     })
   })
 
-  it('answers an Invidious channel without a banner with null', async () => {
+  it('answers an Invidious channel without a banner with null, and leaves out the joined date and view count it answers 0 for', async () => {
     const { layer } = setUp({ config: { backendPreference: 'invidious' } })
 
-    expect(await layer.getChannel(NO_BANNER)).toMatchObject({ banner: null, tabs: ['videos'], isFamilyFriendly: false })
+    const channel = await layer.getChannel(NO_BANNER)
+
+    expect(channel).toMatchObject({ banner: null, tabs: ['videos'], isFamilyFriendly: false, featuredChannels: [] })
+    for (const field of ['joined', 'viewCount', 'videoCount', 'location']) {
+      expect(channel).not.toHaveProperty(field)
+    }
   })
 })
 

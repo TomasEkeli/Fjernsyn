@@ -5,9 +5,12 @@
 // (src/renderer/views/Channel/Channel.vue), re-implemented here.
 //
 // - Details. Local: `getLocalChannel(id)`, a `YT.Channel` read through
-//   `parseLocalChannelHeader`, and for the description `channel.getAbout()`,
-//   a second request. A terminated channel is not thrown but answered as
-//   `{ alert }`, which is `notFound`. Invidious: `invidiousGetChannelInfo(id)`,
+//   `parseLocalChannelHeader`, and for the description, the joined date, the
+//   view and video counts and the location `channel.getAbout()`, a second
+//   request, as in the old view; the featured channels are on the home tab,
+//   which the `YT.Channel` is already (`parseChannelHomeTab`). A terminated
+//   channel is not thrown but answered as `{ alert }`, which is `notFound`.
+//   Invidious: `invidiousGetChannelInfo(id)`, all of it in one answer,
 //   where "does not exist" is `notFound` by the error tables (`./errors.js`).
 //   A `notFound` on the preferred backend is tried once on the other, as the
 //   policy does for every first page.
@@ -447,6 +450,37 @@ function httpsUrl(url) {
   return url.startsWith('//') ? `https:${url}` : url
 }
 
+/**
+ * The fields a backend said, without those it did not: an unknown is absent,
+ * never 0 or `null`.
+ *
+ * @template {Record<string, unknown>} T
+ * @param {T} fields
+ * @returns {Partial<T>}
+ */
+function known(fields) {
+  return /** @type {Partial<T>} */ (Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined)))
+}
+
+/** @param {unknown} value */
+function positive(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+}
+
+/**
+ * Featured channels, once each and only those with an id, in the backend's order.
+ *
+ * @param {{ id: unknown, name: unknown, thumbnail: string }[]} channels
+ * @returns {import('../shapes').ChannelSummary[]}
+ */
+function featured(channels) {
+  const seen = new Set()
+
+  return channels
+    .filter(({ id }) => typeof id === 'string' && id !== '' && !seen.has(id) && seen.add(id))
+    .map(({ id, name, thumbnail }) => ({ id: /** @type {string} */ (id), name: typeof name === 'string' ? name : '', thumbnail }))
+}
+
 /** @param {string} id */
 function channelUrl(id) {
   return `https://www.youtube.com/channel/${id}`
@@ -525,19 +559,81 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
     return name.endsWith('- Topic') && !!channel.metadata?.music_artist_name
   }
 
-  /** @param {any} channel */
-  async function localDescription(channel) {
+  /**
+   * A count as the about page words it ("1,588 videos"), absent where it
+   * gives none or one without digits.
+   *
+   * @param {unknown} text
+   */
+  function localCount(text) {
+    const count = typeof text === 'string' ? youtube.extractNumberFromString(text) : NaN
+    return Number.isFinite(count) ? count : undefined
+  }
+
+  /**
+   * The about page's description and what the old view's details table shows
+   * of it: the joined date, the view and video counts and the location, each
+   * absent where the page does not say. The page comes from the request the
+   * description always took, so the rest costs nothing more. The date is
+   * read as the old view reads it, in English ("Joined May 29, 2008", local
+   * midnight); in a language `Date.parse` cannot read it is absent, where
+   * the old view hid it.
+   *
+   * @param {any} channel
+   * @returns {Promise<{ description: string, joined?: number, viewCount?: number, videoCount?: number, location?: string }>}
+   */
+  async function localAbout(channel) {
     if (!channel.has_about) {
-      return ''
+      return { description: '' }
     }
 
     const about = await channel.getAbout()
+    // The older full metadata gives no video count
+    const full = about?.type === 'ChannelAboutFullMetadata'
+    const metadata = full ? about : about?.metadata
+    const joinedText = metadata?.joined_date?.text
+    const joined = typeof joinedText === 'string' ? Date.parse(joinedText.replace('Joined', '').trim()) : NaN
+    const location = full ? metadata?.country?.text : metadata?.country
 
-    if (about?.type === 'ChannelAboutFullMetadata') {
-      return about.description?.text ?? ''
+    return {
+      description: (full ? about.description?.text : metadata?.description) ?? '',
+      ...known({
+        joined: Number.isFinite(joined) ? joined : undefined,
+        viewCount: localCount(full ? metadata?.view_count?.text : metadata?.view_count),
+        videoCount: full ? undefined : localCount(metadata?.video_count),
+        location: typeof location === 'string' && location.trim() !== '' ? location : undefined,
+      }),
+    }
+  }
+
+  /**
+   * The channels the home tab features, as the old view finds them: every
+   * channel on the home tab's shelves, once each. `YT.Channel` is the home
+   * tab already, so this is no request. Absent for a channel without a home
+   * tab (the old view's test: none, and videos the first tab), and where the
+   * home tab cannot be read, which the old view reported and passed over:
+   * the featured channels are not worth the channel page.
+   *
+   * @param {any} channel
+   * @returns {import('../shapes').ChannelSummary[] | undefined}
+   */
+  function localFeaturedChannels(channel) {
+    if (!(channel.has_home === true || (Array.isArray(channel.tabs) && channel.tabs[0] !== 'Videos'))) {
+      return undefined
     }
 
-    return about?.metadata?.description ?? ''
+    let shelves
+
+    try {
+      shelves = youtube.parseChannelHomeTab(channel)
+    } catch {
+      return undefined
+    }
+
+    return featured((Array.isArray(shelves) ? shelves : [])
+      .flatMap(shelf => Array.isArray(shelf?.content) ? shelf.content : [])
+      .filter(item => item?.type === 'channel')
+      .map(item => ({ id: item.id, name: item.name, thumbnail: httpsUrl(item.thumbnail) })))
   }
 
   /**
@@ -552,6 +648,7 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
     const thumbnail = httpsUrl(header.thumbnailUrl)
     const subscriberCount = header.subscriberText ? youtube.parseLocalSubscriberCount(header.subscriberText) : null
     const isArtistTopicChannel = isArtistTopic(channel, name)
+    const { description, ...about } = await localAbout(channel)
 
     return {
       id: channelId,
@@ -563,8 +660,10 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       // The header has one avatar, which is the large one too
       avatarLarge: thumbnail,
       banner: httpsUrl(header.bannerUrl) || null,
-      description: await localDescription(channel),
+      description,
       descriptionKind: 'plain',
+      ...about,
+      ...known({ featuredChannels: localFeaturedChannels(channel) }),
       // The topic channel's uploads and albums are lists of their own
       tabs: TABS
         .filter(([tab, flag]) => channel[flag] || (isArtistTopicChannel && (tab === 'videos' || tab === 'releases')))
@@ -842,6 +941,26 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
   }
 
   /**
+   * The channels Invidious says the channel features, each avatar the
+   * largest, moved onto the instance as the page's own avatar is, since it
+   * is shown as it is.
+   *
+   * @param {unknown} relatedChannels
+   * @returns {import('../shapes').ChannelSummary[] | undefined}
+   */
+  function invidiousFeaturedChannels(relatedChannels) {
+    if (!Array.isArray(relatedChannels)) {
+      return undefined
+    }
+
+    return featured(relatedChannels.map(related => ({
+      id: related?.authorId,
+      name: related?.author,
+      thumbnail: onInstance(Array.isArray(related?.authorThumbnails) ? related.authorThumbnails.at(-1)?.url : undefined),
+    })))
+  }
+
+  /**
    * @param {string} id
    * @returns {Promise<import('../shapes').ChannelDetails>}
    */
@@ -871,6 +990,13 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       isFamilyFriendly: channel?.isFamilyFriendly === true,
       // Invidious does not say; the old view offers the search box there always
       hasSearch: true,
+      // Invidious answers 0 for a joined date or a view count it could not
+      // read off YouTube's page, and has no video count or location
+      ...known({
+        joined: positive(channel?.joined) ? channel.joined * 1000 : undefined,
+        viewCount: positive(channel?.totalViews) ? channel.totalViews : undefined,
+        featuredChannels: invidiousFeaturedChannels(channel?.relatedChannels),
+      }),
     }
   }
 
