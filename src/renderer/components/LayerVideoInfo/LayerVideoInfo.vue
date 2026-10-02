@@ -1,11 +1,20 @@
 <template>
   <FtCard class="layerVideoInfo">
-    <h1
-      class="videoTitle"
-      dir="auto"
-    >
-      {{ video.title }}
-    </h1>
+    <div>
+      <h1
+        class="videoTitle"
+        dir="auto"
+      >
+        {{ video.title }}
+      </h1>
+      <!-- As WatchVideoInfo's; YouTube only, as PeerTube's details carry no `isUnlisted` -->
+      <div
+        v-if="video.isUnlisted"
+        class="unlistedBadge"
+      >
+        {{ t('Video.Unlisted') }}
+      </div>
+    </div>
     <div class="videoMetrics">
       <div class="datePublishedAndViewCount">
         <template v-if="dateText">
@@ -84,10 +93,10 @@
           :icon="['fas', 'bars-progress']"
           @click="emit('save-watched-progress')"
         />
-        <!-- The view's own actions: audio only, and the download button (LayerDownloadButton) -->
+        <!-- The view's own actions: audio only, and the download button for the video's platform -->
         <slot name="actions" />
         <FtIconButton
-          v-if="USING_ELECTRON && externalPlayer && externalPlayerUrl"
+          v-if="USING_ELECTRON && externalPlayer && externalPlayerVideo"
           :title="t('Video.External Player.OpenInTemplate', { externalPlayer })"
           :icon="['fas', 'external-link-alt']"
           theme="secondary"
@@ -153,7 +162,7 @@ import FtIconButton from '../FtIconButton/FtIconButton.vue'
 import { toStoredPlainText } from '../LayerMarkdown/plainText'
 
 import store from '../../store/index'
-import { PLATFORM_PEERTUBE } from '../../platform/refs'
+import { PLATFORM_YOUTUBE, platformOf } from '../../platform/refs'
 import { usePlatformLayer } from '../../platform/vue'
 import {
   copyToClipboard,
@@ -187,7 +196,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['save-watched-progress', 'pause-player'])
+const emit = defineEmits(['save-watched-progress', 'pause-player', 'opened-in-external-player'])
 
 const USING_ELECTRON = process.env.IS_ELECTRON
 
@@ -219,11 +228,21 @@ const channelRoute = computed(() => {
 const shareUrl = computed(() => props.video.url || layer.describe(props.video).shareUrl)
 
 /**
- * What the external player is handed; main checks it is a PeerTube watch URL.
- * Only for a PeerTube video: main accepts no other URL.
+ * What names the video to the external player: a YouTube video by its id, as
+ * WatchVideoInfo hands it, and a PeerTube one by its watch URL, which main
+ * checks is one; `null` when there is no such URL, which main would refuse.
+ *
+ * @type {import('vue').ComputedRef<{ videoId: string } | { videoUrl: string } | null>}
  */
-const externalPlayerUrl = computed(() => {
-  return props.video.platform === PLATFORM_PEERTUBE ? layer.describe(props.video).externalPlayerUrl : null
+const externalPlayerVideo = computed(() => {
+  const { video } = props
+
+  if (platformOf(video) === PLATFORM_YOUTUBE) {
+    return { videoId: video.videoId }
+  }
+
+  const videoUrl = layer.describe(video).externalPlayerUrl
+  return videoUrl ? { videoUrl } : null
 })
 
 const publishedLabel = computed(() => {
@@ -285,15 +304,21 @@ function openLink() {
   openExternalLink(shareUrl.value)
 }
 
-/** As WatchVideoInfo's `handleExternalPlayer`, less the playlist, which a PeerTube video never plays in yet */
+/**
+ * As WatchVideoInfo's `handleExternalPlayer`, less the playlist, which the
+ * layer's watch view does not play yet. Marking the video watched, which
+ * WatchVideoInfo does next, is the view's: it writes the history entries.
+ */
 function openInExternalPlayer() {
   emit('pause-player')
 
   window.ftElectron.openInExternalPlayer({
-    videoUrl: externalPlayerUrl.value,
+    ...externalPlayerVideo.value,
     startTime: props.getTimestamp?.() ?? 0,
     playbackRate: defaultPlayback.value,
   })
+
+  emit('opened-in-external-player')
 }
 
 /**

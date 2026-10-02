@@ -102,10 +102,17 @@ describe('LayerVideoInfo, the external player button', () => {
     expect(externalPlayerButton(mountInfo()).exists()).toBe(false)
   })
 
-  it('is there only for a PeerTube video: main hands on no other URL', () => {
+  it('hands a YouTube video over by its id, as the old watch page does, and says it has', async () => {
     const { platform: _, host: __, ...youtube } = { ...VIDEO, videoId: 'dQw4w9WgXcQ' }
+    const wrapper = mountInfo({ video: youtube, getTimestamp: () => 42.5 })
 
-    expect(externalPlayerButton(mountInfo({ video: youtube })).exists()).toBe(false)
-    expect(externalPlayerButton(mountInfo({ video: { ...youtube, platform: 'youtube' } })).exists()).toBe(false)
+    await externalPlayerButton(wrapper).find('button').trigger('click')
+
+    expect(window.ftElectron.openInExternalPlayer).toHaveBeenCalledWith({
+      videoId: 'dQw4w9WgXcQ',
+      startTime: 42.5,
+      playbackRate: 1.25,
+    })
+    expect(wrapper.emitted('opened-in-external-player')).toHaveLength(1)
   })
 })

@@ -25,6 +25,13 @@
         :source="description"
         :base-url="baseUrl"
       />
+      <!-- YouTube's markup, sanitised, its timestamps seeking, as WatchVideoDescription shows it -->
+      <FtTimestampCatcher
+        v-else-if="kind === 'html'"
+        :input-html="description"
+        :link-tab-index="showFullDescription ? '0' : '-1'"
+        @timestamp-event="emit('timestamp-event', $event)"
+      />
       <p
         v-else
         class="plainDescription"
@@ -51,18 +58,20 @@ import { computed, onMounted, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import FtCard from '../ft-card/ft-card.vue'
+import FtTimestampCatcher from '../FtTimestampCatcher.vue'
 import LayerMarkdown from '../LayerMarkdown/LayerMarkdown.vue'
 
 // A video's description, collapsed to a few lines until asked for, as
 // WatchVideoDescription shows YouTube's. Markdown (PeerTube) goes through
-// LayerMarkdown; plain text is shown as text.
+// LayerMarkdown; markup (YouTube) through the sanitising directive, with its
+// timestamps made links that seek; plain text is shown as text.
 
 const props = defineProps({
   description: {
     type: String,
     default: ''
   },
-  /** `'markdown'` or `'plain'`, as the layer says */
+  /** `'markdown'`, `'html'` or `'plain'`, as the layer says */
   kind: {
     type: String,
     default: 'plain'
@@ -73,6 +82,8 @@ const props = defineProps({
     default: ''
   },
 })
+
+const emit = defineEmits(['timestamp-event'])
 
 const { t } = useI18n()
 

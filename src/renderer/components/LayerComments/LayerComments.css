@@ -30,6 +30,17 @@
   display: inline-block;
 }
 
+.commentSort {
+  float: inline-end;
+}
+
+@media only screen and (width <= 1000px) {
+  .commentSort {
+    float: none;
+    margin-block: 15px;
+  }
+}
+
 .hideComments {
   font-size: 13px;
   text-decoration: underline;

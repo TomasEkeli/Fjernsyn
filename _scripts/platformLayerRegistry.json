@@ -67,7 +67,7 @@
     },
     {
       "path": "src/renderer/components/WatchVideoPlaylist/WatchVideoPlaylist.vue",
-      "reason": "the next-video preview of a PeerTube item is its own thumbnail, or the placeholder; next, previous, loop and shuffle step over PeerTube items, which open on their own watch page"
+      "reason": "the next-video preview of a PeerTube item is its own thumbnail, or the placeholder; next, previous, loop and shuffle step over PeerTube items, which open on their own watch page, unless the optional `crossPlatform` prop (the layer's watch page) takes them in, each on its own watch route with the playlist query"
     },
     {
       "path": "src/renderer/components/ft-shaka-video-player/ft-shaka-video-player.js",

@@ -20,9 +20,10 @@
 //   same fields around the SABR manifest.
 //
 // What stays the view's: hiding chapters (`hideChapters`, the adapter always
-// answers them), the storyboard's smaller board below 500px of window width
-// (the layer cannot see the window: it answers the largest board), whether the
-// active format can be used, and every toast.
+// answers them), choosing the storyboard's smaller board below 500px of window
+// width (the layer cannot see the window: on Local it answers the largest
+// board and, as `narrowStoryboard`, the largest at most 90px high), whether
+// the active format can be used, and every toast.
 
 import { selectLiveManifest } from '../../helpers/player/liveManifest'
 import { PlatformError } from '../errors'
@@ -356,19 +357,40 @@ function withThumbnail(chapter, thumbnails) {
 }
 
 /**
+ * The storyboard's boards, smallest first, as youtubei.js answers them.
+ *
+ * @param {any} info
+ * @returns {any[]} youtubei.js' `StoryboardData[]`
+ */
+function localStoryboardBoards(info) {
+  if (info.storyboards?.type !== 'PlayerStoryboardSpec' || !Array.isArray(info.storyboards.boards)) {
+    return []
+  }
+
+  return info.storyboards.boards
+}
+
+/**
  * The storyboard board the source is built from: the largest. The old view
  * takes the largest at most 90px high when the window is narrower than 500px,
- * which only the view can see.
+ * which only the view can see (`narrowStoryboard`).
  *
  * @param {any} info
  * @returns {any | null} youtubei.js' `StoryboardData`
  */
 function localStoryboardBoard(info) {
-  if (info.storyboards?.type !== 'PlayerStoryboardSpec' || !Array.isArray(info.storyboards.boards)) {
-    return null
-  }
+  return localStoryboardBoards(info).at(-1) ?? null
+}
 
-  return info.storyboards.boards.at(-1) ?? null
+/**
+ * The board the old view takes in a window narrower than 500px: the largest
+ * at most 90px high.
+ *
+ * @param {any} info
+ * @returns {any | null} youtubei.js' `StoryboardData`
+ */
+function localNarrowStoryboardBoard(info) {
+  return localStoryboardBoards(info).filter(board => board.thumbnail_height <= 90).at(-1) ?? null
 }
 
 /**
@@ -440,14 +462,18 @@ function localPlayableParts(answer, deps) {
   const { info } = answer
   const formats = Array.isArray(info.streaming_data?.formats) ? info.streaming_data.formats : []
   const storyboardBoard = localStoryboardBoard(info)
-  const storyboard = storyboardBoard
-    ? `data:text/vtt;charset=utf-8,${encodeURIComponent(deps.youtube.buildVTTFileLocally(storyboardBoard, info.basic_info?.duration))}`
+  const narrowBoard = localNarrowStoryboardBoard(info)
+  /** @param {any} board */
+  const storyboardOf = board => board
+    ? `data:text/vtt;charset=utf-8,${encodeURIComponent(deps.youtube.buildVTTFileLocally(board, info.basic_info?.duration))}`
     : null
+  const storyboard = storyboardOf(storyboardBoard)
 
   return {
     legacyFormats: formats.map(format => deps.youtube.mapLocalLegacyFormat(format)),
     captions: localCaptions(info, deps),
     storyboard,
+    narrowStoryboard: narrowBoard === storyboardBoard ? storyboard : storyboardOf(narrowBoard),
     storyboardBoard,
     extras: localExtras(answer, true),
   }
@@ -507,13 +533,13 @@ export async function localPlayback(id, answer, deps, liveStatus) {
     return { playbackSource: null, chaptersKind }
   }
 
-  const { legacyFormats, captions, storyboard, storyboardBoard, extras } = localPlayableParts(answer, deps)
+  const { legacyFormats, captions, storyboard, narrowStoryboard, storyboardBoard, extras } = localPlayableParts(answer, deps)
   /**
    * @param {string | null} manifestUrl
    * @param {string} manifestMimeType
    */
   const around = (manifestUrl, manifestMimeType) =>
-    manifestSource({ manifestUrl, manifestMimeType, legacyFormats, captions, chapters, storyboard, ...extras })
+    manifestSource({ manifestUrl, manifestMimeType, legacyFormats, captions, chapters, storyboard, narrowStoryboard, ...extras })
 
   if (canPlaySabr(answer)) {
     return { playbackSource: sabrSource(id, answer, deps.youtube, { captions, chapters, storyboardBoard }, around), chaptersKind }

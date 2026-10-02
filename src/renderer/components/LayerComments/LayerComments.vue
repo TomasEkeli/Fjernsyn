@@ -35,6 +35,17 @@
       >
         {{ t('Comments.Click to View Comments') }}
       </h4>
+      <!-- As CommentSection's: for YouTube, whose comments come in either order -->
+      <FtSelect
+        v-if="sortable && loaded && showComments && comments.length > 0 && !isLoading"
+        class="commentSort"
+        :placeholder="t('Global.Sort By')"
+        :value="sort"
+        :select-names="sortNames"
+        :select-values="SORTS"
+        :icon="['fas', 'arrow-down-short-wide']"
+        @change="changeSort"
+      />
       <template v-if="loaded && showComments">
         <LayerComment
           v-for="comment in comments"
@@ -90,6 +101,7 @@ import { useI18n } from 'vue-i18n'
 import FtButton from '../FtButton/FtButton.vue'
 import FtCard from '../ft-card/ft-card.vue'
 import FtLoader from '../FtLoader/FtLoader.vue'
+import FtSelect from '../FtSelect/FtSelect.vue'
 import LayerComment from './LayerComment.vue'
 
 import store from '../../store/index'
@@ -114,7 +126,19 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  /**
+   * Whether the comments can be asked for top first or newest first, which
+   * YouTube's can and PeerTube's, asked newest first always, cannot. Without
+   * it no sort is asked for.
+   */
+  sortable: {
+    type: Boolean,
+    default: false
+  },
 })
+
+/** The sorts `getComments` takes, YouTube's default first */
+const SORTS = ['top', 'newest']
 
 const { t } = useI18n()
 const layer = usePlatformLayer()
@@ -131,6 +155,10 @@ const loaded = ref(false)
 const isLoading = ref(false)
 const failed = ref(false)
 const showComments = ref(true)
+/** @type {import('vue').Ref<'top' | 'newest'>} */
+const sort = ref('top')
+
+const sortNames = computed(() => [t('Comments.Top comments'), t('Comments.Newest first')])
 
 const observeVisibilityOptions = computed(() => {
   if (!autoLoad.value && !autoLoadMore.value) {
@@ -175,8 +203,10 @@ async function loadMore() {
   isLoading.value = true
   failed.value = false
 
+  const options = props.sortable ? { cursor: cursor.value, sort: sort.value } : { cursor: cursor.value }
+
   try {
-    const page = await layer.getComments(props.videoRef, { cursor: cursor.value })
+    const page = await layer.getComments(props.videoRef, options)
 
     comments.value = [...comments.value, ...page.items]
     cursor.value = page.cursor ?? null
@@ -191,6 +221,19 @@ async function loadMore() {
   } finally {
     isLoading.value = false
   }
+}
+
+/**
+ * As CommentSection's `handleSortChange`: the threads in the other order,
+ * from the first page.
+ *
+ * @param {'top' | 'newest'} value
+ */
+function changeSort(value) {
+  sort.value = value
+  comments.value = []
+  cursor.value = null
+  loadMore()
 }
 </script>
 

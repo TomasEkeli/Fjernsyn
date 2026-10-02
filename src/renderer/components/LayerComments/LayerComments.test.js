@@ -400,6 +400,42 @@ describe('LayerComments, more threads', () => {
   })
 })
 
+describe('LayerComments, the sort', () => {
+  const YT_ID = 'dQw4w9WgXcQ'
+
+  it('asks for top comments first, and for the newest first from the first page once chosen, paging on in that sort', async () => {
+    layer.getComments
+      .mockResolvedValueOnce({ items: [comment()], cursor: 'top-2' })
+      .mockResolvedValueOnce({ items: [comment()], cursor: 'newest-2' })
+      .mockResolvedValueOnce({ items: [comment()], cursor: null })
+    const wrapper = await mountComments({ videoRef: YT_ID, sortable: true })
+    await showComments(wrapper)
+
+    expect(layer.getComments).toHaveBeenLastCalledWith(YT_ID, { cursor: null, sort: 'top' })
+    const select = wrapper.find('.commentSort select')
+    expect(select.findAll('option').map(option => option.text())).toEqual(['Top comments', 'Newest First'])
+
+    await select.setValue('newest')
+    await flushPromises()
+
+    expect(layer.getComments).toHaveBeenLastCalledWith(YT_ID, { cursor: null, sort: 'newest' })
+    expect(commentTexts(wrapper)).toEqual(['Comment 2'])
+
+    await clickText(wrapper, 'Load More Comments')
+
+    expect(layer.getComments).toHaveBeenLastCalledWith(YT_ID, { cursor: 'newest-2', sort: 'newest' })
+  })
+
+  it('is not offered, nor asked for, where the comments cannot be sorted', async () => {
+    layer.getComments.mockResolvedValue({ items: [comment()], cursor: null })
+    const wrapper = await mountComments()
+    await showComments(wrapper)
+
+    expect(wrapper.find('.commentSort').exists()).toBe(false)
+    expect(layer.getComments).toHaveBeenCalledWith(VIDEO_REF, { cursor: null })
+  })
+})
+
 describe('LayerComments, replies', () => {
   it('loads a thread\'s replies only when asked', async () => {
     const thread = comment({ replyCount: 2 })

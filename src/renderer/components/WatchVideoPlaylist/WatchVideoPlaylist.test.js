@@ -76,11 +76,11 @@ vi.mock('../../platform/vue', async () => {
  * @param {object} [current] the item the watch page shows
  * @param {import('vue-router').Router} [router]
  */
-async function mountPlaylist(current = PLAYLIST.videos[0], router = createTestRouter()) {
+async function mountPlaylist(current = PLAYLIST.videos[0], router = createTestRouter(), extraProps = {}) {
   const wrapper = mountWithApp(WatchVideoPlaylist, {
     store,
     router,
-    props: { playlistId: 'mixed', playlistType: 'user', videoId: current.videoId, playlistItemId: current.playlistItemId, watchViewLoading: false },
+    props: { playlistId: 'mixed', playlistType: 'user', videoId: current.videoId, playlistItemId: current.playlistItemId, watchViewLoading: false, ...extraProps },
     stubs: { FtListVideoNumbered: true },
   })
   await flushPromises()
@@ -365,5 +365,78 @@ describe('WatchVideoPlaylist, playing through a YouTube-only playlist (as today)
     expect(order[0]).toBe('y2')
     expect(order).toHaveLength(3)
     expect(new Set(order).size).toBe(3)
+  })
+})
+
+describe('WatchVideoPlaylist, playing through a mixed playlist on the layer\'s watch page (crossPlatform)', () => {
+  const OTHER_PEERTUBE = { ...PEERTUBE_ITEM, playlistItemId: 'p2' }
+  const MIXED = [FIRST, PEERTUBE_ITEM, SECOND, OTHER_PEERTUBE]
+  const PEERTUBE_PATH = `/peertube/watch/video.blender.org/${PEERTUBE_ITEM.videoId}`
+
+  /**
+   * @param {object[]} videos
+   * @param {object} current
+   * @param {(wrapper: import('@vue/test-utils').VueWrapper) => unknown} navigate
+   * @returns {Promise<import('vue-router').RouteLocationNormalizedLoaded | null>} where it went, `null` if it stayed
+   */
+  async function crossFrom(videos, current, navigate) {
+    usePlaylist(videos)
+    const router = createTestRouter()
+    const wrapper = await mountPlaylist(current, router, { crossPlatform: true })
+
+    await navigate(wrapper)
+    await flushPromises()
+
+    const route = router.currentRoute.value
+    return route.path === '/' ? null : route
+  }
+
+  it('plays the PeerTube item next, on its own route with the playlist query', async () => {
+    const route = await crossFrom(MIXED, FIRST, next)
+
+    expect(route.path).toBe(PEERTUBE_PATH)
+    expect(route.query).toEqual({ playlistId: 'mixed', playlistType: 'user', playlistItemId: 'i2' })
+  })
+
+  it('plays a YouTube item after a PeerTube one on the YouTube route', async () => {
+    const route = await crossFrom(MIXED, PEERTUBE_ITEM, next)
+
+    expect(route.path).toBe(`/watch/${SECOND.videoId}`)
+    expect(route.query).toEqual({ playlistId: 'mixed', playlistType: 'user', playlistItemId: 'y2' })
+  })
+
+  it('steps back to a PeerTube item, and wraps from the first item to a PeerTube one last', async () => {
+    expect((await crossFrom(MIXED, SECOND, previous)).query.playlistItemId).toBe('i2')
+    expect((await crossFrom(MIXED, FIRST, previous)).query.playlistItemId).toBe('p2')
+  })
+
+  it('ends the playlist only at its last item, a PeerTube one', async () => {
+    usePlaylist(MIXED)
+    expect((await mountPlaylist(SECOND, createTestRouter(), { crossPlatform: true })).vm.shouldStopDueToPlaylistEnd).toBe(false)
+    expect((await mountPlaylist(OTHER_PEERTUBE, createTestRouter(), { crossPlatform: true })).vm.shouldStopDueToPlaylistEnd).toBe(true)
+  })
+
+  it('shuffles every item, the PeerTube ones included', async () => {
+    usePlaylist(MIXED)
+    const wrapper = await mountPlaylist(FIRST, createTestRouter(), { crossPlatform: true })
+
+    await toggle(wrapper, 'Shuffle Playlist')
+
+    const order = shuffled(wrapper)
+    expect(order[0]).toBe('y1')
+    expect(order.toSorted()).toEqual(['i2', 'p2', 'y1', 'y2'])
+  })
+
+  it('steps back from a deleted video to the PeerTube item before it', async () => {
+    usePlaylist([FIRST, PEERTUBE_ITEM, SECOND, THIRD])
+    const router = createTestRouter()
+    const wrapper = await mountPlaylist(SECOND, router, { crossPlatform: true })
+    usePlaylist([FIRST, PEERTUBE_ITEM, THIRD])
+    await flushPromises()
+
+    previous(wrapper)
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe(PEERTUBE_PATH)
   })
 })

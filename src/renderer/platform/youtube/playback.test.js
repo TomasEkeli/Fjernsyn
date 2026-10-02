@@ -360,6 +360,28 @@ describe('a YouTube video\'s storyboard', () => {
     expect((await sourceOf({ local: localWith(localOrdinary, (info) => { delete info.storyboards }) })).source.storyboard).toBeNull()
   })
 
+  it('on Local, comes for a narrow window too, from the largest board at most 90px high', async () => {
+    const { source } = await sourceOf({
+      local: localWith(localOrdinary, (info) => {
+        info.storyboards.boards.push({ ...info.storyboards.boards[1], template_url: 'https://i.ytimg.com/sb/dQw4w9WgXcQ/storyboard3_L3/M$M.jpg?sigh=d', thumbnail_width: 320, thumbnail_height: 180 })
+      }),
+    })
+
+    expect(decoded(source.storyboard)).toContain('storyboard3_L3/M0.jpg?sigh=d#xywh=0,0,320,180')
+    expect(decoded(source.narrowStoryboard)).toContain('storyboard3_L2/M0.jpg?sigh=c#xywh=0,0,160,90')
+  })
+
+  it('on Local, has none for a narrow window when every board is larger', async () => {
+    const { source } = await sourceOf({
+      local: localWith(localOrdinary, (info) => {
+        info.storyboards.boards = info.storyboards.boards.map(board => ({ ...board, thumbnail_height: 180 }))
+      }),
+    })
+
+    expect(source.storyboard).not.toBeNull()
+    expect(source.narrowStoryboard).toBeNull()
+  })
+
   it('on Invidious, is the instance\'s storyboard track', async () => {
     expect((await sourceOf({ invidious: invidiousOrdinary })).source.storyboard).toBe(`${INSTANCE}/api/v1/storyboards/dQw4w9WgXcQ?height=90`)
   })
