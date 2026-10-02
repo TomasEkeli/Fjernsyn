@@ -125,34 +125,36 @@
         class="card"
       />
       <FtCard class="card">
+        <!-- The videos, shorts and live tabs: one list of the channel's videos each, with its own sort -->
         <div
-          v-if="currentTab === 'videos'"
-          id="videosPanel"
+          v-if="currentVideoList"
+          :id="`${currentTab}Panel`"
           role="tabpanel"
-          aria-labelledby="videosTab"
+          :aria-labelledby="`${currentTab}Tab`"
         >
           <div class="select-container">
-            <!-- Not where the layer answered another sort than the one asked: the channel offers no choice -->
+            <!-- Not where the layer answered another sort than the one asked: the tab offers no choice -->
             <FtSelect
-              v-if="isVideoSortOffered"
-              v-show="videos.items.value.length > 1 || videos.cursor.value !== null || videoSort !== 'newest'"
-              :value="videoSort"
+              v-if="currentVideoList.isSortOffered.value"
+              v-show="currentVideoList.items.value.length > 1 || currentVideoList.cursor.value !== null || currentVideoList.sort.value !== 'newest'"
+              :value="currentVideoList.sort.value"
               :select-names="videoSortNames"
               :select-values="VIDEO_SORTS"
               :placeholder="t('Global.Sort By')"
-              :icon="getIconForSortPreference(videoSort)"
-              @change="changeVideoSort"
+              :icon="getIconForSortPreference(currentVideoList.sort.value)"
+              @change="currentVideoList.changeSort"
             />
           </div>
+          <!-- A short is `type: 'shortVideo'`, which the card badges -->
           <FtElementList
-            :data="videos.items.value"
+            :data="currentVideoList.items.value"
             :use-channels-hidden-preference="false"
           />
           <p
-            v-if="isFinishedAndEmpty(videos)"
+            v-if="isFinishedAndEmpty(currentVideoList)"
             class="message"
           >
-            {{ t('Channel.Videos.This channel does not currently have any videos') }}
+            {{ currentTabInfo.empty }}
           </p>
         </div>
         <div
@@ -278,41 +280,41 @@ const isYouTube = computed(() => channel.value
 /** YouTube's own rating, against the setting, as the old view checks it; PeerTube's channels have none */
 const isFamilyFriendlyGated = computed(() => showFamilyFriendlyOnly.value === true && channel.value?.isFamilyFriendly === false)
 
-/** @type {import('vue').Ref<'newest' | 'popular' | 'oldest'>} */
-const videoSort = ref('newest')
-
-/**
- * Whether the sort select is offered: not once a first page answered another
- * sort than the one asked, which is a channel whose tab has no such filter
- * (spec, "Phase 3 decisions", C1)
- */
-const isVideoSortOffered = ref(true)
+const hideChannelShorts = computed(() => store.getters.getHideChannelShorts)
+const hideLiveStreams = computed(() => store.getters.getHideLiveStreams)
 
 /**
  * The tabs this view has, in the old view's order, by the names of
- * `ChannelDetails.tabs`. Each has its list in `lists`.
+ * `ChannelDetails.tabs`. Each has its list in `lists`. `named` is a tab only
+ * a channel whose `tabs` names it has; `hidden` is the user's setting
+ * against it; `empty` what its list says when the channel has nothing in it.
  */
 const tabs = computed(() => [
-  { name: 'videos', label: t('Channel.Videos.Videos') },
+  { name: 'videos', label: t('Channel.Videos.Videos'), empty: t('Channel.Videos.This channel does not currently have any videos') },
+  { name: 'shorts', label: t('Global.Shorts'), empty: t('Channel.Shorts.This channel does not currently have any shorts'), named: true, hidden: hideChannelShorts.value },
+  { name: 'live', label: t('Channel.Live.Live'), empty: t('Channel.Live.This channel does not currently have any live streams'), named: true, hidden: hideLiveStreams.value },
   { name: 'playlists', label: t('Channel.Playlists.Playlists') },
 ])
 
 /**
- * The tabs the channel has: a tab its `tabs` does not name is not shown, and
- * PeerTube, which names none, has them all. The first stands in for none.
+ * The tabs the channel has and the user does not hide: a tab its `tabs` does
+ * not name is not shown, and PeerTube, which names none, has those every
+ * channel has (not shorts or live). The first stands in for none.
  */
 const visibleTabs = computed(() => {
   const named = channel.value?.tabs
-  const shown = Array.isArray(named) ? tabs.value.filter(tab => named.includes(tab.name)) : tabs.value
+  const shown = tabs.value.filter(tab => !tab.hidden && (Array.isArray(named) ? named.includes(tab.name) : !tab.named))
 
   return shown.length > 0 ? shown : tabs.value.slice(0, 1)
 })
 
-/** The tab the route names, else the first the channel has */
+/** The tab the route names, else the first shown, as the old view falls back */
 const currentTab = computed(() => {
   const names = visibleTabs.value.map(tab => tab.name)
   return names.includes(route.params.currentTab) ? route.params.currentTab : names[0]
 })
+
+const currentTabInfo = computed(() => tabs.value.find(tab => tab.name === currentTab.value))
 
 const videoSortNames = computed(() => [
   t('Channel.Videos.Sort Types.Newest'),
@@ -398,23 +400,64 @@ function createPagedList(fetchPage, onFirstPage) {
   return { items, cursor, loaded, loading, error, reset, load }
 }
 
-const videos = createPagedList(
-  cursor => layer.listChannelVideos(channel.value.id, { sort: videoSort.value, cursor }),
-  (page) => {
-    // The list is in the sort the layer applied, which the select then shows,
-    // were it shown
-    if (page.sort !== undefined && page.sort !== videoSort.value) {
-      isVideoSortOffered.value = false
-      videoSort.value = page.sort
+/**
+ * One of the channel's lists of videos, by the layer's `kind`, in a sort of
+ * its own. Its sort select is offered until a first page answers another
+ * sort than the one asked, which is a tab without that filter (spec, "Phase 3
+ * decisions", C1); the list is then in the sort the layer applied, which the
+ * select would show. `reset` forgets the sort with the list.
+ *
+ * @param {'videos' | 'shorts' | 'live'} kind
+ */
+function createVideoList(kind) {
+  /** @type {import('vue').Ref<'newest' | 'popular' | 'oldest'>} */
+  const sort = ref('newest')
+  const isSortOffered = ref(true)
+
+  const list = createPagedList(
+    cursor => layer.listChannelVideos(channel.value.id, { kind, sort: sort.value, cursor }),
+    (page) => {
+      if (page.sort !== undefined && page.sort !== sort.value) {
+        isSortOffered.value = false
+        sort.value = page.sort
+      }
     }
+  )
+
+  /** @param {string} value */
+  function changeSort(value) {
+    if (value === sort.value || !VIDEO_SORTS.includes(value)) {
+      return
+    }
+
+    sort.value = value
+    list.reset()
+    list.load()
   }
-)
+
+  function reset() {
+    sort.value = 'newest'
+    isSortOffered.value = true
+    list.reset()
+  }
+
+  return { ...list, sort, isSortOffered, changeSort, reset }
+}
+
+const videoLists = {
+  videos: createVideoList('videos'),
+  shorts: createVideoList('shorts'),
+  live: createVideoList('live'),
+}
 const playlists = createPagedList(cursor => layer.listChannelPlaylists(channel.value.id, { cursor }))
 
 /** Each tab's list, by the tab's name */
-const lists = { videos, playlists }
+const lists = { ...videoLists, playlists }
 
 const currentList = computed(() => lists[currentTab.value])
+
+/** The current tab's list of videos, or `null` on a tab of something else */
+const currentVideoList = computed(() => videoLists[currentTab.value] ?? null)
 
 /** @param {ReturnType<typeof createPagedList>} list */
 function hasMore(list) {
@@ -505,29 +548,16 @@ function loadCurrentTab() {
   }
 }
 
-/**
- * @param {string} sort
- */
-function changeVideoSort(sort) {
-  if (sort === videoSort.value || !VIDEO_SORTS.includes(sort)) {
-    return
-  }
-
-  videoSort.value = sort
-  videos.reset()
-  videos.load()
-}
-
 async function load() {
   const thisLoad = ++loadsStarted
 
   isLoading.value = true
   channel.value = null
   loadError.value = null
-  videoSort.value = 'newest'
-  isVideoSortOffered.value = true
-  videos.reset()
-  playlists.reset()
+
+  for (const list of Object.values(lists)) {
+    list.reset()
+  }
 
   try {
     const details = await layer.getChannel(channelRef.value)
