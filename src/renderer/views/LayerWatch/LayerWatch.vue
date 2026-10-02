@@ -21,6 +21,8 @@
             :format="activeFormat"
             :manifest-src="manifestSrc"
             :manifest-mime-type="manifestMimeType"
+            :sabr-data="sabrData"
+            :sabr-regulator="isSabr ? sabrRegulator : null"
             :legacy-formats="source.legacyFormats"
             :start-time="startTime"
             :captions="source.captions"
@@ -47,6 +49,8 @@
             @ended="handleVideoEnded"
             @toggle-theatre-mode="useTheatreMode = !useTheatreMode"
             @playback-rate-updated="currentPlaybackRate = $event"
+            @sabr-refresh-requested="onSabrRefreshRequested"
+            @player-reload-requested="onPlayerReloadRequested"
           />
           <div
             v-else-if="message"
@@ -172,7 +176,8 @@
 // history entry's extra fields, the subscription details refresh and the
 // download button. Upstream's Watch view (views/Watch) is the model for
 // everything a viewer sees and for when history and progress are written; it
-// is not edited.
+// is not edited. A `sabr` source's regulator is hosted by `useSabrHosting`,
+// beside this view (ADR-0006, ADR-0016).
 
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import shaka from 'shaka-player'
@@ -197,6 +202,7 @@ import store from '../../store/index'
 import { formatScheduledTime, showToast } from '../../helpers/utils'
 import { PLATFORM_YOUTUBE, isYouTubeVideoRef, peerTubeVideoRef, platformOf } from '../../platform/refs'
 import { usePlatformLayer } from '../../platform/vue'
+import { useSabrHosting } from './useSabrHosting'
 
 /** @typedef {'dash' | 'legacy' | 'audio'} Format */
 
@@ -245,6 +251,8 @@ const startInPip = ref(false)
 
 /** The `timestamp` query the video was opened with */
 let timestamp = null
+/** Where the ladder's page reload asked the next load to start, once */
+let resumeAt = null
 /** Whether the history entry has been written for this video */
 let historyWritten = false
 /** Whether leaving the page has already saved the position */
@@ -260,11 +268,25 @@ let destruction = Promise.resolve()
 const source = computed(() => video.value?.playbackSource ?? null)
 
 /**
- * A `sabr` source (YouTube Local) needs the regulator this view does not host
- * yet, so its manifest is not played: only its legacy formats are, which are
- * plain files. Its `audio` is the same SABR manifest, so audio only goes too.
+ * A `sabr` source (YouTube Local) plays over SABR, with the regulator this
+ * view hosts (useSabrHosting.js). Its `audio` is the same SABR manifest.
  */
 const isSabr = computed(() => source.value?.transport === 'sabr')
+
+const {
+  regulator: sabrRegulator,
+  sabrData,
+  manifestUrl: sabrManifestUrl,
+  manifestMimeType: sabrManifestMimeType,
+  onSabrRefreshRequested,
+  onPlayerReloadRequested,
+  isEndOfLadder,
+  isTransportFailure,
+} = useSabrHosting(source, {
+  isRegulated: () => store.getters.getEnableRegulatedStreaming,
+  currentPosition,
+  reload: reloadKeepingPosition,
+})
 
 const isYouTube = computed(() => video.value !== null && platformOf(video.value) === PLATFORM_YOUTUBE)
 
@@ -288,11 +310,11 @@ const chaptersShown = computed(() => !hideChapters.value && chapters.value.lengt
 // mode to move out of the way
 const theatrePossible = computed(() => !isLoading.value && chaptersShown.value)
 
-// A SABR manifest is not handed on: without its credentials it is nothing
-// the player can load
+// A SABR source's adaptive and audio are one manifest, the one held for the
+// session: the source's, or a rebuild's since
 const manifestSrc = computed(() => {
   if (isSabr.value) {
-    return null
+    return sabrManifestUrl.value
   }
 
   return activeFormat.value === 'audio' ? source.value.audio.manifestUrl : source.value.manifestUrl
@@ -300,7 +322,7 @@ const manifestSrc = computed(() => {
 
 const manifestMimeType = computed(() => {
   if (isSabr.value) {
-    return ''
+    return sabrManifestMimeType.value
   }
 
   return activeFormat.value === 'audio' ? source.value.audio.mimeType : (source.value.manifestMimeType ?? '')
@@ -323,11 +345,11 @@ function canUseFormat(format) {
 
   switch (format) {
     case 'dash':
-      return !isSabr.value && !!playbackSource.manifestUrl
+      return !!playbackSource.manifestUrl
     case 'legacy':
       return !playbackSource.isLive && playbackSource.legacyFormats.length > 0
     case 'audio':
-      return !isSabr.value && !!playbackSource.audio
+      return !!playbackSource.audio
     default:
       return false
   }
@@ -441,16 +463,23 @@ function historyEntry() {
 }
 
 /**
- * Where to start, as Watch.js's `startTimeSeconds`: the timestamp asked for,
- * else the stored position if progress is being saved at all and the video
- * was not watched to its end, else the beginning. Never for a live.
+ * Where to start, as Watch.js's `startTimeSeconds`: where the ladder's page
+ * reload left off, else the timestamp asked for, else the stored position if
+ * progress is being saved at all and the video was not watched to its end,
+ * else the beginning. Never for a live.
+ *
+ * @param {number | null} resumePosition
  */
-function initialStartTime() {
+function initialStartTime(resumePosition) {
   if (isLive.value) {
     return null
   }
 
   const lengthSeconds = video.value.lengthSeconds ?? 0
+
+  if (resumePosition !== null && resumePosition < lengthSeconds) {
+    return resumePosition
+  }
 
   if (timestamp !== null && timestamp < lengthSeconds) {
     return timestamp
@@ -491,6 +520,9 @@ function applyViewingMode() {
 
 async function load() {
   const thisLoad = ++loadsStarted
+  // Once only, as Watch.js's `oneTimeTimestamp`
+  const resumePosition = resumeAt
+  resumeAt = null
 
   isLoading.value = true
   video.value = null
@@ -519,7 +551,7 @@ async function load() {
 
     video.value = details
     activeFormat.value = FORMAT_RING.find(canUseFormat) ?? 'dash'
-    startTime.value = initialStartTime()
+    startTime.value = initialStartTime(resumePosition)
     // Theatre mode is only possible once the page knows what the sidebar holds
     isLoading.value = false
     applyViewingMode()
@@ -581,7 +613,19 @@ async function handlePlayerError(error) {
 
   failedFormats.add(activeFormat.value)
 
-  const next = FORMAT_RING.find(format => !failedFormats.has(format) && canUseFormat(format))
+  // As Watch.js: a failed SABR transport is not a failed format. Adaptive and
+  // audio are the same session, which the regulator has already spent what
+  // it has on, so only the legacy formats remain worth trying
+  if (isSabr.value && isTransportFailure(error)) {
+    failedFormats.add('dash')
+    failedFormats.add('audio')
+  }
+
+  // The end of the ladder (ADR-0011) is no format's fault, and no other format
+  // escapes it: straight to the message, whose retry starts the ladder afresh
+  const next = isEndOfLadder(error)
+    ? undefined
+    : FORMAT_RING.find(format => !failedFormats.has(format) && canUseFormat(format))
 
   if (next) {
     switchFormat(next)
@@ -605,6 +649,26 @@ async function handlePlayerError(error) {
   if (thisLoad === loadsStarted) {
     playbackFailed.value = true
   }
+}
+
+/**
+ * The ladder's page reload (useSabrHosting.js), as Watch.js's `reloadView`:
+ * the position saved and the player destroyed, then the video asked of the
+ * layer afresh and started at `position`.
+ *
+ * @param {number | null} position
+ */
+async function reloadKeepingPosition(position) {
+  handleWatchProgressAutoSave()
+
+  try {
+    await destroyPlayer()
+  } catch (destroyError) {
+    console.error(destroyError)
+  }
+
+  resumeAt = position
+  await load()
 }
 
 function toggleAudioOnly() {

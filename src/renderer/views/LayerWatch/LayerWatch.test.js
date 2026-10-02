@@ -4,6 +4,7 @@ import shaka from 'shaka-player'
 import { h } from 'vue'
 import { RouterView } from 'vue-router'
 
+import { SabrGiveUpError } from '../../helpers/player/SabrRegulator'
 import { copyToClipboard, formatScheduledTime, openExternalLink, showToast } from '../../helpers/utils'
 import { describe as describeEntity } from '../../platform/describe'
 import { PlatformError } from '../../platform/errors'
@@ -49,10 +50,12 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
         currentPlaybackRate: { type: Number, default: 1 },
         loudnessDb: { type: Number, default: null },
         platform: { type: String, default: 'youtube' },
+        sabrData: { type: Object, default: null },
+        sabrRegulator: { type: Object, default: null },
       },
       // Emitted by the tests, through `vm.$emit`
       // eslint-disable-next-line vue/no-unused-emit-declarations
-      emits: ['error', 'loaded', 'ended', 'timeupdate', 'toggle-theatre-mode', 'playback-rate-updated'],
+      emits: ['error', 'loaded', 'ended', 'timeupdate', 'toggle-theatre-mode', 'playback-rate-updated', 'sabr-refresh-requested', 'player-reload-requested'],
       setup(_props, { expose }) {
         expose({
           get hasLoaded() { return player.hasLoaded },
@@ -75,6 +78,19 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
     }),
   }
 })
+
+// The regulator is the player's to drive, which the stand-in does not; what
+// the page does with it is hand it over, and reset it
+const regulators = vi.hoisted(() => [])
+
+vi.mock('../../helpers/player/SabrRegulator', async (importOriginal) => ({
+  ...(await importOriginal()),
+  createSabrRegulator: vi.fn(() => {
+    const regulator = { reset: vi.fn() }
+    regulators.push(regulator)
+    return regulator
+  }),
+}))
 
 // What the view reads of the settings, as the defaults have them
 const SETTINGS = vi.hoisted(() => ({
@@ -243,6 +259,7 @@ beforeEach(() => {
   store.dispatched.length = 0
 
   Object.assign(player, { hasLoaded: false, currentTime: 0, seekedTo: [], paused: false, events: [], destroyGate: undefined })
+  regulators.length = 0
 
   layer.getVideo.mockReset()
   layer.getComments.mockReset()
@@ -1245,28 +1262,121 @@ describe('a YouTube video', () => {
     expect(wrapper.text()).not.toContain('This live has ended.')
   })
 
-  it('plays only the legacy formats of a SABR source, whose regulator this page does not host yet', async () => {
-    const sabr = youtubeVideo({}, {
-      transport: 'sabr',
-      manifestUrl: SABR_MANIFEST,
-      manifestMimeType: 'application/sabr+json',
-      audio: { manifestUrl: SABR_MANIFEST, mimeType: 'application/sabr+json' },
-      sabrData: { url: 'https://rr1---sn.googlevideo.com/sabr', videoId: YT_ID, poToken: 'token', ustreamerConfig: 'config', clientInfo: {} },
-      sabrStoryboards: [],
-      renew: vi.fn(),
+  it('hands the player no regulator and no credentials over DASH', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+    expect(findPlayer(wrapper).props()).toMatchObject({ sabrData: null, sabrRegulator: null })
+  })
+
+  describe('over SABR', () => {
+    const SABR_DATA = { url: 'https://rr1---sn.googlevideo.com/sabr', videoId: YT_ID, poToken: 'token', ustreamerConfig: 'config', clientInfo: {} }
+
+    function sabrVideo() {
+      return youtubeVideo({}, {
+        transport: 'sabr',
+        manifestUrl: SABR_MANIFEST,
+        manifestMimeType: 'application/sabr+json',
+        audio: { manifestUrl: SABR_MANIFEST, mimeType: 'application/sabr+json' },
+        sabrData: SABR_DATA,
+        sabrStoryboards: [],
+        renew: vi.fn(),
+      })
+    }
+
+    function transportError(cause) {
+      const { Severity, Category, Code } = shaka.util.Error
+      return new shaka.util.Error(Severity.CRITICAL, Category.NETWORK, Code.HTTP_ERROR, 'sabr://segment', cause)
+    }
+
+    it('hands the player its SABR manifest, the credentials and the page\'s one regulator', async () => {
+      const { wrapper, router } = await openWatchPage(sabrVideo(), YT_PATH)
+
+      expect(findPlayer(wrapper).props()).toMatchObject({
+        format: 'dash',
+        manifestSrc: SABR_MANIFEST,
+        manifestMimeType: 'application/sabr+json',
+        sabrData: SABR_DATA,
+        sabrRegulator: regulators[0],
+        legacyFormats: YT_LEGACY_FORMATS,
+        captions: YT_CAPTIONS,
+      })
+
+      await findButton(wrapper, 'Audio only').trigger('click')
+      expect(findPlayer(wrapper).props()).toMatchObject({ format: 'audio', manifestSrc: SABR_MANIFEST, sabrRegulator: regulators[0] })
+
+      // The same regulator for the next video, as the page outlives the player
+      await router.push(`/watch/${YT_ID}?timestamp=10`)
+      await flushPromises()
+      expect(regulators).toHaveLength(1)
+      expect(findPlayer(wrapper).props('sabrRegulator')).toBe(regulators[0])
     })
-    const { wrapper } = await openWatchPage(sabr, YT_PATH)
 
-    expect(findPlayer(wrapper).props()).toMatchObject({ format: 'legacy', legacyFormats: YT_LEGACY_FORMATS, manifestSrc: null, manifestMimeType: '' })
-    expect(findButton(wrapper, 'Audio only').exists()).toBe(false)
+    it('answers the player\'s rebuild through renew, and plays the rebuilt manifest from then on', async () => {
+      const video = sabrVideo()
+      video.playbackSource.renew.mockResolvedValue({
+        sabrData: { ...SABR_DATA, poToken: 'fresh' },
+        formatIds: [],
+        expiresAt: null,
+        manifestUrl: 'data:application/sabr+json,rebuilt',
+        manifestMimeType: 'application/sabr+json',
+      })
+      const { wrapper } = await openWatchPage(video, YT_PATH)
+      const onResult = vi.fn()
 
-    // And nothing else to fall back to
-    findPlayer(wrapper).vm.$emit('error', new Error('legacy failed'))
-    await flushPromises()
+      findPlayer(wrapper).vm.$emit('sabr-refresh-requested', { onResult, rebuilding: true })
+      await flushPromises()
 
-    expect(findPlayer(wrapper).exists()).toBe(false)
-    expect(wrapper.text()).toContain('Fjernsyn cannot play this video.')
-    expect(sabr.playbackSource.renew).not.toHaveBeenCalled()
+      expect(onResult).toHaveBeenCalledWith(expect.objectContaining({ manifestSrc: 'data:application/sabr+json,rebuilt' }))
+      expect(findPlayer(wrapper).props()).toMatchObject({ manifestSrc: 'data:application/sabr+json,rebuilt', sabrData: { ...SABR_DATA, poToken: 'fresh' } })
+    })
+
+    it('tries only the legacy formats once the SABR transport has failed', async () => {
+      const { wrapper } = await openWatchPage(sabrVideo(), YT_PATH)
+
+      findPlayer(wrapper).vm.$emit('error', transportError(new Error('refused')))
+      await flushPromises()
+      expect(findPlayer(wrapper).props('format')).toBe('legacy')
+
+      // Not audio, which is the same session
+      findPlayer(wrapper).vm.$emit('error', new Error('legacy failed'))
+      await flushPromises()
+      expect(findPlayer(wrapper).exists()).toBe(false)
+      expect(wrapper.text()).toContain('Fjernsyn cannot play this video.')
+    })
+
+    it('says it cannot play at the end of the ladder, without the format ring, and trying again starts the ladder afresh', async () => {
+      const { wrapper } = await openWatchPage(sabrVideo(), YT_PATH)
+      regulators[0].reset.mockClear()
+
+      findPlayer(wrapper).vm.$emit('error', transportError(new SabrGiveUpError()))
+      await flushPromises()
+
+      expect(findPlayer(wrapper).exists()).toBe(false)
+      expect(wrapper.text()).toContain('Fjernsyn cannot play this video.')
+
+      await wrapper.find('.errorRetryButton').trigger('click')
+      await flushPromises()
+
+      expect(regulators[0].reset).toHaveBeenCalledTimes(1)
+      expect(findPlayer(wrapper).props('format')).toBe('dash')
+    })
+
+    it('reloads the page when the ladder asks, from where playback was, keeping the ladder\'s budgets', async () => {
+      const { wrapper } = await openWatchPage(sabrVideo(), YT_PATH)
+      const asking = findPlayer(wrapper).vm
+      Object.assign(player, { hasLoaded: true, currentTime: 42.5 })
+      regulators[0].reset.mockClear()
+
+      asking.$emit('player-reload-requested', 'the session reload failed')
+      await flushPromises()
+
+      expect(layer.getVideo).toHaveBeenCalledTimes(2)
+      expect(player.events).toContain('destroyed')
+      expect(findPlayer(wrapper).vm).not.toBe(asking)
+      expect(findPlayer(wrapper).props('startTime')).toBe(42)
+      expect(regulators[0].reset).not.toHaveBeenCalled()
+      expect(showToast).toHaveBeenCalledWith('Reloading player: the session reload failed')
+    })
   })
 
   it('shows its description\'s markup, its timestamps seeking the player', async () => {
