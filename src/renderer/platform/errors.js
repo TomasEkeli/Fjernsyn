@@ -13,7 +13,15 @@
  */
 
 /**
- * @typedef {'private' | 'internal' | 'password' | 'blocked'} RefusalReason
+ * Why a platform refused, where it says.
+ *
+ * - PeerTube: `private`, `internal`, `password`, `blocked`
+ * - YouTube: `private`, `membersOnly`, `ageRestricted`, `drm`, `ipBlock`
+ *   (YouTube's bot check, which it shows to an address it distrusts) and
+ *   `unexplained` (unplayable, with no reason given); see
+ *   `./youtube/errors.js`
+ *
+ * @typedef {'private' | 'internal' | 'password' | 'blocked' | 'membersOnly' | 'ageRestricted' | 'drm' | 'ipBlock' | 'unexplained'} RefusalReason
  */
 
 const KINDS = new Set(['refused', 'notFound', 'rateLimited', 'unavailable', 'invalid'])
