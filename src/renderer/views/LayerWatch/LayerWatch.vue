@@ -32,7 +32,7 @@
             :channel-id="video.authorId"
             :title="video.title"
             :thumbnail="video.thumbnail"
-            :platform="video.platform"
+            :platform="platformOf(video)"
             :loudness-db="null"
             :theatre-possible="theatrePossible"
             :use-theatre-mode="useTheatreMode"
@@ -100,6 +100,7 @@
           class="watchVideo"
           @save-watched-progress="handleWatchProgressManualSave"
           @pause-player="pausePlayer"
+          @opened-in-external-player="markWatchedInExternalPlayer"
         >
           <template
             v-if="video.channel"
@@ -115,7 +116,18 @@
               theme="secondary"
               @click="toggleAudioOnly"
             />
-            <LayerDownloadButton :video="video" />
+            <!-- A YouTube video downloads through yt-dlp, a PeerTube one from its instance (phase 2, Q9) -->
+            <FtYtDlpDownloadButton
+              v-if="isYouTube"
+              :video-id="video.videoId"
+              :title="video.title"
+              :is-live="isLive"
+              :is-upcoming="video.isUpcoming"
+            />
+            <LayerDownloadButton
+              v-else
+              :video="video"
+            />
           </template>
         </LayerVideoInfo>
         <LayerVideoDescription
@@ -124,6 +136,7 @@
           :kind="video.descriptionKind"
           :base-url="video.host ? `https://${video.host}` : ''"
           class="watchVideo"
+          @timestamp-event="changeTimestamp"
         />
         <!-- As the old watch page: no comments for a live that is live -->
         <LayerComments
@@ -151,11 +164,15 @@
 </template>
 
 <script setup>
-// The platform layer's watch view. Platform-neutral: it talks only to the
-// injected layer and reads only the common shapes (platform/shapes.js). The
-// one PeerTube fact here is the route, which names a video by host and uuid.
-// Upstream's Watch view (views/Watch) is the model for everything a viewer
-// sees and for when history and progress are written; it is not edited.
+// The platform layer's watch view. It talks only to the injected layer and
+// reads only the common shapes (platform/shapes.js). The route names the
+// video: `/watch/:id` a YouTube one by its id, as upstream's route does, and
+// the PeerTube route one by host and uuid. Where the two platforms differ is
+// in what is written beside the player, chosen by `platformOf(video)`: the
+// history entry's extra fields, the subscription details refresh and the
+// download button. Upstream's Watch view (views/Watch) is the model for
+// everything a viewer sees and for when history and progress are written; it
+// is not edited.
 
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import shaka from 'shaka-player'
@@ -167,6 +184,7 @@ import FtButton from '../../components/FtButton/FtButton.vue'
 import FtIconButton from '../../components/FtIconButton/FtIconButton.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
 import FtShakaVideoPlayer from '../../components/ft-shaka-video-player/ft-shaka-video-player.vue'
+import FtYtDlpDownloadButton from '../../components/FtYtDlpDownloadButton/FtYtDlpDownloadButton.vue'
 import LayerComments from '../../components/LayerComments/LayerComments.vue'
 import LayerDownloadButton from '../../components/LayerDownloadButton/LayerDownloadButton.vue'
 import LayerSubscribeButton from '../../components/LayerSubscribeButton/LayerSubscribeButton.vue'
@@ -177,7 +195,7 @@ import { toStoredPlainText } from '../../components/LayerMarkdown/plainText'
 
 import store from '../../store/index'
 import { formatScheduledTime, showToast } from '../../helpers/utils'
-import { PLATFORM_YOUTUBE, peerTubeVideoRef, platformOf } from '../../platform/refs'
+import { PLATFORM_YOUTUBE, isYouTubeVideoRef, peerTubeVideoRef, platformOf } from '../../platform/refs'
 import { usePlatformLayer } from '../../platform/vue'
 
 /** @typedef {'dash' | 'legacy' | 'audio'} Format */
@@ -238,19 +256,28 @@ let destroyedPlayer = null
 /** @type {Promise<void>} */
 let destruction = Promise.resolve()
 
+/** What the player plays from, either transport */
+const source = computed(() => video.value?.playbackSource ?? null)
+
 /**
- * What the player plays from. A `sabr` source (YouTube Local, phase 3) is
- * not played here yet, and reads as nothing to play.
+ * A `sabr` source (YouTube Local) needs the regulator this view does not host
+ * yet, so its manifest is not played: only its legacy formats are, which are
+ * plain files. Its `audio` is the same SABR manifest, so audio only goes too.
  */
-const source = computed(() => {
-  const playbackSource = video.value?.playbackSource
-  return playbackSource?.transport === 'manifest' ? playbackSource : null
-})
+const isSabr = computed(() => source.value?.transport === 'sabr')
+
+const isYouTube = computed(() => video.value !== null && platformOf(video.value) === PLATFORM_YOUTUBE)
 
 const isLive = computed(() => video.value?.liveStatus === 'live' || source.value?.isLive === true)
 
 /** The video as the layer names it, for its comments */
-const videoRef = computed(() => (video.value ? peerTubeVideoRef(video.value.host, video.value.videoId) : null))
+const videoRef = computed(() => {
+  if (video.value === null) {
+    return null
+  }
+
+  return isYouTube.value ? video.value.videoId : peerTubeVideoRef(video.value.host, video.value.videoId)
+})
 
 const chapters = computed(() => source.value?.chapters ?? [])
 // Hidden chapters are hidden from the player's progress bar too, as Watch.js
@@ -261,13 +288,23 @@ const chaptersShown = computed(() => !hideChapters.value && chapters.value.lengt
 // mode to move out of the way
 const theatrePossible = computed(() => !isLoading.value && chaptersShown.value)
 
-const manifestSrc = computed(() => activeFormat.value === 'audio'
-  ? source.value.audio.manifestUrl
-  : source.value.manifestUrl)
+// A SABR manifest is not handed on: without its credentials it is nothing
+// the player can load
+const manifestSrc = computed(() => {
+  if (isSabr.value) {
+    return null
+  }
 
-const manifestMimeType = computed(() => activeFormat.value === 'audio'
-  ? source.value.audio.mimeType
-  : (source.value.manifestMimeType ?? ''))
+  return activeFormat.value === 'audio' ? source.value.audio.manifestUrl : source.value.manifestUrl
+})
+
+const manifestMimeType = computed(() => {
+  if (isSabr.value) {
+    return ''
+  }
+
+  return activeFormat.value === 'audio' ? source.value.audio.mimeType : (source.value.manifestMimeType ?? '')
+})
 
 const canSaveWatchProgress = computed(() => {
   return !isLoading.value && video.value !== null && !isLive.value && !video.value.isUpcoming
@@ -286,11 +323,11 @@ function canUseFormat(format) {
 
   switch (format) {
     case 'dash':
-      return !!playbackSource.manifestUrl
+      return !isSabr.value && !!playbackSource.manifestUrl
     case 'legacy':
       return !playbackSource.isLive && playbackSource.legacyFormats.length > 0
     case 'audio':
-      return !!playbackSource.audio
+      return !isSabr.value && !!playbackSource.audio
     default:
       return false
   }
@@ -312,7 +349,10 @@ const message = computed(() => {
     return null
   }
 
-  if (details.liveStatus === 'waiting') {
+  // A waiting live with a trailer plays it, and an ended one served as a
+  // recording (YouTube's post-live DVR) plays that, as the old view does;
+  // PeerTube answers neither with a source
+  if (details.liveStatus === 'waiting' && source.value === null) {
     return {
       icon: ['fas', 'satellite-dish'],
       text: t('PeerTube.Watch.Live waiting'),
@@ -322,7 +362,7 @@ const message = computed(() => {
     }
   }
 
-  if (details.liveStatus === 'ended') {
+  if (details.liveStatus === 'ended' && source.value === null) {
     return { icon: ['fas', 'tower-broadcast'], text: t('PeerTube.Watch.Live ended') }
   }
 
@@ -339,7 +379,9 @@ const showPlayer = computed(() => message.value === null && source.value !== nul
  * @param {{ kind?: string, reason?: string | null, host?: string | null }} error
  */
 function loadErrorMessage(error) {
-  const host = error.host ?? route.params.host
+  // A YouTube video's messages name YouTube where a PeerTube one names its
+  // instance, until the old view's own YouTube messages are passed on
+  const host = error.host ?? route.params.host ?? 'YouTube'
 
   switch (error.kind) {
     case 'refused':
@@ -372,6 +414,21 @@ function refusalText(reason, host) {
     default:
       return t('PeerTube.Watch.Refused.Other', { host })
   }
+}
+
+/**
+ * The video the route names: on a `/watch/:id` route, as upstream's watch
+ * route is, a YouTube id; on the PeerTube route, its host and uuid. `null`
+ * for a name that is neither.
+ *
+ * @returns {import('../../platform/shapes').VideoRef | null}
+ */
+function routeVideoRef() {
+  if (route.params.id !== undefined) {
+    return isYouTubeVideoRef(route.params.id) ? route.params.id : null
+  }
+
+  return peerTubeVideoRef(route.params.host, route.params.uuid)
 }
 
 function readTimestamp() {
@@ -446,7 +503,7 @@ async function load() {
   currentChapterIndex.value = 0
   timestamp = readTimestamp()
 
-  const ref = peerTubeVideoRef(route.params.host, route.params.uuid)
+  const ref = routeVideoRef()
 
   try {
     if (ref === null) {
@@ -467,6 +524,7 @@ async function load() {
     isLoading.value = false
     applyViewingMode()
     store.commit('setAppTitle', details.title)
+    updateSubscriptionDetails(details)
   } catch (error) {
     if (thisLoad !== loadsStarted) {
       return
@@ -598,13 +656,13 @@ function changeTimestamp(seconds) {
 
 /**
  * The history entry, as Watch.js's `addToHistory` writes it, with exactly its
- * fields and names. A video of another platform than YouTube adds what its
- * record needs to render and route (spec, "Refs and stored shapes"), and a
- * YouTube record written here would have nothing added. `category` is left
- * out: it is the YouTube category the profile suggestions read. A PeerTube
- * video's own category label goes to `peertubeCategory` instead, where it
- * has one, so that the two vocabularies never meet (docs/CONTEXT.md,
- * "Watched category"). Nothing reads it yet.
+ * fields and names. A YouTube video carries its `category` where it has one,
+ * as there: the YouTube category the profile suggestions read. A video of
+ * another platform adds what its record needs to render and route (spec,
+ * "Refs and stored shapes") and never `category`: a PeerTube video's own
+ * category label goes to `peertubeCategory` instead, where it has one, so
+ * that the two vocabularies never meet (docs/CONTEXT.md, "Watched
+ * category"). Nothing reads it yet.
  *
  * @param {number} watchProgress
  */
@@ -620,14 +678,20 @@ function historyRecord(watchProgress) {
     // Plain text: the old list card renders it as HTML
     description: toStoredPlainText(details.description),
     viewCount: details.viewCount,
-    lengthSeconds: details.lengthSeconds ?? 0,
+    // A number, as the old view keeps it: 0 for a live, or where unknown
+    lengthSeconds: typeof details.lengthSeconds === 'number' ? details.lengthSeconds : 0,
     watchProgress,
     timeWatched: Date.now(),
     isLive: false,
     type: 'video',
   }
 
-  if (platformOf(details) !== PLATFORM_YOUTUBE) {
+  if (platformOf(details) === PLATFORM_YOUTUBE) {
+    // The layer trims it, and answers `null` for none, as Watch.js leaves it out
+    if (typeof details.category === 'string' && details.category !== '') {
+      record.category = details.category
+    }
+  } else {
     record.platform = details.platform
     record.host = details.host
     record.thumbnail = details.thumbnail
@@ -662,6 +726,45 @@ function handleVideoLoaded() {
   } else {
     store.dispatch('updateHistory', historyRecord(0))
   }
+}
+
+/**
+ * As WatchVideoInfo's `handleExternalPlayer` after it hands the video over:
+ * the video is marked watched from its start, with a toast the first time.
+ * YouTube only: a PeerTube video is not marked, as before.
+ */
+function markWatchedInExternalPlayer() {
+  if (!isYouTube.value || !rememberHistory.value) {
+    return
+  }
+
+  const isNew = historyEntry() === undefined
+
+  store.dispatch('updateHistory', historyRecord(0))
+
+  if (isNew) {
+    showToast(t('Video.Video has been marked as watched'))
+  }
+}
+
+/**
+ * As Watch.js on every load of a YouTube video: a subscription to its channel
+ * takes the channel's current name and avatar. The store's action finds the
+ * stub by id, and turns an avatar on an Invidious instance back into
+ * YouTube's. Not for PeerTube, whose stub keeps the avatar it was stored with.
+ *
+ * @param {import('../../platform/shapes').VideoDetails} details
+ */
+function updateSubscriptionDetails(details) {
+  if (platformOf(details) !== PLATFORM_YOUTUBE || !details.authorId) {
+    return
+  }
+
+  store.dispatch('updateSubscriptionDetails', {
+    channelThumbnailUrl: details.authorThumbnail === '' ? null : details.authorThumbnail,
+    channelName: details.author,
+    channelId: details.authorId,
+  })
 }
 
 function saveWatchProgress() {
@@ -744,7 +847,8 @@ onBeforeRouteLeave(async () => {
 // The router reuses this view for another video, so the one left is saved
 // and its player destroyed before the watcher below loads the next
 onBeforeRouteUpdate(async (to, from) => {
-  if (to.params.host === from.params.host && to.params.uuid === from.params.uuid && to.query.timestamp === from.query.timestamp) {
+  if (to.params.id === from.params.id && to.params.host === from.params.host && to.params.uuid === from.params.uuid &&
+    to.query.timestamp === from.query.timestamp) {
     return
   }
 
@@ -753,10 +857,12 @@ onBeforeRouteUpdate(async (to, from) => {
 })
 
 watch(
-  () => [route.name, route.params.host, route.params.uuid, route.query.timestamp],
-  ([name], [previousName]) => {
-    // The watcher can fire for the navigation away, before this view unmounts
-    if (name === previousName) {
+  () => [route.matched.at(-1)?.path, route.params.id, route.params.host, route.params.uuid, route.query.timestamp],
+  ([pattern], [previousPattern]) => {
+    // The watcher can fire for the navigation away, before this view unmounts.
+    // Told apart by the route's pattern rather than its name: upstream's
+    // `/watch/:id` and the routes it leads to have none
+    if (pattern === previousPattern) {
       load()
     }
   }

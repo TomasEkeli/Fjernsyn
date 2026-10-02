@@ -4,7 +4,7 @@ import shaka from 'shaka-player'
 import { h } from 'vue'
 import { RouterView } from 'vue-router'
 
-import { copyToClipboard, formatScheduledTime, openExternalLink } from '../../helpers/utils'
+import { copyToClipboard, formatScheduledTime, openExternalLink, showToast } from '../../helpers/utils'
 import { describe as describeEntity } from '../../platform/describe'
 import { PlatformError } from '../../platform/errors'
 import { PLATFORM_LAYER_KEY, isPeerTubeEnabled } from '../../platform/vue'
@@ -92,6 +92,7 @@ const SETTINGS = vi.hoisted(() => ({
   getHidePlaylists: false,
   getHideSharingActions: false,
   getExternalPlayer: '',
+  getYtDlpEnabled: true,
   // The comments'
   getHideComments: false,
   getHideCommentPhotos: false,
@@ -249,6 +250,7 @@ beforeEach(() => {
   isPeerTubeEnabled.mockReset().mockReturnValue(true)
   copyToClipboard.mockClear()
   openExternalLink.mockClear()
+  showToast.mockClear()
 
   window.scrollTo = vi.fn()
 })
@@ -280,6 +282,8 @@ async function openWatchPage(answer, path = WATCH_PATH) {
 
   const router = createTestRouter([
     { path: '/peertube/watch/:host/:uuid', name: 'peertubeWatch', component: LayerWatch },
+    // As upstream's watch route, which has no name
+    { path: '/watch/:id', component: LayerWatch },
     { path: '/peertube/channel/:handle/:currentTab?', name: 'peertubeChannel' },
     { path: '/elsewhere', name: 'elsewhere' },
   ])
@@ -1066,5 +1070,338 @@ describe('the download button', () => {
     const { wrapper } = await openWatchPage(playableVideo({ downloadOptions: [] }))
 
     expect(wrapper.find('.layerDownloadButton').exists()).toBe(false)
+  })
+})
+
+describe('a PeerTube video\'s download button', () => {
+  it('is the instance\'s, never yt-dlp\'s', async () => {
+    const { wrapper } = await openWatchPage(playableVideo({ downloadOptions: [{ id: '1080', label: '1080p', resolution: 1080, height: 1080, sizeBytes: 1, url: `https://${HOST}/download/x.mp4`, kind: 'muxed' }] }))
+
+    expect(wrapper.find('.layerDownloadButton').exists()).toBe(true)
+    expect(wrapper.find('.ytDlpDownloadButton').exists()).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// YouTube, on upstream's `/watch/:id` route
+// ---------------------------------------------------------------------------
+
+const YT_ID = 'dQw4w9WgXcQ'
+const YT_PATH = `/watch/${YT_ID}`
+const YT_CHANNEL = 'UCuAXFkgsw1L7xaCfnd5JJOw'
+const YT_AVATAR = 'https://yt3.ggpht.com/rick=s48-c-k-c0x00ffffff-no-rj'
+const YT_THUMBNAIL = `https://i.ytimg.com/vi/${YT_ID}/maxresdefault.jpg`
+const DASH_MANIFEST = 'data:application/dash+xml;charset=UTF-8,%3CMPD%2F%3E'
+const HLS_LIVE = 'https://manifest.googlevideo.com/api/manifest/hls_variant/id/live/file/index.m3u8'
+const SABR_MANIFEST = 'data:application/sabr+json,%7B%7D'
+
+const YT_LEGACY_FORMATS = [
+  { itag: 18, qualityLabel: '360p', fps: 25, bitrate: 500_000, mimeType: 'video/mp4', height: 360, width: 640, url: 'https://rr1---sn.googlevideo.com/videoplayback?itag=18' },
+]
+
+const YT_CAPTIONS = [
+  { url: 'https://www.youtube.com/api/timedtext?v=dQw4w9WgXcQ&lang=en', language: 'en', label: 'English', mimeType: 'text/vtt' },
+]
+
+const YT_CHAPTERS = [
+  { title: 'Intro', timestamp: '0:00', startSeconds: 0, endSeconds: 43 },
+  { title: 'Chorus', timestamp: '0:43', startSeconds: 43, endSeconds: 213 },
+]
+
+/**
+ * A YouTube video's details, as the layer answers them over DASH
+ *
+ * @param {object} [overrides] fields of the details
+ * @param {object} [sourceOverrides] fields of the playback source
+ */
+function youtubeVideo(overrides = {}, sourceOverrides = {}) {
+  return {
+    type: 'video',
+    videoId: YT_ID,
+    title: 'Never Gonna Give You Up',
+    author: 'Rick Astley',
+    authorId: YT_CHANNEL,
+    thumbnail: YT_THUMBNAIL,
+    lengthSeconds: 213,
+    published: Date.UTC(2009, 9, 25),
+    viewCount: 1_500_000_000,
+    liveNow: false,
+    isUpcoming: false,
+    description: 'The official video, <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ&amp;t=43s">0:43</a> the chorus',
+    descriptionKind: 'html',
+    likeCount: 18_000_000,
+    dislikeCount: null,
+    tags: ['rick astley'],
+    category: 'Music',
+    licence: null,
+    language: null,
+    url: `https://www.youtube.com/watch?v=${YT_ID}`,
+    channel: { id: YT_CHANNEL, name: 'Rick Astley', thumbnail: YT_AVATAR, subscriberCount: 4_000_000 },
+    authorThumbnail: YT_AVATAR,
+    commentsEnabled: null,
+    downloadEnabled: false,
+    liveStatus: null,
+    isUnlisted: false,
+    isFamilyFriendly: true,
+    related: [],
+    chaptersKind: 'chapters',
+    playbackSource: {
+      transport: 'manifest',
+      manifestUrl: DASH_MANIFEST,
+      manifestMimeType: 'application/dash+xml',
+      legacyFormats: YT_LEGACY_FORMATS,
+      audio: { manifestUrl: DASH_MANIFEST, mimeType: 'application/dash+xml' },
+      captions: YT_CAPTIONS,
+      chapters: YT_CHAPTERS,
+      chaptersSrc: 'data:text/vtt,WEBVTT%20chapters',
+      storyboard: 'data:text/vtt;charset=utf-8,WEBVTT%20storyboard',
+      isLive: false,
+      loudnessDb: -7.5,
+      expiresAt: new Date(Date.now() + 6 * 60 * 60 * 1000),
+      vrProjection: null,
+      isPostLiveDvr: false,
+      ...sourceOverrides,
+    },
+    downloadOptions: [],
+    ...overrides,
+  }
+}
+
+/** A YouTube live that is live, over HLS: no legacy formats, no audio only */
+function youtubeLive() {
+  const { lengthSeconds: _, ...video } = youtubeVideo({ liveNow: true, liveStatus: 'live' }, {
+    manifestUrl: HLS_LIVE,
+    manifestMimeType: 'application/x-mpegurl',
+    legacyFormats: [],
+    audio: null,
+    chapters: [],
+    chaptersSrc: null,
+    storyboard: null,
+    isLive: true,
+  })
+  return video
+}
+
+describe('a YouTube video', () => {
+  it('is asked of the layer by the id the watch route names', async () => {
+    await openWatchPage(youtubeVideo(), YT_PATH)
+
+    expect(layer.getVideo).toHaveBeenCalledWith(YT_ID)
+  })
+
+  it('is not asked for when the route names no YouTube id', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo(), '/watch/not-an-id')
+
+    expect(layer.getVideo).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('This video does not exist on YouTube, or no longer does.')
+  })
+
+  it('hands the player its DASH manifest and everything around it', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+    expect(findPlayer(wrapper).props()).toMatchObject({
+      format: 'dash',
+      manifestSrc: DASH_MANIFEST,
+      manifestMimeType: 'application/dash+xml',
+      legacyFormats: YT_LEGACY_FORMATS,
+      captions: YT_CAPTIONS,
+      chapters: YT_CHAPTERS,
+      chaptersSrc: 'data:text/vtt,WEBVTT%20chapters',
+      storyboardSrc: 'data:text/vtt;charset=utf-8,WEBVTT%20storyboard',
+      startTime: null,
+      videoId: YT_ID,
+      channelId: YT_CHANNEL,
+      title: 'Never Gonna Give You Up',
+      thumbnail: YT_THUMBNAIL,
+      platform: 'youtube',
+    })
+  })
+
+  it('starts on the legacy formats when it has no manifest', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo({}, { manifestUrl: null, manifestMimeType: null, audio: null }), YT_PATH)
+
+    expect(findPlayer(wrapper).props()).toMatchObject({ format: 'legacy', legacyFormats: YT_LEGACY_FORMATS })
+    expect(findButton(wrapper, 'Audio only').exists()).toBe(false)
+  })
+
+  it('plays a live from its HLS manifest, from the live edge', async () => {
+    store.setGetter('getHistoryCacheById', { [YT_ID]: { videoId: YT_ID, watchProgress: 100 } })
+    const { wrapper } = await openWatchPage(youtubeLive(), `${YT_PATH}?timestamp=30`)
+
+    expect(findPlayer(wrapper).props()).toMatchObject({
+      format: 'dash',
+      manifestSrc: HLS_LIVE,
+      manifestMimeType: 'application/x-mpegurl',
+      legacyFormats: [],
+      startTime: null,
+    })
+  })
+
+  it('plays a recording of an ended live, which YouTube serves', async () => {
+    const recording = youtubeVideo({ liveStatus: 'ended' }, { manifestUrl: HLS_LIVE, manifestMimeType: 'application/x-mpegurl', legacyFormats: [], audio: null, isPostLiveDvr: true })
+    const { wrapper } = await openWatchPage(recording, YT_PATH)
+
+    expect(findPlayer(wrapper).props()).toMatchObject({ format: 'dash', manifestSrc: HLS_LIVE })
+    expect(wrapper.text()).not.toContain('This live has ended.')
+  })
+
+  it('plays only the legacy formats of a SABR source, whose regulator this page does not host yet', async () => {
+    const sabr = youtubeVideo({}, {
+      transport: 'sabr',
+      manifestUrl: SABR_MANIFEST,
+      manifestMimeType: 'application/sabr+json',
+      audio: { manifestUrl: SABR_MANIFEST, mimeType: 'application/sabr+json' },
+      sabrData: { url: 'https://rr1---sn.googlevideo.com/sabr', videoId: YT_ID, poToken: 'token', ustreamerConfig: 'config', clientInfo: {} },
+      sabrStoryboards: [],
+      renew: vi.fn(),
+    })
+    const { wrapper } = await openWatchPage(sabr, YT_PATH)
+
+    expect(findPlayer(wrapper).props()).toMatchObject({ format: 'legacy', legacyFormats: YT_LEGACY_FORMATS, manifestSrc: null, manifestMimeType: '' })
+    expect(findButton(wrapper, 'Audio only').exists()).toBe(false)
+
+    // And nothing else to fall back to
+    findPlayer(wrapper).vm.$emit('error', new Error('legacy failed'))
+    await flushPromises()
+
+    expect(findPlayer(wrapper).exists()).toBe(false)
+    expect(wrapper.text()).toContain('Fjernsyn cannot play this video.')
+    expect(sabr.playbackSource.renew).not.toHaveBeenCalled()
+  })
+
+  it('shows its description\'s markup, its timestamps seeking the player', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+    player.hasLoaded = true
+
+    const timestamp = wrapper.find('.videoDescription a[data-time="43"]')
+    expect(timestamp.exists()).toBe(true)
+    await timestamp.trigger('click')
+
+    expect(player.seekedTo).toEqual([43])
+  })
+
+  describe('in history', () => {
+    it('is written key for key as the old watch page writes it, its YouTube category included', async () => {
+      const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+      findPlayer(wrapper).vm.$emit('loaded')
+      await flushPromises()
+
+      const [record] = dispatched('updateHistory')
+      expect(Object.keys(record).sort()).toEqual([...OLD_PATH_HISTORY_FIELDS, 'category'].sort())
+      expect(record).toEqual({
+        videoId: YT_ID,
+        title: 'Never Gonna Give You Up',
+        author: 'Rick Astley',
+        authorId: YT_CHANNEL,
+        published: Date.UTC(2009, 9, 25),
+        description: 'The official video, 0:43 the chorus',
+        viewCount: 1_500_000_000,
+        lengthSeconds: 213,
+        watchProgress: 0,
+        timeWatched: expect.any(Number),
+        isLive: false,
+        type: 'video',
+        category: 'Music',
+      })
+    })
+
+    it('carries no category where YouTube gave none, as the old watch page leaves it out', async () => {
+      const { wrapper } = await openWatchPage(youtubeVideo({ category: null }), YT_PATH)
+
+      findPlayer(wrapper).vm.$emit('loaded')
+      await flushPromises()
+
+      expect(Object.keys(dispatched('updateHistory')[0]).sort()).toEqual([...OLD_PATH_HISTORY_FIELDS].sort())
+    })
+
+    it('holds a live\'s length as 0, as the old watch page does', async () => {
+      const { wrapper } = await openWatchPage(youtubeLive(), YT_PATH)
+
+      findPlayer(wrapper).vm.$emit('loaded')
+      await flushPromises()
+
+      expect(dispatched('updateHistory')[0].lengthSeconds).toBe(0)
+    })
+  })
+
+  describe('its subscription', () => {
+    it('takes the channel\'s current name and avatar, as the old watch page asks on every load', async () => {
+      await openWatchPage(youtubeVideo(), YT_PATH)
+
+      expect(dispatched('updateSubscriptionDetails')).toEqual([{
+        channelThumbnailUrl: YT_AVATAR,
+        channelName: 'Rick Astley',
+        channelId: YT_CHANNEL,
+      }])
+    })
+
+    it('keeps its avatar when the channel has none to give', async () => {
+      await openWatchPage(youtubeVideo({ authorThumbnail: '' }), YT_PATH)
+
+      expect(dispatched('updateSubscriptionDetails')[0].channelThumbnailUrl).toBeNull()
+    })
+
+    it('is left alone for a PeerTube video, as before', async () => {
+      await openWatchPage(playableVideo())
+
+      expect(dispatched('updateSubscriptionDetails')).toEqual([])
+    })
+  })
+
+  describe('its download button', () => {
+    beforeEach(() => {
+      window.ftElectron = { ytDlpDownload: vi.fn() }
+    })
+
+    afterEach(() => {
+      delete window.ftElectron
+    })
+
+    it('is yt-dlp\'s, and downloads the video by its id', async () => {
+      const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+      expect(wrapper.find('.layerDownloadButton').exists()).toBe(false)
+      await wrapper.find('.ytDlpDownloadButton button').trigger('click')
+
+      expect(window.ftElectron.ytDlpDownload).toHaveBeenCalledWith({ videoId: YT_ID, title: 'Never Gonna Give You Up', quality: 'best', fresh: false })
+    })
+
+    it('is not there for a live, which has no end to download', async () => {
+      const { wrapper } = await openWatchPage(youtubeLive(), YT_PATH)
+
+      expect(wrapper.find('.ytDlpDownloadButton').exists()).toBe(false)
+    })
+  })
+
+  describe('in the external player', () => {
+    beforeEach(() => {
+      window.ftElectron = { openInExternalPlayer: vi.fn() }
+      store.state.fakeGetterValues.getExternalPlayer = 'mpv'
+    })
+
+    afterEach(() => {
+      delete window.ftElectron
+    })
+
+    it('is handed over by its id from where playback is, and marked watched, as the old watch page does', async () => {
+      const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+      Object.assign(player, { hasLoaded: true, currentTime: 42.5 })
+
+      await findButton(wrapper, 'Open in mpv').trigger('click')
+
+      expect(window.ftElectron.openInExternalPlayer).toHaveBeenCalledWith({ videoId: YT_ID, startTime: 42.5, playbackRate: 1 })
+      expect(player.paused).toBe(true)
+      expect(dispatched('updateHistory')).toEqual([expect.objectContaining({ videoId: YT_ID, watchProgress: 0, category: 'Music' })])
+      expect(showToast).toHaveBeenCalledWith('Video has been marked as watched')
+    })
+
+    it('leaves a PeerTube video unmarked, as before', async () => {
+      const { wrapper } = await openWatchPage(playableVideo())
+
+      await findButton(wrapper, 'Open in mpv').trigger('click')
+
+      expect(dispatched('updateHistory')).toEqual([])
+    })
   })
 })
