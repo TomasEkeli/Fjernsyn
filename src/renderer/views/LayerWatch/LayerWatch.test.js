@@ -691,6 +691,18 @@ describe('the format ring', () => {
     expect(findPlayer(wrapper).props('format')).toBe('dash')
   })
 
+  it('tries again from where playback stopped, as the old watch page does', async () => {
+    const { wrapper } = await openWatchPage(playableVideo({}, { legacyFormats: [], audio: null }))
+    Object.assign(player, { hasLoaded: true, currentTime: 42.5 })
+    findPlayer(wrapper).vm.$emit('error', new Error('adaptive failed'))
+    await flushPromises()
+
+    await wrapper.find('.errorRetryButton').trigger('click')
+    await flushPromises()
+
+    expect(findPlayer(wrapper).props('startTime')).toBe(42)
+  })
+
   it('carries on from where playback was', async () => {
     const { wrapper } = await openWatchPage(playableVideo())
     Object.assign(player, { hasLoaded: true, currentTime: 42.5 })
@@ -2329,5 +2341,102 @@ describe('a playlist', () => {
       expect(dispatched('updateWatchProgress')).toEqual([{ videoId: YT_ID, watchProgress: 42 }])
       expect(player.events).toContain('destroyed')
     })
+  })
+})
+
+describe('theatre mode', () => {
+  const NEXT_ID = 'pCJ9JGG0GQI'
+  const USER_ID = 'mine'
+
+  const SIDE_PANELS = {
+    // A PeerTube video's details have no recommendations
+    chapters: {
+      answer: () => playableVideo(),
+      path: WATCH_PATH,
+    },
+    recommendations: {
+      answer: () => youtubeVideo({ related: [{ type: 'video', videoId: NEXT_ID, title: 'Next', author: 'Someone', authorId: 'UCsomeone', lengthSeconds: 60 }] }, { chapters: [] }),
+      path: YT_PATH,
+    },
+    playlist: {
+      setUp: () => {
+        store.setGetter('getHideRecommendedVideos', true)
+        store.setGetter('getPlaylist', id => (id === USER_ID
+          ? { _id: USER_ID, playlistName: 'Mine', videos: [{ videoId: YT_ID, title: 'Mine', author: 'Someone', authorId: 'UCsomeone', lengthSeconds: 60, playlistItemId: 'u1', timeAdded: 1 }] }
+          : undefined))
+      },
+      answer: () => youtubeVideo({}, { chapters: [] }),
+      path: `${YT_PATH}?playlistId=${USER_ID}&playlistType=user&playlistItemId=u1`,
+    },
+  }
+
+  it.each(Object.keys(SIDE_PANELS))('is offered with %s as the only side panel, and toggles from the player', async (name) => {
+    const { setUp, answer, path } = SIDE_PANELS[name]
+    setUp?.()
+    store.setGetter('getDefaultViewingMode', 'theatre')
+    const { wrapper } = await openWatchPage(answer(), path)
+
+    expect(wrapper.find('.sidebarArea').isVisible()).toBe(true)
+    expect(findPlayer(wrapper).props()).toMatchObject({ theatrePossible: true, useTheatreMode: true })
+    expect(wrapper.find('.videoLayout').classes()).toContain('useTheatreMode')
+
+    findPlayer(wrapper).vm.$emit('toggle-theatre-mode')
+    await flushPromises()
+
+    expect(wrapper.find('.videoLayout').classes()).not.toContain('useTheatreMode')
+  })
+
+  it('is not offered without a side panel', async () => {
+    store.setGetter('getDefaultViewingMode', 'theatre')
+    const { wrapper } = await openWatchPage(playableVideo({}, { chapters: [] }))
+
+    expect(wrapper.find('.sidebarArea').exists()).toBe(false)
+    expect(findPlayer(wrapper).props()).toMatchObject({ theatrePossible: false, useTheatreMode: false })
+  })
+})
+
+describe('a waiting YouTube premiere', () => {
+  const HOUR = 60 * 60 * 1000
+
+  function waitingVideo(premiereDate, { trailer = false } = {}) {
+    const overrides = { liveStatus: 'waiting', isUpcoming: true, ...(premiereDate ? { premiereDate } : {}) }
+    return trailer ? youtubeVideo(overrides) : youtubeVideo({ ...overrides, playbackSource: null })
+  }
+
+  /** The date as the countdown gives it, by its month and day */
+  const dayOf = date => date.toLocaleString('en-US', { month: 'long', day: 'numeric' })
+
+  it.each([
+    [30 * 1000, 'Premieres in less than a minute'],
+    [90.5 * 60 * 1000, 'Premieres in 90 minutes'],
+    [3.5 * HOUR, 'Premieres in 3 hours'],
+    [2.5 * 24 * HOUR, 'Premieres in 2 days'],
+  ])('says over its thumbnail when it premieres, %i ms ahead, in the old watch page\'s words', async (ahead, text) => {
+    const start = new Date(Date.now() + ahead)
+    const { wrapper } = await openWatchPage(waitingVideo(start), YT_PATH)
+
+    expect(findPlayer(wrapper).exists()).toBe(false)
+    expect(wrapper.find('.videoThumbnail').attributes('src')).toBe(YT_THUMBNAIL)
+    const premiere = wrapper.find('.premiereDate')
+    expect(premiere.classes()).not.toContain('trailer')
+    expect(premiere.find('.premiereTextTimeLeft').text()).toBe(text)
+    expect(premiere.find('.premiereTextTimestamp').text()).toContain(dayOf(start))
+    expect(wrapper.text()).not.toContain('This live has not started yet.')
+  })
+
+  it('says it starts soon without a scheduled time', async () => {
+    const { wrapper } = await openWatchPage(waitingVideo(null), YT_PATH)
+
+    expect(wrapper.find('.premiereDate').text()).toBe('Starting soon, please refresh the page to check again')
+  })
+
+  it('says it below the trailer while the trailer plays', async () => {
+    const start = new Date(Date.now() + 3.5 * HOUR)
+    const { wrapper } = await openWatchPage(waitingVideo(start, { trailer: true }), YT_PATH)
+
+    expect(findPlayer(wrapper).exists()).toBe(true)
+    const premiere = wrapper.find('.premiereDate')
+    expect(premiere.classes()).toContain('trailer')
+    expect(premiere.find('.premiereTextTimeLeft').text()).toBe('Premieres in 3 hours')
   })
 })

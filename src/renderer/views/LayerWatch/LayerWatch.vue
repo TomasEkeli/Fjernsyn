@@ -65,18 +65,50 @@
             @sabr-refresh-requested="onSabrRefreshRequested"
             @player-reload-requested="onPlayerReloadRequested"
           />
+          <!-- Beside the player only to hold the premiere's text below a trailer, as Watch.vue does -->
           <div
-            v-else-if="message"
+            v-if="showPlayer ? premiereShown : (message || premiereShown)"
             class="videoPlayer"
-            :class="{ withoutThumbnail: !video?.thumbnail }"
+            :class="{ withoutThumbnail: !showPlayer && !video?.thumbnail }"
           >
             <img
-              v-if="video?.thumbnail"
+              v-if="!showPlayer && video?.thumbnail"
               :src="video.thumbnail"
               class="videoThumbnail"
               alt=""
             >
-            <div class="errorContainer">
+            <div
+              v-if="premiereShown"
+              class="premiereDate"
+              :class="{ trailer: showPlayer }"
+            >
+              <FontAwesomeIcon
+                :icon="['fas', 'satellite-dish']"
+                class="premiereIcon"
+              />
+              <p
+                v-if="premiere.timestamp"
+                class="premiereText"
+              >
+                <span class="premiereTextTimeLeft">
+                  {{ t('Video.Premieres') }} {{ premiere.timeLeft }}
+                </span>
+                <br>
+                <span class="premiereTextTimestamp">
+                  {{ premiere.timestamp }}
+                </span>
+              </p>
+              <p
+                v-else
+                class="premiereText"
+              >
+                {{ t('Video.Starting soon, please refresh the page to check again') }}
+              </p>
+            </div>
+            <div
+              v-else
+              class="errorContainer"
+            >
               <div class="errorWrapper">
                 <FontAwesomeIcon
                   :icon="message.icon"
@@ -98,7 +130,7 @@
                     :label="t('Video.Try Again')"
                     :icon="['fas', 'sync']"
                     class="errorRetryButton"
-                    @click="load"
+                    @click="retry"
                   />
                 </div>
               </div>
@@ -170,7 +202,7 @@
     <!-- Kept through the loads of the playlist's videos, as Watch.vue keeps the
     playlist panel, so that loop, shuffle and reverse carry on to the next -->
     <div
-      v-if="theatrePossible || playlist !== null"
+      v-if="hasSidePanel"
       v-show="sidebarShown"
       class="sidebarArea"
     >
@@ -246,7 +278,7 @@ import WatchVideoRecommendations from '../../components/WatchVideoRecommendation
 import { toStoredPlainText } from '../../components/LayerMarkdown/plainText'
 
 import store from '../../store/index'
-import { formatScheduledTime, showToast } from '../../helpers/utils'
+import { formatScheduledTime, getLocalesWithFallback, showToast } from '../../helpers/utils'
 import { PLATFORM_YOUTUBE, isYouTubeVideoRef, peerTubeVideoRef, platformOf } from '../../platform/refs'
 import { usePlatformLayer } from '../../platform/vue'
 import { useSabrHosting } from './useSabrHosting'
@@ -266,7 +298,7 @@ const FORMAT_RING = ['dash', 'legacy', 'audio']
 const layer = usePlatformLayer()
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
+const { locale, t } = useI18n()
 
 const player = useTemplateRef('player')
 const playlistPanel = useTemplateRef('playlistPanel')
@@ -326,8 +358,10 @@ const startInPip = ref(false)
 
 /** The `timestamp` query the video was opened with */
 let timestamp = null
-/** Where the ladder's page reload asked the next load to start, once */
+/** Where the ladder's page reload or a retry asked the next load to start, once */
 let resumeAt = null
+/** Where playback was when nothing more was tried, for a retry to resume there */
+let retryAt = null
 /** Whether the history entry has been written for this video */
 let historyWritten = false
 /** Whether leaving the page has already saved the position */
@@ -489,16 +523,21 @@ const chaptersShown = computed(() => !hideChapters.value && chapters.value.lengt
  */
 const recommendationsShown = computed(() => !hideRecommendedVideos.value && Array.isArray(video.value?.related))
 
-// The sidebar holds the chapters and the recommendations; without either
-// there is nothing for theatre mode to move out of the way
-const theatrePossible = computed(() => {
-  return !isLoading.value && (chaptersShown.value || recommendationsShown.value) && !hiddenAsNotFamilyFriendly.value
+/**
+ * Whether the sidebar has a panel to show: the playlist, the chapters or the
+ * recommendations. A new side panel (the live chat) joins here, and theatre
+ * mode comes with it.
+ */
+const hasSidePanel = computed(() => playlist.value !== null || chaptersShown.value || recommendationsShown.value)
+
+/** The sidebar is shown with a side panel in it, once the video is in and shown */
+const sidebarShown = computed(() => {
+  return !isLoading.value && !hiddenAsNotFamilyFriendly.value && hasSidePanel.value
 })
 
-/** The sidebar is shown with a side panel in it: the playlist, the chapters or the recommendations */
-const sidebarShown = computed(() => {
-  return theatrePossible.value || (playlist.value !== null && !isLoading.value && !hiddenAsNotFamilyFriendly.value)
-})
+// As Watch.js: theatre mode moves the sidebar out of the way, whichever panel
+// it holds; without one there is nothing to move
+const theatrePossible = sidebarShown
 
 /**
  * As Watch.js's `nextRecommendedVideo`: the first recommendation not of a
@@ -601,8 +640,13 @@ const message = computed(() => {
 
   // A waiting live with a trailer plays it, and an ended one served as a
   // recording (YouTube's post-live DVR) plays that, as the old view does;
-  // PeerTube answers neither with a source
+  // PeerTube answers neither with a source. A waiting YouTube video says when
+  // it premieres instead (`premiere`)
   if (details.liveStatus === 'waiting' && source.value === null) {
+    if (isYouTube.value) {
+      return null
+    }
+
     return {
       icon: ['fas', 'satellite-dish'],
       text: t('PeerTube.Watch.Live waiting'),
@@ -633,6 +677,68 @@ function cannotPlay() {
 }
 
 const showPlayer = computed(() => message.value === null && source.value !== null)
+
+/**
+ * When a waiting YouTube video premieres, in Watch.js's words for an upcoming
+ * one: how long until then (minutes up to two hours, then hours up to a day,
+ * then days, rounded down, and less than a minute below one) and the date, its
+ * year only where it is not this year's; `{}` without a scheduled time, `null`
+ * for any other video. Worked out once per video, as there. A PeerTube live
+ * says when it starts in its own message.
+ *
+ * @type {import('vue').ComputedRef<{ timeLeft?: string, timestamp?: string } | null>}
+ */
+const premiere = computed(() => {
+  const details = video.value
+
+  if (!isYouTube.value || details.liveStatus !== 'waiting' || loadError.value !== null) {
+    return null
+  }
+
+  if (!details.premiereDate) {
+    return {}
+  }
+
+  const start = new Date(details.premiereDate)
+  const now = new Date()
+  const locales = getLocalesWithFallback(locale.value)
+
+  const timestampOptions = { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }
+
+  if (now.getFullYear() < start.getFullYear()) {
+    timestampOptions.year = 'numeric'
+  }
+
+  let timeLeft = (start.getTime() - now.getTime()) / 1000 / 60
+  let timeUnit = 'minute'
+
+  // YouTube switches to minutes at 120 minutes left
+  if (timeLeft > 120) {
+    timeLeft /= 60
+    timeUnit = 'hour'
+  }
+
+  if (timeUnit === 'hour' && timeLeft > 24) {
+    timeLeft /= 24
+    timeUnit = 'day'
+  }
+
+  timeLeft = Math.floor(timeLeft)
+
+  return {
+    timeLeft: timeLeft < 1
+      ? t('Video.Published.In less than a minute').toLowerCase()
+      : new Intl.RelativeTimeFormat(locales).format(timeLeft, timeUnit),
+    timestamp: new Intl.DateTimeFormat(locales, timestampOptions).format(start),
+  }
+})
+
+/**
+ * The premiere's text is shown over the thumbnail, or below the trailer while
+ * one plays, as Watch.vue shows it; a failure to play the trailer says so
+ * instead
+ */
+const premiereShown = computed(() => premiere.value !== null && (showPlayer.value || message.value === null))
 
 /**
  * @param {{ kind?: string, reason?: string | null, host?: string | null }} error
@@ -794,6 +900,7 @@ async function load() {
   // Once only, as Watch.js's `oneTimeTimestamp`
   const resumePosition = resumeAt
   resumeAt = null
+  retryAt = null
 
   isLoading.value = true
   video.value = null
@@ -977,14 +1084,22 @@ function youtubeStreamFailure(error) {
 
 /**
  * Nothing more is tried: the message replaces the player. The player goes
- * away with it, so its position is taken now. It is destroyed before that
- * too: unmounted by the message, it would be left running, as a live that
- * goes on refreshing its playlist.
+ * away with it, so its position is taken now, saved and kept for a retry, as
+ * Watch.js's `showRetryableError` keeps it. It is destroyed before that too:
+ * unmounted by the message, it would be left running, as a live that goes on
+ * refreshing its playlist.
  *
  * @param {Message} failure
  */
 async function stopPlaying(failure) {
-  handleWatchProgressAutoSaveWhenProgressEnabled()
+  const position = player.value === destroyedPlayer ? null : currentPosition()
+
+  handleWatchProgressAutoSaveWhenProgressEnabled(position)
+
+  // Where the player was told to start, where it never loaded: a format the
+  // ring switched to from a position, which failed before playing
+  const resumePosition = position ?? startTime.value
+  retryAt = resumePosition === null ? null : Math.floor(resumePosition)
 
   const thisLoad = loadsStarted
 
@@ -1018,6 +1133,17 @@ async function reloadKeepingPosition(position) {
 
   resumeAt = position
   await load()
+}
+
+/**
+ * The message's Try Again, as Watch.js's `retryVideo`: the video asked of the
+ * layer afresh, starting where playback stopped, where it had got past the
+ * beginning (`oneTimeTimestamp`). A new load resets the regulator
+ * (useSabrHosting.js), as `retryVideo` does.
+ */
+function retry() {
+  resumeAt = retryAt !== null && retryAt > 0 ? retryAt : null
+  load()
 }
 
 function toggleAudioOnly() {
@@ -1206,7 +1332,10 @@ function updateSubscriptionDetails(details) {
   })
 }
 
-function saveWatchProgress() {
+/**
+ * @param {number | null} [position] where playback is, where already read
+ */
+function saveWatchProgress(position = null) {
   // A player being destroyed, or destroyed and not yet unmounted, has had its
   // video unloaded, so its position reads about 0 and would overwrite the one
   // saved before the destruction began
@@ -1216,7 +1345,7 @@ function saveWatchProgress() {
 
   store.dispatch('updateWatchProgress', {
     videoId: video.value.videoId,
-    watchProgress: player.value.getCurrentTime(),
+    watchProgress: position ?? player.value.getCurrentTime(),
   })
 }
 
@@ -1229,13 +1358,17 @@ function handleWatchProgressAutoSave() {
   saveWatchProgress()
 }
 
-/** At the end of the video, or when it stops playing: whenever saving is on */
-function handleWatchProgressAutoSaveWhenProgressEnabled() {
+/**
+ * At the end of the video, or when it stops playing: whenever saving is on
+ *
+ * @param {number | null} [position] where playback is, where already read
+ */
+function handleWatchProgressAutoSaveWhenProgressEnabled(position = null) {
   if (!rememberHistory.value || !watchedProgressSavingEnabled.value) {
     return
   }
 
-  saveWatchProgress()
+  saveWatchProgress(position)
 }
 
 function handleWatchProgressManualSave() {
