@@ -6,7 +6,8 @@ import { RouterView } from 'vue-router'
 import { showToast } from '../helpers/utils'
 import store from '../store/index'
 import { createTestRouter } from '../testing/router'
-import { layerSurface, peerTubeRouteGuard, peerTubeRoutes } from './routes.js'
+import { routeView } from '../components/LayerSurfaceSwitch/surfaceSwitch'
+import { WatchSurface, layerSurface, peerTubeRouteGuard, peerTubeRoutes } from './routes.js'
 import { installPlatformLayer } from './vue.js'
 
 vi.mock('./index.js', () => ({ createPlatformLayer: () => ({}) }))
@@ -22,6 +23,7 @@ vi.mock('../views/LayerChannel/LayerChannel.vue', () => ({ default: { name: 'Lay
 vi.mock('../views/LayerSearch/LayerSearch.vue', () => ({ default: { name: 'LayerSearch', render: () => null } }))
 // Upstream's views on the surface switch (tested through the router in router/index.test.js)
 vi.mock('../views/Channel/Channel.vue', () => ({ default: { name: 'Channel', render: () => null } }))
+vi.mock('../views/Watch/Watch.vue', () => ({ default: { name: 'Watch', render: () => null } }))
 
 // The surface switch reads the store module; the guards read the store installed
 vi.mock('../store/index', async () => {
@@ -79,7 +81,22 @@ describe('the PeerTube routes', () => {
     expect(params).toEqual({ host: 'video.blender.org', uuid: 'b29290cc-dc51-4a12-bcb2-2aa5fece7605' })
     expect(query).toEqual({ timestamp: '12' })
     expect(matched[0].meta.title).toBe('Watch')
-    expect(matched[0].components.default.name).toBe('LayerWatch')
+    // The switch `/watch/:id` renders, so that the router keeps the view between the two
+    expect(matched[0].components.default).toBe(WatchSurface)
+  })
+
+  it.each([false, true])('render the layer\'s watch view on the watch page whatever the surface switch (on: %s)', async (on) => {
+    store.setGetter('getEnablePeerTube', true)
+    store.setGetter('getEnableLayerSurfaces', on)
+    const router = createTestRouter(peerTubeRoutes)
+    await router.push('/peertube/watch/video.blender.org/b29290cc-dc51-4a12-bcb2-2aa5fece7605')
+
+    const wrapper = mount({ render: () => h(RouterView) }, { global: { plugins: [router] } })
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: 'LayerWatch' }).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'Watch' }).exists()).toBe(false)
+    expect(routeView(router.currentRoute.value).name).toBe('LayerWatch')
   })
 
   it('include the channel page, carrying the handle, on its videos unless a tab is named', async () => {
@@ -158,6 +175,149 @@ describe('a route on the surface switch', () => {
     await flushPromises()
 
     expect(wrapper.find('.layerView').exists()).toBe(true)
+  })
+
+  it('says which view a route renders: the one its switch picks, or its own component', async () => {
+    const Elsewhere = { name: 'Elsewhere', render: () => null }
+    const router = createTestRouter([
+      { path: '/surface/:id', component: layerSurface('TestSurface', OldView, LayerView) },
+      { path: '/elsewhere', component: Elsewhere },
+    ])
+
+    expect(routeView(router.resolve('/surface/x'))).toBe(OldView)
+    store.setGetter('getEnableLayerSurfaces', true)
+    expect(routeView(router.resolve('/surface/x'))).toBe(LayerView)
+    expect(routeView(router.resolve('/elsewhere'))).toBe(Elsewhere)
+  })
+
+  describe('shared with a route only the layer serves', () => {
+    async function openShared(path) {
+      const surface = layerSurface('TestSurface', OldView, LayerView, { layerOnly: ({ name }) => name === 'layerOnly' })
+      const router = createTestRouter([
+        { path: '/surface/:id', component: surface },
+        { path: '/layer/:id', name: 'layerOnly', component: surface },
+      ])
+      await router.push(path)
+      const wrapper = mount({ render: () => h(RouterView) }, { global: { plugins: [router] } })
+      await flushPromises()
+      return { wrapper, router }
+    }
+
+    it('renders the layer\'s view there whatever the switch, and the old view on the switched route while it is off', async () => {
+      const { wrapper, router } = await openShared('/layer/x')
+
+      expect(wrapper.find('.layerView').exists()).toBe(true)
+      expect(routeView(router.currentRoute.value)).toBe(LayerView)
+
+      await router.push('/surface/x')
+      await flushPromises()
+
+      expect(wrapper.find('.oldView').exists()).toBe(true)
+      expect(wrapper.find('.layerView').exists()).toBe(false)
+    })
+
+    it('keeps its view on the way out, as the app\'s out-in transition holds it, rather than picking for the route it gives way to', async () => {
+      const surface = layerSurface('TestSurface', OldView, LayerView, { layerOnly: ({ name }) => name === 'layerOnly' })
+      const router = createTestRouter([
+        { path: '/layer/:id', name: 'layerOnly', component: surface },
+        { path: '/elsewhere' },
+      ])
+      await router.push('/layer/x')
+      // The switch alone, as the transition keeps it once the router view has moved on
+      const wrapper = mount(surface, { global: { plugins: [router] } })
+      await flushPromises()
+
+      await router.push('/elsewhere')
+      await flushPromises()
+
+      expect(wrapper.find('.layerView').exists()).toBe(true)
+      expect(wrapper.find('.oldView').exists()).toBe(false)
+    })
+
+    it('keeps the one layer view across the two routes while the switch is on', async () => {
+      store.setGetter('getEnableLayerSurfaces', true)
+      const { wrapper, router } = await openShared('/surface/x')
+      const view = wrapper.findComponent(LayerView).vm.$
+
+      await router.push('/layer/y')
+      await flushPromises()
+
+      expect(wrapper.findComponent(LayerView).vm.$).toBe(view)
+
+      await router.push('/surface/z')
+      await flushPromises()
+
+      expect(wrapper.findComponent(LayerView).vm.$).toBe(view)
+    })
+  })
+
+  describe('passing the view\'s own route guards on', () => {
+    const calls = []
+
+    // As upstream's watch view: a `beforeRouteLeave` that calls `next`, with the view as `this`
+    const GuardedView = {
+      name: 'GuardedView',
+      data: () => ({ label: 'guarded' }),
+      beforeRouteLeave(to, from, next) {
+        calls.push(['leave', this.label, from.path, to.path])
+        next(to.query.refuse === undefined)
+      },
+      beforeRouteUpdate(to, from) {
+        calls.push(['update', this.label, from.path, to.path])
+        return to.query.refuse === undefined
+      },
+      render: () => h('p', { class: 'guardedView' }),
+    }
+
+    async function openGuarded() {
+      calls.length = 0
+      const router = createTestRouter([
+        { path: '/surface/:id', component: layerSurface('TestSurface', GuardedView, LayerView) },
+        { path: '/elsewhere' },
+      ])
+      await router.push('/surface/x')
+      const wrapper = mount({ render: () => h(RouterView) }, { global: { plugins: [router] } })
+      await flushPromises()
+      return { wrapper, router }
+    }
+
+    it('runs the view\'s beforeRouteLeave as the route is left, and lets it refuse', async () => {
+      const { router } = await openGuarded()
+
+      await router.push('/elsewhere?refuse')
+      expect(router.currentRoute.value.path).toBe('/surface/x')
+
+      await router.push('/elsewhere')
+      expect(router.currentRoute.value.path).toBe('/elsewhere')
+      expect(calls).toEqual([
+        ['leave', 'guarded', '/surface/x', '/elsewhere'],
+        ['leave', 'guarded', '/surface/x', '/elsewhere'],
+      ])
+    })
+
+    it('runs the view\'s beforeRouteUpdate as the route changes its params, and lets it refuse', async () => {
+      const { router } = await openGuarded()
+
+      await router.push('/surface/y?refuse')
+      expect(router.currentRoute.value.path).toBe('/surface/x')
+
+      await router.push('/surface/y')
+      expect(router.currentRoute.value.path).toBe('/surface/y')
+      expect(calls).toEqual([
+        ['update', 'guarded', '/surface/x', '/surface/y'],
+        ['update', 'guarded', '/surface/x', '/surface/y'],
+      ])
+    })
+
+    it('lets the navigation through where the view rendered has no guards', async () => {
+      store.setGetter('getEnableLayerSurfaces', true)
+      const { router } = await openGuarded()
+
+      await router.push('/elsewhere')
+
+      expect(router.currentRoute.value.path).toBe('/elsewhere')
+      expect(calls).toEqual([])
+    })
   })
 })
 

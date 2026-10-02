@@ -10,10 +10,9 @@ import Settings from '../views/Settings/Settings.vue'
 import About from '../views/About/About.vue'
 import LayerSearchPage from '../views/LayerSearchPage/LayerSearchPage.vue'
 import Playlist from '../views/Playlist/Playlist.vue'
-import Watch from '../views/Watch/Watch.vue'
 import Hashtag from '../views/Hashtag/Hashtag.vue'
 import Post from '../views/Post.vue'
-import { ChannelSurface, peerTubeRoutes } from '../platform/routes'
+import { ChannelSurface, WatchSurface, peerTubeRoutes } from '../platform/routes'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -133,7 +132,8 @@ const router = createRouter({
       meta: {
         title: 'Watch'
       },
-      component: Watch
+      // Fjernsyn: upstream's Watch while enableLayerSurfaces is off, the layer's watch view while it is on
+      component: WatchSurface
     },
     {
       path: '/hashtag/:hashtag',

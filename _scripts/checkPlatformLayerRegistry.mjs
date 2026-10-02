@@ -72,7 +72,14 @@ check('the committed registry is well formed', () => {
     'src/renderer/components/ChannelAbout/ChannelAbout.vue',
     'src/renderer/components/ChannelHome/ChannelHome.vue',
     'src/renderer/components/ChannelHome/ChannelHome.css',
-  ], 'the old channel view and its children are shadowed as enableLayerSurfaces')
+    'src/renderer/views/Watch/Watch.vue',
+    'src/renderer/views/Watch/Watch.js',
+    'src/renderer/views/Watch/Watch.scss',
+    'src/renderer/components/WatchVideoInfo/WatchVideoInfo.vue',
+    'src/renderer/components/WatchVideoInfo/WatchVideoInfo.css',
+    'src/renderer/components/WatchVideoDescription/WatchVideoDescription.vue',
+    'src/renderer/components/WatchVideoDescription/WatchVideoDescription.css',
+  ], 'the old channel and watch views and their children are shadowed as enableLayerSurfaces')
 })
 
 // Validating a registry

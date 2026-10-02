@@ -1582,8 +1582,8 @@ Layer Surfaces:
   Settings:
     Enable layer surfaces: New YouTube pages (experimental)
     Enable layer surfaces Tooltip: Shows the new versions of the YouTube pages that have moved to Fjernsyn's platform
-      layer, in place of the old ones. So far that is the channel page. Pages that have not moved yet are unchanged.
-      Switch it off to go back to the old pages.
+      layer, in place of the old ones. So far those are the channel page and the watch page. Pages that have not moved
+      yet are unchanged. Switch it off to go back to the old pages.
 
 Mini Player: Mini Player
 Comments:

@@ -113,3 +113,41 @@ describe('the channel route, on the surface switch', () => {
     expect(rendered(wrapper, CHANNEL_VIEWS)).toEqual(['LayerChannel'])
   })
 })
+
+describe('the watch route, on the surface switch', () => {
+  const WATCH_VIEWS = ['Watch', 'LayerWatch']
+
+  const paths = [
+    ['a video', '/watch/dQw4w9WgXcQ', {}],
+    ['a video from a timestamp', '/watch/dQw4w9WgXcQ?timestamp=42', { timestamp: '42' }],
+    [
+      'a video in a YouTube playlist',
+      '/watch/dQw4w9WgXcQ?playlistId=PLFgquLnL59alCl_2TQvOiD5Vgm1hCaGSI&playlistType=&timestamp=7',
+      { playlistId: 'PLFgquLnL59alCl_2TQvOiD5Vgm1hCaGSI', playlistType: '', timestamp: '7' },
+    ],
+    [
+      'a video in a user playlist',
+      '/watch/dQw4w9WgXcQ?playlistId=mine&playlistType=user&playlistItemId=u1',
+      { playlistId: 'mine', playlistType: 'user', playlistItemId: 'u1' },
+    ],
+  ]
+
+  it.each(paths)('renders upstream\'s watch view while the switch is off, for %s', async (_what, path, query) => {
+    const wrapper = await open(path)
+
+    expect(router.currentRoute.value.params).toEqual({ id: 'dQw4w9WgXcQ' })
+    expect(router.currentRoute.value.query).toEqual(query)
+    expect(router.currentRoute.value.matched[0].meta.title).toBe('Watch')
+    expect(rendered(wrapper, WATCH_VIEWS)).toEqual(['Watch'])
+  })
+
+  it.each(paths)('renders the layer\'s watch view while the switch is on, for %s', async (_what, path, query) => {
+    store.setGetter('getEnableLayerSurfaces', true)
+    const wrapper = await open(path)
+
+    expect(router.currentRoute.value.params).toEqual({ id: 'dQw4w9WgXcQ' })
+    expect(router.currentRoute.value.query).toEqual(query)
+    expect(router.currentRoute.value.matched[0].meta.title).toBe('Watch')
+    expect(rendered(wrapper, WATCH_VIEWS)).toEqual(['LayerWatch'])
+  })
+})

@@ -79,7 +79,7 @@
     },
     {
       "path": "src/renderer/router/index.js",
-      "reason": "the PeerTube routes (the layer's watch, channel and search views) spread in from src/renderer/platform/routes.js; `/search/:query` renders the layer's search page (src/renderer/views/LayerSearchPage), imported in place of SearchPage, which stays in the tree unrouted (shadowed); `/channel/:id/:currentTab?` renders `ChannelSurface` from src/renderer/platform/routes.js, upstream's Channel while the surface switch (enableLayerSurfaces) is off and the layer's channel view while it is on, imported in place of Channel"
+      "reason": "the PeerTube routes (the layer's watch, channel and search views) spread in from src/renderer/platform/routes.js; `/search/:query` renders the layer's search page (src/renderer/views/LayerSearchPage), imported in place of SearchPage, which stays in the tree unrouted (shadowed); `/channel/:id/:currentTab?` renders `ChannelSurface` from src/renderer/platform/routes.js, upstream's Channel while the surface switch (enableLayerSurfaces) is off and the layer's channel view while it is on, imported in place of Channel; `/watch/:id` likewise renders `WatchSurface`, upstream's Watch or the layer's watch view, imported in place of Watch"
     },
     {
       "path": "src/renderer/store/modules/settings.js",
@@ -123,6 +123,34 @@
       {
         "path": "src/renderer/components/ChannelHome/ChannelHome.css",
         "reason": "the old home tab's styles, with ChannelHome.vue"
+      },
+      {
+        "path": "src/renderer/views/Watch/Watch.vue",
+        "reason": "upstream's watch view, rendered by `/watch/:id` only while the surface switch is off (src/renderer/platform/routes.js `WatchSurface`); while it is on the layer's watch view (src/renderer/views/LayerWatch) renders, the fetching and format choice ported to the layer's YouTube adapter (src/renderer/platform/youtube/videoDetails.js, playback.js, sabr.js). Also edited by the fork (the SABR recovery ladder); reverted to upstream's once the surface leaves the switch (ADR-0018's amendment)"
+      },
+      {
+        "path": "src/renderer/views/Watch/Watch.js",
+        "reason": "the old watch view's script: its fetching, playback, history, playlist, recommendations and autoplay, re-implemented by src/renderer/views/LayerWatch/LayerWatch.vue and its regulator hosting (useSabrHosting.js). Also edited by the fork (the SABR recovery ladder, 818 lines added); reverted to upstream's once the surface leaves the switch (ADR-0018's amendment)"
+      },
+      {
+        "path": "src/renderer/views/Watch/Watch.scss",
+        "reason": "the old watch view's layout, which src/renderer/views/LayerWatch/LayerWatch.scss mirrors for the layer's"
+      },
+      {
+        "path": "src/renderer/components/WatchVideoInfo/WatchVideoInfo.vue",
+        "reason": "the old watch view's title, channel, counts and action buttons; the layer's are src/renderer/components/LayerVideoInfo, with LayerSubscribeButton and LayerDownloadButton"
+      },
+      {
+        "path": "src/renderer/components/WatchVideoInfo/WatchVideoInfo.css",
+        "reason": "the old video info's layout, which src/renderer/components/LayerVideoInfo/LayerVideoInfo.css mirrors for the layer's"
+      },
+      {
+        "path": "src/renderer/components/WatchVideoDescription/WatchVideoDescription.vue",
+        "reason": "the old watch view's description, its YouTube markup cleaned and its timestamps seeking; the layer's is src/renderer/components/LayerVideoDescription, the cleaning in src/renderer/platform/youtube/videoDetails.js"
+      },
+      {
+        "path": "src/renderer/components/WatchVideoDescription/WatchVideoDescription.css",
+        "reason": "the old description's styles, which src/renderer/components/LayerVideoDescription/LayerVideoDescription.css mirrors for the layer's"
       }
     ],
     "unroutedSearch": [

@@ -288,6 +288,7 @@ import WatchVideoLiveChat from '../../components/WatchVideoLiveChat/WatchVideoLi
 import WatchVideoPlaylist from '../../components/WatchVideoPlaylist/WatchVideoPlaylist.vue'
 import WatchVideoRecommendations from '../../components/WatchVideoRecommendations/WatchVideoRecommendations.vue'
 import { toStoredPlainText } from '../../components/LayerMarkdown/plainText'
+import { routeView } from '../../components/LayerSurfaceSwitch/surfaceSwitch'
 
 import store from '../../store/index'
 import { formatScheduledTime, getLocalesWithFallback, showToast } from '../../helpers/utils'
@@ -1664,12 +1665,15 @@ async function destroyPlayerLogged() {
 
 /**
  * Whether this view renders the route: either watch route, between which the
- * router keeps it, as a playlist crosses from one platform to the other
+ * router keeps it, as a playlist crosses from one platform to the other. Both
+ * render the surface switch (platform/routes.js `WatchSurface`), so the view
+ * is the one the switch picks for the route: this one on the PeerTube route,
+ * and on `/watch/:id` while the switch is on
  *
  * @param {import('vue-router').RouteLocationNormalized} location
  */
 function rendersThisView(location) {
-  return location.matched.at(-1)?.components?.default === thisView
+  return routeView(location) === thisView
 }
 
 /** Whether a navigation from one of this view's routes to another stays on the video, the playlist item included */
