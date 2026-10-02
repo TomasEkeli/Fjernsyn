@@ -3,6 +3,7 @@
 // as the `youtube` dependencies (`./deps.js`). The layer (`../index.js`)
 // routes a YouTube ref here; everything below speaks the common shapes.
 
+import { createYouTubeChannelResolver } from './channelUrls'
 import { createYouTubeChannelReader } from './channels'
 import { createYouTubeCommentReader } from './comments'
 import { createBackendPolicy } from './policy'
@@ -21,6 +22,7 @@ export function createYouTubeAdapter({ youtube, config }) {
   return Object.freeze({
     ...createYouTubeVideoReader(shared),
     ...createYouTubeChannelReader(shared),
+    ...createYouTubeChannelResolver(shared),
     ...createYouTubeCommentReader(shared),
     ...createYouTubeSearcher({ youtube, config }),
   })

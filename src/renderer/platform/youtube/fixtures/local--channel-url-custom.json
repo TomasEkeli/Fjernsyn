@@ -1,0 +1,7 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "getLocalChannelId('https://www.youtube.com/c/YouTubeCreators')",
+  "answer": "UCkRfArvrzheW2E7b6SVT7vQ",
+  "notes": "getLocalChannelId's loop re-run with youtubei.js directly. resolveURL hops: https://www.youtube.com/c/YouTubeCreators: WEB_PAGE_TYPE_CHANNEL, browseId UCkRfArvrzheW2E7b6SVT7vQ."
+}

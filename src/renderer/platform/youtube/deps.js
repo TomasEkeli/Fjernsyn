@@ -21,7 +21,9 @@
 //   `parseLocalPlaylistVideos` for an artist topic channel's uploads playlist,
 //   `getLocalArtistTopicChannelReleases(channel)` and
 //   `getLocalArtistTopicChannelReleasesContinuation(channel, continuation)`
-//   for its releases, `parseLocalCommunityPosts` for a page of its posts
+//   for its releases, `parseLocalCommunityPosts` for a page of its posts,
+//   and `getLocalChannelId(url)` for a channel link by name (a `UC` id, or
+//   `null` for any failure)
 // - comments: `getLocalComments(id)` (a `YT.Comments`), `parseLocalComment`
 // - search: `getLocalSearchResults`, `getLocalSearchContinuation`
 //
@@ -35,7 +37,8 @@
 //   `getInvidiousChannelPlaylists`, `getInvidiousChannelReleases`,
 //   `getInvidiousChannelPodcasts`, `getInvidiousChannelCourses`,
 //   `invidiousGetCommunityPosts`, `searchInvidiousChannel(id, query, page)`,
-//   `invidiousImageUrlToInvidious`
+//   `invidiousImageUrlToInvidious`, and `invidiousGetChannelId(url)` for a
+//   channel link by name (a `UC` id, or `null` for any failure)
 // - comments: `invidiousGetComments`, `invidiousGetCommentReplies`
 // - search: `getInvidiousSearchResults`
 //
@@ -71,6 +74,7 @@ export const YOUTUBE_DEP_NAMES = Object.freeze({
     'getLocalArtistTopicChannelReleases',
     'getLocalArtistTopicChannelReleasesContinuation',
     'parseLocalCommunityPosts',
+    'getLocalChannelId',
     'getLocalComments',
     'parseLocalComment',
     'getLocalSearchResults',
@@ -94,6 +98,7 @@ export const YOUTUBE_DEP_NAMES = Object.freeze({
     'getInvidiousChannelCourses',
     'invidiousGetCommunityPosts',
     'searchInvidiousChannel',
+    'invidiousGetChannelId',
     'invidiousGetComments',
     'invidiousGetCommentReplies',
     'getInvidiousSearchResults',

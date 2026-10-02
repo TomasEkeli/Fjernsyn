@@ -1,0 +1,7 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "getLocalChannelId('https://www.youtube.com/@thischanneldoesnotexist-fjernsyn-xq7')",
+  "answer": null,
+  "notes": "getLocalChannelId's loop re-run with youtubei.js directly. resolveURL hops: https://www.youtube.com/@thischanneldoesnotexist-fjernsyn-xq7: threw Request to https://www.youtube.com/youtubei/v1/navigation/resolve_url?prettyPrint=false&alt=json failed with status code 404. The module catches the error and answers null."
+}

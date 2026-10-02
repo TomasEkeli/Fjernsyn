@@ -58,6 +58,10 @@ of them.
   page says the sort it applied (`Page.sort`); an age-gated channel is
   `refused`/`ageRestricted`, carrying the name and avatar YouTube still shows
   as the error's `channel`.
+- `channelUrls.js`: `resolveChannel(url)`, a channel link by name (`/c/`,
+  `/user/`, `@handle`) to its `UC` ref, as the old view resolves a route's
+  `?url=`. Both modules answer `null` for any failure, which is `notFound`,
+  so the policy asks the other backend before it is believed (ADR-0012).
 - `comments.js`: `getComments` (sort `top` or `newest`) and
   `getCommentReplies`. Says when a video's comments are off.
 - `search.js`: YouTube search, from the layer's search query.

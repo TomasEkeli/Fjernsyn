@@ -209,6 +209,28 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   }
 
   /**
+   * The `UC` ref of the YouTube channel a channel URL names: a link by name
+   * (`/c/`, `/user/`, `@handle`, with or without a tab after it) through the
+   * backend policy (see `./youtube/channelUrls.js`), a `/channel/UC…` URL
+   * without a request. A URL that resolves to no channel is `notFound`, on
+   * the other backend's word too when fallback is on (ADR-0012). YouTube
+   * only: anything but a URL on a YouTube host (as `resolveUrl` recognises
+   * them) rejects as `invalid`, without a request.
+   *
+   * @param {string} url
+   * @returns {Promise<import('./shapes').ChannelRef>}
+   */
+  async function resolveChannel(url) {
+    const trimmed = typeof url === 'string' ? url.trim() : ''
+
+    if (!isYouTubeUrl(trimmed)) {
+      throw new PlatformError('invalid', 'Not a YouTube channel URL')
+    }
+
+    return youtubeAdapter.resolveChannel(trimmed)
+  }
+
+  /**
    * A page of a channel's videos, sorted `newest` (the default), `popular` or
    * `oldest`, filtered by the NSFW preference. `kind` picks the list:
    * `videos` (the default), or YouTube's `shorts` and `live` tabs, which a
@@ -442,6 +464,7 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
     resolveUrl,
     getVideo,
     getChannel,
+    resolveChannel,
     listChannelVideos,
     listChannelPlaylists,
     listChannelPosts,

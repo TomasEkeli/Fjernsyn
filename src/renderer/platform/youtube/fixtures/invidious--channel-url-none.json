@@ -1,0 +1,7 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "invidiousGetChannelId('https://www.youtube.com/@thischanneldoesnotexist-fjernsyn-xq7')",
+  "answer": null,
+  "notes": "Written from the module: the instance answers { error } for a URL YouTube does not resolve, which invidiousAPICall throws and invidiousGetChannelId catches, answering null (as it does for any failure, and for a pageType other than WEB_PAGE_TYPE_CHANNEL)."
+}
