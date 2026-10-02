@@ -178,6 +178,11 @@
  *   layer (PeerTube, YouTube Local), or any URL answering one (YouTube
  *   Invidious' `/api/v1/storyboards/{id}`, which the layer cannot build since
  *   the instance has the sprites' layout)
+ * @property {string | null} [narrowStoryboard] YouTube Local only: the
+ *   storyboard of the largest board at most 90px high, which the watch view
+ *   hands the player in place of `storyboard` when the window is narrower than
+ *   500px, as the old view does; `null` when there is no such board (none
+ *   then, in a narrow window). Absent where `storyboard` is the only one
  * @property {boolean} isLive a live that is live now
  * @property {number | null} [loudnessDb] YouTube Local only: the loudness
  *   YouTube measured, for the player's normalisation (`0` is a real value,

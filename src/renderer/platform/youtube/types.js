@@ -328,7 +328,8 @@
  * `storyboard`: L builds a WebVTT data URI from the largest
  * `storyboards.boards` entry (`buildVTTFileLocally`); the old view takes the
  * largest at most 90px high below 500px of window width, which the layer
- * cannot see and stays the view's. I is a URL,
+ * cannot see: L answers that board too, as `narrowStoryboard`, and the view
+ * chooses. I is a URL,
  * `{instance}/api/v1/storyboards/{id}?height=90`, answering WebVTT, not a
  * data URI. None for lives on either.
  *
