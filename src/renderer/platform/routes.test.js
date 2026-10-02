@@ -20,6 +20,8 @@ vi.mock('../helpers/utils', () => ({
 vi.mock('../views/LayerWatch/LayerWatch.vue', () => ({ default: { name: 'LayerWatch', render: () => null } }))
 vi.mock('../views/LayerChannel/LayerChannel.vue', () => ({ default: { name: 'LayerChannel', render: () => null } }))
 vi.mock('../views/LayerSearch/LayerSearch.vue', () => ({ default: { name: 'LayerSearch', render: () => null } }))
+// Upstream's views on the surface switch (tested through the router in router/index.test.js)
+vi.mock('../views/Channel/Channel.vue', () => ({ default: { name: 'Channel', render: () => null } }))
 
 // The surface switch reads the store module; the guards read the store installed
 vi.mock('../store/index', async () => {

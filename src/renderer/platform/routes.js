@@ -24,7 +24,10 @@
  *
  * A YouTube surface that moves onto the layer joins the one surface switch
  * (`enableLayerSurfaces`, ADR-0018) as its last ticket: its upstream route
- * then renders `layerSurface(...)` in place of the old view.
+ * then renders `layerSurface(...)` in place of the old view. On it so far:
+ *
+ * - `/channel/:id/:currentTab?` renders `ChannelSurface`: upstream's Channel
+ *   view while the switch is off, the layer's channel view while it is on
  *
  * The views are imported statically, as `router/index.js` imports upstream's.
  * A view reaches the router again through `helpers/utils`, which is the same
@@ -33,6 +36,7 @@
  */
 
 import { surfaceSwitch } from '../components/LayerSurfaceSwitch/surfaceSwitch'
+import Channel from '../views/Channel/Channel.vue'
 import LayerChannel from '../views/LayerChannel/LayerChannel.vue'
 import LayerSearch from '../views/LayerSearch/LayerSearch.vue'
 import LayerWatch from '../views/LayerWatch/LayerWatch.vue'
@@ -51,6 +55,9 @@ import LayerWatch from '../views/LayerWatch/LayerWatch.vue'
 export function layerSurface(name, OldView, LayerView) {
   return surfaceSwitch({ name, getter: 'getEnableLayerSurfaces', off: OldView, on: LayerView })
 }
+
+/** What upstream's `/channel/:id/:currentTab?` renders: the channel, on the surface switch */
+export const ChannelSurface = layerSurface('ChannelSurface', Channel, LayerChannel)
 
 /**
  * `beforeEnter` for every PeerTube route.

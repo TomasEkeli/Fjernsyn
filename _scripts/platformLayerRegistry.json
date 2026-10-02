@@ -79,7 +79,7 @@
     },
     {
       "path": "src/renderer/router/index.js",
-      "reason": "the PeerTube routes (the layer's watch, channel and search views) spread in from src/renderer/platform/routes.js; `/search/:query` renders the layer's search page (src/renderer/views/LayerSearchPage), imported in place of SearchPage, which stays in the tree unrouted (shadowed)"
+      "reason": "the PeerTube routes (the layer's watch, channel and search views) spread in from src/renderer/platform/routes.js; `/search/:query` renders the layer's search page (src/renderer/views/LayerSearchPage), imported in place of SearchPage, which stays in the tree unrouted (shadowed); `/channel/:id/:currentTab?` renders `ChannelSurface` from src/renderer/platform/routes.js, upstream's Channel while the surface switch (enableLayerSurfaces) is off and the layer's channel view while it is on, imported in place of Channel"
     },
     {
       "path": "src/renderer/store/modules/settings.js",
@@ -95,6 +95,36 @@
     }
   ],
   "shadowed": {
+    "enableLayerSurfaces": [
+      {
+        "path": "src/renderer/views/Channel/Channel.vue",
+        "reason": "upstream's channel view, rendered by `/channel/:id/:currentTab?` only while the surface switch is off (src/renderer/platform/routes.js `ChannelSurface`); while it is on the layer's channel view (src/renderer/views/LayerChannel) renders, its fetching, `?url=` resolving, tabs, channel search and subscription cache writes ported to the layer's YouTube channel adapter (src/renderer/platform/youtube/channels.js, channelUrls.js) and the new view"
+      },
+      {
+        "path": "src/renderer/views/Channel/Channel.css",
+        "reason": "the old channel view's layout, which src/renderer/views/LayerChannel/LayerChannel.css mirrors for the layer's"
+      },
+      {
+        "path": "src/renderer/components/ChannelDetails/ChannelDetails.vue",
+        "reason": "the old channel view's header (banner, avatar, name, subscriber count, subscribe, share and SponsorBlock buttons, tabs, channel search box); the layer's channel view has its own, with src/renderer/components/LayerSubscribeButton"
+      },
+      {
+        "path": "src/renderer/components/ChannelDetails/ChannelDetails.css",
+        "reason": "the old channel header's layout, which src/renderer/views/LayerChannel/LayerChannel.css mirrors for the layer's"
+      },
+      {
+        "path": "src/renderer/components/ChannelAbout/ChannelAbout.vue",
+        "reason": "the old channel view's about tab; the layer's is src/renderer/components/LayerChannelAbout, which still takes this component's stylesheet (ChannelAbout.css, so not shadowed)"
+      },
+      {
+        "path": "src/renderer/components/ChannelHome/ChannelHome.vue",
+        "reason": "the old channel view's home tab (YouTube's shelves), dropped on the layer (spec, phase 3, C5): a YouTube channel on the layer has no home tab, as under Invidious"
+      },
+      {
+        "path": "src/renderer/components/ChannelHome/ChannelHome.css",
+        "reason": "the old home tab's styles, with ChannelHome.vue"
+      }
+    ],
     "unroutedSearch": [
       {
         "path": "src/renderer/views/SearchPage/SearchPage.vue",

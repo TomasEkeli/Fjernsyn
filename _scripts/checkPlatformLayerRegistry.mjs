@@ -61,6 +61,18 @@ check('the committed registry is well formed', () => {
     'src/renderer/components/FtSearchFilters/FtSearchFilters.vue',
     'src/renderer/store/modules/utils.js',
   ], 'the search page, the filter modal and the search settings state are shadowed as unroutedSearch')
+
+  // The surfaces on the one surface switch (ADR-0018): the old views and the children only they run
+  const surfaces = shadowed.find(({ group }) => group === 'enableLayerSurfaces')
+  assert.deepEqual(surfaces?.files.map(file => file.path), [
+    'src/renderer/views/Channel/Channel.vue',
+    'src/renderer/views/Channel/Channel.css',
+    'src/renderer/components/ChannelDetails/ChannelDetails.vue',
+    'src/renderer/components/ChannelDetails/ChannelDetails.css',
+    'src/renderer/components/ChannelAbout/ChannelAbout.vue',
+    'src/renderer/components/ChannelHome/ChannelHome.vue',
+    'src/renderer/components/ChannelHome/ChannelHome.css',
+  ], 'the old channel view and its children are shadowed as enableLayerSurfaces')
 })
 
 // Validating a registry
