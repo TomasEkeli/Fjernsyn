@@ -125,59 +125,45 @@
         class="card"
       />
       <FtCard class="card">
-        <!-- The videos, shorts and live tabs: one list of the channel's videos each, with its own sort -->
+        <!-- One list per tab: the videos, shorts and live, the playlists, releases, podcasts and courses -->
         <div
-          v-if="currentVideoList"
           :id="`${currentTab}Panel`"
           role="tabpanel"
           :aria-labelledby="`${currentTab}Tab`"
         >
-          <div class="select-container">
+          <div
+            v-if="currentSortedList"
+            class="select-container"
+          >
             <!-- Not where the layer answered another sort than the one asked: the tab offers no choice -->
             <FtSelect
-              v-if="currentVideoList.isSortOffered.value"
-              v-show="currentVideoList.items.value.length > 1 || currentVideoList.cursor.value !== null || currentVideoList.sort.value !== 'newest'"
-              :value="currentVideoList.sort.value"
-              :select-names="videoSortNames"
-              :select-values="VIDEO_SORTS"
+              v-if="currentSortedList.isSortOffered.value"
+              v-show="currentSortedList.items.value.length > 1 || currentSortedList.cursor.value !== null || currentSortedList.sort.value !== 'newest'"
+              :value="currentSortedList.sort.value"
+              :select-names="currentSortedList.sortNames.value"
+              :select-values="currentSortedList.sorts"
               :placeholder="t('Global.Sort By')"
-              :icon="getIconForSortPreference(currentVideoList.sort.value)"
-              @change="currentVideoList.changeSort"
+              :icon="getIconForSortPreference(currentSortedList.sort.value)"
+              @change="currentSortedList.changeSort"
             />
           </div>
-          <!-- A short is `type: 'shortVideo'`, which the card badges -->
+          <!-- A PeerTube playlist links to its instance; a YouTube playlist
+               opens on the app's own playlist page, through the existing
+               card, and a short is `type: 'shortVideo'`, which the card badges -->
+          <LayerPlaylistList
+            v-if="currentTabInfo.playlists && !isYouTube"
+            :playlists="currentList.items.value"
+          />
           <FtElementList
-            :data="currentVideoList.items.value"
+            v-else
+            :data="currentList.items.value"
             :use-channels-hidden-preference="false"
           />
           <p
-            v-if="isFinishedAndEmpty(currentVideoList)"
+            v-if="isFinishedAndEmpty(currentList)"
             class="message"
           >
             {{ currentTabInfo.empty }}
-          </p>
-        </div>
-        <div
-          v-else
-          id="playlistsPanel"
-          role="tabpanel"
-          aria-labelledby="playlistsTab"
-        >
-          <!-- A YouTube playlist opens on the app's own playlist page, through the existing card -->
-          <FtElementList
-            v-if="isYouTube"
-            :data="playlists.items.value"
-            :use-channels-hidden-preference="false"
-          />
-          <LayerPlaylistList
-            v-else
-            :playlists="playlists.items.value"
-          />
-          <p
-            v-if="isFinishedAndEmpty(playlists)"
-            class="message"
-          >
-            {{ t('Channel.Playlists.This channel does not currently have any playlists') }}
           </p>
         </div>
         <FtLoader v-if="currentList.loading.value" />
@@ -247,6 +233,9 @@ import { usePlatformLayer } from '../../platform/vue'
 /** The sorts the layer takes for a channel's videos, newest (its default) first */
 const VIDEO_SORTS = ['newest', 'popular', 'oldest']
 
+/** The sorts the layer takes for a YouTube channel's own playlists, newest (its default) first */
+const PLAYLIST_SORTS = ['newest', 'last']
+
 const layer = usePlatformLayer()
 const route = useRoute()
 const { t } = useI18n()
@@ -282,18 +271,25 @@ const isFamilyFriendlyGated = computed(() => showFamilyFriendlyOnly.value === tr
 
 const hideChannelShorts = computed(() => store.getters.getHideChannelShorts)
 const hideLiveStreams = computed(() => store.getters.getHideLiveStreams)
+const hideChannelReleases = computed(() => store.getters.getHideChannelReleases)
+const hideChannelPodcasts = computed(() => store.getters.getHideChannelPodcasts)
+const hideChannelCourses = computed(() => store.getters.getHideChannelCourses)
 
 /**
  * The tabs this view has, in the old view's order, by the names of
  * `ChannelDetails.tabs`. Each has its list in `lists`. `named` is a tab only
  * a channel whose `tabs` names it has; `hidden` is the user's setting
- * against it; `empty` what its list says when the channel has nothing in it.
+ * against it; `empty` what its list says when the channel has nothing in it;
+ * `playlists` a tab listing playlists.
  */
 const tabs = computed(() => [
   { name: 'videos', label: t('Channel.Videos.Videos'), empty: t('Channel.Videos.This channel does not currently have any videos') },
   { name: 'shorts', label: t('Global.Shorts'), empty: t('Channel.Shorts.This channel does not currently have any shorts'), named: true, hidden: hideChannelShorts.value },
   { name: 'live', label: t('Channel.Live.Live'), empty: t('Channel.Live.This channel does not currently have any live streams'), named: true, hidden: hideLiveStreams.value },
-  { name: 'playlists', label: t('Channel.Playlists.Playlists') },
+  { name: 'releases', label: t('Channel.Releases.Releases'), empty: t('Channel.Releases.This channel does not currently have any releases'), named: true, hidden: hideChannelReleases.value, playlists: true },
+  { name: 'podcasts', label: t('Channel.Podcasts.Podcasts'), empty: t('Channel.Podcasts.This channel does not currently have any podcasts'), named: true, hidden: hideChannelPodcasts.value, playlists: true },
+  { name: 'courses', label: t('Channel.Courses.Courses'), empty: t('Channel.Courses.This channel does not currently have any courses'), named: true, hidden: hideChannelCourses.value, playlists: true },
+  { name: 'playlists', label: t('Channel.Playlists.Playlists'), empty: t('Channel.Playlists.This channel does not currently have any playlists'), playlists: true },
 ])
 
 /**
@@ -320,6 +316,11 @@ const videoSortNames = computed(() => [
   t('Channel.Videos.Sort Types.Newest'),
   t('Channel.Videos.Sort Types.Most Popular'),
   t('Channel.Videos.Sort Types.Oldest'),
+])
+
+const playlistSortNames = computed(() => [
+  t('Channel.Playlists.Sort Types.Newest'),
+  t('Channel.Playlists.Sort Types.Last Video Added'),
 ])
 
 /** Tells a load apart from the one that replaced it */
@@ -401,21 +402,23 @@ function createPagedList(fetchPage, onFirstPage) {
 }
 
 /**
- * One of the channel's lists of videos, by the layer's `kind`, in a sort of
- * its own. Its sort select is offered until a first page answers another
- * sort than the one asked, which is a tab without that filter (spec, "Phase 3
- * decisions", C1); the list is then in the sort the layer applied, which the
- * select would show. `reset` forgets the sort with the list.
+ * One of the channel's lists in a sort of its own, newest (the first of
+ * `sorts`) until another is chosen. Its sort select is offered until a first
+ * page answers another sort than the one asked, which is a tab without that
+ * filter (spec, "Phase 3 decisions", C1); the list is then in the sort the
+ * layer applied, which the select would show. `reset` forgets the sort with
+ * the list.
  *
- * @param {'videos' | 'shorts' | 'live'} kind
+ * @param {readonly string[]} sorts
+ * @param {import('vue').ComputedRef<string[]>} sortNames
+ * @param {(sort: string, cursor: unknown) => Promise<import('../../platform/shapes').Page<any>>} fetchPage
  */
-function createVideoList(kind) {
-  /** @type {import('vue').Ref<'newest' | 'popular' | 'oldest'>} */
-  const sort = ref('newest')
+function createSortedList(sorts, sortNames, fetchPage) {
+  const sort = ref(sorts[0])
   const isSortOffered = ref(true)
 
   const list = createPagedList(
-    cursor => layer.listChannelVideos(channel.value.id, { kind, sort: sort.value, cursor }),
+    cursor => fetchPage(sort.value, cursor),
     (page) => {
       if (page.sort !== undefined && page.sort !== sort.value) {
         isSortOffered.value = false
@@ -426,7 +429,7 @@ function createVideoList(kind) {
 
   /** @param {string} value */
   function changeSort(value) {
-    if (value === sort.value || !VIDEO_SORTS.includes(value)) {
+    if (value === sort.value || !sorts.includes(value)) {
       return
     }
 
@@ -436,28 +439,55 @@ function createVideoList(kind) {
   }
 
   function reset() {
-    sort.value = 'newest'
+    sort.value = sorts[0]
     isSortOffered.value = true
     list.reset()
   }
 
-  return { ...list, sort, isSortOffered, changeSort, reset }
+  return { ...list, sorts, sortNames, sort, isSortOffered, changeSort, reset }
 }
 
-const videoLists = {
+/** @param {'videos' | 'shorts' | 'live'} kind */
+function createVideoList(kind) {
+  return createSortedList(VIDEO_SORTS, videoSortNames, (sort, cursor) => layer.listChannelVideos(channel.value.id, { kind, sort, cursor }))
+}
+
+/** @param {'releases' | 'podcasts' | 'courses'} kind YouTube's tabs of playlists, which have one order */
+function createPlaylistList(kind) {
+  return createPagedList(cursor => layer.listChannelPlaylists(channel.value.id, { kind, cursor }))
+}
+
+/** The lists with a sort select, by the tab's name */
+const sortedLists = {
   videos: createVideoList('videos'),
   shorts: createVideoList('shorts'),
   live: createVideoList('live'),
+  // The channel's own playlists, newest or by the last video added (YouTube's)
+  playlists: createSortedList(PLAYLIST_SORTS, playlistSortNames, (sort, cursor) =>
+    layer.listChannelPlaylists(channel.value.id, { kind: 'playlists', sort, cursor })),
 }
-const playlists = createPagedList(cursor => layer.listChannelPlaylists(channel.value.id, { cursor }))
 
 /** Each tab's list, by the tab's name */
-const lists = { ...videoLists, playlists }
+const lists = {
+  ...sortedLists,
+  releases: createPlaylistList('releases'),
+  podcasts: createPlaylistList('podcasts'),
+  courses: createPlaylistList('courses'),
+}
 
 const currentList = computed(() => lists[currentTab.value])
 
-/** The current tab's list of videos, or `null` on a tab of something else */
-const currentVideoList = computed(() => videoLists[currentTab.value] ?? null)
+/**
+ * The current tab's list where it offers a sort, else `null`. A PeerTube
+ * channel's playlists are in its own order: the playlist sort is YouTube's.
+ */
+const currentSortedList = computed(() => {
+  if (currentTab.value === 'playlists' && !isYouTube.value) {
+    return null
+  }
+
+  return sortedLists[currentTab.value] ?? null
+})
 
 /** @param {ReturnType<typeof createPagedList>} list */
 function hasMore(list) {
