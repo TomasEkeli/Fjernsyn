@@ -244,12 +244,29 @@
  * header (`''` when none). For PeerTube, `banner` is the largest banner or
  * `null`, and `description` and `support` the channel's Markdown.
  *
+ * YouTube adds four, absent for PeerTube (phase 2):
+ * - `tabs`: which content lists the channel has (`videos`, `shorts`, `live`,
+ *   `releases`, `podcasts`, `courses`, `playlists`, `community`), since a
+ *   YouTube channel shows only the tabs it has, and the old view asks the
+ *   backend which.
+ * - `tags`: the channel's keywords, which the page shows.
+ * - `isFamilyFriendly`: YouTube's own rating, which the view checks against
+ *   `showFamilyFriendlyOnly` as the old one does (spec, Q6). PeerTube's flag
+ *   is `nsfw`, on list items.
+ * - `isArtistTopicChannel`: an artist's auto-generated `- Topic` channel
+ *   (Local only), which has no videos tab and whose videos may be other
+ *   channels', so the view treats it apart.
+ *
  * @typedef {ChannelSummary & {
  *   avatarLarge: string,
  *   banner: string | null,
  *   description: string,
  *   descriptionKind: 'plain' | 'markdown',
  *   support?: string | null,
+ *   tabs?: string[],
+ *   tags?: string[],
+ *   isFamilyFriendly?: boolean,
+ *   isArtistTopicChannel?: boolean,
  * }} ChannelDetails
  */
 

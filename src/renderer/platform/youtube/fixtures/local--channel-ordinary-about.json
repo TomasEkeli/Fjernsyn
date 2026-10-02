@@ -1,0 +1,11 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "(await getLocalChannel('UCSMOQeBJ2RAnuFungnQOxLg')).getAbout()",
+  "answer": {
+    "type": "AboutChannel",
+    "metadata": {
+      "description": "Official YouTube channel for Blender, the Free and Open Source 3D Creation Suite.\n\nThe Freedom to Create\n"
+    }
+  }
+}

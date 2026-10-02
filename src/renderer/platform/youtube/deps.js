@@ -15,7 +15,8 @@
 // - channels: `getLocalChannel(id)` (a `YT.Channel`, or `{ alert }` for a
 //   terminated channel), `parseLocalChannelHeader`, `parseLocalChannelVideos`,
 //   `parseLocalChannelShorts`, `parseLocalListVideo`, `parseLocalListPlaylist`,
-//   `getLocalPlaylist`, `getLocalPlaylistContinuation`
+//   `getLocalPlaylist`, `getLocalPlaylistContinuation`, and
+//   `parseLocalPlaylistVideos` for an artist topic channel's uploads playlist
 // - comments: `getLocalComments(id)` (a `YT.Comments`), `parseLocalComment`
 // - search: `getLocalSearchResults`, `getLocalSearchContinuation`
 //
@@ -33,8 +34,9 @@
 // From the player and utility helpers, which import i18n or shaka and so are
 // not imported by the layer either: `sortCaptions`
 // (`helpers/player/utils.js`), `buildVTTFileLocally`,
-// `formatDurationAsTimestamp`, `extractNumberFromString`
-// (`helpers/utils.js`), `buildFormatId` (`helpers/player/SabrManifestParser.js`).
+// `formatDurationAsTimestamp`, `extractNumberFromString`, `getChannelPlaylistId`
+// (`helpers/utils.js`; the last names a channel's auto-generated uploads
+// playlist), `buildFormatId` (`helpers/player/SabrManifestParser.js`).
 //
 // And `resolveUrl(url)`, the existing YouTube URL parser (`../vue.js`).
 
@@ -56,6 +58,7 @@ export const YOUTUBE_DEP_NAMES = Object.freeze({
     'parseLocalListPlaylist',
     'getLocalPlaylist',
     'getLocalPlaylistContinuation',
+    'parseLocalPlaylistVideos',
     'getLocalComments',
     'parseLocalComment',
     'getLocalSearchResults',
@@ -79,6 +82,6 @@ export const YOUTUBE_DEP_NAMES = Object.freeze({
     'getInvidiousSearchResults',
   ]),
   playerUtils: Object.freeze(['sortCaptions']),
-  utils: Object.freeze(['buildVTTFileLocally', 'formatDurationAsTimestamp', 'extractNumberFromString']),
+  utils: Object.freeze(['buildVTTFileLocally', 'formatDurationAsTimestamp', 'extractNumberFromString', 'getChannelPlaylistId']),
   sabrManifest: Object.freeze(['buildFormatId']),
 })

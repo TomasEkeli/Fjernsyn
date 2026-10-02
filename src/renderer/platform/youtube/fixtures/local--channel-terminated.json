@@ -1,0 +1,9 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "getLocalChannel('UCterminatedterminatedte')",
+  "answer": {
+    "alert": "This account has been terminated for a violation of YouTube's Terms of Service."
+  },
+  "notes": "getLocalChannel catches youtubei.js' ChannelError and answers its message as `alert`."
+}
