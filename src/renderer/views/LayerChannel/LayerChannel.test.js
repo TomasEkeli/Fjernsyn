@@ -195,6 +195,7 @@ function playlist(n) {
 
 const layer = {
   getChannel: vi.fn(),
+  resolveChannel: vi.fn(),
   listChannelVideos: vi.fn(),
   listChannelPlaylists: vi.fn(),
   listChannelPosts: vi.fn(),
@@ -213,6 +214,7 @@ beforeEach(() => {
   store.committed.length = 0
 
   layer.getChannel.mockReset().mockResolvedValue(channelDetails())
+  layer.resolveChannel.mockReset()
   layer.listChannelVideos.mockReset().mockResolvedValue({ items: [video(1), video(2)], cursor: null })
   layer.listChannelPlaylists.mockReset().mockResolvedValue({ items: [playlist(1)], cursor: null })
   layer.listChannelPosts.mockReset().mockResolvedValue({ items: [], cursor: null })
@@ -1775,6 +1777,48 @@ describe('a YouTube channel', () => {
         expect(cardTitles(wrapper)).toEqual([])
         expect(wrapper.text()).not.toContain('This channel does not currently have any videos')
       })
+    })
+  })
+
+  describe('a link by name', () => {
+    const LINK = 'https://www.youtube.com/@BlenderOfficial/playlists'
+    const linkPath = (path, url = LINK) => `${path}?url=${encodeURIComponent(url)}`
+
+    it('is resolved first, and the route replaced by the channel\'s UC route on the same tab', async () => {
+      layer.resolveChannel.mockResolvedValue(YT_ID)
+      const { wrapper, router } = await openChannelPage(linkPath('/channel/@BlenderOfficial/playlists'))
+
+      expect(layer.resolveChannel).toHaveBeenCalledWith(LINK)
+      expect(router.currentRoute.value.fullPath).toBe(`${YT_PATH}/playlists`)
+      expect(layer.getChannel).toHaveBeenCalledTimes(1)
+      expect(layer.getChannel).toHaveBeenCalledWith(YT_ID)
+      expect(wrapper.find('#playlistsTab').classes()).toContain('selectedTab')
+    })
+
+    it('is replaced by the UC route without a tab when it names none', async () => {
+      layer.resolveChannel.mockResolvedValue(YT_ID)
+      const { router } = await openChannelPage(linkPath('/channel/@BlenderOfficial', 'https://www.youtube.com/@BlenderOfficial'))
+
+      expect(router.currentRoute.value.fullPath).toBe(YT_PATH)
+      expect(layer.getChannel).toHaveBeenCalledWith(YT_ID)
+    })
+
+    it('loads the channel when the link resolves to the UC id the route already names', async () => {
+      layer.resolveChannel.mockResolvedValue(YT_ID)
+      const { wrapper, router } = await openChannelPage(linkPath(`${YT_PATH}/videos`, `https://www.youtube.com/channel/${YT_ID}/videos`))
+
+      expect(router.currentRoute.value.fullPath).toBe(`${YT_PATH}/videos`)
+      expect(layer.getChannel).toHaveBeenCalledTimes(1)
+      expect(wrapper.find('h1').text()).toBe('Blender')
+    })
+
+    it('says a link that resolves to no channel does not exist, in the old view\'s words, loading nothing', async () => {
+      layer.resolveChannel.mockRejectedValue(new PlatformError('notFound', 'resolved no channel'))
+      const { wrapper } = await openChannelPage(linkPath('/channel/@nobody/videos', 'https://www.youtube.com/@nobody/videos'))
+
+      expect(wrapper.text()).toContain('This channel does not exist')
+      expect(wrapper.find('.retryButton').exists()).toBe(false)
+      expect(layer.getChannel).not.toHaveBeenCalled()
     })
   })
 

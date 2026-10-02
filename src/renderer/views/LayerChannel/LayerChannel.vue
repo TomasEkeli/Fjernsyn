@@ -362,6 +362,16 @@ const showFamilyFriendlyOnly = computed(() => store.getters.getShowFamilyFriendl
 /** The channel ref the route names */
 const channelRef = computed(() => route.params[refParam])
 
+/**
+ * The YouTube channel link the route holds (`?url=`, the old view's, from
+ * the app's link handling), `''` for none: a link by name, resolved before
+ * anything is loaded. Only on YouTube's route.
+ */
+const channelUrl = computed(() => {
+  const value = refParam === 'id' ? route.query.url : undefined
+  return typeof value === 'string' ? value : ''
+})
+
 const isLoading = ref(true)
 /** @type {import('vue').ShallowRef<import('../../platform/shapes').ChannelDetails | null>} */
 const channel = shallowRef(null)
@@ -370,7 +380,7 @@ const loadError = shallowRef(null)
 
 const isYouTube = computed(() => channel.value
   ? platformOf(channel.value) === PLATFORM_YOUTUBE
-  : isYouTubeChannelRef(channelRef.value))
+  : channelUrl.value !== '' || isYouTubeChannelRef(channelRef.value))
 
 /** YouTube's own rating, against the setting, as the old view checks it; PeerTube's channels have none */
 const isFamilyFriendlyGated = computed(() => showFamilyFriendlyOnly.value === true && channel.value?.isFamilyFriendly === false)
@@ -978,6 +988,39 @@ function updateSubscriptionDetails(shown) {
   })
 }
 
+/**
+ * The route's channel link, resolved to its `UC` ref, and the route replaced
+ * with that channel's on the same tab, as the old view does: so back and
+ * forward land on the resolved route and never resolve again. The old view
+ * keeps no other query. The route change loads the channel. A link that
+ * resolves to no channel says so, as a channel that does not exist.
+ *
+ * @param {number} thisLoad
+ */
+async function resolveChannelUrl(thisLoad) {
+  try {
+    const id = await layer.resolveChannel(channelUrl.value)
+
+    if (thisLoad !== loadsStarted) {
+      return
+    }
+
+    const tab = route.params.currentTab
+    router.replace({ path: tab ? `/channel/${id}/${tab}` : `/channel/${id}` })
+  } catch (error) {
+    if (thisLoad !== loadsStarted) {
+      return
+    }
+
+    if (!error?.kind) {
+      console.error(error)
+    }
+
+    loadError.value = error ?? {}
+    isLoading.value = false
+  }
+}
+
 async function load() {
   const thisLoad = ++loadsStarted
 
@@ -988,6 +1031,11 @@ async function load() {
 
   for (const list of Object.values(lists)) {
     list.reset()
+  }
+
+  if (channelUrl.value !== '') {
+    await resolveChannelUrl(thisLoad)
+    return
   }
 
   try {
@@ -1032,13 +1080,14 @@ async function load() {
   loadSubscriptionCacheLists()
 }
 
-// The router reuses this view for another channel, or another search of it
-watch([channelRef, searchQuery], ([ref, query], [previousRef, previousQuery]) => {
+// The router reuses this view for another channel, another link to resolve
+// (or the one just resolved), or another search of it
+watch([channelRef, channelUrl, searchQuery], ([ref, url, query], [previousRef, previousUrl, previousQuery]) => {
   if (!isOnThisView()) {
     return
   }
 
-  if (ref !== previousRef) {
+  if (ref !== previousRef || url !== previousUrl) {
     load()
   } else if (query !== previousQuery) {
     lists.search.reset()
