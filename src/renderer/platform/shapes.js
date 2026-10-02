@@ -294,6 +294,7 @@
  *   isUnlisted?: boolean,
  *   related?: VideoSummary[],
  *   chaptersKind?: 'chapters' | 'keyMoments',
+ *   liveChat?: unknown,
  * }} VideoDetails
  *
  * - `url`: the canonical URL on the origin, to share and open
@@ -316,6 +317,12 @@
  *   than the uploader's, which the chapter list names differently
  * - `related`: YouTube's watch-next list, as summaries; absent for PeerTube,
  *   which has none
+ * - `liveChat`: YouTube only: the chat of a live or waiting live, as a
+ *   handle the watch view opens (it hands it to upstream's
+ *   `WatchVideoLiveChat`, which starts it). Local only has one; `null` where
+ *   there is none, and always from Invidious; absent for PeerTube. An
+ *   in-memory value, a library instance, as a cursor is: hold the details in
+ *   a `shallowRef` or a plain variable, and never store or clone the handle
  */
 
 // ---------------------------------------------------------------------------

@@ -265,12 +265,12 @@
  * | isUnlisted       | `basic_info.is_unlisted`                               | `isListed === false`                 |
  * | related          | `watch_next_feed` (`CompactVideo`, `CompactMovie`, and `LockupView` of a video or station) through `parseLocalWatchNextVideo` | `recommendedVideos` as `type: 'video'`, their ISO `published` made ms |
  * | chaptersKind     | `'keyMoments'` when the chapters are the engagement panel's auto chapters, else `'chapters'` (`./playback.js`) | `'chapters'` |
+ * | liveChat         | `info.getLiveChat()`, a `YT.LiveChat` not yet started, for a live or upcoming video with `info.livechat`; else `null` | `null`: no chat |
  *
- * Not carried, and the old view's still: `isLiveContent` (L only), the live
- * chat (L `info.getLiveChat()`, a library instance), and the channel's
- * formatted subscriber count, which the view can format from
- * `channel.subscriberCount`. So are hiding likes and chapters, the
- * `showFamilyFriendlyOnly` gate and putting watched recommendations last.
+ * Not carried, and the old view's still: `isLiveContent` (L only) and the
+ * channel's formatted subscriber count, which the view can format from
+ * `channel.subscriberCount`. So are hiding likes, chapters and the live chat,
+ * the `showFamilyFriendlyOnly` gate and putting watched recommendations last.
  *
  * Refusals and other failures are classified in `./errors.js`: Local's from
  * the playability status (`classifyLocalPlayability`, a removed video

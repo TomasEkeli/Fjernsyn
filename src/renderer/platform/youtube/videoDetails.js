@@ -6,7 +6,8 @@
 //
 // What the old view does besides reading stays the view's: hiding likes and
 // chapters, the `showFamilyFriendlyOnly` gate, putting watched recommendations
-// last, live chat, toasts and the subscription details update.
+// last, showing the live chat (`hideLiveChat`), toasts and the subscription
+// details update.
 //
 // Neither backend says whether a video is a short in its details (Local's
 // player and next responses carry no marker, Invidious' `/videos/{id}` none
@@ -304,6 +305,9 @@ export function localVideoDetails(id, { info }, { youtube, config }) {
     liveStatus,
     isUnlisted: !!basic.is_unlisted,
     related: localRelated(youtube, info),
+    // As Watch.js asks for it: a live or waiting live with a chat. A
+    // `YT.LiveChat`, which polls nothing until the view starts it
+    liveChat: (live || upcoming) && info.livechat ? info.getLiveChat() : null,
   }
 
   if (!live) {
@@ -456,6 +460,8 @@ export function invidiousVideoDetails(id, video, { youtube, config }) {
     liveStatus,
     isUnlisted: video.isListed === false,
     related: invidiousRelated(video),
+    // Invidious has no live chat to hand on
+    liveChat: null,
   }
 
   if (!live) {

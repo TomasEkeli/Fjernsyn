@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { failure, INSTANCE, localInstance, localWith, setUp } from './testing/videoLayer'
+import { failure, fakeToDash, INSTANCE, localInstance, localWith, setUp } from './testing/videoLayer'
 
 import invidiousLive from './fixtures/invidious--video-live.json'
 import invidiousOrdinary from './fixtures/invidious--video-ordinary.json'
@@ -22,6 +22,8 @@ const YOUTUBE = {
   commentsEnabled: null,
   downloadEnabled: false,
   downloadOptions: [],
+  // None of the fixtures has a chat: those are below
+  liveChat: null,
 }
 
 const next = videoId => ({ type: 'video', videoId, title: `Next ${videoId}` })
@@ -367,6 +369,39 @@ describe('a YouTube video\'s details from Invidious', () => {
     const { layer } = setUp({ answers: { invidiousGetVideoInformation: video }, config: { backendPreference: 'invidious' } })
 
     expect((await layer.getVideo('dQw4w9WgXcQ')).description).toBe('<a href="https://example.org/" >example.org</a>')
+  })
+})
+
+describe('a YouTube video\'s live chat', () => {
+  /** A Local answer with a chat, whose `getLiveChat` answers the given handle */
+  function withChat(fixture, handle) {
+    const chatted = localWith(fixture, (info) => { info.livechat = { type: 'LiveChat', continuation: 'chat-continuation', is_replay: false } })
+    return localInstance(chatted, info => ({ toDash: fakeToDash(info), getLiveChat: () => handle }))
+  }
+
+  it.each([
+    ['a live', localLive, 'ODio2-1aFa8'],
+    ['an upcoming video', localUpcoming, 'UpCmNgPrm01'],
+  ])('is a handle on %s from Local, the very one the library answered', async (_what, fixture, id) => {
+    const handle = { chat: id }
+    const { layer } = setUp({ answers: { getLocalVideoInfo: withChat(fixture, handle) } })
+
+    expect((await layer.getVideo(id)).liveChat).toBe(handle)
+  })
+
+  it('is none for a video that is neither live nor upcoming, even with a chat (a replay)', async () => {
+    const { layer } = setUp({ answers: { getLocalVideoInfo: withChat(localOrdinary, { chat: 'replay' }) } })
+
+    expect((await layer.getVideo('dQw4w9WgXcQ')).liveChat).toBeNull()
+  })
+
+  it('is none for a live from Invidious', async () => {
+    const { layer } = setUp({ answers: { invidiousGetVideoInformation: invidiousLive }, config: { backendPreference: 'invidious' } })
+
+    const video = await layer.getVideo('ODio2-1aFa8')
+
+    expect(video.liveStatus).toBe('live')
+    expect(video.liveChat).toBeNull()
   })
 })
 
