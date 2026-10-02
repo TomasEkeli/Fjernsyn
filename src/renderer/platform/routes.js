@@ -22,15 +22,35 @@
  * search page, directly: search has left its surface switch (ADR-0018), and
  * upstream's search page stays in the tree, unrouted.
  *
+ * A YouTube surface that moves onto the layer joins the one surface switch
+ * (`enableLayerSurfaces`, ADR-0018) as its last ticket: its upstream route
+ * then renders `layerSurface(...)` in place of the old view.
+ *
  * The views are imported statically, as `router/index.js` imports upstream's.
  * A view reaches the router again through `helpers/utils`, which is the same
  * cycle every upstream view closes, and harmless for the same reason: nothing
  * on it reads the router while the modules are still being evaluated.
  */
 
+import { surfaceSwitch } from '../components/LayerSurfaceSwitch/surfaceSwitch'
 import LayerChannel from '../views/LayerChannel/LayerChannel.vue'
 import LayerSearch from '../views/LayerSearch/LayerSearch.vue'
 import LayerWatch from '../views/LayerWatch/LayerWatch.vue'
+
+/**
+ * The component a surface's route renders while the surface is on the surface
+ * switch: the old view while `enableLayerSurfaces` is off, the layer's while
+ * it is on, swapping in place when the setting changes.
+ *
+ *   component: layerSurface('ChannelSurface', Channel, LayerChannel)
+ *
+ * @param {string} name the component's name, for devtools and tests
+ * @param {import('vue').Component} OldView upstream's view, unedited
+ * @param {import('vue').Component} LayerView the layer's view
+ */
+export function layerSurface(name, OldView, LayerView) {
+  return surfaceSwitch({ name, getter: 'getEnableLayerSurfaces', off: OldView, on: LayerView })
+}
 
 /**
  * `beforeEnter` for every PeerTube route.

@@ -213,6 +213,9 @@ const state = {
   defaultSearchScope: 'all',
   searchRememberedParameters: null,
   searchLatched: false,
+  // The surface switch (experimental, ADR-0018): the layer's views in place of
+  // upstream's for every YouTube surface on it (platform/routes.js `layerSurface`)
+  enableLayerSurfaces: false,
   enableSearchSuggestions: true,
   enableSubtitlesByDefault: false,
   enterFullscreenOnDisplayRotate: false,

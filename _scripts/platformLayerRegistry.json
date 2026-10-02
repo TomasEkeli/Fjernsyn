@@ -35,7 +35,7 @@
     },
     {
       "path": "src/renderer/components/ExperimentalSettings/ExperimentalSettings.vue",
-      "reason": "the experimental PeerTube toggle"
+      "reason": "the experimental PeerTube toggle, and the surface switch's (enableLayerSurfaces)"
     },
     {
       "path": "src/renderer/components/FtListChannel/FtListChannel.vue",
@@ -83,7 +83,7 @@
     },
     {
       "path": "src/renderer/store/modules/settings.js",
-      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw; the layer search page's: defaultSearchScope, searchRememberedParameters, searchLatched"
+      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw; the layer search page's: defaultSearchScope, searchRememberedParameters, searchLatched; the surface switch: enableLayerSurfaces"
     },
     {
       "path": "src/renderer/views/Settings/Settings.vue",
@@ -91,7 +91,7 @@
     },
     {
       "path": "static/locales/en-US.yaml",
-      "reason": "the fork-only PeerTube and Layer Search strings"
+      "reason": "the fork-only PeerTube, Layer Search and Layer Surfaces strings"
     }
   ],
   "shadowed": {

@@ -1,10 +1,12 @@
+import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createApp } from 'vue'
+import { createApp, h } from 'vue'
+import { RouterView } from 'vue-router'
 
 import { showToast } from '../helpers/utils'
 import store from '../store/index'
 import { createTestRouter } from '../testing/router'
-import { peerTubeRouteGuard, peerTubeRoutes } from './routes.js'
+import { layerSurface, peerTubeRouteGuard, peerTubeRoutes } from './routes.js'
 import { installPlatformLayer } from './vue.js'
 
 vi.mock('./index.js', () => ({ createPlatformLayer: () => ({}) }))
@@ -19,10 +21,10 @@ vi.mock('../views/LayerWatch/LayerWatch.vue', () => ({ default: { name: 'LayerWa
 vi.mock('../views/LayerChannel/LayerChannel.vue', () => ({ default: { name: 'LayerChannel', render: () => null } }))
 vi.mock('../views/LayerSearch/LayerSearch.vue', () => ({ default: { name: 'LayerSearch', render: () => null } }))
 
-// The guards read the store installed
+// The surface switch reads the store module; the guards read the store installed
 vi.mock('../store/index', async () => {
   const { createFakeStore } = await import('../testing/store')
-  return { default: createFakeStore({ getters: { getEnablePeerTube: false } }) }
+  return { default: createFakeStore({ getters: { getEnablePeerTube: false, getEnableLayerSurfaces: false } }) }
 })
 
 vi.mock('../i18n/index', async () => {
@@ -35,6 +37,7 @@ const SWITCHED_OFF = 'PeerTube is switched off. Switch it on in Experimental set
 beforeEach(() => {
   showToast.mockClear()
   store.setGetter('getEnablePeerTube', false)
+  store.setGetter('getEnableLayerSurfaces', false)
   installPlatformLayer(createApp({ render: () => null }), store)
 })
 
@@ -114,6 +117,45 @@ describe('the PeerTube routes', () => {
       expect(router.currentRoute.value.name, route.name).toBe('subscriptions')
       expect(showToast, route.name).toHaveBeenCalledWith(SWITCHED_OFF)
     }
+  })
+})
+
+describe('a route on the surface switch', () => {
+  const OldView = { name: 'OldView', render: () => h('p', { class: 'oldView' }) }
+  const LayerView = { name: 'LayerView', render: () => h('p', { class: 'layerView' }) }
+
+  async function openSurface() {
+    const router = createTestRouter([{ path: '/surface/:id', component: layerSurface('TestSurface', OldView, LayerView) }])
+    await router.push('/surface/x')
+    const wrapper = mount({ render: () => h(RouterView) }, { global: { plugins: [router] } })
+    await flushPromises()
+    return wrapper
+  }
+
+  it('renders the old view while the switch is off', async () => {
+    const wrapper = await openSurface()
+
+    expect(wrapper.find('.oldView').exists()).toBe(true)
+    expect(wrapper.find('.layerView').exists()).toBe(false)
+  })
+
+  it('renders the layer\'s view while the switch is on, and swaps in place when it changes', async () => {
+    store.setGetter('getEnableLayerSurfaces', true)
+    const wrapper = await openSurface()
+
+    expect(wrapper.find('.layerView').exists()).toBe(true)
+    expect(wrapper.find('.oldView').exists()).toBe(false)
+
+    store.setGetter('getEnableLayerSurfaces', false)
+    await flushPromises()
+
+    expect(wrapper.find('.oldView').exists()).toBe(true)
+    expect(wrapper.find('.layerView').exists()).toBe(false)
+
+    store.setGetter('getEnableLayerSurfaces', true)
+    await flushPromises()
+
+    expect(wrapper.find('.layerView').exists()).toBe(true)
   })
 })
 

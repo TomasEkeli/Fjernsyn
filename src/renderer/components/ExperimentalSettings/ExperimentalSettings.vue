@@ -41,6 +41,14 @@
         :tooltip="$t('PeerTube.Settings.Enable PeerTube Tooltip')"
         @change="handleEnablePeerTube"
       />
+      <FtToggleSwitch
+        tooltip-position="top"
+        :label="$t('Layer Surfaces.Settings.Enable layer surfaces')"
+        compact
+        :default-value="enableLayerSurfaces"
+        :tooltip="$t('Layer Surfaces.Settings.Enable layer surfaces Tooltip')"
+        @change="handleEnableLayerSurfaces"
+      />
     </FtFlexBox>
     <FtPrompt
       v-if="showRestartPrompt"
@@ -96,6 +104,16 @@ const enablePeerTube = computed(() => store.getters.getEnablePeerTube)
  */
 function handleEnablePeerTube(value) {
   store.dispatch('updateEnablePeerTube', value)
+}
+
+/** @type {import('vue').ComputedRef<boolean>} */
+const enableLayerSurfaces = computed(() => store.getters.getEnableLayerSurfaces)
+
+/**
+ * @param {boolean} value
+ */
+function handleEnableLayerSurfaces(value) {
+  store.dispatch('updateEnableLayerSurfaces', value)
 }
 
 onMounted(async () => {
