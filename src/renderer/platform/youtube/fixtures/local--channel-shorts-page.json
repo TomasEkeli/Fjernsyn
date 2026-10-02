@@ -1,0 +1,40 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "(await (await getLocalChannel('UCSMOQeBJ2RAnuFungnQOxLg')).getShorts()).videos",
+  "answer": [
+    {
+      "type": "ShortsLockupView",
+      "on_tap_endpoint": {
+        "payload": {
+          "videoId": "A9Yn8Ad_cH8"
+        }
+      },
+      "overlay_metadata": {
+        "primary_text": {
+          "text": "BLENDERHEADS - Ep. 13 teaser #shorts"
+        },
+        "secondary_text": {
+          "text": "13K views"
+        }
+      }
+    },
+    {
+      "type": "ShortsLockupView",
+      "on_tap_endpoint": {
+        "payload": {
+          "videoId": "bchuTN1Hrd0"
+        }
+      },
+      "overlay_metadata": {
+        "primary_text": {
+          "text": "Stay in touch with your Blender 🫆"
+        },
+        "secondary_text": {
+          "text": "83K views"
+        }
+      }
+    }
+  ],
+  "notes": "The first two of the tab's ShortsLockupView nodes, trimmed to what parseShort reads; the tab's filters and has_continuation are the test's."
+}

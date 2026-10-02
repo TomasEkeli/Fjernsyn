@@ -1,6 +1,6 @@
-// A YouTube channel, fetched: its details and videos in the common shapes
-// (`../shapes.js`), from Local or Invidious through the backend policy
-// (`./policy.js`). The mapping is the channel section and the cursor table of
+// A YouTube channel, fetched: its details, videos (with its shorts and live
+// tabs) and playlists in the common shapes (`../shapes.js`), from Local or
+// Invidious through the backend policy (`./policy.js`). The mapping is the channel section and the cursor table of
 // `./types.js`; the reading is the old channel view's
 // (src/renderer/views/Channel/Channel.vue), re-implemented here.
 //
@@ -17,6 +17,17 @@
 //   playlist stands in. Invidious: `getInvidiousChannelVideos(id, sort,
 //   continuation)`, whose token needs the sort repeated on every page, so the
 //   cursor carries both.
+// - Shorts and live are a `kind` of video list, the same machinery on other
+//   tabs (`getShorts()`, `getLiveStreams()`; `getInvidiousChannelShorts`,
+//   `getInvidiousChannelLive`). Playlists are the channel's own ("Created
+//   playlists"), newest first, the old view's default, from `getPlaylists()`
+//   and `getInvidiousChannelPlaylists`. Each list's backend calls and item
+//   shapes are a row of `LISTS`; a cursor names its list, so a later page
+//   never needs the caller to repeat it.
+// - A channel without a tab answers an empty page, without opening it: Local
+//   reads the channel's `has_*` flags; Invidious, which reports no such
+//   thing per tab, the channel's `tabs` when `getChannel` read them on this
+//   layer, and otherwise asks the tab and answers what it has.
 // - The Local `YT.Channel` instances `getChannel` fetched are kept in a small
 //   cache per reader, so per layer instance (a settings change builds a new
 //   layer, which starts empty). The first page of a Local list takes the
@@ -52,21 +63,183 @@ const TABS = Object.freeze([
   ['community', 'has_community'],
 ])
 
+/** The kinds of video list `listChannelVideos` takes, YouTube's tabs */
+export const CHANNEL_VIDEO_KINDS = Object.freeze(['videos', 'shorts', 'live'])
+
 /**
- * Where each list of a channel's videos comes from on each backend: the
- * Local tab and its parser, the uploads playlist type standing in for it on
- * an artist topic channel (`getChannelPlaylistId`), and the Invidious module
- * function. Videos only for now; the shorts and live lists are rows of their
- * own.
+ * How many empty pages a first page is followed past. YouTube sends some live
+ * tabs as a run of pages holding only a continuation (the old view's
+ * workaround, for https://www.youtube.com/@TWLIVES/streams); a few more
+ * requests find the first broadcasts, and past that the empty page is
+ * answered with its cursor.
+ */
+const EMPTY_PAGES_FOLLOWED = 3
+
+/** @param {string} id */
+function playlistUrl(id) {
+  return `https://www.youtube.com/playlist?list=${id}`
+}
+
+/**
+ * A list item as the card reads it: the card builds a YouTube thumbnail from
+ * the id, so the common shape's `thumbnail` is `''`.
+ *
+ * @param {object} item
+ */
+function forCard(item) {
+  return { ...item, thumbnail: '' }
+}
+
+/**
+ * A short as the card reads it. Neither backend's shorts tab gives a
+ * duration: Local answers `''`, Invidious may answer 0. `''` is "unknown, not
+ * live" to the card, where 0 would show as a length and absent as a live.
+ *
+ * @param {any} item
+ */
+function asShort(item) {
+  return { ...forCard(item), type: 'shortVideo', lengthSeconds: item.lengthSeconds || '' }
+}
+
+/**
+ * `parseLocalListPlaylist`'s answer, completed to the common shape. Its
+ * `channelId` is the channel page's, or the item's own author's; an item
+ * naming no channel (an auto-generated album, a station) has none, `null`.
+ *
+ * @param {any} playlist
+ * @returns {import('./types').YouTubePlaylistSummary}
+ */
+function localPlaylist(playlist) {
+  return {
+    ...playlist,
+    type: 'playlist',
+    dataSource: 'local',
+    url: playlistUrl(playlist.playlistId),
+    description: '',
+    channelName: playlist.channelName ?? '',
+    channelId: playlist.channelId || null,
+  }
+}
+
+/**
+ * An `InvidiousPlaylistObject` renamed into the card's Local field names. Its
+ * thumbnail moves onto the instance in a smaller size, as the card does for
+ * an Invidious playlist; `authorId` is empty for an auto-generated album.
+ *
+ * @param {any} playlist
+ * @param {Readonly<import('../index').PlatformConfig>} config
+ * @returns {import('./types').YouTubePlaylistSummary}
+ */
+function invidiousPlaylist(playlist, config) {
+  const thumbnail = typeof playlist.playlistThumbnail === 'string' ? playlist.playlistThumbnail : ''
+
+  return {
+    type: 'playlist',
+    dataSource: 'local',
+    playlistId: playlist.playlistId,
+    title: playlist.title ?? '',
+    thumbnail: thumbnail
+      .replace('https://i.ytimg.com', config.currentInvidiousInstanceUrl || 'https://i.ytimg.com')
+      .replace('hqdefault', 'mqdefault'),
+    videoCount: typeof playlist.videoCount === 'number' ? playlist.videoCount : null,
+    url: playlistUrl(playlist.playlistId),
+    description: '',
+    channelName: playlist.author ?? '',
+    channelId: playlist.authorId || null,
+  }
+}
+
+/**
+ * The `YT.Channel` playlists tab, narrowed to the channel's own playlists
+ * where YouTube offers other categories too (the old view's choice: the
+ * "Created playlists" view, `view=1`, holds all of them).
+ *
+ * @param {any} channel
+ */
+async function openCreatedPlaylists(channel) {
+  const tab = await channel.getPlaylists()
+
+  if (!(tab.content_type_filters?.length > 1)) {
+    return tab
+  }
+
+  const created = tab.current_tab?.content?.sub_menu?.content_type_sub_menu_items?.find(item => {
+    const url = item.endpoint?.metadata?.url
+    return typeof url === 'string' && new URL(url, 'https://www.youtube.com').searchParams.get('view') === '1'
+  })
+
+  return created ? tab.applyContentTypeFilter(created.title) : tab
+}
+
+/**
+ * Where each list of a channel comes from on each backend, and its items' shape:
+ *
+ * - `flag`: the `YT.Channel` flag saying Local has the tab; `tab`: the
+ *   name in Invidious' `tabs` (as the module maps them).
+ * - `openTab`, `localItems`, `parseLocal`: the Local tab, the nodes on one
+ *   of its pages, and the parser call.
+ * - `othersContent`: a channel that shows other channels' items (an artist
+ *   topic channel, a topic header) leaves them unattributed, as the old view
+ *   does for shorts, rather than naming the channel page as their author.
+ * - `followEmpty`: follow a first page that came back empty (see
+ *   `EMPTY_PAGES_FOLLOWED`).
+ * - `topicPlaylist`: the uploads playlist type standing in for the tab on an
+ *   artist topic channel (`getChannelPlaylistId`), which has no videos tab.
+ * - `invidious`, `invidiousItems`: the Invidious module function and where
+ *   its answer keeps the items.
+ * - `localItem`, `invidiousItem`: one item, in the common shape.
  */
 const LISTS = Object.freeze({
   videos: Object.freeze({
+    flag: 'has_videos',
+    tab: 'videos',
     openTab: channel => channel.getVideos(),
-    localParser: 'parseLocalChannelVideos',
-    playlistType: 'videos',
+    localItems: page => page.videos,
+    parseLocal: (youtube, nodes, owner) => youtube.parseLocalChannelVideos(nodes, owner?.id, owner?.name),
+    topicPlaylist: 'videos',
     invidious: 'getInvidiousChannelVideos',
+    invidiousItems: 'videos',
+    localItem: forCard,
+    invidiousItem: forCard,
+  }),
+  shorts: Object.freeze({
+    flag: 'has_shorts',
+    tab: 'shorts',
+    openTab: channel => channel.getShorts(),
+    localItems: page => page.videos,
+    parseLocal: (youtube, nodes, owner) => youtube.parseLocalChannelShorts(nodes, owner?.id, owner?.name),
+    othersContent: true,
+    invidious: 'getInvidiousChannelShorts',
+    invidiousItems: 'videos',
+    localItem: asShort,
+    invidiousItem: asShort,
+  }),
+  live: Object.freeze({
+    flag: 'has_live_streams',
+    tab: 'live',
+    openTab: channel => channel.getLiveStreams(),
+    localItems: page => page.videos,
+    parseLocal: (youtube, nodes, owner) => youtube.parseLocalChannelVideos(nodes, owner?.id, owner?.name),
+    followEmpty: true,
+    invidious: 'getInvidiousChannelLive',
+    invidiousItems: 'videos',
+    localItem: forCard,
+    invidiousItem: forCard,
+  }),
+  playlists: Object.freeze({
+    flag: 'has_playlists',
+    tab: 'playlists',
+    openTab: openCreatedPlaylists,
+    localItems: page => page.playlists,
+    parseLocal: (youtube, nodes, owner) => nodes.map(node => youtube.parseLocalListPlaylist(node, owner?.id, owner?.name)),
+    invidious: 'getInvidiousChannelPlaylists',
+    invidiousItems: 'playlists',
+    localItem: localPlaylist,
+    invidiousItem: invidiousPlaylist,
   }),
 })
+
+/** @typedef {keyof typeof LISTS} ListKind */
 
 /**
  * A least recently used map of a few entries.
@@ -133,16 +306,6 @@ function handleOf(vanityUrl) {
 }
 
 /**
- * A list item as the card reads it: the card builds a YouTube thumbnail from
- * the id, so the common shape's `thumbnail` is `''`.
- *
- * @param {object} item
- */
-function forCard(item) {
-  return { ...item, thumbnail: '' }
-}
-
-/**
  * @param {object} deps
  * @param {import('./deps').YouTubeDeps} deps.youtube
  * @param {Readonly<import('../index').PlatformConfig>} deps.config
@@ -151,6 +314,8 @@ function forCard(item) {
 export function createYouTubeChannelReader({ youtube, config, policy }) {
   /** @type {ReturnType<typeof createLruCache>} the `YT.Channel` instances, by the channel ref */
   const localChannels = createLruCache(CHANNEL_CACHE_SIZE)
+  /** @type {ReturnType<typeof createLruCache>} the tabs Invidious said a channel has, by the channel ref */
+  const invidiousTabs = createLruCache(CHANNEL_CACHE_SIZE)
 
   // -------------------------------------------------------------------------
   // Local
@@ -243,26 +408,48 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
   }
 
   /**
-   * @param {any} tab a `YT.Channel` tab or its continuation
+   * Whose items a channel's lists hold: the channel's own, named after it
+   * where the page leaves them unnamed, unless the channel shows other
+   * channels' items too (`othersContent`).
+   *
+   * @param {any} channel
    * @param {string} id
-   * @param {string} channelName the author of items the page leaves unnamed
-   * @param {keyof typeof LISTS} kind
+   * @param {ListKind} kind
+   * @returns {{ id: string, name: string } | null}
    */
-  function localTabPage(tab, id, channelName, kind) {
+  function ownerOf(channel, id, kind) {
+    const name = localName(channel)
+    const header = channel.header
+    const showsOthers = isArtistTopic(channel, name) ||
+      header?.type === 'CarouselHeader' ||
+      header?.type === 'InteractiveTabbedHeader' ||
+      (header?.type === 'PageHeader' && !!header.content?.animated_image)
+
+    return LISTS[kind].othersContent && showsOthers ? null : { id, name }
+  }
+
+  /**
+   * @param {any} tab a `YT.Channel` tab or its continuation
+   * @param {{ id: string, name: string } | null} owner
+   * @param {ListKind} kind
+   */
+  function localTabPage(tab, owner, kind) {
+    const list = LISTS[kind]
+
     return {
-      items: youtube[LISTS[kind].localParser](tab.videos ?? [], id, channelName).map(forCard),
-      cursor: tab.has_continuation ? { backend: 'local', continuation: tab, from: 'tab', channelName } : null,
+      items: list.parseLocal(youtube, list.localItems(tab) ?? [], owner).filter(item => item != null).map(list.localItem),
+      cursor: tab.has_continuation ? { backend: 'local', continuation: tab, from: 'tab', kind, owner } : null,
     }
   }
 
   /**
    * @param {any} playlist a `YT.Playlist`, the first or a continuation
-   * @param {keyof typeof LISTS} kind
+   * @param {ListKind} kind
    */
   function localPlaylistPage(playlist, kind) {
     return {
-      items: youtube.parseLocalPlaylistVideos(playlist.items ?? []).map(forCard),
-      cursor: playlist.has_continuation ? { backend: 'local', continuation: playlist, from: 'playlist' } : null,
+      items: youtube.parseLocalPlaylistVideos(playlist.items ?? []).map(LISTS[kind].localItem),
+      cursor: playlist.has_continuation ? { backend: 'local', continuation: playlist, from: 'playlist', kind } : null,
     }
   }
 
@@ -272,7 +459,7 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
    *
    * @param {string} id
    * @param {string} sort
-   * @param {keyof typeof LISTS} kind
+   * @param {ListKind} kind
    */
   async function firstLocalPlaylistPage(id, sort, kind) {
     if (sort === 'oldest') {
@@ -282,7 +469,7 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
     let playlist
 
     try {
-      playlist = await youtube.getLocalPlaylist(youtube.getChannelPlaylistId(id, LISTS[kind].playlistType, sort))
+      playlist = await youtube.getLocalPlaylist(youtube.getChannelPlaylistId(id, LISTS[kind].topicPlaylist, sort))
     } catch (error) {
       // A topic channel with no videos has no uploads playlist either
       if (error instanceof Error && error.message === 'The playlist does not exist.') {
@@ -298,35 +485,46 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
   /**
    * @param {string} id
    * @param {string} sort
-   * @param {keyof typeof LISTS} kind
+   * @param {ListKind} kind
    */
   async function firstLocalPage(id, sort, kind) {
+    const list = LISTS[kind]
     const channel = localChannels.get(id) ?? await fetchLocalChannel(id)
-    const channelName = localName(channel)
 
-    if (isArtistTopic(channel, channelName)) {
+    if (list.topicPlaylist && isArtistTopic(channel, localName(channel))) {
       return firstLocalPlaylistPage(id, sort, kind)
     }
 
-    let tab = await LISTS[kind].openTab(channel)
+    if (!channel[list.flag]) {
+      return { items: [], cursor: null }
+    }
 
-    // A channel offering no such sort lists newest first, as the old view
-    // does when it hides the sort for want of filters
+    let tab = await list.openTab(channel)
+
+    // A tab offering no such sort lists newest first, as the old view does
+    // when it hides the sort for want of filters
     const filter = sort === 'newest' ? undefined : tab.filters?.[CHANNEL_VIDEO_SORTS.indexOf(sort)]
 
     if (filter) {
       tab = await tab.applyFilter(filter)
     }
 
-    return localTabPage(tab, id, channelName, kind)
+    for (let followed = 0; list.followEmpty && followed < EMPTY_PAGES_FOLLOWED; followed++) {
+      if ((list.localItems(tab)?.length ?? 0) > 0 || !tab.has_continuation) {
+        break
+      }
+
+      tab = await tab.getContinuation()
+    }
+
+    return localTabPage(tab, ownerOf(channel, id, kind), kind)
   }
 
   /**
-   * @param {string} id
    * @param {any} cursor
-   * @param {keyof typeof LISTS} kind
+   * @param {ListKind} kind
    */
-  async function laterLocalPage(id, cursor, kind) {
+  async function laterLocalPage(cursor, kind) {
     const { continuation, from } = cursor
 
     if (typeof continuation?.getContinuation !== 'function') {
@@ -339,7 +537,7 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       return next ? localPlaylistPage(next, kind) : { items: [], cursor: null }
     }
 
-    return localTabPage(await continuation.getContinuation(), id, cursor.channelName ?? '', kind)
+    return localTabPage(await continuation.getContinuation(), cursor.owner ?? null, kind)
   }
 
   // -------------------------------------------------------------------------
@@ -368,6 +566,8 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
     const channelId = channel?.authorId || id
     const tabs = Array.isArray(channel?.tabs) ? channel.tabs : []
 
+    invidiousTabs.set(id, tabs)
+
     return {
       id: channelId,
       name: channel?.author ?? '',
@@ -387,20 +587,65 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
   }
 
   /**
-   * A page from Invidious, the first when `continuation` is `null`.
+   * A page from Invidious, the first when `continuation` is `null`. A first
+   * page of a tab the channel is known not to have is empty, without a
+   * request.
    *
    * @param {string} id
    * @param {string} sort
    * @param {string | null} continuation
-   * @param {keyof typeof LISTS} kind
+   * @param {ListKind} kind
    */
   async function invidiousPage(id, sort, continuation, kind) {
-    const answer = await youtube[LISTS[kind].invidious](id, sort, continuation)
+    const list = LISTS[kind]
+
+    if (continuation === null && invidiousTabs.get(id)?.includes(list.tab) === false) {
+      return { items: [], cursor: null }
+    }
+
+    const answer = await youtube[list.invidious](id, sort, continuation)
+    const items = Array.isArray(answer?.[list.invidiousItems]) ? answer[list.invidiousItems] : []
 
     return {
-      items: (Array.isArray(answer?.videos) ? answer.videos : []).map(forCard),
-      cursor: answer?.continuation ? { backend: 'invidious', continuation: answer.continuation, sort } : null,
+      items: items.map(item => list.invidiousItem(item, config)),
+      cursor: answer?.continuation ? { backend: 'invidious', continuation: answer.continuation, sort, kind } : null,
     }
+  }
+
+  /**
+   * A page of one of the channel's lists: the first from the backend the
+   * policy picks, a later one from the backend and of the list its cursor
+   * names, in the sort the first was asked in.
+   *
+   * @param {string} id
+   * @param {ListKind} kind
+   * @param {string} sort
+   * @param {unknown} cursor
+   * @param {readonly string[]} kinds the lists the operation lists, which a cursor must be of
+   */
+  function listPage(id, kind, sort, cursor, kinds) {
+    if (cursor != null) {
+      return policy.later(cursor, (backend, laterCursor) => {
+        if (!kinds.includes(laterCursor.kind)) {
+          throw new PlatformError('invalid', 'Not a cursor of this list')
+        }
+
+        if (backend === 'local') {
+          return laterLocalPage(laterCursor, laterCursor.kind)
+        }
+
+        if (typeof laterCursor.continuation !== 'string' || laterCursor.continuation === '') {
+          throw new PlatformError('invalid', 'Not a YouTube channel list cursor')
+        }
+
+        return invidiousPage(id, laterCursor.sort, laterCursor.continuation, laterCursor.kind)
+      }, classifyYouTubeError)
+    }
+
+    return policy.first(
+      backend => backend === 'local' ? firstLocalPage(id, sort, kind) : invidiousPage(id, sort, null, kind),
+      classifyYouTubeError
+    )
   }
 
   // -------------------------------------------------------------------------
@@ -416,43 +661,35 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
   }
 
   /**
-   * A page of the channel's videos. A later page goes to the backend its
-   * cursor names, in the sort the first was asked in.
+   * A page of the channel's videos, shorts or live broadcasts. A channel
+   * without the tab answers an empty page. A later page keeps the first's
+   * kind and sort, whatever the options say.
    *
    * @param {string} id a YouTube channel ref
-   * @param {{ sort?: string, cursor?: unknown }} [options]
+   * @param {{ kind?: string, sort?: string, cursor?: unknown }} [options]
    * @returns {Promise<import('../shapes').Page<import('./types').YouTubeVideoSummary>>}
    */
-  async function listChannelVideos(id, { sort = 'newest', cursor = null } = {}) {
-    // The one list yet; see `LISTS`
-    const kind = 'videos'
-
-    if (cursor != null) {
-      return policy.later(cursor, (backend, laterCursor) => {
-        if (backend === 'local') {
-          return laterLocalPage(id, laterCursor, kind)
-        }
-
-        if (typeof laterCursor.continuation !== 'string' || laterCursor.continuation === '') {
-          throw new PlatformError('invalid', 'Not a YouTube channel list cursor')
-        }
-
-        return invidiousPage(id, laterCursor.sort, laterCursor.continuation, kind)
-      }, classifyYouTubeError)
+  async function listChannelVideos(id, { kind = 'videos', sort = 'newest', cursor = null } = {}) {
+    if (cursor == null && !CHANNEL_VIDEO_KINDS.includes(kind)) {
+      throw new PlatformError('invalid', `Not a kind of a channel's videos: ${kind}`)
     }
 
-    if (!CHANNEL_VIDEO_SORTS.includes(sort)) {
+    if (cursor == null && !CHANNEL_VIDEO_SORTS.includes(sort)) {
       throw new PlatformError('invalid', `Not a sort of a channel's videos: ${sort}`)
     }
 
-    return policy.first(
-      backend => backend === 'local' ? firstLocalPage(id, sort, kind) : invidiousPage(id, sort, null, kind),
-      classifyYouTubeError
-    )
+    return listPage(id, /** @type {ListKind} */ (kind), sort, cursor, CHANNEL_VIDEO_KINDS)
   }
 
-  async function listChannelPlaylists() {
-    throw new PlatformError('invalid', 'YouTube channel playlists are not on the layer yet')
+  /**
+   * A page of the channel's own playlists, newest first.
+   *
+   * @param {string} id a YouTube channel ref
+   * @param {{ cursor?: unknown }} [options]
+   * @returns {Promise<import('../shapes').Page<import('./types').YouTubePlaylistSummary>>}
+   */
+  async function listChannelPlaylists(id, { cursor = null } = {}) {
+    return listPage(id, 'playlists', 'newest', cursor, ['playlists'])
   }
 
   return Object.freeze({ getChannel, listChannelVideos, listChannelPlaylists })

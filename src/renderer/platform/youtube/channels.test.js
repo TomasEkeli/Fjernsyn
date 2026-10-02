@@ -1,17 +1,21 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseLocalChannelHeader, parseLocalSubscriberCount } from '../../helpers/api/local'
+import { parseLocalChannelHeader, parseLocalChannelShorts, parseLocalSubscriberCount } from '../../helpers/api/local'
 import { createPlatformLayer } from '../index'
 import { CHANNEL_CACHE_SIZE } from './channels'
 import { createFakeYouTube, withMethods } from './testing/fakeYouTube'
 
+import invidiousLive from './fixtures/invidious--channel-live.json'
 import invidiousNoBanner from './fixtures/invidious--channel-no-banner.json'
 import invidiousOrdinary from './fixtures/invidious--channel-ordinary.json'
+import invidiousPlaylists from './fixtures/invidious--channel-playlists.json'
+import invidiousShorts from './fixtures/invidious--channel-shorts.json'
 import localArtistTopicAbout from './fixtures/local--channel-artist-topic-about.json'
 import localArtistTopic from './fixtures/local--channel-artist-topic.json'
 import localNoBanner from './fixtures/local--channel-no-banner.json'
 import localOrdinaryAbout from './fixtures/local--channel-ordinary-about.json'
 import localOrdinary from './fixtures/local--channel-ordinary.json'
+import localShortsPage from './fixtures/local--channel-shorts-page.json'
 import localTerminated from './fixtures/local--channel-terminated.json'
 
 const BLENDER = 'UCSMOQeBJ2RAnuFungnQOxLg'
@@ -40,12 +44,61 @@ function videosTab(chip, page = 1) {
   }
 }
 
-/** A `YT.Channel` from a fixture, with its about page and videos tab */
+/**
+ * A synthesised channel tab of other lists: one page per entry of `pages`,
+ * the nodes under `key` (`videos` or `playlists`).
+ *
+ * @param {string} key
+ * @param {object[][]} pages
+ * @param {object} [extra] more of the tab
+ */
+function pagedTab(key, pages, extra = {}, index = 0) {
+  return {
+    filters: Object.values(CHIPS),
+    content_type_filters: [],
+    [key]: structuredClone(pages[index]),
+    has_continuation: index < pages.length - 1,
+    applyFilter: async () => pagedTab(key, pages, extra),
+    getContinuation: async () => pagedTab(key, pages, extra, index + 1),
+    ...extra,
+  }
+}
+
+const LOCAL_LIVE_PAGES = [
+  // YouTube's run of pages holding only a continuation
+  [],
+  [{ id: 'liveliveliv', live: true }, { id: 'upcomingupc', upcoming: true }],
+  [{ id: 'finishedfin' }],
+]
+
+const LOCAL_PLAYLIST_PAGES = [
+  [{ id: 'PLown' }, { id: 'RDmix', mix: true }],
+  [{ id: 'OLAKalbum', album: true }],
+]
+
+/** A `YT.Channel` from a fixture, with its about page and tabs */
 function localChannel(fixture, about = null) {
   return withMethods(fixture, () => ({
     getAbout: async () => structuredClone(about?.answer),
     getVideos: async () => videosTab(CHIPS.newest),
+    getShorts: async () => pagedTab('videos', localShortsPage.answer.map(node => [node])),
+    getLiveStreams: async () => pagedTab('videos', LOCAL_LIVE_PAGES),
+    getPlaylists: async () => pagedTab('playlists', LOCAL_PLAYLIST_PAGES),
   }))
+}
+
+/**
+ * An Invidious channel tab answering a fixture's items over two pages: all
+ * but the last, then the last.
+ *
+ * @param {{ answer: any }} fixture
+ * @param {string} key `videos` or `playlists`
+ */
+function invidiousTab(fixture, key) {
+  return async (_id, _sort, continuation) => {
+    const { [key]: items, continuation: next } = structuredClone(fixture.answer)
+    return continuation ? { [key]: items.slice(-1), continuation: null } : { [key]: items.slice(0, -1), continuation: next }
+  }
 }
 
 /**
@@ -71,9 +124,29 @@ function setUp({ config = {}, answers = {} } = {}) {
   const fake = createFakeYouTube({
     parseLocalChannelHeader,
     parseLocalSubscriberCount,
+    parseLocalChannelShorts,
     parseLocalChannelVideos: (videos, channelId, channelName) => videos.map(video => ({
-      type: 'video', videoId: video.id, title: video.id, author: channelName, authorId: channelId,
+      type: 'video',
+      videoId: video.id,
+      title: video.id,
+      author: channelName,
+      authorId: channelId,
+      liveNow: !!video.live,
+      isUpcoming: !!video.upcoming,
+      lengthSeconds: video.live ? '' : 60,
     })),
+    // As the module answers a lockup: a mix is left out, an album names no channel
+    parseLocalListPlaylist: (node, channelId, channelName) => node.mix
+      ? null
+      : {
+          type: 'playlist',
+          dataSource: 'local',
+          playlistId: node.id,
+          title: node.id,
+          thumbnail: `https://i.ytimg.com/vi/${node.id}/hqdefault.jpg`,
+          videoCount: 3,
+          ...(node.album ? {} : { channelName, channelId }),
+        },
     parseLocalPlaylistVideos: items => items.map(item => ({ type: 'video', videoId: item.id, title: item.id })),
     getChannelPlaylistId: (id, type, sort) => id.replace(/^UC/, sort === 'popular' ? 'UULP' : 'UULF'),
     getLocalPlaylist: async id => uploadsPlaylist(id),
@@ -98,6 +171,9 @@ function setUp({ config = {}, answers = {} } = {}) {
         continuation: page < 2 ? `token-${sort}-${page + 1}` : null,
       }
     },
+    getInvidiousChannelShorts: invidiousTab(invidiousShorts, 'videos'),
+    getInvidiousChannelLive: invidiousTab(invidiousLive, 'videos'),
+    getInvidiousChannelPlaylists: invidiousTab(invidiousPlaylists, 'playlists'),
     ...answers,
   })
   const layer = createLayer(fake, config)
@@ -114,14 +190,19 @@ function createLayer(fake, config = {}) {
 }
 
 /** Every page of a list, following the cursors to the end */
-async function allPages(layer, ref, options = {}) {
-  const pages = [await layer.listChannelVideos(ref, options)]
+async function allPages(layer, ref, options = {}, operation = 'listChannelVideos') {
+  const pages = [await layer[operation](ref, options)]
 
   while (pages.at(-1).cursor !== null && pages.length < 10) {
-    pages.push(await layer.listChannelVideos(ref, { cursor: pages.at(-1).cursor }))
+    pages.push(await layer[operation](ref, { cursor: pages.at(-1).cursor }))
   }
 
   return pages
+}
+
+/** @param {{ items: any[] }[]} pages */
+function itemsOf(pages) {
+  return pages.flatMap(page => page.items)
 }
 
 async function failure(promise) {
@@ -233,7 +314,7 @@ describe('a YouTube channel\'s videos', () => {
 
     expect(pages.flatMap(page => page.items.map(item => item.videoId))).toEqual([`${sort}-1`, `${sort}-2`])
     expect(pages[0].items[0].thumbnail).toBe('')
-    expect(pages[0].cursor).toEqual({ backend: 'invidious', continuation: `token-${sort}-2`, sort })
+    expect(pages[0].cursor).toEqual({ backend: 'invidious', continuation: `token-${sort}-2`, sort, kind: 'videos' })
     expect(pages.at(-1).cursor).toBeNull()
     expect(fake.callsOf('getInvidiousChannelVideos')).toEqual([[BLENDER, sort, null], [BLENDER, sort, `token-${sort}-2`]])
     expect(fake.callsOf('getLocalChannel')).toHaveLength(0)
@@ -336,5 +417,169 @@ describe('a YouTube channel that is gone', () => {
 
     expect(await failure(layer.getChannel(BLENDER))).toMatchObject({ kind: 'refused', reason: 'ageRestricted' })
     expect(fake.callsOf('invidiousGetChannelInfo')).toHaveLength(0)
+  })
+})
+
+describe('a YouTube channel\'s shorts and live broadcasts', () => {
+  it('pages Local shorts to the end, as shorts of unknown length', async () => {
+    const { layer } = setUp()
+
+    const pages = await allPages(layer, BLENDER, { kind: 'shorts' })
+
+    expect(itemsOf(pages)).toEqual([
+      expect.objectContaining({ type: 'shortVideo', videoId: 'A9Yn8Ad_cH8', viewCount: 13000, lengthSeconds: '', author: 'Blender', authorId: BLENDER }),
+      expect.objectContaining({ type: 'shortVideo', videoId: 'bchuTN1Hrd0', viewCount: 83000, lengthSeconds: '' }),
+    ])
+    expect(pages[0].cursor).toMatchObject({ backend: 'local', kind: 'shorts' })
+    expect(pages.at(-1).cursor).toBeNull()
+  })
+
+  it('pages Invidious shorts to the end, as shorts of unknown length, repeating the sort', async () => {
+    const { layer, fake } = setUp({ config: { backendPreference: 'invidious' } })
+
+    const pages = await allPages(layer, BLENDER, { kind: 'shorts', sort: 'popular' })
+
+    expect(itemsOf(pages).map(item => [item.videoId, item.type, item.lengthSeconds])).toEqual([
+      ['A9Yn8Ad_cH8', 'shortVideo', ''],
+      ['bchuTN1Hrd0', 'shortVideo', ''],
+    ])
+    expect(pages[0].cursor).toEqual({ backend: 'invidious', continuation: 'shorts-token-2', sort: 'popular', kind: 'shorts' })
+    expect(pages.at(-1).cursor).toBeNull()
+    expect(fake.callsOf('getInvidiousChannelShorts')).toEqual([[BLENDER, 'popular', null], [BLENDER, 'popular', 'shorts-token-2']])
+  })
+
+  it.each([
+    ['Local', 'local'],
+    ['Invidious', 'invidious'],
+  ])('pages %s live broadcasts to the end, live, upcoming and finished', async (_name, backendPreference) => {
+    const { layer } = setUp({ config: { backendPreference } })
+
+    const pages = await allPages(layer, BLENDER, { kind: 'live' })
+
+    expect(itemsOf(pages).map(item => [item.videoId, item.liveNow, item.isUpcoming])).toEqual([
+      ['liveliveliv', true, false],
+      ['upcomingupc', false, true],
+      ['finishedfin', false, false],
+    ])
+    // Local's empty first page is followed, not answered
+    expect(pages[0].items).toHaveLength(2)
+    expect(pages[0].cursor).toMatchObject({ backend: backendPreference, kind: 'live' })
+    expect(pages.at(-1).cursor).toBeNull()
+  })
+
+  it.each(['shorts', 'live'])('answers a Local channel without a %s tab with an empty page, opening none', async (kind) => {
+    // The fixture's channel has no shorts or live tab, and no methods to open one
+    const { layer } = setUp({ answers: { getLocalChannel: async () => structuredClone(localNoBanner.answer) } })
+
+    expect(await layer.listChannelVideos(NO_BANNER, { kind })).toEqual({ items: [], cursor: null })
+  })
+
+  it.each([
+    ['shorts', 'getInvidiousChannelShorts'],
+    ['live', 'getInvidiousChannelLive'],
+  ])('answers an Invidious channel without a %s tab with an empty page, asking nothing more once its tabs are known', async (kind, tabFunction) => {
+    const { layer, fake } = setUp({ config: { backendPreference: 'invidious' } })
+
+    await layer.getChannel(NO_BANNER)
+
+    expect(await layer.listChannelVideos(NO_BANNER, { kind })).toEqual({ items: [], cursor: null })
+    expect(fake.callsOf(tabFunction)).toHaveLength(0)
+  })
+
+  it('rejects a kind it does not know, asking nobody', async () => {
+    const { layer, fake } = setUp()
+
+    expect((await failure(layer.listChannelVideos(BLENDER, { kind: 'posts' }))).kind).toBe('invalid')
+    expect(fake.calls).toHaveLength(0)
+  })
+})
+
+describe('a YouTube channel\'s playlists', () => {
+  it('pages Local to the end, an auto-generated album naming no channel', async () => {
+    const { layer } = setUp()
+
+    const pages = await allPages(layer, BLENDER, {}, 'listChannelPlaylists')
+
+    expect(itemsOf(pages)).toEqual([
+      {
+        type: 'playlist',
+        dataSource: 'local',
+        playlistId: 'PLown',
+        title: 'PLown',
+        thumbnail: 'https://i.ytimg.com/vi/PLown/hqdefault.jpg',
+        videoCount: 3,
+        url: 'https://www.youtube.com/playlist?list=PLown',
+        description: '',
+        channelName: 'Blender',
+        channelId: BLENDER,
+      },
+      expect.objectContaining({ playlistId: 'OLAKalbum', channelName: '', channelId: null }),
+    ])
+    expect(pages[0].cursor).toMatchObject({ backend: 'local', kind: 'playlists' })
+    expect(pages.at(-1).cursor).toBeNull()
+  })
+
+  it('pages Invidious to the end, newest first on every page, thumbnails on the instance', async () => {
+    const { layer, fake } = setUp({ config: { backendPreference: 'invidious' } })
+
+    const pages = await allPages(layer, BLENDER, {}, 'listChannelPlaylists')
+
+    expect(itemsOf(pages)).toEqual([
+      {
+        type: 'playlist',
+        dataSource: 'local',
+        playlistId: 'PLa1F2ddGya_8acrgoQr1fTeskX2-uzIJJ',
+        title: 'Blender Conference 2025',
+        thumbnail: `${INSTANCE}/vi/X-zb1FxHuCw/mqdefault.jpg`,
+        videoCount: 42,
+        url: 'https://www.youtube.com/playlist?list=PLa1F2ddGya_8acrgoQr1fTeskX2-uzIJJ',
+        description: '',
+        channelName: 'Blender',
+        channelId: BLENDER,
+      },
+      expect.objectContaining({ title: 'Sprite Fright (Soundtrack)', channelName: '', channelId: null }),
+    ])
+    expect(pages.at(-1).cursor).toBeNull()
+    expect(fake.callsOf('getInvidiousChannelPlaylists')).toEqual([[BLENDER, 'newest', null], [BLENDER, 'newest', 'playlists-token-2']])
+  })
+
+  it('narrows Local\'s playlists to the channel\'s own where YouTube offers other categories', async () => {
+    const applied = []
+    const categories = {
+      content_type_filters: ['Created playlists', 'Saved playlists'],
+      current_tab: {
+        content: {
+          sub_menu: {
+            content_type_sub_menu_items: [
+              { title: 'Saved playlists', endpoint: { metadata: { url: '/@BlenderOfficial/playlists?view=58' } } },
+              { title: 'Created playlists', endpoint: { metadata: { url: '/@BlenderOfficial/playlists?view=1' } } },
+            ],
+          },
+        },
+      },
+      applyContentTypeFilter: async (title) => {
+        applied.push(title)
+        return pagedTab('playlists', LOCAL_PLAYLIST_PAGES)
+      },
+    }
+    const { layer } = setUp({
+      answers: {
+        getLocalChannel: async () => withMethods(localOrdinary, () => ({
+          getPlaylists: async () => pagedTab('playlists', [[]], categories),
+        })),
+      },
+    })
+
+    const page = await layer.listChannelPlaylists(BLENDER)
+
+    expect(applied).toEqual(['Created playlists'])
+    expect(page.items.map(item => item.playlistId)).toEqual(['PLown'])
+  })
+
+  it('will not continue a list of videos as playlists', async () => {
+    const { layer } = setUp()
+    const videos = await layer.listChannelVideos(BLENDER)
+
+    expect((await failure(layer.listChannelPlaylists(BLENDER, { cursor: videos.cursor }))).kind).toBe('invalid')
   })
 })

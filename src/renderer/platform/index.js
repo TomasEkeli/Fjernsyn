@@ -210,11 +210,14 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
 
   /**
    * A page of a channel's videos, sorted `newest` (the default), `popular` or
-   * `oldest`, filtered by the NSFW preference. Hand the page's `cursor` back
-   * for the next page; `null` is the end.
+   * `oldest`, filtered by the NSFW preference. `kind` picks the list:
+   * `videos` (the default), or YouTube's `shorts` and `live` tabs, which a
+   * channel without them, and every PeerTube channel, answers as an empty
+   * page. Hand the page's `cursor` back for the next page, which keeps the
+   * first page's kind and sort; `null` is the end.
    *
    * @param {import('./shapes').ChannelRef} ref
-   * @param {{ sort?: 'newest' | 'popular' | 'oldest', cursor?: unknown }} [options]
+   * @param {{ kind?: 'videos' | 'shorts' | 'live', sort?: 'newest' | 'popular' | 'oldest', cursor?: unknown }} [options]
    * @returns {Promise<import('./shapes').Page<import('./shapes').VideoSummary>>}
    */
   function listChannelVideos(ref, options) {
@@ -222,7 +225,8 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   }
 
   /**
-   * A page of a channel's playlists.
+   * A page of a channel's playlists, in the order the platform lists them
+   * (YouTube: newest first, the channel's own playlists).
    *
    * @param {import('./shapes').ChannelRef} ref
    * @param {{ cursor?: unknown }} [options]

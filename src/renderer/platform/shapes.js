@@ -351,7 +351,12 @@
  * @property {string} url the canonical URL on the origin
  * @property {string} description
  * @property {string} channelName
- * @property {string} channelId the channel ref
+ * @property {string | null} channelId the channel ref; `null` where YouTube
+ *   names no channel, as for an auto-generated album (phase 2)
+ * @property {'local'} [dataSource] YouTube's, always (phase 2): `FtListPlaylist`
+ *   reads these field names only when `dataSource` is `'local'`, and otherwise
+ *   reads Invidious' (`playlistThumbnail`). Absent for PeerTube, whose card
+ *   path does not depend on it, so that it keeps the path it has.
  */
 
 // ---------------------------------------------------------------------------
