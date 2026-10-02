@@ -197,12 +197,64 @@
  */
 
 /**
- * The existing SABR manifest and regulator data, passed through untouched.
- * The layer does not model SABR.
+ * The SABR credentials of one session (YouTube Local only), exactly what the
+ * player's `sabrData` prop and the `sabr://` scheme plugin read.
  *
- * @typedef {object} SabrPlaybackSource
- * @property {'sabr'} transport
- * @property {unknown} data opaque to the layer
+ * @typedef {object} SabrData
+ * @property {string} url the SABR streaming URL, deciphered, with `alr=yes`
+ *   and the response's `cpn`
+ * @property {string} videoId
+ * @property {string} poToken the content-bound PO token the response was made with
+ * @property {string} ustreamerConfig the response's
+ *   `video_playback_ustreamer_config`
+ * @property {{ clientName: number, clientVersion: string, osName: string, osVersion: string }} clientInfo
+ *   the client the response was asked as
+ */
+
+/**
+ * What a SABR source's `renew` answers: the credentials of a fresh player
+ * response, and for a rebuild a manifest agreeing with them. A refresh keeps
+ * its buffer, so its formats must be the ones playing, and has no manifest.
+ *
+ * @typedef {object} SabrRenewResult
+ * @property {SabrData} sabrData
+ * @property {string[]} formatIds the formats the fresh session serves, as the
+ *   manifest parser names them (`itag-lastModified-xtags`)
+ * @property {Date | null} expiresAt when the fresh streaming URLs expire;
+ *   `null` where the response does not say
+ * @property {string} [manifestUrl] a rebuild only
+ * @property {'application/sabr+json'} [manifestMimeType] a rebuild only
+ */
+
+/**
+ * A YouTube Local video over SABR (ADR-0016). Every `ManifestPlaybackSource`
+ * field, so that the watch view reads captions, chapters, storyboard, legacy
+ * formats, audio and the extras one way for both transports, and branches on
+ * transport only to hand `sabrData` and its regulator to the player:
+ *
+ * - `manifestUrl`: the project's own SABR manifest (formats, and the source's
+ *   captions, chapters and `sabrStoryboards`) as a `data:` URI
+ * - `audio`: the same manifest, since a SABR failure is one of adaptive and
+ *   audio alike
+ * - `sabrStoryboards`: the storyboards the manifest embeds, kept because they
+ *   come from `/next`, which a rebuild does not re-read
+ * - `renew`: fetches a fresh player response, passing the server's reload
+ *   token on, and answers its credentials (and for `rebuilding` a manifest
+ *   built from this source's captions, chapters and `sabrStoryboards`), or
+ *   `null` when none can be had. The one function a shape holds. It decides
+ *   nothing, and never changes the source: the regulator that calls it is the
+ *   watch view's (ADR-0006), as are the current credentials and expiry
+ *
+ * The source is frozen.
+ *
+ * @typedef {Omit<ManifestPlaybackSource, 'transport' | 'manifestUrl' | 'manifestMimeType'> & {
+ *   transport: 'sabr',
+ *   manifestUrl: string,
+ *   manifestMimeType: 'application/sabr+json',
+ *   sabrData: SabrData,
+ *   sabrStoryboards: object[],
+ *   renew: (options?: { reloadPlaybackContext?: object, rebuilding?: boolean }) => Promise<SabrRenewResult | null>,
+ * }} SabrPlaybackSource
  */
 
 /**

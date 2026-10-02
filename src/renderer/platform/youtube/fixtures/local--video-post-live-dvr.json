@@ -2,7 +2,7 @@
   "recordedAt": "2026-10-02",
   "source": "recorded",
   "call": "getLocalVideoInfo('jfKfPfyJRdk')",
-  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised; the one muxed format is synthesised, to show a post-live DVR keeps none; the adaptive formats and YouTube's HLS manifest URL synthesised",
+  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised; the one muxed format is synthesised, to show a post-live DVR keeps none; the adaptive formats and YouTube's HLS manifest URL synthesised; for SABR, synthesised: the SABR streaming URL, the ustreamer config, the cpn, the client info and the formats' SABR fields. No PO token, as from Node: a test adds one",
   "answer": {
     "info": {
       "playability_status": {
@@ -108,19 +108,65 @@
             "width": 1920,
             "height": 1080,
             "projection_type": "RECTANGULAR",
-            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=299"
+            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=299",
+            "approx_duration_ms": 213040,
+            "last_modified_ms": "1700000000000000",
+            "bitrate": 4000000,
+            "init_range": {
+              "start": 0,
+              "end": 740
+            },
+            "index_range": {
+              "start": 741,
+              "end": 1500
+            },
+            "quality": "hd1080",
+            "fps": 30
           },
           {
             "itag": 140,
             "mime_type": "audio/mp4; codecs=\"mp4a.40.2\"",
             "has_video": false,
             "has_audio": true,
-            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=140"
+            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=140",
+            "approx_duration_ms": 213081,
+            "last_modified_ms": "1700000000000000",
+            "bitrate": 130000,
+            "init_range": {
+              "start": 0,
+              "end": 740
+            },
+            "index_range": {
+              "start": 741,
+              "end": 1500
+            },
+            "quality": "tiny",
+            "xtags": "CggKA2RyYxIBMQ",
+            "language": "en",
+            "audio_sample_rate": 44100,
+            "audio_channels": 2,
+            "is_original": true,
+            "is_drc": false
           }
         ],
         "expires": "2026-10-02T23:59:59.000Z",
-        "hls_manifest_url": "https://manifest.googlevideo.com/api/manifest/hls_variant/id/jfKfPfyJRdk"
+        "hls_manifest_url": "https://manifest.googlevideo.com/api/manifest/hls_variant/id/jfKfPfyJRdk",
+        "server_abr_streaming_url": "https://rr1---sn.googlevideo.com/videoplayback?id=jfKfPfyJRdk&sabr=1"
+      },
+      "cpn": "cpnFromTheResponse",
+      "player_config": {
+        "media_common_config": {
+          "media_ustreamer_request_config": {
+            "video_playback_ustreamer_config": "ustreamer-config-jfKfPfyJRdk"
+          }
+        }
       }
+    },
+    "clientInfo": {
+      "clientName": 1,
+      "clientVersion": "2.20261001.00.00",
+      "osName": "Windows",
+      "osVersion": "10.0"
     }
   }
 }

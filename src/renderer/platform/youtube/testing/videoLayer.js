@@ -3,6 +3,7 @@
 // modules' real helpers, and the Local answer as the library instance
 // `getLocalVideoInfo` answers.
 
+import { buildFormatId } from '../../../helpers/player/SabrManifestParser'
 import { sortCaptions } from '../../../helpers/player/utils'
 import { buildVTTFileLocally, extractNumberFromString, formatDurationAsTimestamp } from '../../../helpers/utils'
 import { mapLocalLegacyFormat, parseLocalSubscriberCount, parseLocalTextRuns } from '../../../helpers/api/local'
@@ -47,6 +48,7 @@ const HELPERS = {
   convertInvidiousToLocalFormat,
   generateInvidiousDashManifestLocally,
   getProxyUrl,
+  buildFormatId,
 }
 
 /**

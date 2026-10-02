@@ -2,7 +2,7 @@
   "recordedAt": "2026-10-02",
   "source": "recorded",
   "call": "getLocalVideoInfo('dQw4w9WgXcQ')",
-  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised; the License row and the watch-next variety (a playlist lockup, a station, a compact video and movie, an unreadable item) synthesised, YouTube answered lockups only. For the playback source, synthesised: adaptive formats, captions with translation languages, storyboards, the player bar's chapter markers, the loudness, the expiry and the ad end time (none of which Node is given without a PO token)",
+  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised; the License row and the watch-next variety (a playlist lockup, a station, a compact video and movie, an unreadable item) synthesised, YouTube answered lockups only. For the playback source, synthesised: adaptive formats, captions with translation languages, storyboards, the player bar's chapter markers, the loudness, the expiry and the ad end time (none of which Node is given without a PO token); for SABR, synthesised: the SABR streaming URL, the ustreamer config, the cpn, the client info and the formats' SABR fields. No PO token, as from Node: a test adds one",
   "answer": {
     "info": {
       "playability_status": {
@@ -161,21 +161,58 @@
             "width": 1920,
             "height": 1080,
             "projection_type": "RECTANGULAR",
-            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=137"
+            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=137",
+            "approx_duration_ms": 213040,
+            "last_modified_ms": "1700000000000000",
+            "bitrate": 4000000,
+            "init_range": {
+              "start": 0,
+              "end": 740
+            },
+            "index_range": {
+              "start": 741,
+              "end": 1500
+            },
+            "quality": "hd1080",
+            "fps": 30
           },
           {
             "itag": 140,
             "mime_type": "audio/mp4; codecs=\"mp4a.40.2\"",
             "has_video": false,
             "has_audio": true,
-            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=140"
+            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=140",
+            "approx_duration_ms": 213081,
+            "last_modified_ms": "1700000000000000",
+            "bitrate": 130000,
+            "init_range": {
+              "start": 0,
+              "end": 740
+            },
+            "index_range": {
+              "start": 741,
+              "end": 1500
+            },
+            "quality": "tiny",
+            "xtags": "CggKA2RyYxIBMQ",
+            "language": "en",
+            "audio_sample_rate": 44100,
+            "audio_channels": 2,
+            "is_original": true,
+            "is_drc": false
           }
         ],
-        "expires": "2026-10-02T23:59:59.000Z"
+        "expires": "2026-10-02T23:59:59.000Z",
+        "server_abr_streaming_url": "https://rr1---sn.googlevideo.com/videoplayback?id=dQw4w9WgXcQ&sabr=1"
       },
       "player_config": {
         "audio_config": {
           "loudness_db": -7.25
+        },
+        "media_common_config": {
+          "media_ustreamer_request_config": {
+            "video_playback_ustreamer_config": "ustreamer-config-dQw4w9WgXcQ"
+          }
         }
       },
       "captions": {
@@ -289,8 +326,15 @@
             ]
           }
         }
-      }
+      },
+      "cpn": "cpnFromTheResponse"
     },
-    "adEndTimeUnixMs": 1790000012345
+    "adEndTimeUnixMs": 1790000012345,
+    "clientInfo": {
+      "clientName": 1,
+      "clientVersion": "2.20261001.00.00",
+      "osName": "Windows",
+      "osVersion": "10.0"
+    }
   }
 }

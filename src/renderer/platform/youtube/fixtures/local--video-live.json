@@ -2,7 +2,7 @@
   "recordedAt": "2026-10-02",
   "source": "recorded",
   "call": "getLocalVideoInfo('ODio2-1aFa8')",
-  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised; the one muxed format is synthesised, to show a live keeps none",
+  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised; the one muxed format is synthesised, to show a live keeps none; for SABR, synthesised: the SABR streaming URL, the ustreamer config, the cpn, the client info and the formats' SABR fields. No PO token, as from Node: a test adds one",
   "answer": {
     "info": {
       "playability_status": {
@@ -102,14 +102,27 @@
         ],
         "adaptive_formats": [],
         "hls_manifest_url": "https://manifest.googlevideo.com/api/manifest/hls_variant/id/ODio2-1aFa8",
-        "expires": "2026-10-02T23:59:59.000Z"
+        "expires": "2026-10-02T23:59:59.000Z",
+        "server_abr_streaming_url": "https://rr1---sn.googlevideo.com/videoplayback?id=ODio2-1aFa8&sabr=1"
       },
       "player_config": {
         "audio_config": {
           "loudness_db": -3
+        },
+        "media_common_config": {
+          "media_ustreamer_request_config": {
+            "video_playback_ustreamer_config": "ustreamer-config-ODio2-1aFa8"
+          }
         }
-      }
+      },
+      "cpn": "cpnFromTheResponse"
     },
-    "adEndTimeUnixMs": 1790000000000
+    "adEndTimeUnixMs": 1790000000000,
+    "clientInfo": {
+      "clientName": 1,
+      "clientVersion": "2.20261001.00.00",
+      "osName": "Windows",
+      "osVersion": "10.0"
+    }
   }
 }

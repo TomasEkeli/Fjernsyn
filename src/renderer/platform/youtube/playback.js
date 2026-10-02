@@ -15,21 +15,19 @@
 //   for a video only). With no manifest to play it is `unavailable`, which the
 //   old view shows as a retryable error and falls back from.
 // - Anything else plays from a DASH manifest, legacy formats (`null` manifest
-//   when only those exist), captions, chapters and a storyboard.
+//   when only those exist), captions, chapters and a storyboard; on Local over
+//   SABR instead of DASH where the response allows it (`./sabr.js`), with the
+//   same fields around the SABR manifest.
 //
 // What stays the view's: hiding chapters (`hideChapters`, the adapter always
 // answers them), the storyboard's smaller board below 500px of window width
 // (the layer cannot see the window: it answers the largest board), whether the
 // active format can be used, and every toast.
-//
-// The Local pieces that are not the manifest (`localPlayableParts`,
-// `localChapters`, `localExtras`, `localStoryboardBoard`) are exported for the
-// SABR source, which carries the same captions, chapters, storyboard, legacy
-// formats and extras around another manifest.
 
 import { selectLiveManifest } from '../../helpers/player/liveManifest'
 import { PlatformError } from '../errors'
 import { chaptersSrcOf } from '../peertube/playback'
+import { canPlaySabr, sabrSource } from './sabr'
 import { dateOf, isNumber, onInstance } from './videoDetails'
 
 export const DASH_MIME_TYPE = 'application/dash+xml'
@@ -41,7 +39,7 @@ const VTT_MIME_TYPE = 'text/vtt'
 /** @typedef {import('../shapes').Chapter} Chapter */
 /** @typedef {import('../shapes').CaptionTrack} CaptionTrack */
 /** @typedef {'live' | 'waiting' | 'ended' | null} LiveStatus */
-/** @typedef {{ playbackSource: ManifestPlaybackSource | null, chaptersKind: 'chapters' | 'keyMoments' }} Playback */
+/** @typedef {{ playbackSource: import('../shapes').PlaybackSource | null, chaptersKind: 'chapters' | 'keyMoments' }} Playback */
 
 /**
  * @typedef {object} PlaybackDeps
@@ -299,7 +297,7 @@ function localCaptions(info, { youtube, config }) {
  * @param {import('./deps').YouTubeDeps} youtube
  * @returns {{ chapters: Chapter[], chaptersKind: 'chapters' | 'keyMoments' }}
  */
-export function localChapters(info, youtube) {
+function localChapters(info, youtube) {
   const basic = info.basic_info ?? {}
   const markers = info.player_overlays?.decorated_player_bar?.player_bar?.markers_map
     ?.find(marker => marker?.marker_key === 'DESCRIPTION_CHAPTERS')?.value?.chapters
@@ -365,7 +363,7 @@ function withThumbnail(chapter, thumbnails) {
  * @param {any} info
  * @returns {any | null} youtubei.js' `StoryboardData`
  */
-export function localStoryboardBoard(info) {
+function localStoryboardBoard(info) {
   if (info.storyboards?.type !== 'PlayerStoryboardSpec' || !Array.isArray(info.storyboards.boards)) {
     return null
   }
@@ -392,7 +390,7 @@ function vrProjectionOf(formats, isVideo, field) {
  * @param {{ info: any, adEndTimeUnixMs?: number }} answer
  * @param {boolean} playable
  */
-export function localExtras({ info, adEndTimeUnixMs }, playable) {
+function localExtras({ info, adEndTimeUnixMs }, playable) {
   const loudness = info.player_config?.audio_config?.loudness_db
   const adaptive = Array.isArray(info.streaming_data?.adaptive_formats) ? info.streaming_data.adaptive_formats : []
 
@@ -438,7 +436,7 @@ async function localDashManifest(info, includeThumbnails) {
  * @param {{ info: any, adEndTimeUnixMs?: number }} answer
  * @param {PlaybackDeps} deps
  */
-export function localPlayableParts(answer, deps) {
+function localPlayableParts(answer, deps) {
   const { info } = answer
   const formats = Array.isArray(info.streaming_data?.formats) ? info.streaming_data.formats : []
   const storyboardBoard = localStoryboardBoard(info)
@@ -509,13 +507,21 @@ export async function localPlayback(id, answer, deps, liveStatus) {
     return { playbackSource: null, chaptersKind }
   }
 
-  const { legacyFormats, captions, storyboard, extras } = localPlayableParts(answer, deps)
+  const { legacyFormats, captions, storyboard, storyboardBoard, extras } = localPlayableParts(answer, deps)
+  /**
+   * @param {string | null} manifestUrl
+   * @param {string} manifestMimeType
+   */
+  const around = (manifestUrl, manifestMimeType) =>
+    manifestSource({ manifestUrl, manifestMimeType, legacyFormats, captions, chapters, storyboard, ...extras })
+
+  if (canPlaySabr(answer)) {
+    return { playbackSource: sabrSource(id, answer, deps.youtube, { captions, chapters, storyboardBoard }, around), chaptersKind }
+  }
+
   const manifestUrl = hasStreamableAdaptiveFormats(info.streaming_data) ? await localDashManifest(info, false) : null
 
-  return {
-    playbackSource: manifestSource({ manifestUrl, manifestMimeType: DASH_MIME_TYPE, legacyFormats, captions, chapters, storyboard, ...extras }),
-    chaptersKind,
-  }
+  return { playbackSource: around(manifestUrl, DASH_MIME_TYPE), chaptersKind }
 }
 
 // ---------------------------------------------------------------------------
