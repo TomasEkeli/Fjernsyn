@@ -15,10 +15,24 @@ import LayerChannel from './LayerChannel.vue'
 // The cards are the shared components' own (and under test with them); here
 // the list only has to show what the view handed it. A playlist is shown by
 // its real card, whose link to the app's playlist page is what a YouTube
-// channel's playlists tab is for.
+// channel's playlists tab is for, and a post by the real post component,
+// which is what the layer's post shape is for.
 vi.mock('../../components/FtElementList/FtElementList.vue', async () => {
   const { defineComponent, h } = await import('vue')
   const { default: FtListPlaylist } = await import('../../components/FtListPlaylist/FtListPlaylist.vue')
+  const { default: FtCommunityPost } = await import('../../components/FtCommunityPost/FtCommunityPost.vue')
+
+  function card(item) {
+    if (item.type === 'playlist') {
+      return h('li', { class: 'fakePlaylistCard' }, [h(FtListPlaylist, { data: item, appearance: 'result' })])
+    }
+
+    if (item.type === 'community') {
+      return h('li', { class: 'fakePostCard' }, [h(FtCommunityPost, { data: item, appearance: 'result' })])
+    }
+
+    return h('li', { class: 'fakeCard' }, item.title)
+  }
 
   return {
     default: defineComponent({
@@ -26,10 +40,9 @@ vi.mock('../../components/FtElementList/FtElementList.vue', async () => {
       props: {
         data: { type: Array, required: true },
         useChannelsHiddenPreference: { type: Boolean, default: true },
+        display: { type: String, default: '' },
       },
-      setup: (props) => () => h('ul', { class: 'fakeElementList' }, props.data.map(item => item.type === 'playlist'
-        ? h('li', { class: 'fakePlaylistCard' }, [h(FtListPlaylist, { data: item, appearance: 'result' })])
-        : h('li', { class: 'fakeCard' }, item.title))),
+      setup: (props) => () => h('ul', { class: 'fakeElementList' }, props.data.map(card)),
     }),
   }
 })
@@ -57,6 +70,11 @@ const SETTINGS = vi.hoisted(() => ({
   getHideChannelReleases: false,
   getHideChannelPodcasts: false,
   getHideChannelCourses: false,
+  getHideChannelCommunity: false,
+  // The post component's
+  getForbiddenTitles: '[]',
+  getHideSharingActions: true,
+  getHideComments: false,
   // The playlist card's
   getListType: 'grid',
   getBlurThumbnails: false,
@@ -163,6 +181,7 @@ const layer = {
   getChannel: vi.fn(),
   listChannelVideos: vi.fn(),
   listChannelPlaylists: vi.fn(),
+  listChannelPosts: vi.fn(),
   describe: (entity, options) => describeEntity(entity, {}, options),
 }
 
@@ -178,6 +197,7 @@ beforeEach(() => {
   layer.getChannel.mockReset().mockResolvedValue(channelDetails())
   layer.listChannelVideos.mockReset().mockResolvedValue({ items: [video(1), video(2)], cursor: null })
   layer.listChannelPlaylists.mockReset().mockResolvedValue({ items: [playlist(1)], cursor: null })
+  layer.listChannelPosts.mockReset().mockResolvedValue({ items: [], cursor: null })
 
   openExternalLink.mockClear()
   isPeerTubeEnabled.mockReset().mockReturnValue(true)
@@ -301,6 +321,8 @@ describe('the videos tab', () => {
     expect(wrapper.findComponent({ name: 'FtElementList' }).props()).toEqual({
       data: [video(1), video(2)],
       useChannelsHiddenPreference: false,
+      // The density setting's layout, which only the posts tab overrides
+      display: '',
     })
   })
 
@@ -542,6 +564,14 @@ describe('the playlists tab', () => {
     expect(wrapper.find('select').exists()).toBe(false)
   })
 
+  it('has no posts tab, and reads a route naming it as the videos, asking for none', async () => {
+    const { wrapper } = await openChannelPage(`${CHANNEL_PATH}/community`)
+
+    expect(wrapper.find('#communityTab').exists()).toBe(false)
+    expect(wrapper.find('#videosTab').classes()).toContain('selectedTab')
+    expect(layer.listChannelPosts).not.toHaveBeenCalled()
+  })
+
   it('has no releases, podcasts or courses tab, and reads a route naming one as the videos', async () => {
     const { wrapper } = await openChannelPage(`${CHANNEL_PATH}/podcasts`)
 
@@ -744,7 +774,7 @@ describe('a YouTube channel', () => {
       layer.getChannel.mockResolvedValue(youTubeChannel({ tabs: ['videos', 'community'] }))
       const { wrapper } = await openChannelPage(`${YT_PATH}/playlists`)
 
-      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos'])
+      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Posts'])
       expect(wrapper.find('#videosTab').classes()).toContain('selectedTab')
       expect(layer.listChannelPlaylists).not.toHaveBeenCalled()
     })
@@ -1080,6 +1110,97 @@ describe('a YouTube channel', () => {
       const { wrapper } = await openChannelPage(`${YT_PATH}/${kind}`)
 
       expect(wrapper.text()).toContain(message)
+    })
+  })
+
+  describe('posts tab', () => {
+    /** A text post as the layer lists them, in the post component's field names */
+    function youTubePost(n) {
+      return {
+        type: 'community',
+        postId: `Ugkxpost${n}`,
+        postText: `Post number ${n}`,
+        author: 'Blender',
+        authorId: YT_ID,
+        authorThumbnails: [{ url: YT_AVATAR, width: 76, height: 76 }],
+        publishedTime: Date.now() - 2 * 86400000,
+        voteCount: 462 * n,
+        commentCount: 20,
+        postContent: null,
+      }
+    }
+
+    function postTexts(wrapper) {
+      return wrapper.findAll('.fakePostCard .postText').map(text => text.text())
+    }
+
+    it('appears where the channel has posts, last, in the old view\'s word', async () => {
+      const { wrapper } = await openChannelPage(YT_PATH)
+
+      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Shorts', 'Playlists', 'Posts'])
+    })
+
+    it('is absent for a channel without posts, and a route naming it lands on the first shown', async () => {
+      layer.getChannel.mockResolvedValue(youTubeChannel({ tabs: ['videos', 'playlists'] }))
+      const { wrapper } = await openChannelPage(`${YT_PATH}/community`)
+
+      expect(wrapper.find('#communityTab').exists()).toBe(false)
+      expect(wrapper.find('#videosTab').classes()).toContain('selectedTab')
+      expect(layer.listChannelPosts).not.toHaveBeenCalled()
+    })
+
+    it('is hidden under getHideChannelCommunity, and a route naming it lands on the first shown', async () => {
+      store.setGetter('getHideChannelCommunity', true)
+      const { wrapper } = await openChannelPage(`${YT_PATH}/community`)
+
+      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Shorts', 'Playlists'])
+      expect(wrapper.find('#videosTab').classes()).toContain('selectedTab')
+      expect(layer.listChannelPosts).not.toHaveBeenCalled()
+    })
+
+    it('is reached from its tab, renders the posts with the post component in a list, without a sort, and appends the next page', async () => {
+      layer.listChannelPosts
+        .mockResolvedValueOnce({ items: [youTubePost(1), youTubePost(2)], cursor: 'next' })
+        .mockResolvedValueOnce({ items: [youTubePost(3)], cursor: null })
+      const { wrapper, router } = await openChannelPage(YT_PATH)
+
+      await wrapper.find('#communityTab').trigger('click')
+      await flushPromises()
+
+      expect(router.currentRoute.value.path).toBe(`${YT_PATH}/community`)
+      expect(wrapper.find('#communityTab').classes()).toContain('selectedTab')
+      expect(wrapper.find('#communityPanel').exists()).toBe(true)
+      expect(layer.listChannelPosts).toHaveBeenLastCalledWith(YT_ID, { cursor: null })
+      expect(postTexts(wrapper)).toEqual(['Post number 1', 'Post number 2'])
+      expect(wrapper.find('.fakePostCard .authorName').text()).toBe('Blender')
+      expect(wrapper.find('.fakePostCard .likeCount').text()).toBe('462')
+      expect(wrapper.find('.fakePostCard .publishedText').text()).toBe('2 days ago')
+      expect(wrapper.find('select').exists()).toBe(false)
+
+      await fetchMore(wrapper).trigger('click')
+      await flushPromises()
+
+      expect(layer.listChannelPosts).toHaveBeenLastCalledWith(YT_ID, { cursor: 'next' })
+      expect(postTexts(wrapper)).toEqual(['Post number 1', 'Post number 2', 'Post number 3'])
+      expect(fetchMore(wrapper).exists()).toBe(false)
+    })
+
+    it('lays the posts out as a list whatever the density, and the other tabs as the setting says', async () => {
+      layer.listChannelPosts.mockResolvedValue({ items: [youTubePost(1)], cursor: null })
+      const { wrapper, router } = await openChannelPage(`${YT_PATH}/community`)
+
+      expect(wrapper.findComponent({ name: 'FtElementList' }).props('display')).toBe('list')
+
+      await router.replace(YT_PATH)
+      await flushPromises()
+
+      expect(wrapper.findComponent({ name: 'FtElementList' }).props('display')).toBe('')
+    })
+
+    it('says so when the channel has none', async () => {
+      const { wrapper } = await openChannelPage(`${YT_PATH}/community`)
+
+      expect(wrapper.text()).toContain('This channel currently does not have any posts')
     })
   })
 

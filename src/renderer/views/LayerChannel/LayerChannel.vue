@@ -125,7 +125,7 @@
         class="card"
       />
       <FtCard class="card">
-        <!-- One list per tab: the videos, shorts and live, the playlists, releases, podcasts and courses -->
+        <!-- One list per tab: the videos, shorts and live, the playlists, releases, podcasts and courses, the posts -->
         <div
           :id="`${currentTab}Panel`"
           role="tabpanel"
@@ -149,7 +149,10 @@
           </div>
           <!-- A PeerTube playlist links to its instance; a YouTube playlist
                opens on the app's own playlist page, through the existing
-               card, and a short is `type: 'shortVideo'`, which the card badges -->
+               card, and a short is `type: 'shortVideo'`, which the card badges.
+               Posts are `type: 'community'`, which the list renders with the
+               existing post component, always as a list, as the old view
+               forces them -->
           <LayerPlaylistList
             v-if="currentTabInfo.playlists && !isYouTube"
             :playlists="currentList.items.value"
@@ -158,6 +161,7 @@
             v-else
             :data="currentList.items.value"
             :use-channels-hidden-preference="false"
+            :display="currentTabInfo.posts ? 'list' : ''"
           />
           <p
             v-if="isFinishedAndEmpty(currentList)"
@@ -274,13 +278,15 @@ const hideLiveStreams = computed(() => store.getters.getHideLiveStreams)
 const hideChannelReleases = computed(() => store.getters.getHideChannelReleases)
 const hideChannelPodcasts = computed(() => store.getters.getHideChannelPodcasts)
 const hideChannelCourses = computed(() => store.getters.getHideChannelCourses)
+const hideChannelCommunity = computed(() => store.getters.getHideChannelCommunity)
 
 /**
  * The tabs this view has, in the old view's order, by the names of
  * `ChannelDetails.tabs`. Each has its list in `lists`. `named` is a tab only
  * a channel whose `tabs` names it has; `hidden` is the user's setting
  * against it; `empty` what its list says when the channel has nothing in it;
- * `playlists` a tab listing playlists.
+ * `playlists` a tab listing playlists; `posts` the posts tab, a list layout
+ * whatever the density setting.
  */
 const tabs = computed(() => [
   { name: 'videos', label: t('Channel.Videos.Videos'), empty: t('Channel.Videos.This channel does not currently have any videos') },
@@ -290,12 +296,14 @@ const tabs = computed(() => [
   { name: 'podcasts', label: t('Channel.Podcasts.Podcasts'), empty: t('Channel.Podcasts.This channel does not currently have any podcasts'), named: true, hidden: hideChannelPodcasts.value, playlists: true },
   { name: 'courses', label: t('Channel.Courses.Courses'), empty: t('Channel.Courses.This channel does not currently have any courses'), named: true, hidden: hideChannelCourses.value, playlists: true },
   { name: 'playlists', label: t('Channel.Playlists.Playlists'), empty: t('Channel.Playlists.This channel does not currently have any playlists'), playlists: true },
+  { name: 'community', label: t('Global.Posts'), empty: t('Channel.Posts.This channel currently does not have any posts'), named: true, hidden: hideChannelCommunity.value, posts: true },
 ])
 
 /**
  * The tabs the channel has and the user does not hide: a tab its `tabs` does
  * not name is not shown, and PeerTube, which names none, has those every
- * channel has (not shorts or live). The first stands in for none.
+ * channel has (not shorts, live, releases, podcasts, courses or posts). The
+ * first stands in for none.
  */
 const visibleTabs = computed(() => {
   const named = channel.value?.tabs
@@ -473,6 +481,8 @@ const lists = {
   releases: createPlaylistList('releases'),
   podcasts: createPlaylistList('podcasts'),
   courses: createPlaylistList('courses'),
+  // YouTube's community posts, in its one order
+  community: createPagedList(cursor => layer.listChannelPosts(channel.value.id, { cursor })),
 }
 
 const currentList = computed(() => lists[currentTab.value])
