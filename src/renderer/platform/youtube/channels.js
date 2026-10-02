@@ -28,16 +28,20 @@
 //   `getInvidiousChannelReleases`, `…Podcasts` and `…Courses`; an artist
 //   topic channel's releases are its albums and singles, which Local reads
 //   off the channel page (`getLocalArtistTopicChannelReleases`), as the old
-//   view does. Each list's backend calls and item shapes are a row of
-//   `LISTS`; a cursor names its list, so a later page never needs the caller
-//   to repeat it.
+//   view does. Posts (YouTube's community tab, `listChannelPosts`) are a list
+//   in one order too, from `getCommunity()` read by
+//   `parseLocalCommunityPosts`, and `invidiousGetCommunityPosts`; YouTube
+//   sends some posts tabs as pages holding only a continuation, which are
+//   followed on every page, as the old view does. Each list's backend calls
+//   and item shapes are a row of `LISTS`; a cursor names its list, so a later
+//   page never needs the caller to repeat it.
 // - A page of a sorted list says which sort it is in (`Page.sort`), so that
 //   the view can tell when the sort asked was not applied: Local's first page
 //   of a tab without that filter (for playlists: without the sort, or of one
 //   playlist) answers `newest`, and an uploads playlist the sort asked;
 //   Invidious every page the sort asked, which it always applies. A later
 //   Local page, an empty page for a missing tab, and every page of an
-//   unsorted list (releases, podcasts, courses) say none.
+//   unsorted list (releases, podcasts, courses, posts) say none.
 // - A channel without a tab answers an empty page, without opening it: Local
 //   reads the channel's `has_*` flags; Invidious, which reports no such
 //   thing per tab, the channel's `tabs` when `getChannel` read them on this
@@ -86,12 +90,16 @@ export const CHANNEL_PLAYLIST_KINDS = Object.freeze(['playlists', 'releases', 'p
 /** The sorts of the channel's own playlists, in the order of YouTube's sort menu (date added, last video added) */
 export const CHANNEL_PLAYLIST_SORTS = Object.freeze(['newest', 'last'])
 
+/** The list `listChannelPosts` reads, by the old view's name for the tab */
+const CHANNEL_POST_KINDS = Object.freeze(['community'])
+
 /**
- * How many empty pages a first page is followed past. YouTube sends some live
- * tabs as a run of pages holding only a continuation (the old view's
- * workaround, for https://www.youtube.com/@TWLIVES/streams); a few more
- * requests find the first broadcasts, and past that the empty page is
- * answered with its cursor.
+ * How many empty pages a page is followed past. YouTube sends some live and
+ * posts tabs as a run of pages holding only a continuation (the old view's
+ * workaround, for https://www.youtube.com/@TWLIVES/streams and
+ * https://www.youtube.com/@TheLinuxEXP/community); a few more requests find
+ * the next items, and past that the empty page is answered with its cursor.
+ * The old view follows without a bound.
  */
 const EMPTY_PAGES_FOLLOWED = 3
 
@@ -119,6 +127,18 @@ function forCard(item) {
  */
 function asShort(item) {
   return { ...forCard(item), type: 'shortVideo', lengthSeconds: item.lengthSeconds || '' }
+}
+
+/**
+ * A post as the module parsed it, which is the common shape already (the
+ * post component's field names), with `null` for no attachment where a
+ * module leaves one it does not know `undefined`.
+ *
+ * @param {any} post
+ * @returns {import('../shapes').Post}
+ */
+function asPost(post) {
+  return { ...post, postContent: post.postContent ?? null }
 }
 
 /**
@@ -248,7 +268,7 @@ function parseLocalPlaylists(youtube, nodes, owner) {
  *   topic channel, a topic header) leaves them unattributed, as the old view
  *   does for shorts, rather than naming the channel page as their author.
  * - `followEmpty`: follow a first page that came back empty (see
- *   `EMPTY_PAGES_FOLLOWED`).
+ *   `EMPTY_PAGES_FOLLOWED`); `followEmptyLater`: a later one too.
  * - `topicPlaylist`: the uploads playlist type standing in for the tab on an
  *   artist topic channel (`getChannelPlaylistId`), which has no videos tab.
  *   `topicReleases`: on an artist topic channel the list is the albums and
@@ -350,6 +370,22 @@ const LISTS = Object.freeze({
     invidiousItems: 'playlists',
     localItem: localPlaylist,
     invidiousItem: invidiousPlaylist,
+  }),
+  community: Object.freeze({
+    flag: 'has_community',
+    tab: 'community',
+    sorts: null,
+    openTab: channel => channel.getCommunity(),
+    localItems: page => page.posts,
+    // The module's parser reads a whole page at once: it drops the posts a
+    // shared post repeats, which it does not show
+    parseLocal: (youtube, nodes) => youtube.parseLocalCommunityPosts(nodes),
+    followEmpty: true,
+    followEmptyLater: true,
+    invidious: 'invidiousGetCommunityPosts',
+    invidiousItems: 'posts',
+    localItem: asPost,
+    invidiousItem: asPost,
   }),
 })
 
@@ -553,6 +589,27 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
   }
 
   /**
+   * The tab page, or the first after it with items, following at most
+   * `EMPTY_PAGES_FOLLOWED` pages that hold only a continuation.
+   *
+   * @param {any} tab a `YT.Channel` tab or its continuation
+   * @param {ListKind} kind
+   */
+  async function pastEmptyPages(tab, kind) {
+    const list = LISTS[kind]
+
+    for (let followed = 0; followed < EMPTY_PAGES_FOLLOWED; followed++) {
+      if ((list.localItems(tab)?.length ?? 0) > 0 || !tab.has_continuation) {
+        break
+      }
+
+      tab = await tab.getContinuation()
+    }
+
+    return tab
+  }
+
+  /**
    * @param {any} tab a `YT.Channel` tab or its continuation
    * @param {{ id: string, name: string } | null} owner
    * @param {ListKind} kind
@@ -655,12 +712,8 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       tab = sorted
     }
 
-    for (let followed = 0; list.followEmpty && followed < EMPTY_PAGES_FOLLOWED; followed++) {
-      if ((list.localItems(tab)?.length ?? 0) > 0 || !tab.has_continuation) {
-        break
-      }
-
-      tab = await tab.getContinuation()
+    if (list.followEmpty) {
+      tab = await pastEmptyPages(tab, kind)
     }
 
     const page = localTabPage(tab, ownerOf(channel, id, kind), kind)
@@ -697,7 +750,9 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       return next ? localPlaylistPage(next, kind) : { items: [], cursor: null }
     }
 
-    return localTabPage(await continuation.getContinuation(), cursor.owner ?? null, kind)
+    const next = await continuation.getContinuation()
+
+    return localTabPage(LISTS[kind].followEmptyLater ? await pastEmptyPages(next, kind) : next, cursor.owner ?? null, kind)
   }
 
   // -------------------------------------------------------------------------
@@ -869,5 +924,17 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
     return listPage(id, /** @type {ListKind} */ (kind), sort, cursor, CHANNEL_PLAYLIST_KINDS)
   }
 
-  return Object.freeze({ getChannel, listChannelVideos, listChannelPlaylists })
+  /**
+   * A page of the channel's posts, newest first, YouTube's one order. A
+   * channel without the tab answers an empty page.
+   *
+   * @param {string} id a YouTube channel ref
+   * @param {{ cursor?: unknown }} [options]
+   * @returns {Promise<import('../shapes').Page<import('../shapes').Post>>}
+   */
+  async function listChannelPosts(id, { cursor = null } = {}) {
+    return listPage(id, 'community', 'newest', cursor, CHANNEL_POST_KINDS)
+  }
+
+  return Object.freeze({ getChannel, listChannelVideos, listChannelPlaylists, listChannelPosts })
 }

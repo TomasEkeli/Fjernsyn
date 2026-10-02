@@ -11,6 +11,7 @@ import invidiousNoBanner from './fixtures/invidious--channel-no-banner.json'
 import invidiousOrdinary from './fixtures/invidious--channel-ordinary.json'
 import invidiousPlaylists from './fixtures/invidious--channel-playlists.json'
 import invidiousPodcasts from './fixtures/invidious--channel-podcasts.json'
+import invidiousPosts from './fixtures/invidious--channel-posts.json'
 import invidiousReleases from './fixtures/invidious--channel-releases.json'
 import invidiousShorts from './fixtures/invidious--channel-shorts.json'
 import localArtistTopicAbout from './fixtures/local--channel-artist-topic-about.json'
@@ -20,6 +21,8 @@ import localArtistTopic from './fixtures/local--channel-artist-topic.json'
 import localNoBanner from './fixtures/local--channel-no-banner.json'
 import localOrdinaryAbout from './fixtures/local--channel-ordinary-about.json'
 import localOrdinary from './fixtures/local--channel-ordinary.json'
+import localPostsPoll from './fixtures/local--channel-posts-poll.json'
+import localPosts from './fixtures/local--channel-posts.json'
 import localShortsPage from './fixtures/local--channel-shorts-page.json'
 import localTerminated from './fixtures/local--channel-terminated.json'
 
@@ -104,6 +107,15 @@ function sortablePlaylistsTab(pages = LOCAL_PLAYLIST_PAGES, sorted = [[{ id: 'PL
   })
 }
 
+/**
+ * Blender's posts tab as the test pages it: the text post, a page holding
+ * only a continuation, then the image and video posts. Each node is a marker
+ * the fake parser answers the recorded parse for.
+ */
+const [LOCAL_TEXT_POST, LOCAL_IMAGE_POST, LOCAL_VIDEO_POST] = localPosts.answer
+const LOCAL_POST_PAGES = [[LOCAL_TEXT_POST], [], [LOCAL_IMAGE_POST, LOCAL_VIDEO_POST]].map(page => page.map(post => ({ id: post.postId })))
+const LOCAL_POSTS_BY_ID = Object.fromEntries([...localPosts.answer, ...localPostsPoll.answer].map(post => [post.postId, post]))
+
 /** A `YT.Channel` from a fixture, with its about page and tabs */
 function localChannel(fixture, about = null) {
   return withMethods(fixture, () => ({
@@ -115,6 +127,7 @@ function localChannel(fixture, about = null) {
     getReleases: async () => pagedTab('playlists', localKindPages('releases')),
     getPodcasts: async () => pagedTab('playlists', localKindPages('podcasts')),
     getCourses: async () => pagedTab('playlists', localKindPages('courses')),
+    getCommunity: async () => pagedTab('posts', LOCAL_POST_PAGES),
   }))
 }
 
@@ -133,8 +146,8 @@ function invidiousTab(fixture, key) {
 }
 
 /** The same, for a tab whose module function takes no sort: `(id, continuation)` */
-function invidiousUnsortedTab(fixture) {
-  const tab = invidiousTab(fixture, 'playlists')
+function invidiousUnsortedTab(fixture, key = 'playlists') {
+  const tab = invidiousTab(fixture, key)
   return (id, continuation) => tab(id, undefined, continuation)
 }
 
@@ -216,6 +229,9 @@ function setUp({ config = {}, answers = {} } = {}) {
     getInvidiousChannelCourses: invidiousUnsortedTab(invidiousCourses),
     getLocalArtistTopicChannelReleases: async () => structuredClone(localArtistTopicReleases.answer),
     getLocalArtistTopicChannelReleasesContinuation: async () => structuredClone(localArtistTopicReleasesContinuation.answer),
+    // The module's parse of each node, as recorded
+    parseLocalCommunityPosts: nodes => nodes.map(node => structuredClone(LOCAL_POSTS_BY_ID[node.id])),
+    invidiousGetCommunityPosts: invidiousUnsortedTab(invidiousPosts, 'posts'),
     ...answers,
   })
   const layer = createLayer(fake, config)
@@ -827,5 +843,97 @@ describe('the sorts of a YouTube channel\'s playlists', () => {
     expect(pages.map(page => page.sort)).toEqual([sort, sort])
     expect(pages[0].cursor).toEqual({ backend: 'invidious', continuation: 'playlists-token-2', sort, kind: 'playlists' })
     expect(fake.callsOf('getInvidiousChannelPlaylists')).toEqual([[BLENDER, sort, null], [BLENDER, sort, 'playlists-token-2']])
+  })
+})
+
+describe('a YouTube channel\'s posts', () => {
+  it('pages Local to the end, a text, an image and a video post, as the module parsed them', async () => {
+    const { layer } = setUp()
+
+    const pages = await allPages(layer, BLENDER, {}, 'listChannelPosts')
+
+    // The page holding only a continuation is followed, not answered
+    expect(pages).toHaveLength(2)
+    expect(itemsOf(pages)).toEqual([LOCAL_TEXT_POST, LOCAL_IMAGE_POST, LOCAL_VIDEO_POST])
+    expect(itemsOf(pages).map(post => post.postContent?.type ?? null)).toEqual([null, 'image', 'video'])
+    expect(LOCAL_VIDEO_POST.postContent.content).toMatchObject({ type: 'video', videoId: '685eur9lMGc', lengthSeconds: 282 })
+    expect(pages[0].cursor).toMatchObject({ backend: 'local', from: 'tab', kind: 'community' })
+    expect(pages.at(-1).cursor).toBeNull()
+    expect(pages.every(page => !('sort' in page))).toBe(true)
+  })
+
+  it('reads a Local poll, its choices and votes', async () => {
+    const { layer } = setUp({
+      answers: {
+        getLocalChannel: async () => withMethods(localOrdinary, () => ({
+          getCommunity: async () => pagedTab('posts', [localPostsPoll.answer.map(post => ({ id: post.postId }))]),
+        })),
+      },
+    })
+
+    const page = await layer.listChannelPosts(BLENDER)
+
+    expect(page).toEqual({ items: localPostsPoll.answer, cursor: null })
+    expect(page.items[0]).toMatchObject({
+      type: 'community',
+      voteCount: 3600,
+      commentCount: 516,
+      postContent: { type: 'poll', totalVotes: 223000, content: expect.arrayContaining([expect.objectContaining({ text: 'Concord Purple' })]) },
+    })
+  })
+
+  it('answers a Local attachment the module does not know as none', async () => {
+    const { layer } = setUp({ answers: { parseLocalCommunityPosts: nodes => nodes.map(() => ({ ...LOCAL_TEXT_POST, postContent: undefined })) } })
+
+    const page = await layer.listChannelPosts(BLENDER)
+
+    expect(page.items[0].postContent).toBeNull()
+  })
+
+  it('pages Invidious to the end, a text, an image, a video and a poll post, asking no sort', async () => {
+    const { layer, fake } = setUp({ config: { backendPreference: 'invidious' } })
+
+    const pages = await allPages(layer, BLENDER, {}, 'listChannelPosts')
+
+    expect(itemsOf(pages)).toEqual(invidiousPosts.answer.posts)
+    expect(itemsOf(pages).map(post => post.postContent?.type ?? null)).toEqual([null, 'image', 'video', 'poll'])
+    expect(pages[0].cursor).toEqual({ backend: 'invidious', continuation: 'posts-token-2', sort: null, kind: 'community' })
+    expect(pages.at(-1).cursor).toBeNull()
+    expect(fake.callsOf('invidiousGetCommunityPosts')).toEqual([[BLENDER, null], [BLENDER, 'posts-token-2']])
+  })
+
+  it('tries Invidious once when Local fails with fallback on, and pages on there', async () => {
+    const { layer, fake } = setUp({
+      config: { backendFallback: true },
+      answers: { getLocalChannel: async () => withMethods(localOrdinary, () => ({ getCommunity: async () => { throw new TypeError('fetch failed') } })) },
+    })
+
+    const pages = await allPages(layer, BLENDER, {}, 'listChannelPosts')
+
+    expect(itemsOf(pages)).toHaveLength(invidiousPosts.answer.posts.length)
+    expect(fake.callsOf('invidiousGetCommunityPosts')).toHaveLength(2)
+  })
+
+  it('answers a Local channel without posts with an empty page, opening no tab', async () => {
+    // The fixture's channel has no community tab, and no methods to open one
+    const { layer } = setUp({ answers: { getLocalChannel: async () => structuredClone(localNoBanner.answer) } })
+
+    expect(await layer.listChannelPosts(NO_BANNER)).toEqual({ items: [], cursor: null })
+  })
+
+  it('answers an Invidious channel without posts with an empty page, asking nothing more once its tabs are known', async () => {
+    const { layer, fake } = setUp({ config: { backendPreference: 'invidious' } })
+
+    await layer.getChannel(NO_BANNER)
+
+    expect(await layer.listChannelPosts(NO_BANNER)).toEqual({ items: [], cursor: null })
+    expect(fake.callsOf('invidiousGetCommunityPosts')).toHaveLength(0)
+  })
+
+  it('will not continue a list of videos as posts', async () => {
+    const { layer } = setUp()
+    const videos = await layer.listChannelVideos(BLENDER)
+
+    expect((await failure(layer.listChannelPosts(BLENDER, { cursor: videos.cursor }))).kind).toBe('invalid')
   })
 })

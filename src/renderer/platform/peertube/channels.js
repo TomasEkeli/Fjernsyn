@@ -13,6 +13,7 @@
 // - Playlists are the channel's, in PeerTube's order. The `releases`,
 //   `podcasts` and `courses` kinds are YouTube's tabs: an empty page here.
 //   The playlist sort is YouTube's too, and not read.
+// - Posts are YouTube's community tab: an empty page here.
 // - A handle the instance does not know is `notFound` (see `./client.js`).
 // - An account's channels (`listAccountChannels`) are asked of the account's
 //   host, `/api/v1/accounts/{name@host}/video-channels`, all at once: 100 is
@@ -187,6 +188,18 @@ export function createChannelReader({ client, config }) {
   }
 
   /**
+   * The channel's posts. PeerTube has none, so an empty page, without a
+   * request; the handle is still checked.
+   *
+   * @param {import('../shapes').PeerTubeChannelRef} ref
+   * @returns {Promise<import('../shapes').Page<import('../shapes').Post>>}
+   */
+  async function listChannelPosts(ref) {
+    channelOf(ref)
+    return { items: [], cursor: null }
+  }
+
+  /**
    * @param {string} accountHandle `name@host`
    * @returns {Promise<import('../shapes').ChannelSummary[]>}
    */
@@ -201,5 +214,5 @@ export function createChannelReader({ client, config }) {
     return body.data.map(channel => channelSummary(channel, host)).filter(channel => channel !== null)
   }
 
-  return Object.freeze({ getChannel, listChannelVideos, listChannelPlaylists, listAccountChannels })
+  return Object.freeze({ getChannel, listChannelVideos, listChannelPlaylists, listChannelPosts, listAccountChannels })
 }

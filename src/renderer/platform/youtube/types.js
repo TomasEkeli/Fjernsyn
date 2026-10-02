@@ -2,7 +2,7 @@
 // in ../shapes.js, field by field. Written in phase 1 as the sketch the
 // shapes were checked against (ticket 17), and now implemented: details in
 // `./videos.js` and `./videoDetails.js`, playback sources in `./playback.js`
-// and `./sabr.js`, channels, their lists and playlists in `./channels.js`,
+// and `./sabr.js`, channels, their lists, playlists and posts in `./channels.js`,
 // comments in `./comments.js`, search in `./search.js`. Which backend answers
 // is `./policy.js`, how its failures read is `./errors.js` (ADR-0015). Kept as
 // the reference table the modules point to; where a module and this file
@@ -76,7 +76,7 @@
  * @property {'tab' | 'playlist' | 'topicReleases'} [from] channel lists: a
  *   channel tab, an artist topic channel's uploads playlist standing in for
  *   its videos tab, or the releases read off its page
- * @property {'videos' | 'shorts' | 'live' | 'playlists' | 'releases' | 'podcasts' | 'courses'} [kind] channel lists
+ * @property {'videos' | 'shorts' | 'live' | 'playlists' | 'releases' | 'podcasts' | 'courses' | 'community'} [kind] channel lists
  * @property {any} [channel] an artist topic channel's releases: the
  *   `YT.Channel`, whose session alone can call the continuation node
  * @property {{ id: string, name: string } | null} [owner] channel tabs: whose
@@ -93,9 +93,9 @@
  * @property {string | null} [sort] the sort the token was issued under, which
  *   Invidious needs repeated (`sort_by`) on every page: `newest`, `popular`
  *   or `oldest` for channel video lists, `newest` or `last` for a channel's
- *   own playlists, `null` for its releases, podcasts and courses, `top` or
+ *   own playlists, `null` for its releases, podcasts, courses and posts, `top` or
  *   `newest` for comments; absent for replies
- * @property {'videos' | 'shorts' | 'live' | 'playlists' | 'releases' | 'podcasts' | 'courses'} [kind] channel lists
+ * @property {'videos' | 'shorts' | 'live' | 'playlists' | 'releases' | 'podcasts' | 'courses' | 'community'} [kind] channel lists
  */
 
 /**
@@ -148,6 +148,14 @@
  *     sort repeated, or from `getInvidiousChannelReleases`, `…Podcasts`,
  *     `…Courses`, which take none. `{ backend, continuation, sort, kind }`,
  *     `sort` `null` for the unsorted kinds.
+ *   - A channel without the tab is an empty page, as for the video lists.
+ * - `listChannelPosts` (the list `kind` `community`), YouTube's one order
+ *   - L: the tab instance from `getCommunity()`, its `posts` read by
+ *     `parseLocalCommunityPosts`. `{ backend, continuation, from: 'tab',
+ *     kind, owner }`. End: `!has_continuation`. Every page, first or later,
+ *     follows up to 3 empty pages, as the old view does (without its bound).
+ *   - I: `continuation` string from `invidiousGetCommunityPosts(id,
+ *     continuation)`. `{ backend, continuation, sort: null, kind }`.
  *   - A channel without the tab is an empty page, as for the video lists.
  * - `search`
  *   - L: the `YT.Search` instance `getLocalSearchResults` answers as
@@ -516,6 +524,34 @@
  * 'local'`, and otherwise reads `playlistThumbnail` and fails.
  *
  * @typedef {import('../shapes').PlaylistSummary & { dataSource: 'local' }} YouTubePlaylistSummary
+ */
+
+// ---------------------------------------------------------------------------
+// Posts
+// ---------------------------------------------------------------------------
+
+/**
+ * A YouTube channel's post, the common `Post` (../shapes.js), implemented in
+ * `./channels.js`. Not mapped: both modules' parsers answer the post
+ * component's field names already, which is what `Post` is, and the adapter
+ * hands their answer on, with `postContent` `null` where a parser left an
+ * attachment it does not know `undefined`. L: `parseLocalCommunityPosts` on a
+ * page of `getCommunity()`'s `posts` (`YTNodes.BackstagePost`, `Post`,
+ * `SharedPost`), which drops a shared post and the post it repeats. I:
+ * `invidiousGetCommunityPosts(id, continuation)`'s `posts`.
+ *
+ * | common           | L (`BackstagePost`)                                   | I (`/api/v1/channels/{id}/community` entry)        |
+ * | ---------------- | ----------------------------------------------------- | -------------------------------------------------- |
+ * | postId           | `id`                                                  | `commentId`                                        |
+ * | postText         | `parseLocalTextRuns(content.runs)`, autolinked; `''` when empty | `contentHtml`, `href="/` made `href="#/`  |
+ * | author, authorId | `author.name`, `author.id`                            | `author`, `authorId`                               |
+ * | authorThumbnails | `author.thumbnails`, `//` made `https:`               | `authorThumbnails` via `youtubeImageUrlToInvidious` |
+ * | publishedTime    | `calculatePublishedDate(published.text)`              | `calculatePublishedDate(publishedText)`            |
+ * | voteCount        | from `vote_count.text`, 0 when YouTube hides it       | `likeCount`                                        |
+ * | commentCount     | from `action_buttons.reply_button.text`, `null` without one | `replyCount`, else 0                         |
+ * | postContent      | from `attachment`: `BackstageImage` → `image`, `PostMultiImage` → `multiImage`, `Poll` → `poll`, `Quiz` → `quiz`, `Video` → `video` (`parseLocalListVideo`, `null` for an unavailable one), `Playlist` → `playlist` (`parseLocalListPlaylist`) | from `attachment`: `image`, `multiImage`, `poll`, `quiz` with images on the instance, `video` and `playlist` as the API gives them, `error` for a gone video |
+ *
+ * @typedef {import('../shapes').Post} YouTubePost
  */
 
 // ---------------------------------------------------------------------------

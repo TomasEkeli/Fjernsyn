@@ -247,6 +247,21 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   }
 
   /**
+   * A page of a channel's posts (YouTube's community tab), newest first, in
+   * the shape the existing post component reads (`Post`). A YouTube channel
+   * goes through the backend policy; one without the tab, and every PeerTube
+   * channel (without a request), answers an empty page. Hand the page's
+   * `cursor` back for the next page; `null` is the end.
+   *
+   * @param {import('./shapes').ChannelRef} ref
+   * @param {{ cursor?: unknown }} [options]
+   * @returns {Promise<import('./shapes').Page<import('./shapes').Post>>}
+   */
+  function listChannelPosts(ref, options) {
+    return isYouTubeChannelRef(ref) ? youtubeAdapter.listChannelPosts(ref, options) : channels.listChannelPosts(ref)
+  }
+
+  /**
    * Every video channel of a PeerTube account, from the account's own
    * instance, as channel summaries: `handle` (`name@host`, also `id`), `name`
    * (the display name), `thumbnail` (the avatar a subscription stub holds,
@@ -406,6 +421,7 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
     getChannel,
     listChannelVideos,
     listChannelPlaylists,
+    listChannelPosts,
     listAccountChannels,
     search,
     searchQuery,

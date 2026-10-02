@@ -484,6 +484,22 @@ describe('listChannelPlaylists (PeerTube)', () => {
   })
 })
 
+describe('listChannelPosts (PeerTube)', () => {
+  it('answers YouTube\'s posts tab as an empty page, without a request', async () => {
+    const { fake, layer } = setUp()
+
+    expect(await layer.listChannelPosts(BLENDER)).toEqual({ items: [], cursor: null })
+    expect(fake.requests).toHaveLength(0)
+  })
+
+  it('refuses what is not a handle, without a request', async () => {
+    const { fake, layer } = setUp()
+
+    expect((await failure(layer.listChannelPosts('blender'))).kind).toBe('invalid')
+    expect(fake.requests).toHaveLength(0)
+  })
+})
+
 describe('listAccountChannels (PeerTube)', () => {
   const ACCOUNT = 'blender@video.blender.org'
   const ACCOUNT_CHANNELS_URL = `https://video.blender.org/api/v1/accounts/${ACCOUNT}/video-channels?count=100`
