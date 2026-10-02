@@ -103,6 +103,7 @@ const SETTINGS = vi.hoisted(() => ({
   getWatchedProgressSavingMode: 'auto',
   getHistoryCacheById: {},
   getDefaultViewingMode: 'default',
+  getDefaultVideoFormat: 'dash',
   getDefaultPlayback: 1,
   getHideChapters: false,
   getHideVideoDescription: false,
@@ -334,6 +335,10 @@ async function openWatchPage(answer, path = WATCH_PATH) {
     { path: '/watch/:id', component: LayerWatch },
     { path: '/peertube/channel/:handle/:currentTab?', name: 'peertubeChannel' },
     { path: '/elsewhere', name: 'elsewhere' },
+    // Routes whose own guard refuses the navigation, as the PeerTube routes'
+    // does while PeerTube is off: one rendering this view, one not
+    { path: '/refused/watch/:host/:uuid', component: LayerWatch, beforeEnter: () => false },
+    { path: '/refused', beforeEnter: () => false },
   ])
   await router.push(path)
 
@@ -676,6 +681,23 @@ describe('the format ring', () => {
     expect(dispatched('updateWatchProgress')).toEqual([{ videoId: UUID, watchProgress: 42.5 }])
     // Destroyed once: a second ui.destroy() on a player on its way out
     expect(player.events.filter(event => event === 'destroyed')).toEqual(['destroyed'])
+  })
+
+  it.each([
+    ['to another video', `/refused/watch/${HOST}/${OTHER_UUID}`],
+    ['away from the page', '/refused'],
+  ])('leaves the video playing when the target route refuses a navigation %s', async (_case, path) => {
+    const { wrapper, router } = await openWatchPage(playableVideo())
+    Object.assign(player, { hasLoaded: true, currentTime: 42.5 })
+    const playing = findPlayer(wrapper).element
+
+    await router.push(path)
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe(WATCH_PATH)
+    expect(findPlayer(wrapper).element).toBe(playing)
+    expect(player.events).not.toContain('destroyed')
+    expect(dispatched('updateWatchProgress')).toEqual([])
   })
 
   it('offers to try again once nothing plays, asking the layer afresh', async () => {
@@ -1301,6 +1323,38 @@ describe('a YouTube video', () => {
     expect(findButton(wrapper, 'Audio only').exists()).toBe(false)
   })
 
+  it.each([
+    ['in the default format where it has it', 'legacy', {}, 'legacy'],
+    ['on the ring where it lacks the default format', 'legacy', { legacyFormats: [] }, 'dash'],
+  ])('starts %s, as the old watch page does', async (_case, defaultFormat, sourceOverrides, format) => {
+    store.setGetter('getDefaultVideoFormat', defaultFormat)
+    const { wrapper } = await openWatchPage(youtubeVideo({}, sourceOverrides), YT_PATH)
+
+    expect(findPlayer(wrapper).props('format')).toBe(format)
+  })
+
+  it('leaves a PeerTube video to the ring, whatever the default format', async () => {
+    store.setGetter('getDefaultVideoFormat', 'legacy')
+    const { wrapper } = await openWatchPage(playableVideo())
+
+    expect(findPlayer(wrapper).props('format')).toBe('dash')
+  })
+
+  it.each([
+    ['fullscreen', false],
+    ['fullscreen_always_on', true],
+  ])('applies the %s viewing mode to the first video, and to the next only if always on', async (mode, onNext) => {
+    store.setGetter('getDefaultViewingMode', mode)
+    const { wrapper, router } = await openWatchPage(ref => youtubeVideo({ videoId: ref }), YT_PATH)
+    expect(findPlayer(wrapper).props('startInFullscreen')).toBe(true)
+
+    // The player left full screen, as its destruction reports
+    await router.push('/watch/pCJ9JGG0GQI')
+    await flushPromises()
+
+    expect(findPlayer(wrapper).props('startInFullscreen')).toBe(onNext)
+  })
+
   it('plays a live from its HLS manifest, from the live edge', async () => {
     store.setGetter('getHistoryCacheById', { [YT_ID]: { videoId: YT_ID, watchProgress: 100 } })
     const { wrapper } = await openWatchPage(youtubeLive(), `${YT_PATH}?timestamp=30`)
@@ -1436,6 +1490,26 @@ describe('a YouTube video', () => {
       expect(findPlayer(wrapper).props('startTime')).toBe(42)
       expect(regulators[0].reset).not.toHaveBeenCalled()
       expect(showToast).toHaveBeenCalledWith('Reloading player: the session reload failed')
+    })
+
+    it('does not reload over another video opened while the player is being destroyed for the reload', async () => {
+      const NEXT_ID = 'pCJ9JGG0GQI'
+      const { wrapper, router } = await openWatchPage(ref => ({ ...sabrVideo(), videoId: ref }), YT_PATH)
+      Object.assign(player, { hasLoaded: true, currentTime: 42.5 })
+      let finishDestroying
+      player.destroyGate = new Promise(resolve => { finishDestroying = resolve })
+
+      findPlayer(wrapper).vm.$emit('player-reload-requested', 'the session reload failed')
+      await flushPromises()
+      const opening = router.push(`/watch/${NEXT_ID}`)
+      await flushPromises()
+
+      finishDestroying()
+      await opening
+      await flushPromises()
+
+      expect(layer.getVideo.mock.calls).toEqual([[YT_ID], [NEXT_ID]])
+      expect(findPlayer(wrapper).props()).toMatchObject({ videoId: NEXT_ID, startTime: null })
     })
 
     it('reads a 403 against the expiry of the session renewed since, not the source\'s', async () => {
@@ -1752,6 +1826,17 @@ describe('a YouTube video\'s stream failing', () => {
     expect(findPlayer(wrapper).exists()).toBe(false)
     expect(wrapper.text()).toContain(text)
     expect(wrapper.find('.errorRetryButton').exists()).toBe(false)
+  })
+
+  it('says it is rate limited on a 429, without trying another format, and offers to try again', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+    findPlayer(wrapper).vm.$emit('error', badStatus(429))
+    await flushPromises()
+
+    expect(findPlayer(wrapper).exists()).toBe(false)
+    expect(wrapper.text()).toContain('[BAD_HTTP_STATUS: 429] Ratelimited')
+    expect(wrapper.find('.errorRetryButton').exists()).toBe(true)
   })
 
   it('reads a 403 as the address refused where the layer does not know the expiry', async () => {

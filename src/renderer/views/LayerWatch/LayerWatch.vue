@@ -381,6 +381,10 @@ let historyWritten = false
 let savedOnLeave = false
 /** Tells a load apart from the one that replaced it */
 let loadsStarted = 0
+/** Set by the route guard once it lets a navigation leave the video, until the next load */
+let leavingVideo = false
+/** Whether a video has been shown, and the default viewing mode applied to it */
+let viewingModeApplied = false
 /** The player whose destruction has begun, and that destruction */
 let destroyedPlayer = null
 /** @type {Promise<void>} */
@@ -645,6 +649,23 @@ function canUseFormat(format) {
 }
 
 /**
+ * The format a video starts in: for YouTube, the default format setting where
+ * the video has it, as Watch.js starts from it, else the first of the ring it
+ * has. A PeerTube video starts on the ring, as it always has.
+ *
+ * @returns {Format}
+ */
+function initialFormat() {
+  const preferred = store.getters.getDefaultVideoFormat
+
+  if (isYouTube.value && FORMAT_RING.includes(preferred) && canUseFormat(preferred)) {
+    return preferred
+  }
+
+  return FORMAT_RING.find(canUseFormat) ?? 'dash'
+}
+
+/**
  * What to show instead of the player, or `null` to show the player.
  *
  * @type {import('vue').ComputedRef<Message | null>}
@@ -898,9 +919,28 @@ function initialStartTime(resumePosition) {
   return null
 }
 
-/** As Watch.js's `setViewingModeOnFirstLoad` */
+/**
+ * As Watch.js: `setViewingModeOnFirstLoad` for the first video this view
+ * shows, then `setViewingModeOnRouteChange` for every later one, a reload and
+ * a retry included, which applies only the `_always_on` modes. Otherwise the
+ * player's own state carries over from the video before (`destroyPlayer`).
+ */
 function applyViewingMode() {
-  switch (store.getters.getDefaultViewingMode) {
+  const mode = store.getters.getDefaultViewingMode
+
+  if (viewingModeApplied) {
+    if (mode === 'fullscreen_always_on') {
+      startInFullscreen.value = true
+    } else if (mode === 'fullwindow_always_on') {
+      startInFullwindow.value = true
+    }
+
+    return
+  }
+
+  viewingModeApplied = true
+
+  switch (mode) {
     case 'theatre':
       useTheatreMode.value = theatrePossible.value
       break
@@ -933,6 +973,7 @@ async function load() {
   narrowWindow.value = window.innerWidth < 500
   historyWritten = false
   savedOnLeave = false
+  leavingVideo = false
   startTime.value = null
   currentChapterIndex.value = 0
   timestamp = readTimestamp()
@@ -962,7 +1003,7 @@ async function load() {
       return
     }
 
-    activeFormat.value = FORMAT_RING.find(canUseFormat) ?? 'dash'
+    activeFormat.value = initialFormat()
     startTime.value = initialStartTime(resumePosition)
     // Theatre mode is only possible once the page knows what the sidebar holds
     isLoading.value = false
@@ -1063,7 +1104,8 @@ function streamExpired() {
 /**
  * Watch.js's `handlePlayerError` for a YouTube video, before its format ring:
  * the end of the SABR ladder (ADR-0011), which no other format escapes, its
- * retry starting the ladder afresh; a 403, which reads as an expired session
+ * retry starting the ladder afresh; a 429, the rate limit, to try again; a
+ * 403, which reads as an expired session
  * once the streaming URLs have expired and otherwise as the address refused,
  * a music video's possibly by country; a legacy format failing after the
  * expiry. Its words, hard-coded in English there, are kept as they are.
@@ -1082,6 +1124,10 @@ function youtubeStreamFailure(error) {
       text: 'YouTube is not serving this video to the current session (PO token rejected). Trying again sometimes works, otherwise wait a while or switch networks.',
       retryable: true,
     }
+  }
+
+  if (error?.code === Code.BAD_HTTP_STATUS && error.data?.[1] === 429) {
+    return { icon: ['fas', 'exclamation-circle'], text: '[BAD_HTTP_STATUS: 429] Ratelimited', retryable: true }
   }
 
   if (error?.code === Code.BAD_HTTP_STATUS && error.data?.[1] === 403) {
@@ -1140,17 +1186,22 @@ async function stopPlaying(failure) {
 /**
  * The ladder's page reload (useSabrHosting.js), as Watch.js's `reloadView`:
  * the position saved and the player destroyed, then the video asked of the
- * layer afresh and started at `position`.
+ * layer afresh and started at `position`. Not if, during the destruction,
+ * another video has started loading or a navigation has left this one: the
+ * position is this video's, and the navigation brings its own load.
  *
  * @param {number | null} position
  */
 async function reloadKeepingPosition(position) {
   handleWatchProgressAutoSave()
 
-  try {
-    await destroyPlayer()
-  } catch (destroyError) {
-    console.error(destroyError)
+  const thisLoad = loadsStarted
+
+  await destroyPlayerLogged()
+
+  // A navigation the route guard has let through, whose load is still to come
+  if (thisLoad !== loadsStarted || leavingVideo) {
+    return
   }
 
   resumeAt = position
@@ -1600,6 +1651,18 @@ function destroyPlayer() {
 }
 
 /**
+ * `destroyPlayer`, a failure logged rather than thrown: whatever comes next
+ * (the next video, a message, leaving the view) goes ahead without the player
+ */
+async function destroyPlayerLogged() {
+  try {
+    await destroyPlayer()
+  } catch (destroyError) {
+    console.error(destroyError)
+  }
+}
+
+/**
  * Whether this view renders the route: either watch route, between which the
  * router keeps it, as a playlist crosses from one platform to the other
  *
@@ -1619,8 +1682,11 @@ function sameVideo(to, from) {
 // stay with the record this view was first mounted on, and the router keeps
 // the view when a playlist crosses to the other watch route. For another
 // video, the one left is saved and its player destroyed before the watcher
-// below loads the next; leaving the view, the same and the listeners removed
-const removeRouteGuard = router.beforeEach(async (to, from) => {
+// below loads the next; leaving the view, the same and the listeners removed.
+// Before resolving rather than before each: after the target route's own
+// `beforeEnter`, so that a navigation it refuses (a PeerTube route while
+// PeerTube is off) leaves the video playing
+const removeRouteGuard = router.beforeResolve(async (to, from) => {
   if (!rendersThisView(from)) {
     return
   }
@@ -1630,19 +1696,21 @@ const removeRouteGuard = router.beforeEach(async (to, from) => {
       return
     }
 
+    leavingVideo = true
     // As Watch.js's `handleRouteChange`: the countdown is for the video left
     abortAutoplayCountdown(true)
     handleWatchProgressAutoSave()
-    await destroyPlayer()
+    await destroyPlayerLogged()
     return
   }
 
+  leavingVideo = true
   abortAutoplayCountdown(true)
   handleWatchProgressAutoSave()
   savedOnLeave = true
   window.removeEventListener('beforeunload', handleWatchProgressAutoSave)
   stopAutoplayInterruptionTimer()
-  await destroyPlayer()
+  await destroyPlayerLogged()
 })
 
 watch(
