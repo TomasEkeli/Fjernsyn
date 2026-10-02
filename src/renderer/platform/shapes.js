@@ -484,14 +484,16 @@
  * the sort asked, which lists newest first. A view reads the first page's.
  * Absent where the adapter does not say, which is the sort asked: PeerTube
  * always applies it, and an empty page for a tab a channel lacks applied
- * none.
+ * none. Absent too on a list that takes no sort (YouTube's releases,
+ * podcasts and courses). A YouTube channel's own playlists are `newest` or
+ * `last` (by the last video added).
  *
  * @template T
  * @typedef {object} Page
  * @property {T[]} items
  * @property {unknown} cursor
  * @property {boolean} [commentsEnabled]
- * @property {'newest' | 'popular' | 'oldest'} [sort]
+ * @property {'newest' | 'popular' | 'oldest' | 'last'} [sort]
  */
 
 export {}

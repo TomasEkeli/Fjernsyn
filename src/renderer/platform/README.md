@@ -48,7 +48,8 @@ of them.
   captions, chapters, storyboard and proxying, on either backend.
 - `sabr.js`: the Local `sabr` source (see below).
 - `channels.js`: `getChannel`, `listChannelVideos` (`kind` `videos`, `shorts`
-  or `live`) and `listChannelPlaylists`. Keeps the last 5 Local `YT.Channel`
+  or `live`) and `listChannelPlaylists` (`kind` `playlists`, sorted `newest`
+  or `last`, or `releases`, `podcasts` or `courses`, unsorted). Keeps the last 5 Local `YT.Channel`
   instances per layer, so a first page does not fetch the channel again. A
   page says the sort it applied (`Page.sort`); an age-gated channel is
   `refused`/`ageRestricted`, carrying the name and avatar YouTube still shows

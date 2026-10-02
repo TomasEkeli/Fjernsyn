@@ -1,0 +1,13 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "getInvidiousChannelPodcasts('UCSMOQeBJ2RAnuFungnQOxLg', null)",
+  "answer": {
+    "playlists": [
+      { "type": "playlist", "title": "Blender Conference 2022 Podcasts", "playlistId": "PLa1F2ddGya__t5L-fgRpzUZmbjFLTDI1o", "playlistThumbnail": "https://i.ytimg.com/vi/kLyQNzWr7P0/hqdefault.jpg", "author": "Blender", "authorId": "UCSMOQeBJ2RAnuFungnQOxLg", "videoCount": 8, "videos": [] },
+      { "type": "playlist", "title": "Blender Today Live", "playlistId": "PLa1F2ddGya_9XER0wnFS6Mgnp3T-hgSZO", "playlistThumbnail": "https://i.ytimg.com/vi/b9cmnaLnYwc/hqdefault.jpg", "author": "Blender", "authorId": "UCSMOQeBJ2RAnuFungnQOxLg", "videoCount": 21, "videos": [] }
+    ],
+    "continuation": "podcasts-token-2"
+  },
+  "notes": "From the Invidious API's /api/v1/channels/{id}/podcasts shape (InvidiousPlaylistObject). The first is Blender's one podcast as Local listed it on 2026-10-02; the second is invented, for a second page."
+}

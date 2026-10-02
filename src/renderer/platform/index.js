@@ -227,11 +227,19 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   }
 
   /**
-   * A page of a channel's playlists, in the order the platform lists them
-   * (YouTube: newest first, the channel's own playlists).
+   * A page of a channel's playlists. `kind` picks the list: `playlists` (the
+   * default), the channel's own, or YouTube's `releases`, `podcasts` and
+   * `courses` tabs, which a channel without them, and every PeerTube channel,
+   * answers as an empty page. `sort` is YouTube's, for the channel's own
+   * playlists only: `newest` (the default) or `last` (by the last video
+   * added); the page says the sort it applied (`sort`), which on Local is
+   * `newest` where the tab cannot be sorted. The other kinds have one order
+   * and take no sort. PeerTube lists in its own order. Hand the page's
+   * `cursor` back for the next page, which keeps the first page's kind and
+   * sort; `null` is the end.
    *
    * @param {import('./shapes').ChannelRef} ref
-   * @param {{ cursor?: unknown }} [options]
+   * @param {{ kind?: 'playlists' | 'releases' | 'podcasts' | 'courses', sort?: 'newest' | 'last', cursor?: unknown }} [options]
    * @returns {Promise<import('./shapes').Page<import('./shapes').PlaylistSummary>>}
    */
   function listChannelPlaylists(ref, options) {

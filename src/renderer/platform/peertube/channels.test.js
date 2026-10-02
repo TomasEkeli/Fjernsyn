@@ -451,9 +451,17 @@ describe('listChannelPlaylists (PeerTube)', () => {
     expect(second).toEqual({ items: [], cursor: null })
   })
 
+  it.each(['releases', 'podcasts', 'courses'])('answers YouTube\'s %s tab as an empty page, without a request', async (kind) => {
+    const { fake, layer } = setUp()
+
+    expect(await layer.listChannelPlaylists(BLENDER, { kind })).toEqual({ items: [], cursor: null })
+    expect(fake.requests).toHaveLength(0)
+  })
+
   it.each([
     [{ cursor: -1 }],
     [{ cursor: '5' }],
+    [{ kind: 'videos' }],
   ])('refuses %o, without a request', async (options) => {
     const { fake, layer } = setUp()
 

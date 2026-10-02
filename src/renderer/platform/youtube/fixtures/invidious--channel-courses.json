@@ -1,0 +1,13 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "getInvidiousChannelCourses('UCSMOQeBJ2RAnuFungnQOxLg', null)",
+  "answer": {
+    "playlists": [
+      { "type": "playlist", "title": "Blender Fundamentals", "playlistId": "PLa1F2ddGya_-UvuAqHAksYnB0qL9yWDO6", "playlistThumbnail": "https://i.ytimg.com/vi/MF1qEhBSfq4/hqdefault.jpg", "author": "Blender", "authorId": "UCSMOQeBJ2RAnuFungnQOxLg", "videoCount": 39, "videos": [] },
+      { "type": "playlist", "title": "Geometry Nodes from Scratch", "playlistId": "PLa1F2ddGya_8Q5ZS9VBoaL1KqUw2wLqP0", "playlistThumbnail": "https://i.ytimg.com/vi/aO0eUnmGzmQ/hqdefault.jpg", "author": "Blender", "authorId": "UCSMOQeBJ2RAnuFungnQOxLg", "videoCount": 12, "videos": [] }
+    ],
+    "continuation": "courses-token-2"
+  },
+  "notes": "From the Invidious API's /api/v1/channels/{id}/courses shape (InvidiousPlaylistObject). Invented: Blender has no courses tab; the shape is what matters."
+}

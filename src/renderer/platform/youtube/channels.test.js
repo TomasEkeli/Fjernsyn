@@ -5,12 +5,17 @@ import { createPlatformLayer } from '../index'
 import { CHANNEL_CACHE_SIZE } from './channels'
 import { createFakeYouTube, withMethods } from './testing/fakeYouTube'
 
+import invidiousCourses from './fixtures/invidious--channel-courses.json'
 import invidiousLive from './fixtures/invidious--channel-live.json'
 import invidiousNoBanner from './fixtures/invidious--channel-no-banner.json'
 import invidiousOrdinary from './fixtures/invidious--channel-ordinary.json'
 import invidiousPlaylists from './fixtures/invidious--channel-playlists.json'
+import invidiousPodcasts from './fixtures/invidious--channel-podcasts.json'
+import invidiousReleases from './fixtures/invidious--channel-releases.json'
 import invidiousShorts from './fixtures/invidious--channel-shorts.json'
 import localArtistTopicAbout from './fixtures/local--channel-artist-topic-about.json'
+import localArtistTopicReleasesContinuation from './fixtures/local--channel-artist-topic-releases-continuation.json'
+import localArtistTopicReleases from './fixtures/local--channel-artist-topic-releases.json'
 import localArtistTopic from './fixtures/local--channel-artist-topic.json'
 import localNoBanner from './fixtures/local--channel-no-banner.json'
 import localOrdinaryAbout from './fixtures/local--channel-ordinary-about.json'
@@ -76,6 +81,29 @@ const LOCAL_PLAYLIST_PAGES = [
   [{ id: 'OLAKalbum', album: true }],
 ]
 
+/** A releases, podcasts or courses tab: one of the channel's own, then one naming no channel */
+function localKindPages(kind) {
+  return [[{ id: `PL${kind}1` }], [{ id: `OLAK${kind}2`, album: true }]]
+}
+
+/**
+ * YouTube's sort menu on the playlists tab (recorded 2026-10-02, Blender),
+ * `applySort` answering the tab by the last video added
+ */
+const PLAYLIST_SORT_FILTERS = ['Date added (newest)', 'Last video added']
+
+function sortablePlaylistsTab(pages = LOCAL_PLAYLIST_PAGES, sorted = [[{ id: 'PLlast' }, { id: 'PLown' }]]) {
+  return pagedTab('playlists', pages, {
+    sort_filters: PLAYLIST_SORT_FILTERS,
+    applySort: async (filter) => {
+      if (filter !== 'Last video added') {
+        throw new Error(`not a sort the test knows: ${filter}`)
+      }
+      return pagedTab('playlists', sorted, { sort_filters: PLAYLIST_SORT_FILTERS })
+    },
+  })
+}
+
 /** A `YT.Channel` from a fixture, with its about page and tabs */
 function localChannel(fixture, about = null) {
   return withMethods(fixture, () => ({
@@ -84,6 +112,9 @@ function localChannel(fixture, about = null) {
     getShorts: async () => pagedTab('videos', localShortsPage.answer.map(node => [node])),
     getLiveStreams: async () => pagedTab('videos', LOCAL_LIVE_PAGES),
     getPlaylists: async () => pagedTab('playlists', LOCAL_PLAYLIST_PAGES),
+    getReleases: async () => pagedTab('playlists', localKindPages('releases')),
+    getPodcasts: async () => pagedTab('playlists', localKindPages('podcasts')),
+    getCourses: async () => pagedTab('playlists', localKindPages('courses')),
   }))
 }
 
@@ -99,6 +130,12 @@ function invidiousTab(fixture, key) {
     const { [key]: items, continuation: next } = structuredClone(fixture.answer)
     return continuation ? { [key]: items.slice(-1), continuation: null } : { [key]: items.slice(0, -1), continuation: next }
   }
+}
+
+/** The same, for a tab whose module function takes no sort: `(id, continuation)` */
+function invidiousUnsortedTab(fixture) {
+  const tab = invidiousTab(fixture, 'playlists')
+  return (id, continuation) => tab(id, undefined, continuation)
 }
 
 /**
@@ -174,6 +211,11 @@ function setUp({ config = {}, answers = {} } = {}) {
     getInvidiousChannelShorts: invidiousTab(invidiousShorts, 'videos'),
     getInvidiousChannelLive: invidiousTab(invidiousLive, 'videos'),
     getInvidiousChannelPlaylists: invidiousTab(invidiousPlaylists, 'playlists'),
+    getInvidiousChannelReleases: invidiousUnsortedTab(invidiousReleases),
+    getInvidiousChannelPodcasts: invidiousUnsortedTab(invidiousPodcasts),
+    getInvidiousChannelCourses: invidiousUnsortedTab(invidiousCourses),
+    getLocalArtistTopicChannelReleases: async () => structuredClone(localArtistTopicReleases.answer),
+    getLocalArtistTopicChannelReleasesContinuation: async () => structuredClone(localArtistTopicReleasesContinuation.answer),
     ...answers,
   })
   const layer = createLayer(fake, config)
@@ -623,5 +665,167 @@ describe('a YouTube channel\'s playlists', () => {
     const videos = await layer.listChannelVideos(BLENDER)
 
     expect((await failure(layer.listChannelPlaylists(BLENDER, { cursor: videos.cursor }))).kind).toBe('invalid')
+  })
+})
+
+describe('a YouTube channel\'s releases, podcasts and courses', () => {
+  const KINDS = ['releases', 'podcasts', 'courses']
+
+  /** Blender, as if it had every tab */
+  function withEveryTab() {
+    return {
+      getLocalChannel: async () => Object.assign(localChannel(localOrdinary, localOrdinaryAbout), { has_releases: true, has_courses: true }),
+    }
+  }
+
+  it.each(KINDS)('pages Local %s to the end, attributed to the channel where an item names none, in no sort', async (kind) => {
+    const { layer } = setUp({ answers: withEveryTab() })
+
+    const pages = await allPages(layer, BLENDER, { kind }, 'listChannelPlaylists')
+
+    expect(itemsOf(pages)).toEqual([
+      expect.objectContaining({ type: 'playlist', dataSource: 'local', playlistId: `PL${kind}1`, channelName: 'Blender', channelId: BLENDER, url: `https://www.youtube.com/playlist?list=PL${kind}1` }),
+      expect.objectContaining({ playlistId: `OLAK${kind}2`, channelName: '', channelId: null }),
+    ])
+    expect(pages[0].cursor).toMatchObject({ backend: 'local', from: 'tab', kind })
+    expect(pages.at(-1).cursor).toBeNull()
+    expect(pages.every(page => !('sort' in page))).toBe(true)
+  })
+
+  it.each([
+    ['releases', 'getInvidiousChannelReleases', invidiousReleases],
+    ['podcasts', 'getInvidiousChannelPodcasts', invidiousPodcasts],
+    ['courses', 'getInvidiousChannelCourses', invidiousCourses],
+  ])('pages Invidious %s to the end, asking no sort, thumbnails on the instance', async (kind, tabFunction, fixture) => {
+    const { layer, fake } = setUp({ config: { backendPreference: 'invidious' } })
+    const [first, second] = fixture.answer.playlists
+
+    const pages = await allPages(layer, BLENDER, { kind }, 'listChannelPlaylists')
+
+    expect(itemsOf(pages)).toEqual([
+      expect.objectContaining({
+        type: 'playlist',
+        dataSource: 'local',
+        playlistId: first.playlistId,
+        title: first.title,
+        thumbnail: first.playlistThumbnail.replace('https://i.ytimg.com', INSTANCE).replace('hqdefault', 'mqdefault'),
+        videoCount: first.videoCount,
+        channelName: first.author,
+        channelId: first.authorId,
+      }),
+      expect.objectContaining({ playlistId: second.playlistId, channelId: second.authorId || null }),
+    ])
+    expect(pages[0].cursor).toEqual({ backend: 'invidious', continuation: `${kind}-token-2`, sort: null, kind })
+    expect(pages.at(-1).cursor).toBeNull()
+    expect(pages.every(page => !('sort' in page))).toBe(true)
+    expect(fake.callsOf(tabFunction)).toEqual([[BLENDER, null], [BLENDER, `${kind}-token-2`]])
+  })
+
+  it('lists an artist topic channel\'s releases off its page on Local, as the module reads them', async () => {
+    const { layer, fake } = setUp()
+
+    const pages = await allPages(layer, DAFT_PUNK_TOPIC, { kind: 'releases' }, 'listChannelPlaylists')
+
+    expect(itemsOf(pages).map(item => [item.title, item.channelName, item.channelId])).toEqual([
+      ['Random Access Memories (Drumless Edition)', 'Daft Punk · Sep 20, 2026', 'UC_kRDKYrUlrbtrSiyu5Tflg'],
+      ['Random Access Memories', 'Daft Punk · Mar 28, 2026', 'UC_kRDKYrUlrbtrSiyu5Tflg'],
+      ['Alive 1997', 'Daft Punk · Sep 20, 2025', 'UC_kRDKYrUlrbtrSiyu5Tflg'],
+    ])
+    expect(itemsOf(pages)[0]).toMatchObject({ type: 'playlist', dataSource: 'local', url: expect.stringContaining('list=OLAK5uy_'), description: '' })
+    expect(pages[0].cursor).toMatchObject({ backend: 'local', from: 'topicReleases', kind: 'releases' })
+    expect(pages.at(-1).cursor).toBeNull()
+    // The continuation is called with the channel whose session made it
+    const [[channel, continuation]] = fake.callsOf('getLocalArtistTopicChannelReleasesContinuation')
+    expect(channel.metadata.music_artist_name).toBeTruthy()
+    expect(continuation).toEqual(localArtistTopicReleases.answer.continuationData)
+  })
+
+  it.each(KINDS)('answers a Local channel without a %s tab with an empty page, opening none', async (kind) => {
+    // The fixture's channel has none of the three, and no methods to open one
+    const { layer } = setUp({ answers: { getLocalChannel: async () => structuredClone(localNoBanner.answer) } })
+
+    expect(await layer.listChannelPlaylists(NO_BANNER, { kind })).toEqual({ items: [], cursor: null })
+  })
+
+  it.each([
+    ['releases', 'getInvidiousChannelReleases'],
+    ['podcasts', 'getInvidiousChannelPodcasts'],
+    ['courses', 'getInvidiousChannelCourses'],
+  ])('answers an Invidious channel without a %s tab with an empty page, asking nothing more once its tabs are known', async (kind, tabFunction) => {
+    const { layer, fake } = setUp({ config: { backendPreference: 'invidious' } })
+
+    await layer.getChannel(NO_BANNER)
+
+    expect(await layer.listChannelPlaylists(NO_BANNER, { kind })).toEqual({ items: [], cursor: null })
+    expect(fake.callsOf(tabFunction)).toHaveLength(0)
+  })
+
+  it.each([
+    [{ kind: 'posts' }],
+    [{ kind: 'videos' }],
+    [{ sort: 'popular' }],
+    [{ kind: 'releases', sort: 'last' }],
+  ])('rejects %o, asking nobody', async (options) => {
+    const { layer, fake } = setUp()
+
+    expect((await failure(layer.listChannelPlaylists(BLENDER, options))).kind).toBe('invalid')
+    expect(fake.calls).toHaveLength(0)
+  })
+
+  it('continues a list as the kind its cursor names, whatever the options say', async () => {
+    const { layer } = setUp({ answers: withEveryTab() })
+    const first = await layer.listChannelPlaylists(BLENDER, { kind: 'podcasts' })
+
+    const next = await layer.listChannelPlaylists(BLENDER, { kind: 'playlists', cursor: first.cursor })
+
+    expect(next.items.map(item => item.playlistId)).toEqual(['OLAKpodcasts2'])
+  })
+})
+
+describe('the sorts of a YouTube channel\'s playlists', () => {
+  it('lists Local by the last video added through YouTube\'s sort menu, and says so', async () => {
+    const { layer } = setUp({
+      answers: { getLocalChannel: async () => withMethods(localOrdinary, () => ({ getPlaylists: async () => sortablePlaylistsTab() })) },
+    })
+
+    const page = await layer.listChannelPlaylists(BLENDER, { sort: 'last' })
+
+    expect(page.items.map(item => item.playlistId)).toEqual(['PLlast', 'PLown'])
+    expect(page.sort).toBe('last')
+  })
+
+  it('lists Local newest first without the sort menu, and says so', async () => {
+    const { layer } = setUp({
+      answers: { getLocalChannel: async () => withMethods(localOrdinary, () => ({ getPlaylists: async () => sortablePlaylistsTab() })) },
+    })
+
+    const page = await layer.listChannelPlaylists(BLENDER, { sort: 'newest' })
+
+    expect(page.items.map(item => item.playlistId)).toEqual(['PLown'])
+    expect(page.sort).toBe('newest')
+  })
+
+  it.each([
+    ['of one playlist', () => sortablePlaylistsTab([[{ id: 'PLonly' }]])],
+    ['without a sort menu', () => pagedTab('playlists', LOCAL_PLAYLIST_PAGES)],
+  ])('answers newest first, and says so, for last on a Local tab %s', async (_name, tab) => {
+    const { layer } = setUp({
+      answers: { getLocalChannel: async () => withMethods(localOrdinary, () => ({ getPlaylists: async () => tab() })) },
+    })
+
+    const page = await layer.listChannelPlaylists(BLENDER, { sort: 'last' })
+
+    expect(page.sort).toBe('newest')
+    expect(page.items.map(item => item.playlistId)).not.toContain('PLlast')
+  })
+
+  it.each(['newest', 'last'])('asks Invidious for %s, repeating the sort on every page, and says so on each', async (sort) => {
+    const { layer, fake } = setUp({ config: { backendPreference: 'invidious' } })
+
+    const pages = await allPages(layer, BLENDER, { sort }, 'listChannelPlaylists')
+
+    expect(pages.map(page => page.sort)).toEqual([sort, sort])
+    expect(pages[0].cursor).toEqual({ backend: 'invidious', continuation: 'playlists-token-2', sort, kind: 'playlists' })
+    expect(fake.callsOf('getInvidiousChannelPlaylists')).toEqual([[BLENDER, sort, null], [BLENDER, sort, 'playlists-token-2']])
   })
 })

@@ -1,0 +1,33 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "getLocalArtistTopicChannelReleases(await getLocalChannel('UCRr1xG_2WIDs18a6cIiCxeA'))",
+  "answer": {
+    "releases": [
+      {
+        "type": "playlist",
+        "dataSource": "local",
+        "title": "Random Access Memories (Drumless Edition)",
+        "thumbnail": "https://i.ytimg.com/vi/IluRBvnYMoY/hqdefault.jpg?sqp=-oaymwEXCOADEI4CSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLCzeJRFGZBaaFOCkHU-fQpj0is82Q",
+        "playlistId": "OLAK5uy_neuzTO2KMn_6ilgyHagsib6AXTq8Wv13o",
+        "channelName": "Daft Punk · Sep 20, 2026",
+        "channelId": "UC_kRDKYrUlrbtrSiyu5Tflg",
+        "videoCount": 13
+      },
+      {
+        "type": "playlist",
+        "dataSource": "local",
+        "title": "Random Access Memories",
+        "thumbnail": "https://i.ytimg.com/vi/IluRBvnYMoY/hqdefault.jpg?sqp=-oaymwEXCOADEI4CSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLCzeJRFGZBaaFOCkHU-fQpj0is82Q",
+        "playlistId": "OLAK5uy_nZZjkBu_E4olFSb5Ey-fQ-4a0ZCqJICdQ",
+        "channelName": "Daft Punk · Mar 28, 2026",
+        "channelId": "UC_kRDKYrUlrbtrSiyu5Tflg",
+        "videoCount": 13
+      }
+    ],
+    "continuationData": {
+      "type": "ContinuationItem"
+    }
+  },
+  "notes": "The first two of the first page (30 on YouTube). continuationData is a YTNodes.ContinuationItem, here a marker: the module calls it, the adapter only hands it back. channelName is the GridPlaylist author text, artist and date, as the old view shows it, and channelId the artist's own channel (Daft Punk's, not the topic channel)."
+}

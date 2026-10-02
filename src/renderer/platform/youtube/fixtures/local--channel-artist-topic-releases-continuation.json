@@ -1,0 +1,21 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "getLocalArtistTopicChannelReleasesContinuation(channel, continuationData)",
+  "answer": {
+    "releases": [
+      {
+        "type": "playlist",
+        "dataSource": "local",
+        "title": "Alive 1997",
+        "thumbnail": "https://i.ytimg.com/vi/wZ0910QYB78/hqdefault.jpg?sqp=-oaymwEXCOADEI4CSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLDpmef6nlmVw1M0cqrGN5mrIDjwig",
+        "playlistId": "OLAK5uy_mPZC_JzZZw-eOfEpYrK4PACchxT606QJc",
+        "channelName": "Daft Punk · Sep 20, 2025",
+        "channelId": "UC_kRDKYrUlrbtrSiyu5Tflg",
+        "videoCount": 1
+      }
+    ],
+    "continuationData": null
+  },
+  "notes": "The first of the second page; continuationData set to null (YouTube had no more) so that the list ends here."
+}

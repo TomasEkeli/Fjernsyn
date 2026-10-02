@@ -16,7 +16,10 @@
 //   terminated channel), `parseLocalChannelHeader`, `parseLocalChannelVideos`,
 //   `parseLocalChannelShorts`, `parseLocalListVideo`, `parseLocalListPlaylist`,
 //   `getLocalPlaylist`, `getLocalPlaylistContinuation`, and
-//   `parseLocalPlaylistVideos` for an artist topic channel's uploads playlist
+//   `parseLocalPlaylistVideos` for an artist topic channel's uploads playlist,
+//   `getLocalArtistTopicChannelReleases(channel)` and
+//   `getLocalArtistTopicChannelReleasesContinuation(channel, continuation)`
+//   for its releases
 // - comments: `getLocalComments(id)` (a `YT.Comments`), `parseLocalComment`
 // - search: `getLocalSearchResults`, `getLocalSearchContinuation`
 //
@@ -27,7 +30,9 @@
 //   stream URL onto the current instance when proxying (`proxyVideos`)
 // - channels: `invidiousGetChannelInfo(id)`, `getInvidiousChannelVideos`,
 //   `getInvidiousChannelShorts`, `getInvidiousChannelLive`,
-//   `getInvidiousChannelPlaylists`, `invidiousImageUrlToInvidious`
+//   `getInvidiousChannelPlaylists`, `getInvidiousChannelReleases`,
+//   `getInvidiousChannelPodcasts`, `getInvidiousChannelCourses`,
+//   `invidiousImageUrlToInvidious`
 // - comments: `invidiousGetComments`, `invidiousGetCommentReplies`
 // - search: `getInvidiousSearchResults`
 //
@@ -60,6 +65,8 @@ export const YOUTUBE_DEP_NAMES = Object.freeze({
     'getLocalPlaylist',
     'getLocalPlaylistContinuation',
     'parseLocalPlaylistVideos',
+    'getLocalArtistTopicChannelReleases',
+    'getLocalArtistTopicChannelReleasesContinuation',
     'getLocalComments',
     'parseLocalComment',
     'getLocalSearchResults',
@@ -78,6 +85,9 @@ export const YOUTUBE_DEP_NAMES = Object.freeze({
     'getInvidiousChannelShorts',
     'getInvidiousChannelLive',
     'getInvidiousChannelPlaylists',
+    'getInvidiousChannelReleases',
+    'getInvidiousChannelPodcasts',
+    'getInvidiousChannelCourses',
     'invidiousGetComments',
     'invidiousGetCommentReplies',
     'getInvidiousSearchResults',

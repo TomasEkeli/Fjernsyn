@@ -73,9 +73,12 @@
  * @property {'local'} backend
  * @property {any} continuation the youtubei.js instance to continue; see
  *   YouTubeCursorTable
- * @property {'tab' | 'playlist'} [from] channel lists: a channel tab, or an
- *   artist topic channel's uploads playlist standing in for it
- * @property {'videos' | 'shorts' | 'live' | 'playlists'} [kind] channel lists
+ * @property {'tab' | 'playlist' | 'topicReleases'} [from] channel lists: a
+ *   channel tab, an artist topic channel's uploads playlist standing in for
+ *   its videos tab, or the releases read off its page
+ * @property {'videos' | 'shorts' | 'live' | 'playlists' | 'releases' | 'podcasts' | 'courses'} [kind] channel lists
+ * @property {any} [channel] an artist topic channel's releases: the
+ *   `YT.Channel`, whose session alone can call the continuation node
  * @property {{ id: string, name: string } | null} [owner] channel tabs: whose
  *   items the page holds, named after the channel where the page leaves them
  *   unnamed; `null` for a channel showing other channels' items, whose items
@@ -87,11 +90,12 @@
  * @property {'invidious'} backend
  * @property {string} continuation Invidious' `continuation`, passed back as the
  *   `continuation` query parameter
- * @property {string} [sort] the sort the token was issued under, which
+ * @property {string | null} [sort] the sort the token was issued under, which
  *   Invidious needs repeated (`sort_by`) on every page: `newest`, `popular`
- *   or `oldest` for channel lists, `top` or `newest` for comments; absent for
- *   replies
- * @property {'videos' | 'shorts' | 'live' | 'playlists'} [kind] channel lists
+ *   or `oldest` for channel video lists, `newest` or `last` for a channel's
+ *   own playlists, `null` for its releases, podcasts and courses, `top` or
+ *   `newest` for comments; absent for replies
+ * @property {'videos' | 'shorts' | 'live' | 'playlists' | 'releases' | 'podcasts' | 'courses'} [kind] channel lists
  */
 
 /**
@@ -127,14 +131,24 @@
  *   - A channel without the tab is an empty page: L reads the channel's
  *     `has_*` flags, I the `tabs` `getChannel` cached on this layer, and
  *     otherwise asks the tab.
- * - `listChannelPlaylists`: the channel's own playlists, newest first, no
- *   sort option. Releases, podcasts and courses are not lists of the layer.
+ * - `listChannelPlaylists` (`kind` `playlists`, `releases`, `podcasts` or
+ *   `courses`): the channel's own playlists `newest` first or by the `last`
+ *   video added; the other kinds in YouTube's one order, no sort.
  *   - L: the tab instance from `getPlaylists()`, narrowed to "Created
- *     playlists" (`view=1`) where YouTube offers other categories. `{ backend,
- *     continuation, from: 'tab', kind: 'playlists', owner }`. End:
- *     `!has_continuation`.
- *   - I: `continuation` string from `getInvidiousChannelPlaylists`, with
- *     `sort: 'newest'`.
+ *     playlists" (`view=1`) where YouTube offers other categories, then
+ *     `applySort(sort_filters[1])` for `last` where the tab has two sorts and
+ *     more than one playlist (the old view's rule; else newest, said so);
+ *     `getReleases()`, `getPodcasts()`, `getCourses()`. `{ backend,
+ *     continuation, from: 'tab', kind, owner }`. End: `!has_continuation`.
+ *     An artist topic channel's releases: `getLocalArtistTopicChannelReleases
+ *     (channel)`, continued by `getLocalArtistTopicChannelReleasesContinuation
+ *     (channel, continuation)`. `{ backend, continuation, from:
+ *     'topicReleases', kind, channel }`. End: no `continuationData`.
+ *   - I: `continuation` string from `getInvidiousChannelPlaylists` with the
+ *     sort repeated, or from `getInvidiousChannelReleases`, `…Podcasts`,
+ *     `…Courses`, which take none. `{ backend, continuation, sort, kind }`,
+ *     `sort` `null` for the unsorted kinds.
+ *   - A channel without the tab is an empty page, as for the video lists.
  * - `search`
  *   - L: the `YT.Search` instance `getLocalSearchResults` answers as
  *     `continuationData`, continued by `getLocalSearchContinuation`.
@@ -482,7 +496,7 @@
 
 /**
  * A YouTube playlist in a list, implemented in `./channels.js` for a
- * channel's own playlists. L: `parseLocalListPlaylist` answers the card's
+ * channel's own playlists, releases, podcasts and courses. L: `parseLocalListPlaylist` answers the card's
  * Local field names already, with `dataSource: 'local'`. I:
  * `InvidiousPlaylistObject` renamed into them.
  *
