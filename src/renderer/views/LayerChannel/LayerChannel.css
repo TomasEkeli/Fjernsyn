@@ -40,6 +40,10 @@
   display: flex;
 }
 
+.refusedChannel {
+  margin-block-end: 10px;
+}
+
 .avatar {
   inline-size: 100px;
   block-size: 100px;

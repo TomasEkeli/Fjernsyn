@@ -8,6 +8,31 @@
       v-else-if="loadError"
       class="card"
     >
+      <!-- What the platform still shows of a channel it refuses (YouTube's age gate) -->
+      <div
+        v-if="loadError.channel"
+        class="thumbnailContainer refusedChannel"
+      >
+        <img
+          v-if="loadError.channel.thumbnail"
+          :src="loadError.channel.thumbnail"
+          class="avatar"
+          alt=""
+        >
+        <FontAwesomeIcon
+          v-else
+          :icon="['fas', 'circle-user']"
+          class="avatar"
+        />
+        <div class="lineContainer">
+          <h1
+            class="name"
+            dir="auto"
+          >
+            {{ loadError.channel.name }}
+          </h1>
+        </div>
+      </div>
       <p class="message">
         {{ errorMessage(loadError).text }}
       </p>
@@ -19,6 +44,11 @@
         @click="load"
       />
     </FtCard>
+    <FtAgeRestricted
+      v-else-if="channel && isFamilyFriendlyGated"
+      class="ageRestricted"
+      :is-channel="true"
+    />
     <template v-else-if="channel">
       <FtCard class="card channelHeader">
         <img
@@ -48,8 +78,11 @@
                 >
                   {{ channel.name }}
                 </h1>
-                <p class="handle">
-                  {{ channel.handle ?? channel.id }}
+                <p
+                  v-if="handleText"
+                  class="handle"
+                >
+                  {{ handleText }}
                 </p>
                 <p
                   v-if="followerCountText"
@@ -69,7 +102,7 @@
             :aria-label="t('Channel.Channel Tabs')"
           >
             <RouterLink
-              v-for="tab in tabs"
+              v-for="tab in visibleTabs"
               :id="`${tab.name}Tab`"
               :key="tab.name"
               :to="tabRoute(tab.name)"
@@ -99,7 +132,9 @@
           aria-labelledby="videosTab"
         >
           <div class="select-container">
+            <!-- Not where the layer answered another sort than the one asked: the channel offers no choice -->
             <FtSelect
+              v-if="isVideoSortOffered"
               v-show="videos.items.value.length > 1 || videos.cursor.value !== null || videoSort !== 'newest'"
               :value="videoSort"
               :select-names="videoSortNames"
@@ -126,7 +161,16 @@
           role="tabpanel"
           aria-labelledby="playlistsTab"
         >
-          <LayerPlaylistList :playlists="playlists.items.value" />
+          <!-- A YouTube playlist opens on the app's own playlist page, through the existing card -->
+          <FtElementList
+            v-if="isYouTube"
+            :data="playlists.items.value"
+            :use-channels-hidden-preference="false"
+          />
+          <LayerPlaylistList
+            v-else
+            :playlists="playlists.items.value"
+          />
           <p
             v-if="isFinishedAndEmpty(playlists)"
             class="message"
@@ -170,16 +214,19 @@
 </template>
 
 <script setup>
-// The platform layer's channel view. Platform-neutral: it talks only to the
-// injected layer and reads only the common shapes (platform/shapes.js); the
-// route names the channel by its ref. Upstream's Channel view
-// (views/Channel) is the model for the layout; it is not edited.
+// The platform layer's channel view. It talks only to the injected layer and
+// reads only the common shapes (platform/shapes.js); the route names the
+// channel by its ref, as `:handle` (PeerTube's route) or `:id` (YouTube's,
+// `/channel/:id/:currentTab?`). Where the platforms differ it is in the old
+// views' own words: a YouTube channel reads as upstream's Channel view
+// (views/Channel) does, which is the model for the layout and is not edited.
 
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
+import FtAgeRestricted from '../../components/FtAgeRestricted/FtAgeRestricted.vue'
 import FtAutoLoadNextPageWrapper from '../../components/FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
 import FtCard from '../../components/ft-card/ft-card.vue'
@@ -192,7 +239,7 @@ import LayerVideoDescription from '../../components/LayerVideoDescription/LayerV
 
 import store from '../../store/index'
 import { formatNumber, getIconForSortPreference } from '../../helpers/utils'
-import { parseChannelHandle } from '../../platform/refs'
+import { PLATFORM_YOUTUBE, isYouTubeChannelRef, parseChannelHandle, platformOf } from '../../platform/refs'
 import { usePlatformLayer } from '../../platform/vue'
 
 /** The sorts the layer takes for a channel's videos, newest (its default) first */
@@ -202,27 +249,70 @@ const layer = usePlatformLayer()
 const route = useRoute()
 const { t } = useI18n()
 
-// The route this view serves, so that its watchers ignore the navigation away
+// The route this view serves, so that its watchers ignore the navigation
+// away. By its path, since YouTube's channel route has no name.
 const viewRouteName = route.name
+const viewRoutePath = route.matched.at(-1)?.path
+const refParam = Object.hasOwn(route.params, 'handle') ? 'handle' : 'id'
+
+function isOnThisView() {
+  return route.matched.at(-1)?.path === viewRoutePath
+}
 
 const hideChannelSubscriptions = computed(() => store.getters.getHideChannelSubscriptions)
+const showFamilyFriendlyOnly = computed(() => store.getters.getShowFamilyFriendlyOnly)
 
-const handle = computed(() => route.params.handle)
-const currentTab = computed(() => route.params.currentTab === 'playlists' ? 'playlists' : 'videos')
+/** The channel ref the route names */
+const channelRef = computed(() => route.params[refParam])
 
 const isLoading = ref(true)
 /** @type {import('vue').ShallowRef<import('../../platform/shapes').ChannelDetails | null>} */
 const channel = shallowRef(null)
-/** @type {import('vue').ShallowRef<{ kind?: string, host?: string | null } | null>} */
+/** @type {import('vue').ShallowRef<{ kind?: string, reason?: string | null, host?: string | null, channel?: import('../../platform/shapes').ChannelSummary } | null>} */
 const loadError = shallowRef(null)
+
+const isYouTube = computed(() => channel.value
+  ? platformOf(channel.value) === PLATFORM_YOUTUBE
+  : isYouTubeChannelRef(channelRef.value))
+
+/** YouTube's own rating, against the setting, as the old view checks it; PeerTube's channels have none */
+const isFamilyFriendlyGated = computed(() => showFamilyFriendlyOnly.value === true && channel.value?.isFamilyFriendly === false)
 
 /** @type {import('vue').Ref<'newest' | 'popular' | 'oldest'>} */
 const videoSort = ref('newest')
 
+/**
+ * Whether the sort select is offered: not once a first page answered another
+ * sort than the one asked, which is a channel whose tab has no such filter
+ * (spec, "Phase 3 decisions", C1)
+ */
+const isVideoSortOffered = ref(true)
+
+/**
+ * The tabs this view has, in the old view's order, by the names of
+ * `ChannelDetails.tabs`. Each has its list in `lists`.
+ */
 const tabs = computed(() => [
   { name: 'videos', label: t('Channel.Videos.Videos') },
   { name: 'playlists', label: t('Channel.Playlists.Playlists') },
 ])
+
+/**
+ * The tabs the channel has: a tab its `tabs` does not name is not shown, and
+ * PeerTube, which names none, has them all. The first stands in for none.
+ */
+const visibleTabs = computed(() => {
+  const named = channel.value?.tabs
+  const shown = Array.isArray(named) ? tabs.value.filter(tab => named.includes(tab.name)) : tabs.value
+
+  return shown.length > 0 ? shown : tabs.value.slice(0, 1)
+})
+
+/** The tab the route names, else the first the channel has */
+const currentTab = computed(() => {
+  const names = visibleTabs.value.map(tab => tab.name)
+  return names.includes(route.params.currentTab) ? route.params.currentTab : names[0]
+})
 
 const videoSortNames = computed(() => [
   t('Channel.Videos.Sort Types.Newest'),
@@ -238,11 +328,13 @@ let loadsStarted = 0
  * layer's and handed back unchanged; `null` after the first page is the end.
  * An empty page with a cursor is not the end (filtering can empty a page).
  * `reset` forgets the list, and any answer still coming for it.
+ * `onFirstPage` sees the first page of the current list as it is answered.
  *
  * @template T
  * @param {(cursor: unknown) => Promise<import('../../platform/shapes').Page<T>>} fetchPage
+ * @param {(page: import('../../platform/shapes').Page<T>) => void} [onFirstPage]
  */
-function createPagedList(fetchPage) {
+function createPagedList(fetchPage, onFirstPage) {
   /** @type {import('vue').ShallowRef<T[]>} */
   const items = shallowRef([])
   const cursor = shallowRef(null)
@@ -279,6 +371,10 @@ function createPagedList(fetchPage) {
         return
       }
 
+      if (!isNext) {
+        onFirstPage?.(page)
+      }
+
       items.value = isNext ? [...items.value, ...page.items] : page.items
       cursor.value = page.cursor ?? null
       loaded.value = true
@@ -302,10 +398,23 @@ function createPagedList(fetchPage) {
   return { items, cursor, loaded, loading, error, reset, load }
 }
 
-const videos = createPagedList(cursor => layer.listChannelVideos(channel.value.id, { sort: videoSort.value, cursor }))
+const videos = createPagedList(
+  cursor => layer.listChannelVideos(channel.value.id, { sort: videoSort.value, cursor }),
+  (page) => {
+    // The list is in the sort the layer applied, which the select then shows,
+    // were it shown
+    if (page.sort !== undefined && page.sort !== videoSort.value) {
+      isVideoSortOffered.value = false
+      videoSort.value = page.sort
+    }
+  }
+)
 const playlists = createPagedList(cursor => layer.listChannelPlaylists(channel.value.id, { cursor }))
 
-const currentList = computed(() => currentTab.value === 'playlists' ? playlists : videos)
+/** Each tab's list, by the tab's name */
+const lists = { videos, playlists }
+
+const currentList = computed(() => lists[currentTab.value])
 
 /** @param {ReturnType<typeof createPagedList>} list */
 function hasMore(list) {
@@ -324,22 +433,36 @@ const followerCountText = computed(() => {
     return ''
   }
 
-  return t('PeerTube.Channel.Followers', { count: formatNumber(count) }, count)
+  // YouTube's in the old view's words (ChannelDetails.vue)
+  return isYouTube.value
+    ? t('Global.Counts.Subscriber Count', { count: formatNumber(count) }, count)
+    : t('PeerTube.Channel.Followers', { count: formatNumber(count) }, count)
 })
 
+/** A PeerTube channel's ref is its handle; a YouTube channel without an `@handle` shows none */
+const handleText = computed(() => channel.value?.handle ?? (isYouTube.value ? '' : channel.value?.id ?? ''))
+
 /**
+ * The same route, on another tab. By name where the route has one; YouTube's
+ * has none, and vue-router resolves params alone against the current route.
+ *
  * @param {string} tab
  */
 function tabRoute(tab) {
-  return { name: viewRouteName, params: { handle: handle.value, currentTab: tab } }
+  const params = { [refParam]: channelRef.value, currentTab: tab }
+  return viewRouteName ? { name: viewRouteName, params } : { params }
 }
 
 /**
- * @param {{ kind?: string, host?: string | null }} error
+ * @param {{ kind?: string, reason?: string | null, host?: string | null }} error
  * @returns {{ text: string, retryable: boolean }}
  */
 function errorMessage(error) {
-  const host = error.host ?? channel.value?.host ?? parseChannelHandle(handle.value)?.host ?? handle.value
+  if (isYouTube.value) {
+    return youTubeErrorMessage(error)
+  }
+
+  const host = error.host ?? channel.value?.host ?? parseChannelHandle(channelRef.value)?.host ?? channelRef.value
 
   switch (error.kind) {
     case 'notFound':
@@ -354,11 +477,30 @@ function errorMessage(error) {
   }
 }
 
-/** The current tab's first page, unless it is loaded, loading or failed */
+/**
+ * A YouTube channel's, in the old view's words where it has them. An age
+ * gate is final: no backend can show the channel.
+ *
+ * @param {{ kind?: string, reason?: string | null }} error
+ * @returns {{ text: string, retryable: boolean }}
+ */
+function youTubeErrorMessage(error) {
+  if (error.kind === 'refused' && error.reason === 'ageRestricted') {
+    return { text: t('Channel["This channel is age-restricted and currently cannot be viewed in FreeTube."]'), retryable: false }
+  }
+
+  if (error.kind === 'notFound' || error.kind === 'invalid') {
+    return { text: t('Channel.This channel does not exist'), retryable: false }
+  }
+
+  return { text: t('PeerTube.Channel.Could not load'), retryable: true }
+}
+
+/** The current tab's first page, unless it is loaded, loading or failed, or the channel is not shown */
 function loadCurrentTab() {
   const list = currentList.value
 
-  if (channel.value !== null && !list.loaded.value && !list.loading.value && !list.error.value) {
+  if (channel.value !== null && !isFamilyFriendlyGated.value && !list.loaded.value && !list.loading.value && !list.error.value) {
     list.load()
   }
 }
@@ -383,11 +525,12 @@ async function load() {
   channel.value = null
   loadError.value = null
   videoSort.value = 'newest'
+  isVideoSortOffered.value = true
   videos.reset()
   playlists.reset()
 
   try {
-    const details = await layer.getChannel(handle.value)
+    const details = await layer.getChannel(channelRef.value)
 
     if (thisLoad !== loadsStarted) {
       return
@@ -405,6 +548,10 @@ async function load() {
     }
 
     loadError.value = error ?? {}
+
+    if (error?.channel?.name) {
+      store.commit('setAppTitle', error.channel.name)
+    }
   } finally {
     if (thisLoad === loadsStarted) {
       isLoading.value = false
@@ -415,14 +562,14 @@ async function load() {
 }
 
 // The router reuses this view for another channel
-watch(handle, (value, previous) => {
-  if (route.name === viewRouteName && value !== previous) {
+watch(channelRef, (value, previous) => {
+  if (isOnThisView() && value !== previous) {
     load()
   }
 })
 
-watch(currentTab, () => {
-  if (route.name === viewRouteName) {
+watch([currentTab, isFamilyFriendlyGated], () => {
+  if (isOnThisView()) {
     loadCurrentTab()
   }
 })
