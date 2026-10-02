@@ -259,4 +259,17 @@ describe('YouTube comments, off and failing', () => {
     unfallen.fake.respond('getLocalComments', new Error('fetch failed'))
     expect((await failure(unfallen.layer.getComments(VIDEO))).kind).toBe('unavailable')
   })
+
+  // An IP block falls back on a first page (ADR-0019), but the cursor still
+  // pins its backend
+  it('rejects a later page refused for an IP block, without asking the other backend', async () => {
+    const { layer, fake } = setUp({ backendPreference: 'invidious', backendFallback: true })
+    const first = await layer.getComments(VIDEO)
+    fake.respond('invidiousGetComments', new Error('Sign in to confirm you’re not a bot'))
+
+    const error = await failure(layer.getComments(VIDEO, { cursor: first.cursor }))
+
+    expect([error.kind, error.reason]).toEqual(['refused', 'ipBlock'])
+    expect(fake.callsOf('getLocalComments')).toEqual([])
+  })
 })

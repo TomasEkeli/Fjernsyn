@@ -276,7 +276,8 @@
  * the playability status (`classifyLocalPlayability`, a removed video
  * `notFound`), Invidious' from the error message, into `PlatformError` kinds
  * and YouTube's `RefusalReason`s (`private`, `membersOnly`, `ageRestricted`,
- * `drm`, `ipBlock`, `unexplained`). A refusal is final (ADR-0015).
+ * `drm`, `ipBlock`, `unexplained`). A refusal about the video is final; an
+ * `ipBlock`, `unexplained` or reasonless one falls back (ADR-0015, ADR-0019).
  *
  * @typedef {never} YouTubeVideoDetailsTable
  */

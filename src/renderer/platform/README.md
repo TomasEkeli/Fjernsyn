@@ -61,13 +61,18 @@ the existing feed descriptors, as before.
 
 ## Backend policy
 
-ADR-0015, in `youtube/policy.js`:
+ADR-0015 and ADR-0019, in `youtube/policy.js`:
 
-- A first page goes to the preferred backend. When fallback is on, a failure
-  of kind `notFound`, `unavailable` or `rateLimited` is tried once on the
-  other backend.
-- `refused` and `invalid` are final. A refusal is YouTube's own answer, which
-  the other backend would repeat.
+- A first page goes to the preferred backend. When fallback is on and the
+  build has both backends, a failure of kind `notFound`, `unavailable` or
+  `rateLimited` is tried once on the other backend, in either direction.
+- So is a `refused` whose reason is `ipBlock` or `unexplained`, or which has
+  no reason. Such a refusal may be about the address asking, and Local asks
+  YouTube from the user's address while an Invidious instance asks from its
+  own.
+- `private`, `membersOnly`, `ageRestricted` and `drm` are final: those are
+  about the video, and the other backend would repeat them. `invalid` is
+  final too.
 - A cursor names the backend that made it, and a later page goes there. A
   failure on a later page is an error. The policy never falls back mid-list
   and never restarts a list.

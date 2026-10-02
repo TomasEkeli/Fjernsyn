@@ -1,12 +1,17 @@
 // The YouTube backend policy: which backend answers, in one place for every
-// YouTube operation on the layer (ADR-0015).
+// YouTube operation on the layer (ADR-0015, amended by ADR-0019).
 //
 // - A first page goes to the preferred backend, Invidious alone where the
 //   build has no Local API. When fallback is on and the build has both, a
 //   failure of kind `notFound`, `unavailable` or `rateLimited` is tried once
-//   on the other backend. `refused` and `invalid` are final: a refusal is
-//   YouTube's own answer, which the other backend would only repeat, and
-//   `invalid` is our own mistake. When both fail, the last failure is thrown.
+//   on the other backend, in either direction. So is a `refused` whose reason
+//   is `ipBlock` or `unexplained`, or which gives no reason: such a refusal
+//   may be about the address asking rather than the video, and Local asks
+//   YouTube from the user's address while an Invidious instance asks from its
+//   own. A refusal that is about the video (`private`, `membersOnly`,
+//   `ageRestricted`, `drm`) is final, since the other backend would only
+//   repeat it, and so is `invalid`, which is our own mistake. When both fail,
+//   the last failure is thrown.
 // - A cursor names the backend that made it, and a later page goes there. A
 //   failure there is thrown as it is: the policy never falls back mid-list and
 //   never restarts one. A cursor naming no backend this build has rejects as
@@ -20,8 +25,25 @@ import { PlatformError } from '../errors'
 
 /** @typedef {'local' | 'invidious'} YouTubeBackend */
 
-/** The kinds a first page is tried again for on the other backend */
+/** The kinds a first page is tried again for on the other backend, whatever their reason */
 export const FALLBACK_KINDS = Object.freeze(new Set(['notFound', 'unavailable', 'rateLimited']))
+
+/**
+ * The reasons a `refused` first page is tried again for on the other backend:
+ * the refusals that may be about the address asking. `null` is a refusal that
+ * gives no reason.
+ */
+export const FALLBACK_REFUSALS = Object.freeze(new Set(['ipBlock', 'unexplained', null]))
+
+/**
+ * Whether a first page's failure may be the backend's own, and so worth
+ * asking the other backend.
+ *
+ * @param {PlatformError} error
+ */
+function fallsBack(error) {
+  return FALLBACK_KINDS.has(error.kind) || (error.kind === 'refused' && FALLBACK_REFUSALS.has(error.reason))
+}
 
 /**
  * @callback Classify
@@ -90,7 +112,7 @@ export function createBackendPolicy({ config }) {
       } catch (error) {
         lastError = classified(error, backend, classify)
 
-        if (!FALLBACK_KINDS.has(lastError.kind) || index === order.length - 1) {
+        if (!fallsBack(lastError) || index === order.length - 1) {
           throw lastError
         }
       }

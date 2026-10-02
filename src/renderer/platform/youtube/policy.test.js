@@ -55,19 +55,35 @@ describe('the YouTube backend policy, on a first page', () => {
     expect(await createBackendPolicy({ config: { ...both, backendPreference: 'invidious' } }).first(attempt, classifyYouTubeError)).toBe('from local')
   })
 
-  it.each([
-    ['refused', 'membersOnly'],
-    ['refused', 'ageRestricted'],
-    ['refused', null],
-    ['invalid', null],
-  ])('does not fall back for %s (%s): the first answer is final', async (kind, reason) => {
-    const attempt = attemptAnswering({ local: failing(kind, reason), invidious: 'from invidious' })
+  // A refusal that may be about the address asking, not the video (ADR-0019)
+  describe.each([
+    ['local', 'invidious'],
+    ['invidious', 'local'],
+  ])('from %s', (preferred, other) => {
+    const config = { ...both, backendPreference: preferred }
 
-    const error = await failure(createBackendPolicy({ config: both }).first(attempt, classifyYouTubeError))
+    it.each(['ipBlock', 'unexplained', null])('tries %s once on the other backend', async (reason) => {
+      const attempt = attemptAnswering({ [preferred]: failing('refused', reason), [other]: `from ${other}` })
 
-    expect(error.kind).toBe(kind)
-    expect(error.reason).toBe(reason)
-    expect(attempt).toHaveBeenCalledTimes(1)
+      expect(await createBackendPolicy({ config }).first(attempt, classifyYouTubeError)).toBe(`from ${other}`)
+      expect(attempt.mock.calls.map(call => call[0])).toEqual([preferred, other])
+    })
+
+    it.each([
+      ['refused', 'private'],
+      ['refused', 'membersOnly'],
+      ['refused', 'ageRestricted'],
+      ['refused', 'drm'],
+      ['invalid', null],
+    ])('does not fall back for %s (%s): the first answer is final', async (kind, reason) => {
+      const attempt = attemptAnswering({ [preferred]: failing(kind, reason), [other]: `from ${other}` })
+
+      const error = await failure(createBackendPolicy({ config }).first(attempt, classifyYouTubeError))
+
+      expect(error.kind).toBe(kind)
+      expect(error.reason).toBe(reason)
+      expect(attempt).toHaveBeenCalledTimes(1)
+    })
   })
 
   it('throws the last failure when both fail', async () => {
@@ -117,6 +133,15 @@ describe('the YouTube backend policy, on a later page', () => {
 
     expect(error.kind).toBe('unavailable')
     expect(attempt).toHaveBeenCalledTimes(1)
+  })
+
+  it('never falls back for a refusal either, even one about the address', async () => {
+    const attempt = attemptAnswering({ local: failing('refused', 'ipBlock'), invidious: 'from invidious' })
+
+    const error = await failure(createBackendPolicy({ config: both }).later({ backend: 'local', continuation: {} }, attempt, classifyYouTubeError))
+
+    expect([error.kind, error.reason]).toEqual(['refused', 'ipBlock'])
+    expect(attempt.mock.calls.map(call => call[0])).toEqual(['local'])
   })
 
   it.each([

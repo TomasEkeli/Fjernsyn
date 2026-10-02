@@ -399,8 +399,6 @@ describe('a YouTube video refused', () => {
     ['ageRestricted', refusedLocally({ status: 'LOGIN_REQUIRED', reason: 'Sign in to confirm your age' })],
     ['ageRestricted', localInstance(refusedLocally({ status: 'UNPLAYABLE', reason: 'Video unavailable' }, { has_trailer: true }), () => ({ getTrailerInfo: () => null }))],
     ['drm', refusedLocally({ status: 'OK' }, { streaming_data: { formats: [], adaptive_formats: [{ drm_families: ['WIDEVINE'] }] } })],
-    ['ipBlock', refusedLocally({ status: 'LOGIN_REQUIRED', reason: 'Sign in to confirm you’re not a bot' })],
-    ['unexplained', refusedLocally({ status: 'UNPLAYABLE', reason: 'Video unavailable' })],
   ])('by Local as %s, final with fallback on', async (reason, getLocalVideoInfo) => {
     const { layer, fake } = setUp({ answers: { getLocalVideoInfo }, config: { backendFallback: true } })
 
@@ -410,14 +408,34 @@ describe('a YouTube video refused', () => {
     expect(fake.callsOf('invidiousGetVideoInformation')).toEqual([])
   })
 
-  // Invidious names no unexplained refusal: its bare "Video unavailable" is
-  // not found (below), which is tried on Local
+  // These may be about the address asking rather than the video, and an
+  // Invidious instance asks YouTube from its own (ADR-0019)
+  it.each([
+    ['ipBlock', refusedLocally({ status: 'LOGIN_REQUIRED', reason: 'Sign in to confirm you’re not a bot' })],
+    ['unexplained', refusedLocally({ status: 'UNPLAYABLE', reason: 'Video unavailable' })],
+    ['no reason', refusedLocally({
+      status: 'UNPLAYABLE',
+      reason: 'Video unavailable',
+      error_screen: { subreason: { text: 'The uploader has not made this video available in your country' } },
+    })],
+  ])('by Local as %s, answered by Invidious with fallback on', async (_reason, getLocalVideoInfo) => {
+    const { layer, fake } = setUp({
+      answers: { getLocalVideoInfo, invidiousGetVideoInformation: invidiousOrdinary },
+      config: { backendFallback: true },
+    })
+
+    const video = await layer.getVideo('dQw4w9WgXcQ')
+
+    expect(video.thumbnail).toBe(`${INSTANCE}/vi/dQw4w9WgXcQ/maxres.jpg`)
+    expect(fake.callsOf('getLocalVideoInfo')).toHaveLength(1)
+    expect(fake.callsOf('invidiousGetVideoInformation')).toHaveLength(1)
+  })
+
   it.each([
     ['private', 'This video is private'],
     ['membersOnly', 'Join this channel to get access to members-only content like this video, and other exclusive perks.'],
     ['ageRestricted', 'Sign in to confirm your age'],
     ['drm', 'This video is DRM protected'],
-    ['ipBlock', 'Sign in to confirm you’re not a bot'],
   ])('by Invidious as %s, final with fallback on', async (reason, message) => {
     const { layer, fake } = setUp({
       answers: { invidiousGetVideoInformation: new Error(message) },
@@ -428,6 +446,22 @@ describe('a YouTube video refused', () => {
 
     expect([error.kind, error.reason]).toEqual(['refused', reason])
     expect(fake.callsOf('getLocalVideoInfo')).toEqual([])
+  })
+
+  // Invidious' messages name no unexplained or reasonless refusal: its bare
+  // "Video unavailable" is not found (below), which is tried on Local too.
+  // The policy's own tests cover those two from Invidious.
+  it('by Invidious as ipBlock, answered by Local with fallback on', async () => {
+    const { layer, fake } = setUp({
+      answers: { invidiousGetVideoInformation: new Error('Sign in to confirm you’re not a bot'), getLocalVideoInfo: localInstance(localOrdinary) },
+      config: { backendPreference: 'invidious', backendFallback: true },
+    })
+
+    const video = await layer.getVideo('dQw4w9WgXcQ')
+
+    expect(video.thumbnail).toBe('https://i.ytimg.com/vi_webp/dQw4w9WgXcQ/maxresdefault.webp')
+    expect(fake.callsOf('invidiousGetVideoInformation')).toHaveLength(1)
+    expect(fake.callsOf('getLocalVideoInfo')).toHaveLength(1)
   })
 })
 
