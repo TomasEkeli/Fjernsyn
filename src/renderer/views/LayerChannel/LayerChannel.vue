@@ -127,26 +127,40 @@
               <LayerSubscribeButton :channel="channel" />
             </div>
           </div>
-          <nav
-            class="tabs"
-            role="tablist"
-            :aria-label="t('Channel.Channel Tabs')"
-          >
-            <RouterLink
-              v-for="tab in visibleTabs"
-              :id="`${tab.name}Tab`"
-              :key="tab.name"
-              :to="tabRoute(tab.name)"
-              replace
-              class="tab"
-              :class="{ selectedTab: currentTab === tab.name }"
-              role="tab"
-              :aria-selected="currentTab === tab.name"
-              :aria-controls="`${tab.name}Panel`"
+          <div class="infoTabs">
+            <nav
+              class="tabs"
+              role="tablist"
+              :aria-label="t('Channel.Channel Tabs')"
             >
-              {{ tab.label }}
-            </RouterLink>
-          </nav>
+              <RouterLink
+                v-for="tab in visibleTabs"
+                :id="`${tab.name}Tab`"
+                :key="tab.name"
+                :to="tabRoute(tab.name)"
+                replace
+                class="tab"
+                :class="{ selectedTab: currentTab === tab.name }"
+                role="tab"
+                :aria-selected="currentTab === tab.name"
+                :aria-controls="`${tab.name}Panel`"
+              >
+                {{ tab.label }}
+              </RouterLink>
+            </nav>
+            <!-- Search within the channel, where it has search, as in the old header (ChannelDetails) -->
+            <FtInput
+              v-if="showSearchBar"
+              ref="searchBar"
+              :placeholder="t('Channel.Search Channel')"
+              :action-button-label="t('Search Bar.Search')"
+              :value="searchQuery"
+              :show-clear-text-button="true"
+              class="channelSearch"
+              :maxlength="255"
+              @click="searchChannel"
+            />
+          </div>
         </div>
       </FtCard>
       <!-- A YouTube channel's description is on its about tab, as in the old view -->
@@ -158,11 +172,11 @@
         class="card"
       />
       <FtCard class="card">
-        <!-- One list per tab: the videos, shorts and live, the playlists, releases, podcasts and courses, the posts; and YouTube's about -->
+        <!-- One list per tab: the videos, shorts and live, the playlists, releases, podcasts and courses, the posts, the search results; and YouTube's about -->
         <div
           :id="`${currentTab}Panel`"
           role="tabpanel"
-          :aria-labelledby="`${currentTab}Tab`"
+          :aria-labelledby="currentTabInfo.search ? null : `${currentTab}Tab`"
         >
           <LayerChannelAbout
             v-if="currentTabInfo.about"
@@ -211,12 +225,12 @@
             />
             <FtElementList
               v-else
-              :data="currentList.items.value"
+              :data="currentItems"
               :use-channels-hidden-preference="false"
               :display="currentTabInfo.posts ? 'list' : ''"
             />
             <p
-              v-if="isFinishedAndEmpty(currentList)"
+              v-if="isFinishedAndEmpty(currentList, currentItems)"
               class="message"
             >
               {{ currentTabInfo.empty }}
@@ -229,10 +243,10 @@
           class="pageError"
         >
           <p class="message">
-            {{ errorMessage(currentList.error.value).text }}
+            {{ listErrorMessage(currentList.error.value).text }}
           </p>
           <FtButton
-            v-if="errorMessage(currentList.error.value).retryable"
+            v-if="listErrorMessage(currentList.error.value).retryable"
             :label="t('Video.Try Again')"
             :icon="['fas', 'sync']"
             class="retryButton"
@@ -267,7 +281,7 @@
 // (views/Channel) does, which is the model for the layout and is not edited.
 
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { computed, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -278,6 +292,7 @@ import FtCard from '../../components/ft-card/ft-card.vue'
 import FtDensitySwitch from '../../components/FtDensitySwitch/FtDensitySwitch.vue'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
 import FtIconButton from '../../components/FtIconButton/FtIconButton.vue'
+import FtInput from '../../components/FtInput/FtInput.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
 import FtSelect from '../../components/FtSelect/FtSelect.vue'
 import FtShareButton from '../../components/FtShareButton/FtShareButton.vue'
@@ -290,6 +305,7 @@ import LayerVideoDescription from '../../components/LayerVideoDescription/LayerV
 import store from '../../store/index'
 import {
   copyToClipboard,
+  ctrlFHandler,
   formatNumber,
   getChannelPlaylistId,
   getIconForSortPreference,
@@ -348,6 +364,16 @@ const hideChannelReleases = computed(() => store.getters.getHideChannelReleases)
 const hideChannelPodcasts = computed(() => store.getters.getHideChannelPodcasts)
 const hideChannelCourses = computed(() => store.getters.getHideChannelCourses)
 const hideChannelCommunity = computed(() => store.getters.getHideChannelCommunity)
+const hideChannelPlaylists = computed(() => store.getters.getHideChannelPlaylists)
+
+/** The search within the channel the route holds (`?searchQueryText=`, the old view's), `''` for none */
+const searchQuery = computed(() => {
+  const value = route.query.searchQueryText
+  return typeof value === 'string' ? value : ''
+})
+
+/** The search box, where the old view has it: a YouTube channel that can be searched */
+const showSearchBar = computed(() => isYouTube.value && channel.value?.hasSearch === true)
 
 /**
  * The tabs this view has, in the old view's order, by the names of
@@ -356,7 +382,9 @@ const hideChannelCommunity = computed(() => store.getters.getHideChannelCommunit
  * against it; `empty` what its list says when the channel has nothing in it;
  * `playlists` a tab listing playlists; `posts` the posts tab, a list layout
  * whatever the density setting; `about` YouTube's about tab, which every
- * YouTube channel has, as in the old view, and which lists nothing.
+ * YouTube channel has, as in the old view, and which lists nothing; `search`
+ * the results of a search within the channel, which has no tab of its own in
+ * the tab row, as in the old view, and is shown while the route holds one.
  */
 const tabs = computed(() => [
   { name: 'videos', label: t('Channel.Videos.Videos'), empty: t('Channel.Videos.This channel does not currently have any videos') },
@@ -368,6 +396,7 @@ const tabs = computed(() => [
   { name: 'playlists', label: t('Channel.Playlists.Playlists'), empty: t('Channel.Playlists.This channel does not currently have any playlists'), playlists: true },
   { name: 'community', label: t('Global.Posts'), empty: t('Channel.Posts.This channel currently does not have any posts'), named: true, hidden: hideChannelCommunity.value, posts: true },
   { name: 'about', label: t('Channel.About.About'), about: true },
+  { name: 'search', empty: t('Channel.Your search results have returned 0 results'), search: true },
 ])
 
 /**
@@ -380,6 +409,10 @@ const tabs = computed(() => [
 const visibleTabs = computed(() => {
   const named = channel.value?.tabs
   const shown = tabs.value.filter((tab) => {
+    if (tab.search) {
+      return false
+    }
+
     if (tab.about) {
       return isYouTube.value
     }
@@ -390,8 +423,16 @@ const visibleTabs = computed(() => {
   return shown.length > 0 ? shown : tabs.value.slice(0, 1)
 })
 
-/** The tab the route names, else the first shown, as the old view falls back */
+/**
+ * The tab the route names, else the first shown, as the old view falls back.
+ * The search results where the route holds a search of a channel that can be
+ * searched.
+ */
 const currentTab = computed(() => {
+  if (route.params.currentTab === 'search' && searchQuery.value !== '' && showSearchBar.value) {
+    return 'search'
+  }
+
   const names = visibleTabs.value.map(tab => tab.name)
   return names.includes(route.params.currentTab) ? route.params.currentTab : names[0]
 })
@@ -561,10 +602,18 @@ const lists = {
   courses: createPlaylistList('courses'),
   // YouTube's community posts, in its one order
   community: createPagedList(cursor => layer.listChannelPosts(channel.value.id, { cursor })),
+  // The search the route holds; a later page keeps the query of the first
+  search: createPagedList(cursor => layer.searchChannel(channel.value.id, searchQuery.value, { cursor })),
 }
 
 /** The current tab's list; none on the about tab */
 const currentList = computed(() => lists[currentTab.value] ?? null)
+
+/** The current list's items as shown: the search's playlists are hidden with the playlists, as in the old view */
+const currentItems = computed(() => {
+  const items = currentList.value?.items.value ?? []
+  return currentTab.value === 'search' && hideChannelPlaylists.value ? items.filter(item => item.type !== 'playlist') : items
+})
 
 /**
  * The current tab's list where it offers a sort, else `null`. A PeerTube
@@ -627,9 +676,12 @@ function hasMore(list) {
   return list.loaded.value && list.cursor.value !== null
 }
 
-/** @param {ReturnType<typeof createPagedList>} list */
-function isFinishedAndEmpty(list) {
-  return list.loaded.value && list.cursor.value === null && list.items.value.length === 0
+/**
+ * @param {ReturnType<typeof createPagedList>} list
+ * @param {unknown[]} [items] what is shown of it
+ */
+function isFinishedAndEmpty(list, items = list.items.value) {
+  return list.loaded.value && list.cursor.value === null && items.length === 0
 }
 
 const followerCountText = computed(() => {
@@ -702,6 +754,53 @@ function youTubeErrorMessage(error) {
   return { text: t('PeerTube.Channel.Could not load'), retryable: true }
 }
 
+/**
+ * A list's error. A search refused as `invalid` is a channel that cannot be
+ * searched, in the old view's words, not one that does not exist.
+ *
+ * @param {{ kind?: string, reason?: string | null, host?: string | null }} error
+ * @returns {{ text: string, retryable: boolean }}
+ */
+function listErrorMessage(error) {
+  if (currentTab.value === 'search' && error.kind === 'invalid') {
+    return { text: t('Channel.This channel does not allow searching'), retryable: false }
+  }
+
+  return errorMessage(error)
+}
+
+/**
+ * Searches the channel for the query typed in the box, in the route, so
+ * that a reload or a link lands on the same results; the old view replaces
+ * the route as this does. The same search again is asked afresh.
+ *
+ * @param {string} query
+ */
+function searchChannel(query) {
+  if (typeof query !== 'string' || query.trim() === '') {
+    return
+  }
+
+  if (query === searchQuery.value && currentTab.value === 'search') {
+    lists.search.reset()
+    loadCurrentTab()
+    return
+  }
+
+  router.replace({ ...tabRoute('search'), query: { searchQueryText: query } })
+}
+
+const searchBar = useTemplateRef('searchBar')
+
+/**
+ * Ctrl+F (Cmd+F) to the search box, as on the old page
+ *
+ * @param {KeyboardEvent} event
+ */
+function keyboardShortcutHandler(event) {
+  ctrlFHandler(event, searchBar.value)
+}
+
 /** The current tab's first page, unless it is loaded, loading or failed, the tab lists nothing, or the channel is not shown */
 function loadCurrentTab() {
   const list = currentList.value
@@ -754,10 +853,17 @@ async function load() {
   loadCurrentTab()
 }
 
-// The router reuses this view for another channel
-watch(channelRef, (value, previous) => {
-  if (isOnThisView() && value !== previous) {
+// The router reuses this view for another channel, or another search of it
+watch([channelRef, searchQuery], ([ref, query], [previousRef, previousQuery]) => {
+  if (!isOnThisView()) {
+    return
+  }
+
+  if (ref !== previousRef) {
     load()
+  } else if (query !== previousQuery) {
+    lists.search.reset()
+    loadCurrentTab()
   }
 })
 
@@ -767,7 +873,14 @@ watch([currentTab, isFamilyFriendlyGated], () => {
   }
 })
 
-onMounted(load)
+onMounted(() => {
+  document.addEventListener('keydown', keyboardShortcutHandler)
+  load()
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', keyboardShortcutHandler)
+})
 </script>
 
 <style scoped src="./LayerChannel.css" />

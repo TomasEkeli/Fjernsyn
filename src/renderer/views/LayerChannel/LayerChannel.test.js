@@ -71,6 +71,7 @@ const SETTINGS = vi.hoisted(() => ({
   getHideChannelPodcasts: false,
   getHideChannelCourses: false,
   getHideChannelCommunity: false,
+  getHideChannelPlaylists: false,
   // The post component's
   getForbiddenTitles: '[]',
   getHideSharingActions: true,
@@ -193,6 +194,7 @@ const layer = {
   listChannelVideos: vi.fn(),
   listChannelPlaylists: vi.fn(),
   listChannelPosts: vi.fn(),
+  searchChannel: vi.fn(),
   describe: (entity, options) => describeEntity(entity, {}, options),
 }
 
@@ -209,6 +211,7 @@ beforeEach(() => {
   layer.listChannelVideos.mockReset().mockResolvedValue({ items: [video(1), video(2)], cursor: null })
   layer.listChannelPlaylists.mockReset().mockResolvedValue({ items: [playlist(1)], cursor: null })
   layer.listChannelPosts.mockReset().mockResolvedValue({ items: [], cursor: null })
+  layer.searchChannel.mockReset().mockResolvedValue({ items: [], cursor: null })
 
   openExternalLink.mockClear()
   copyToClipboard.mockClear()
@@ -1387,6 +1390,134 @@ describe('a YouTube channel', () => {
         await flushPromises()
         expect(wrapper.find('.densitySwitch').exists()).toBe(false)
       }
+    })
+  })
+
+  describe('search within the channel', () => {
+    const SEARCH_PATH = `${YT_PATH}/search?searchQueryText=animation`
+
+    // The box asks the YouTube URL parser what is typed, for its icon: not a URL
+    const recordingDispatch = store.dispatch
+
+    beforeEach(() => {
+      store.dispatch = (type, payload) => {
+        const result = recordingDispatch(type, payload)
+        return type === 'getYoutubeUrlInfo' ? Promise.resolve({ urlType: 'invalid_url' }) : result
+      }
+    })
+
+    afterEach(() => {
+      store.dispatch = recordingDispatch
+    })
+
+    beforeEach(() => {
+      layer.getChannel.mockResolvedValue(youTubeChannel({ hasSearch: true }))
+      layer.searchChannel
+        .mockResolvedValueOnce({ items: [youTubePlaylist('PLopen'), youTubeVideo(1, 'found')], cursor: 'next' })
+        .mockResolvedValueOnce({ items: [youTubeVideo(2, 'found')], cursor: null })
+    })
+
+    /** Types the query into the header's box and runs it, as the viewer does */
+    async function searchFromTheBox(wrapper, query) {
+      await wrapper.find('.channelSearch input').setValue(query)
+      await wrapper.find('.channelSearch .inputAction').trigger('click')
+      await flushPromises()
+    }
+
+    it('has the box in the header where the channel has search, and none where it has not', async () => {
+      const { wrapper } = await openChannelPage(YT_PATH)
+
+      expect(wrapper.find('.channelHeader .channelSearch input').attributes('placeholder')).toBe('Search Channel')
+
+      layer.getChannel.mockResolvedValue(youTubeChannel({ hasSearch: false }))
+      const { wrapper: other } = await openChannelPage(YT_PATH)
+
+      expect(other.find('.channelSearch').exists()).toBe(false)
+    })
+
+    it('has no box for a PeerTube channel', async () => {
+      layer.getChannel.mockResolvedValue(channelDetails({ hasSearch: true }))
+      const { wrapper } = await openChannelPage()
+
+      expect(wrapper.find('.channelSearch').exists()).toBe(false)
+    })
+
+    it('searches from the box: the query in the route, the results on a tab of their own, and the next page appended', async () => {
+      const { wrapper, router } = await openChannelPage(YT_PATH)
+
+      await searchFromTheBox(wrapper, 'animation')
+
+      expect(router.currentRoute.value.path).toBe(`${YT_PATH}/search`)
+      expect(router.currentRoute.value.query).toEqual({ searchQueryText: 'animation' })
+      expect(layer.searchChannel).toHaveBeenCalledWith(YT_ID, 'animation', { cursor: null })
+      expect(wrapper.find('#searchPanel').exists()).toBe(true)
+      expect(wrapper.find('.selectedTab').exists()).toBe(false)
+      expect(wrapper.find('.fakePlaylistCard').text()).toContain('Playlist PLopen')
+      expect(cardTitles(wrapper)).toEqual(['found 1'])
+
+      await fetchMore(wrapper).trigger('click')
+      await flushPromises()
+
+      expect(layer.searchChannel).toHaveBeenLastCalledWith(YT_ID, 'animation', { cursor: 'next' })
+      expect(cardTitles(wrapper)).toEqual(['found 1', 'found 2'])
+      expect(fetchMore(wrapper).exists()).toBe(false)
+    })
+
+    it('lands on the same results from the route, as a reload or a link does, the query in the box', async () => {
+      const { wrapper } = await openChannelPage(SEARCH_PATH)
+
+      expect(layer.searchChannel).toHaveBeenCalledTimes(1)
+      expect(layer.searchChannel).toHaveBeenCalledWith(YT_ID, 'animation', { cursor: null })
+      expect(layer.listChannelVideos).not.toHaveBeenCalled()
+      expect(wrapper.find('.channelSearch input').element.value).toBe('animation')
+      expect(cardTitles(wrapper)).toEqual(['found 1'])
+    })
+
+    it('asks afresh for another query, replacing the results', async () => {
+      const { wrapper, router } = await openChannelPage(SEARCH_PATH)
+      layer.searchChannel.mockReset().mockResolvedValue({ items: [youTubeVideo(1, 'other')], cursor: null })
+
+      await searchFromTheBox(wrapper, 'grease pencil')
+
+      expect(router.currentRoute.value.query).toEqual({ searchQueryText: 'grease pencil' })
+      expect(layer.searchChannel).toHaveBeenCalledWith(YT_ID, 'grease pencil', { cursor: null })
+      expect(cardTitles(wrapper)).toEqual(['other 1'])
+    })
+
+    it('is left for a tab, the query going with it', async () => {
+      const { wrapper, router } = await openChannelPage(SEARCH_PATH)
+
+      await wrapper.find('#videosTab').trigger('click')
+      await flushPromises()
+
+      expect(router.currentRoute.value.path).toBe(`${YT_PATH}/videos`)
+      expect(router.currentRoute.value.query).toEqual({})
+      expect(wrapper.find('#videosTab').classes()).toContain('selectedTab')
+    })
+
+    it('reads a search route for a channel without search as its first tab', async () => {
+      layer.getChannel.mockResolvedValue(youTubeChannel({ hasSearch: false }))
+      const { wrapper } = await openChannelPage(SEARCH_PATH)
+
+      expect(layer.searchChannel).not.toHaveBeenCalled()
+      expect(wrapper.find('#videosTab').classes()).toContain('selectedTab')
+    })
+
+    it('hides the playlists among the results while the channel\'s playlists are hidden, and says when nothing is left', async () => {
+      store.setGetter('getHideChannelPlaylists', true)
+      layer.searchChannel.mockReset().mockResolvedValue({ items: [youTubePlaylist('PLopen')], cursor: null })
+      const { wrapper } = await openChannelPage(SEARCH_PATH)
+
+      expect(wrapper.find('.fakePlaylistCard').exists()).toBe(false)
+      expect(wrapper.find('#searchPanel .message').text()).toBe('Your search results have returned 0 results')
+    })
+
+    it('says a channel that cannot be searched cannot, without a retry', async () => {
+      layer.searchChannel.mockReset().mockRejectedValue(new PlatformError('invalid', 'This channel cannot be searched'))
+      const { wrapper } = await openChannelPage(SEARCH_PATH)
+
+      expect(wrapper.find('.pageError .message').text()).toBe('This channel does not allow searching')
+      expect(wrapper.find('.pageError .retryButton').exists()).toBe(false)
     })
   })
 

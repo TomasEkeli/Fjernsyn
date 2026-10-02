@@ -84,10 +84,25 @@
   align-items: center;
 }
 
+.infoTabs {
+  display: flex;
+  gap: 32px;
+  padding-block: 0.3em;
+}
+
 .tabs {
   display: flex;
+  flex: 0 1 66%;
   flex-wrap: wrap;
-  padding-block: 0.3em;
+}
+
+.channelSearch {
+  margin-block-start: 10px;
+  max-inline-size: 250px;
+  inline-size: 220px;
+  margin-inline-start: auto;
+  align-self: flex-end;
+  flex: 1 1 0%;
 }
 
 .tab {
@@ -156,6 +171,20 @@
 }
 
 @media only screen and (width <= 800px) {
+  .infoTabs {
+    flex-flow: column-reverse;
+    gap: 0;
+  }
+
+  .channelSearch {
+    inline-size: 100%;
+    max-inline-size: none;
+  }
+
+  .tabs {
+    flex: 1 1 0;
+  }
+
   .tab {
     flex: 1 1 0%;
   }
