@@ -35,6 +35,14 @@
 //   followed on every page, as the old view does. Each list's backend calls
 //   and item shapes are a row of `LISTS`; a cursor names its list, so a later
 //   page never needs the caller to repeat it.
+// - Search within the channel (`searchChannel`), the videos and playlists
+//   matching a query, in YouTube's order. Local: `channel.search(query)` on
+//   the `YT.Channel`, where the channel has search (`has_search`, which the
+//   details say as `hasSearch`), its item sections read as the old view reads
+//   them, continued with `getContinuation()`. Invidious:
+//   `searchInvidiousChannel(id, query, page)`, by page number, which never
+//   says it is the last: an empty answer is the end. Not a row of `LISTS`:
+//   it is asked with a query, has no tab to open and no sort.
 // - A page of a sorted list says which sort it is in (`Page.sort`), so that
 //   the view can tell when the sort asked was not applied: Local's first page
 //   of a tab without that filter (for playlists: without the sort, or of one
@@ -564,6 +572,7 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       tags: [...new Set([...(header.tags ?? []), ...(channel.metadata?.tags ?? [])])],
       isFamilyFriendly: channel.metadata?.is_family_safe === true,
       isArtistTopicChannel,
+      hasSearch: channel.has_search === true,
     }
   }
 
@@ -755,6 +764,68 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
     return localTabPage(LISTS[kind].followEmptyLater ? await pastEmptyPages(next, kind) : next, cursor.owner ?? null, kind)
   }
 
+  /**
+   * A page of a channel's search results, as the old view reads them: the
+   * videos and playlists of its item sections, a playlist without a channel
+   * named after the one searched.
+   *
+   * @param {any} result the `YT.Channel` `search()` answered, or a continuation of it
+   * @param {any} contents its sections
+   * @param {{ id: string, name: string }} owner
+   */
+  function localSearchPage(result, contents, owner) {
+    const items = (Array.isArray(contents) ? contents : [])
+      .filter(node => node?.type === 'ItemSection')
+      .flatMap(section => Array.isArray(section.contents) ? section.contents : [])
+      .map((item) => {
+        if (item?.type === 'Video') {
+          const video = youtube.parseLocalListVideo(item)
+          return video ? forCard(video) : null
+        }
+
+        if (item?.type === 'Playlist') {
+          const playlist = youtube.parseLocalListPlaylist(item, owner.id, owner.name)
+          return playlist ? localPlaylist(playlist) : null
+        }
+
+        return null
+      })
+      .filter(item => item != null)
+
+    return {
+      items,
+      cursor: result?.has_continuation ? { backend: 'local', continuation: result, from: 'search', kind: 'search', owner } : null,
+    }
+  }
+
+  /**
+   * @param {string} id
+   * @param {string} query
+   */
+  async function firstLocalSearchPage(id, query) {
+    const channel = localChannels.get(id) ?? await fetchLocalChannel(id)
+
+    // The old view hides its search box for such a channel
+    if (!channel.has_search) {
+      throw new PlatformError('invalid', 'This channel cannot be searched')
+    }
+
+    const result = await channel.search(query)
+
+    return localSearchPage(result, result?.current_tab?.content?.contents, { id, name: localName(channel) })
+  }
+
+  /** @param {any} cursor */
+  async function laterLocalSearchPage(cursor) {
+    if (typeof cursor.continuation?.getContinuation !== 'function' || cursor.owner == null) {
+      throw new PlatformError('invalid', 'Not a YouTube channel search cursor')
+    }
+
+    const next = await cursor.continuation.getContinuation()
+
+    return localSearchPage(next, next?.contents?.contents, cursor.owner)
+  }
+
   // -------------------------------------------------------------------------
   // Invidious
   // -------------------------------------------------------------------------
@@ -798,6 +869,8 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       tabs: TABS.map(([tab]) => tab).filter(tab => tabs.includes(tab)),
       tags: Array.isArray(channel?.tags) ? [...new Set(channel.tags)] : [],
       isFamilyFriendly: channel?.isFamilyFriendly === true,
+      // Invidious does not say; the old view offers the search box there always
+      hasSearch: true,
     }
   }
 
@@ -829,6 +902,36 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
 
     // Invidious applies the sort it is asked, on every page
     return list.sorts ? { ...page, sort } : page
+  }
+
+  /**
+   * A page of a channel's search results from Invidious, by its number. An
+   * empty answer is the end, which Invidious never says otherwise; the cursor
+   * repeats the query, which every page is asked with.
+   *
+   * @param {string} id
+   * @param {string} query
+   * @param {number} page 1-based
+   */
+  async function invidiousSearchPage(id, query, page) {
+    const answer = await youtube.searchInvidiousChannel(id, query, page)
+    const results = Array.isArray(answer) ? answer : []
+
+    if (results.length === 0) {
+      return { items: [], cursor: null }
+    }
+
+    const items = results
+      .map((item) => {
+        if (item?.type === 'video' || item?.type === 'shortVideo') {
+          return forCard(item)
+        }
+
+        return item?.type === 'playlist' ? invidiousPlaylist(item, config) : null
+      })
+      .filter(item => item != null)
+
+    return { items, cursor: { backend: 'invidious', page: page + 1, query, kind: 'search' } }
   }
 
   /**
@@ -936,5 +1039,49 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
     return listPage(id, 'community', 'newest', cursor, CHANNEL_POST_KINDS)
   }
 
-  return Object.freeze({ getChannel, listChannelVideos, listChannelPlaylists, listChannelPosts })
+  /**
+   * A page of the channel's videos and playlists matching a query, in
+   * YouTube's order. A blank query is an empty page, without a request; a
+   * Local channel without search (`hasSearch` false) is `invalid`. A later
+   * page keeps the first's query, whatever the arguments say.
+   *
+   * @param {string} id a YouTube channel ref
+   * @param {string} query
+   * @param {{ cursor?: unknown }} [options]
+   * @returns {Promise<import('../shapes').Page<import('./types').YouTubeVideoSummary | import('./types').YouTubePlaylistSummary>>}
+   */
+  async function searchChannel(id, query, { cursor = null } = {}) {
+    if (cursor != null) {
+      return policy.later(cursor, (backend, laterCursor) => {
+        if (laterCursor.kind !== 'search') {
+          throw new PlatformError('invalid', 'Not a cursor of this list')
+        }
+
+        if (backend === 'local') {
+          return laterLocalSearchPage(laterCursor)
+        }
+
+        if (!Number.isInteger(laterCursor.page) || laterCursor.page < 2 || typeof laterCursor.query !== 'string') {
+          throw new PlatformError('invalid', 'Not a YouTube channel search cursor')
+        }
+
+        return invidiousSearchPage(id, laterCursor.query, laterCursor.page)
+      }, classifyYouTubeError)
+    }
+
+    if (typeof query !== 'string') {
+      throw new PlatformError('invalid', 'A channel search needs a query')
+    }
+
+    if (query.trim() === '') {
+      return { items: [], cursor: null }
+    }
+
+    return policy.first(
+      backend => backend === 'local' ? firstLocalSearchPage(id, query) : invidiousSearchPage(id, query, 1),
+      classifyYouTubeError
+    )
+  }
+
+  return Object.freeze({ getChannel, listChannelVideos, listChannelPlaylists, listChannelPosts, searchChannel })
 }

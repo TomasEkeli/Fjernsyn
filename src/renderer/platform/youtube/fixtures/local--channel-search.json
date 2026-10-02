@@ -1,0 +1,178 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "(await getLocalChannel('UCSMOQeBJ2RAnuFungnQOxLg')).search('animation')",
+  "answer": {
+    "current_tab": {
+      "content": {
+        "contents": [
+          {
+            "type": "ItemSection",
+            "contents": [
+              {
+                "type": "Playlist",
+                "parsed": {
+                  "type": "playlist",
+                  "dataSource": "local",
+                  "title": "Official Blender Open Movies",
+                  "thumbnail": "https://i.ytimg.com/vi/WhWc3b3KhnY/hqdefault.jpg?sqp=-oaymwEXCOADEI4CSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLCMXsLQxRiAv0z6Zh8uDVsGaid1mQ",
+                  "channelName": "Blender · Playlist",
+                  "channelId": "UCSMOQeBJ2RAnuFungnQOxLg",
+                  "playlistId": "PL6B3937A5D230E335",
+                  "videoCount": 17
+                }
+              }
+            ]
+          },
+          {
+            "type": "ItemSection",
+            "contents": [
+              {
+                "type": "Video",
+                "parsed": {
+                  "type": "video",
+                  "videoId": "fxz6p-QATfs",
+                  "title": "The animation of Flow — Blender Conference 2024",
+                  "author": "Blender",
+                  "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+                  "description": "\"The animation of Flow\" by Silly-Pélissier Léo\nBlender Conference 2024\n2024-10-23 15:00 at the Felix Meritis, Amsterdam, studio. —\nDonate to support Blender at https://fund.blender.org/...",
+                  "viewCount": 86338,
+                  "published": 1759421288688,
+                  "lengthSeconds": 3456,
+                  "liveNow": false,
+                  "isUpcoming": false,
+                  "isPremiere": false,
+                  "is4k": false,
+                  "is8k": false,
+                  "isNew": false,
+                  "isVr180": false,
+                  "isVr360": false,
+                  "is3d": false,
+                  "hasCaptions": false
+                }
+              }
+            ]
+          },
+          {
+            "type": "ItemSection",
+            "contents": [
+              {
+                "type": "Video",
+                "parsed": {
+                  "type": "video",
+                  "videoId": "P0RvjSfFyLg",
+                  "title": "Building a Complete Animation Pipeline for a Feature Film with a Woolly Look — BCON26",
+                  "author": "Blender",
+                  "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+                  "description": "\"Building a Complete Animation Pipeline for a Feature Film with a Woolly Look\" by Juan Carlos Garcia del Blanco, Antonio Javier Torralba Moreno at Blender Conference 2026\n\nJuan Carlos García...",
+                  "viewCount": 6322,
+                  "published": 1790287040689,
+                  "lengthSeconds": 3138,
+                  "liveNow": false,
+                  "isUpcoming": false,
+                  "isPremiere": false,
+                  "is4k": false,
+                  "is8k": false,
+                  "isNew": false,
+                  "isVr180": false,
+                  "isVr360": false,
+                  "is3d": false,
+                  "hasCaptions": false
+                }
+              }
+            ]
+          },
+          {
+            "type": "ItemSection",
+            "contents": [
+              {
+                "type": "Video",
+                "parsed": {
+                  "type": "video",
+                  "videoId": "e_0ppK_f_rY",
+                  "title": "The Appeal of Animation",
+                  "author": "Blender",
+                  "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+                  "description": "Hjalti Hjalmarsson at Blender Conference 2016. Learn more at https://www.blender.org/conference/2016/presentations/298",
+                  "viewCount": 7487,
+                  "published": 1506965672689,
+                  "lengthSeconds": 2336,
+                  "liveNow": false,
+                  "isUpcoming": false,
+                  "isPremiere": false,
+                  "is4k": false,
+                  "is8k": false,
+                  "isNew": false,
+                  "isVr180": false,
+                  "isVr360": false,
+                  "is3d": false,
+                  "hasCaptions": false
+                }
+              }
+            ]
+          },
+          {
+            "type": "ItemSection",
+            "contents": [
+              {
+                "type": "Video",
+                "parsed": {
+                  "type": "video",
+                  "videoId": "bRoOYfwgIPI",
+                  "title": "Why my 3D animated NPR project doesn’t look 2d enough?",
+                  "author": "Blender",
+                  "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+                  "description": "When you are working on an NPR still-frame, everything is fine, but then, when the camera or your character moves, a lot of 3D alarms shout out and the trick is revealed. \n\nShading, camera...",
+                  "viewCount": 74066,
+                  "published": 1727864336689,
+                  "lengthSeconds": 1025,
+                  "liveNow": false,
+                  "isUpcoming": false,
+                  "isPremiere": false,
+                  "is4k": false,
+                  "is8k": false,
+                  "isNew": false,
+                  "isVr180": false,
+                  "isVr360": false,
+                  "is3d": false,
+                  "hasCaptions": false
+                }
+              }
+            ]
+          },
+          {
+            "type": "ItemSection",
+            "contents": [
+              {
+                "type": "Video",
+                "parsed": {
+                  "type": "video",
+                  "videoId": "Z4C82eyhwgU",
+                  "title": "\"Caminandes 2: Gran Dillama\" - Blender Animated Short",
+                  "author": "Blender",
+                  "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+                  "description": "Caminandes: Episode 2 is an Open Movie produced by Blender Institute in Amsterdam, the Netherlands. You can support the makers and open source projects by purchasing the 8 GB USB card with...",
+                  "viewCount": 1311171,
+                  "published": 1412294816689,
+                  "lengthSeconds": 147,
+                  "liveNow": false,
+                  "isUpcoming": false,
+                  "isPremiere": false,
+                  "is4k": false,
+                  "is8k": false,
+                  "isNew": false,
+                  "isVr180": false,
+                  "isVr360": false,
+                  "is3d": false,
+                  "hasCaptions": false
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "has_continuation": true
+  },
+  "notes": "has_search was true at recording. Trimmed to the fields the adapter reads: the first 6 sections, each with its first 4 items, each as its node type and what the module's parser answered for it (parseLocalListVideo for a Video, parseLocalListPlaylist with the channel's id and name for a Playlist), as \"parsed\". getContinuation() is the test's."
+}

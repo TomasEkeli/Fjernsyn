@@ -337,7 +337,7 @@
  * header (`''` when none). For PeerTube, `banner` is the largest banner or
  * `null`, and `description` and `support` the channel's Markdown.
  *
- * YouTube adds four, absent for PeerTube (phase 2):
+ * YouTube adds these, absent for PeerTube (phase 2; `hasSearch` phase 3):
  * - `tabs`: which content lists the channel has (`videos`, `shorts`, `live`,
  *   `releases`, `podcasts`, `courses`, `playlists`, `community`), since a
  *   YouTube channel shows only the tabs it has, and the old view asks the
@@ -349,6 +349,9 @@
  * - `isArtistTopicChannel`: an artist's auto-generated `- Topic` channel
  *   (Local only), which has no videos tab and whose videos may be other
  *   channels', so the view treats it apart.
+ * - `hasSearch`: whether the channel can be searched (`searchChannel`), so
+ *   that the page offers its search box where the old view does: Local's
+ *   `has_search`, always on Invidious, which does not say.
  *
  * @typedef {ChannelSummary & {
  *   avatarLarge: string,
@@ -360,6 +363,7 @@
  *   tags?: string[],
  *   isFamilyFriendly?: boolean,
  *   isArtistTopicChannel?: boolean,
+ *   hasSearch?: boolean,
  * }} ChannelDetails
  */
 

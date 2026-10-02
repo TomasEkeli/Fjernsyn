@@ -90,7 +90,8 @@
     "has_courses": false,
     "has_playlists": true,
     "has_community": true,
+    "has_search": true,
     "has_about": true
   },
-  "notes": "The has_* getters of YT.Channel recorded as plain fields; the header trimmed to what parseLocalChannelHeader reads (no actions, so the id comes from metadata.external_id)."
+  "notes": "The has_* getters of YT.Channel recorded as plain fields; the header trimmed to what parseLocalChannelHeader reads (no actions, so the id comes from metadata.external_id). has_search (true) added 2026-10-02 from the recording of local--channel-search.json, the same channel."
 }

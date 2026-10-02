@@ -51,7 +51,8 @@ of them.
   or `live`), `listChannelPlaylists` (`kind` `playlists`, sorted `newest`
   or `last`, or `releases`, `podcasts` or `courses`, unsorted) and
   `listChannelPosts` (the community tab, as the post component reads
-  posts; PeerTube answers none). Keeps the last 5 Local `YT.Channel`
+  posts; PeerTube answers none) and `searchChannel` (its videos and
+  playlists matching a query, where `hasSearch`; PeerTube is `invalid`). Keeps the last 5 Local `YT.Channel`
   instances per layer, so a first page does not fetch the channel again. A
   page says the sort it applied (`Page.sort`); an age-gated channel is
   `refused`/`ageRestricted`, carrying the name and avatar YouTube still shows

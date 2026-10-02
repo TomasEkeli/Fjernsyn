@@ -14,7 +14,9 @@
 //   `mapLocalLegacyFormat`
 // - channels: `getLocalChannel(id)` (a `YT.Channel`, or `{ alert }` for a
 //   terminated channel), `parseLocalChannelHeader`, `parseLocalChannelVideos`,
-//   `parseLocalChannelShorts`, `parseLocalListVideo`, `parseLocalListPlaylist`,
+//   `parseLocalChannelShorts`, `parseLocalListVideo`, `parseLocalListPlaylist`
+//   (also for a channel's search results, which `channel.search(query)` on
+//   the `YT.Channel` answers),
 //   `getLocalPlaylist`, `getLocalPlaylistContinuation`, and
 //   `parseLocalPlaylistVideos` for an artist topic channel's uploads playlist,
 //   `getLocalArtistTopicChannelReleases(channel)` and
@@ -32,7 +34,8 @@
 //   `getInvidiousChannelShorts`, `getInvidiousChannelLive`,
 //   `getInvidiousChannelPlaylists`, `getInvidiousChannelReleases`,
 //   `getInvidiousChannelPodcasts`, `getInvidiousChannelCourses`,
-//   `invidiousGetCommunityPosts`, `invidiousImageUrlToInvidious`
+//   `invidiousGetCommunityPosts`, `searchInvidiousChannel(id, query, page)`,
+//   `invidiousImageUrlToInvidious`
 // - comments: `invidiousGetComments`, `invidiousGetCommentReplies`
 // - search: `getInvidiousSearchResults`
 //
@@ -90,6 +93,7 @@ export const YOUTUBE_DEP_NAMES = Object.freeze({
     'getInvidiousChannelPodcasts',
     'getInvidiousChannelCourses',
     'invidiousGetCommunityPosts',
+    'searchInvidiousChannel',
     'invidiousGetComments',
     'invidiousGetCommentReplies',
     'getInvidiousSearchResults',

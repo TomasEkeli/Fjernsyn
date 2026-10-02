@@ -73,14 +73,14 @@
  * @property {'local'} backend
  * @property {any} continuation the youtubei.js instance to continue; see
  *   YouTubeCursorTable
- * @property {'tab' | 'playlist' | 'topicReleases'} [from] channel lists: a
+ * @property {'tab' | 'playlist' | 'topicReleases' | 'search'} [from] channel lists: a
  *   channel tab, an artist topic channel's uploads playlist standing in for
- *   its videos tab, or the releases read off its page
- * @property {'videos' | 'shorts' | 'live' | 'playlists' | 'releases' | 'podcasts' | 'courses' | 'community'} [kind] channel lists
+ *   its videos tab, the releases read off its page, or a search within it
+ * @property {'videos' | 'shorts' | 'live' | 'playlists' | 'releases' | 'podcasts' | 'courses' | 'community' | 'search'} [kind] channel lists
  * @property {any} [channel] an artist topic channel's releases: the
  *   `YT.Channel`, whose session alone can call the continuation node
- * @property {{ id: string, name: string } | null} [owner] channel tabs: whose
- *   items the page holds, named after the channel where the page leaves them
+ * @property {{ id: string, name: string } | null} [owner] channel tabs and
+ *   searches: whose items the page holds, named after the channel where the page leaves them
  *   unnamed; `null` for a channel showing other channels' items, whose items
  *   are left unattributed
  */
@@ -102,6 +102,8 @@
  * @typedef {object} YouTubeInvidiousPageCursor
  * @property {'invidious'} backend
  * @property {number} page 1-based, the next page to ask for
+ * @property {string} [query] a search within a channel: the query, asked again on every page
+ * @property {'search'} [kind] a search within a channel
  */
 
 /** @typedef {YouTubeLocalCursor | YouTubeInvidiousTokenCursor | YouTubeInvidiousPageCursor} YouTubeCursor */
@@ -157,6 +159,15 @@
  *   - I: `continuation` string from `invidiousGetCommunityPosts(id,
  *     continuation)`. `{ backend, continuation, sort: null, kind }`.
  *   - A channel without the tab is an empty page, as for the video lists.
+ * - `searchChannel`, a search within a channel
+ *   - L: the `YT.Channel` `channel.search(query)` answers, on the channel
+ *     `getChannel` cached (else fetched), where `has_search`; later pages
+ *     from `getContinuation()`. `{ backend, continuation, from: 'search',
+ *     kind: 'search', owner }`. End: `!has_continuation`. A channel without
+ *     `has_search` is `invalid`.
+ *   - I: a page number of `searchInvidiousChannel(id, query, page)`, the
+ *     first page 1. `{ backend, page, query, kind: 'search' }`. End: an
+ *     empty answer, as for `search`.
  * - `search`
  *   - L: the `YT.Search` instance `getLocalSearchResults` answers as
  *     `continuationData`, continued by `getLocalSearchContinuation`.
@@ -195,7 +206,8 @@
 
 /**
  * A YouTube video in a list. Implemented in `./channels.js` for a channel's
- * videos, shorts and lives; `./search.js` hands the modules' items on as they
+ * videos, shorts and lives, and the videos of a search within it;
+ * `./search.js` hands the modules' items on as they
  * are (see the search section). The Local list parsers already produce the
  * common field names (they are what the cards read), so on Local the summary
  * is `parseLocalListVideo`'s answer as it is. Invidious' video objects also
@@ -484,6 +496,7 @@
  * | tags                 | header tags and `metadata.tags`, without repeats   | `tags`, without repeats                      |
  * | isFamilyFriendly     | `metadata.is_family_safe === true`                 | `isFamilyFriendly === true`                  |
  * | isArtistTopicChannel | a name ending `- Topic` with `metadata.music_artist_name`, which changes where its videos come from | absent |
+ * | hasSearch            | `has_search === true`                              | `true` (not reported; the old view offers search always) |
  *
  * `tabs` uses the old view's names in its order (`videos`, `shorts`, `live`,
  * `releases`, `podcasts`, `courses`, `playlists`, `community`), without home
@@ -504,7 +517,8 @@
 
 /**
  * A YouTube playlist in a list, implemented in `./channels.js` for a
- * channel's own playlists, releases, podcasts and courses. L: `parseLocalListPlaylist` answers the card's
+ * channel's own playlists, releases, podcasts and courses, and the
+ * playlists of a search within it. L: `parseLocalListPlaylist` answers the card's
  * Local field names already, with `dataSource: 'local'`. I:
  * `InvidiousPlaylistObject` renamed into them.
  *

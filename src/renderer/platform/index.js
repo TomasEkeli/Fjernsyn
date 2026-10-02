@@ -262,6 +262,29 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   }
 
   /**
+   * A page of a YouTube channel's videos and playlists matching `query`, in
+   * YouTube's order, through the backend policy: the items are card-ready
+   * video and playlist summaries, as the channel's own lists answer them. A
+   * blank query is an empty page, without a request. A channel whose details
+   * say `hasSearch: false` cannot be searched (`invalid` on Local). Hand the
+   * page's `cursor` back for the next page, which keeps the first page's
+   * query; `null` is the end. PeerTube has no search within a channel: any
+   * other ref rejects as `invalid`, without a request.
+   *
+   * @param {import('./shapes').ChannelRef} ref
+   * @param {string} query
+   * @param {{ cursor?: unknown }} [options]
+   * @returns {Promise<import('./shapes').Page<import('./shapes').VideoSummary | import('./shapes').PlaylistSummary>>}
+   */
+  async function searchChannel(ref, query, options) {
+    if (!isYouTubeChannelRef(ref)) {
+      throw new PlatformError('invalid', 'Only a YouTube channel can be searched')
+    }
+
+    return youtubeAdapter.searchChannel(ref, query, options)
+  }
+
+  /**
    * Every video channel of a PeerTube account, from the account's own
    * instance, as channel summaries: `handle` (`name@host`, also `id`), `name`
    * (the display name), `thumbnail` (the avatar a subscription stub holds,
@@ -422,6 +445,7 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
     listChannelVideos,
     listChannelPlaylists,
     listChannelPosts,
+    searchChannel,
     listAccountChannels,
     search,
     searchQuery,

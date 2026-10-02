@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { parseLocalChannelHeader, parseLocalChannelShorts, parseLocalSubscriberCount } from '../../helpers/api/local'
 import { createPlatformLayer } from '../index'
@@ -13,6 +13,7 @@ import invidiousPlaylists from './fixtures/invidious--channel-playlists.json'
 import invidiousPodcasts from './fixtures/invidious--channel-podcasts.json'
 import invidiousPosts from './fixtures/invidious--channel-posts.json'
 import invidiousReleases from './fixtures/invidious--channel-releases.json'
+import invidiousSearch from './fixtures/invidious--channel-search.json'
 import invidiousShorts from './fixtures/invidious--channel-shorts.json'
 import localArtistTopicAbout from './fixtures/local--channel-artist-topic-about.json'
 import localArtistTopicReleasesContinuation from './fixtures/local--channel-artist-topic-releases-continuation.json'
@@ -23,6 +24,8 @@ import localOrdinaryAbout from './fixtures/local--channel-ordinary-about.json'
 import localOrdinary from './fixtures/local--channel-ordinary.json'
 import localPostsPoll from './fixtures/local--channel-posts-poll.json'
 import localPosts from './fixtures/local--channel-posts.json'
+import localSearchContinuation from './fixtures/local--channel-search-continuation.json'
+import localSearch from './fixtures/local--channel-search.json'
 import localShortsPage from './fixtures/local--channel-shorts-page.json'
 import localTerminated from './fixtures/local--channel-terminated.json'
 
@@ -116,6 +119,19 @@ const [LOCAL_TEXT_POST, LOCAL_IMAGE_POST, LOCAL_VIDEO_POST] = localPosts.answer
 const LOCAL_POST_PAGES = [[LOCAL_TEXT_POST], [], [LOCAL_IMAGE_POST, LOCAL_VIDEO_POST]].map(page => page.map(post => ({ id: post.postId })))
 const LOCAL_POSTS_BY_ID = Object.fromEntries([...localPosts.answer, ...localPostsPoll.answer].map(post => [post.postId, post]))
 
+/**
+ * What `channel.search(query)` answers, as recorded, and its continuation,
+ * which the test makes the last page
+ */
+function localSearchResult() {
+  return withMethods(localSearch, () => ({
+    getContinuation: async () => withMethods(localSearchContinuation, answer => ({
+      has_continuation: false,
+      getContinuation: async () => { throw new Error(`asked past the end of ${answer.contents.contents.length} sections`) },
+    })),
+  }))
+}
+
 /** A `YT.Channel` from a fixture, with its about page and tabs */
 function localChannel(fixture, about = null) {
   return withMethods(fixture, () => ({
@@ -128,6 +144,7 @@ function localChannel(fixture, about = null) {
     getPodcasts: async () => pagedTab('playlists', localKindPages('podcasts')),
     getCourses: async () => pagedTab('playlists', localKindPages('courses')),
     getCommunity: async () => pagedTab('posts', LOCAL_POST_PAGES),
+    search: async () => localSearchResult(),
   }))
 }
 
@@ -291,6 +308,7 @@ describe('a YouTube channel\'s details', () => {
       tags: localOrdinary.answer.metadata.tags,
       isFamilyFriendly: true,
       isArtistTopicChannel: false,
+      hasSearch: true,
     })
   })
 
@@ -322,6 +340,7 @@ describe('a YouTube channel\'s details', () => {
       tabs: ['videos'],
       tags: [],
       isFamilyFriendly: false,
+      hasSearch: false,
     })
     expect(fake.calls.filter(call => call.name.startsWith('invidious'))).toHaveLength(0)
   })
@@ -343,6 +362,7 @@ describe('a YouTube channel\'s details', () => {
       tabs: ['videos', 'shorts', 'live', 'podcasts', 'playlists', 'community'],
       tags: ['blender', 'Blender Foundation', '3d'],
       isFamilyFriendly: true,
+      hasSearch: true,
     })
   })
 
@@ -935,5 +955,150 @@ describe('a YouTube channel\'s posts', () => {
     const videos = await layer.listChannelVideos(BLENDER)
 
     expect((await failure(layer.listChannelPosts(BLENDER, { cursor: videos.cursor }))).kind).toBe('invalid')
+  })
+})
+
+describe('searching a YouTube channel', () => {
+  const QUERY = 'animation'
+
+  /** Every page of a search, following the cursors to the end */
+  async function allSearchPages(layer, ref, query) {
+    const pages = [await layer.searchChannel(ref, query)]
+
+    while (pages.at(-1).cursor !== null && pages.length < 10) {
+      pages.push(await layer.searchChannel(ref, query, { cursor: pages.at(-1).cursor }))
+    }
+
+    return pages
+  }
+
+  /** The items of a recorded Local page, as the module parsed them */
+  function parsedOf(sections) {
+    return sections.flatMap(section => section.contents.map(item => item.parsed))
+  }
+
+  /** Invidious' answer over two pages, the fixture's items but the last, then the last, then nothing */
+  async function invidiousPages(_id, _query, page) {
+    const items = structuredClone(invidiousSearch.answer)
+    return [items.slice(0, -1), items.slice(-1)][page - 1] ?? []
+  }
+
+  /**
+   * @param {object} [options]
+   * @param {object} [options.config]
+   * @param {Record<string, any>} [options.answers]
+   */
+  function setUpSearch({ config = {}, answers = {} } = {}) {
+    return setUp({
+      config,
+      answers: {
+        // The module's parse of each node, as recorded
+        parseLocalListVideo: node => structuredClone(node.parsed),
+        parseLocalListPlaylist: node => structuredClone(node.parsed),
+        searchInvidiousChannel: invidiousPages,
+        ...answers,
+      },
+    })
+  }
+
+  it('pages Local\'s videos and playlists to the end, as the cards read them', async () => {
+    const { layer, fake } = setUpSearch()
+    await layer.getChannel(BLENDER)
+
+    const pages = await allSearchPages(layer, BLENDER, QUERY)
+    const [playlist, ...videos] = itemsOf(pages)
+
+    expect(pages).toHaveLength(2)
+    expect(pages[0].cursor).toMatchObject({ backend: 'local', kind: 'search', owner: { id: BLENDER, name: 'Blender' } })
+    expect(pages[1].cursor).toBeNull()
+    expect(playlist).toEqual({
+      ...localSearch.answer.current_tab.content.contents[0].contents[0].parsed,
+      url: 'https://www.youtube.com/playlist?list=PL6B3937A5D230E335',
+      description: '',
+    })
+    expect(videos.map(video => video.videoId)).toEqual(parsedOf([
+      ...localSearch.answer.current_tab.content.contents,
+      ...localSearchContinuation.answer.contents.contents,
+    ]).slice(1).map(video => video.videoId))
+    expect(videos.every(video => video.type === 'video' && video.thumbnail === '')).toBe(true)
+    // The channel getChannel fetched, not fetched again
+    expect(fake.callsOf('getLocalChannel')).toHaveLength(1)
+    expect(fake.callsOf('parseLocalListPlaylist')[0].slice(1)).toEqual([BLENDER, 'Blender'])
+  })
+
+  it('pages Invidious by number, playlists on the instance, until a page answers nothing', async () => {
+    const { layer, fake } = setUpSearch({ config: { backendPreference: 'invidious' } })
+
+    const pages = await allSearchPages(layer, BLENDER, QUERY)
+
+    expect(pages.map(page => page.items.length)).toEqual([2, 1, 0])
+    expect(pages[0].cursor).toEqual({ backend: 'invidious', page: 2, query: QUERY, kind: 'search' })
+    expect(pages.at(-1).cursor).toBeNull()
+    expect(pages[0].items[0]).toMatchObject({
+      type: 'playlist',
+      dataSource: 'local',
+      playlistId: 'PL6B3937A5D230E335',
+      thumbnail: `${INSTANCE}/vi/WhWc3b3KhnY/mqdefault.jpg`,
+      channelId: BLENDER,
+    })
+    expect(itemsOf(pages).slice(1).map(video => [video.videoId, video.thumbnail])).toEqual([['fxz6p-QATfs', ''], ['e_0ppK_f_rY', '']])
+    expect(fake.callsOf('searchInvidiousChannel')).toEqual([[BLENDER, QUERY, 1], [BLENDER, QUERY, 2], [BLENDER, QUERY, 3]])
+  })
+
+  it('tries Invidious once when Local fails with fallback on, and asks it for the later pages too', async () => {
+    const { layer, fake } = setUpSearch({
+      config: { backendFallback: true },
+      answers: { getLocalChannel: async () => withMethods(localOrdinary, () => ({ search: async () => { throw new TypeError('fetch failed') } })) },
+    })
+
+    const first = await layer.searchChannel(BLENDER, QUERY)
+    await layer.searchChannel(BLENDER, 'ignored', { cursor: first.cursor })
+
+    expect(first.cursor.backend).toBe('invidious')
+    expect(fake.callsOf('getLocalChannel')).toHaveLength(1)
+    expect(fake.callsOf('searchInvidiousChannel')).toEqual([[BLENDER, QUERY, 1], [BLENDER, QUERY, 2]])
+  })
+
+  it('continues a Local search on Local, whatever the preference is now', async () => {
+    const { fake, layer } = setUpSearch()
+    const first = await layer.searchChannel(BLENDER, QUERY)
+    const invidiousLayer = createLayer(fake, { backendPreference: 'invidious' })
+
+    const next = await invidiousLayer.searchChannel(BLENDER, QUERY, { cursor: first.cursor })
+
+    expect(next.items).toHaveLength(3)
+    expect(fake.callsOf('searchInvidiousChannel')).toHaveLength(0)
+  })
+
+  it('refuses a Local channel without search as invalid, asking Invidious nothing', async () => {
+    const { layer, fake } = setUpSearch({
+      config: { backendFallback: true },
+      answers: { getLocalChannel: async () => structuredClone(localNoBanner.answer) },
+    })
+
+    expect((await failure(layer.searchChannel(NO_BANNER, QUERY))).kind).toBe('invalid')
+    expect(fake.callsOf('searchInvidiousChannel')).toHaveLength(0)
+  })
+
+  it('answers a blank query with an empty page, asking nobody', async () => {
+    const { layer, fake } = setUpSearch()
+
+    expect(await layer.searchChannel(BLENDER, '  ')).toEqual({ items: [], cursor: null })
+    expect(fake.calls).toHaveLength(0)
+  })
+
+  it('will not continue a list of videos as a search', async () => {
+    const { layer } = setUpSearch()
+    const videos = await layer.listChannelVideos(BLENDER)
+
+    expect((await failure(layer.searchChannel(BLENDER, QUERY, { cursor: videos.cursor }))).kind).toBe('invalid')
+  })
+
+  it('rejects a PeerTube channel as invalid, without a request', async () => {
+    const fetch = vi.fn(() => Promise.reject(new TypeError('no network in tests')))
+    const layer = createPlatformLayer({ fetch, youtube: createFakeYouTube().youtube, config: { peertubeEnabled: true } })
+
+    expect((await failure(layer.searchChannel('blender@video.blender.org', QUERY))).kind).toBe('invalid')
+    expect(fetch).not.toHaveBeenCalled()
   })
 })
