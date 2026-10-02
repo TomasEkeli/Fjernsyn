@@ -95,6 +95,10 @@ const SETTINGS = vi.hoisted(() => ({
   getDefaultSearchScope: 'all',
   getSearchRememberedParameters: null,
   getSearchLatched: false,
+  // What the page writes and filters (a fresh set each test)
+  getSubscribedChannelIdSet: null,
+  getHideWatchedSubs: false,
+  getHistoryCacheById: {},
 }))
 
 vi.mock('../../store/index', async () => {
@@ -204,6 +208,7 @@ beforeEach(() => {
   }
   store.setGetter('getProfileList', [{ ...ALL_CHANNELS, subscriptions: [] }])
   store.setGetter('getActiveProfile', store.getters.getProfileList[0])
+  store.setGetter('getSubscribedChannelIdSet', new Set())
   store.dispatched.length = 0
   store.committed.length = 0
 
@@ -1306,6 +1311,8 @@ describe('a YouTube channel', () => {
 
     it('links each tag to a search for it on the search page, with no filters while the pill is not lit', async () => {
       const { wrapper, router } = await openChannelPage(`${YT_PATH}/about`)
+      // What loading the channel writes is under "what the page writes"
+      store.dispatched.length = 0
 
       const tags = wrapper.findAll('a.aboutTagLink')
       expect(tags.map(tag => tag.text())).toEqual(['3d modelling', 'open source'])
@@ -1576,6 +1583,198 @@ describe('a YouTube channel', () => {
       const { wrapper } = await openChannelPage(`${YT_PATH}/playlists`)
 
       expect(wrapper.find('.viewAllButton').exists()).toBe(false)
+    })
+  })
+
+  describe('what the page writes', () => {
+    const TABS_WITH_LIVE = ['videos', 'shorts', 'live', 'playlists', 'community']
+    const CACHE_WRITES = ['updateSubscriptionVideosCacheByChannel', 'updateSubscriptionLiveCacheByChannel', 'updateSubscriptionPostsCacheByChannel']
+
+    function live(n) {
+      return { ...youTubeVideo(n, 'live'), liveNow: true, lengthSeconds: undefined }
+    }
+
+    function post(n) {
+      return {
+        type: 'community',
+        postId: `Ugkxpost${n}`,
+        postText: `Post number ${n}`,
+        author: 'Blender',
+        authorId: YT_ID,
+        authorThumbnails: [{ url: YT_AVATAR, width: 76, height: 76 }],
+        publishedTime: 1790000000000,
+        voteCount: 462,
+        commentCount: 20,
+        postContent: null,
+      }
+    }
+
+    /** A layer summary as the cache holds it: the card's `thumbnail` dropped */
+    function entry(item) {
+      const { thumbnail, ...rest } = item
+      return rest
+    }
+
+    function cacheWrites() {
+      return store.dispatched.filter(({ type }) => CACHE_WRITES.includes(type))
+    }
+
+    function subscribed() {
+      store.setGetter('getSubscribedChannelIdSet', new Set([YT_ID]))
+    }
+
+    beforeEach(() => {
+      layer.getChannel.mockResolvedValue(youTubeChannel({ tabs: TABS_WITH_LIVE }))
+      layer.listChannelVideos.mockImplementation(async (ref, { kind, sort }) => kind === 'live'
+        ? { items: [live(1), live(2)], cursor: 'more', sort }
+        : { items: [youTubeVideo(1, sort), youTubeVideo(2, sort)], cursor: 'more', sort })
+      layer.listChannelPosts.mockResolvedValue({ items: [post(1), post(2)], cursor: 'more' })
+    })
+
+    it('refreshes the subscription\'s name and avatar with the channel\'s', async () => {
+      await openChannelPage(YT_PATH)
+
+      expect(dispatched('updateSubscriptionDetails')).toEqual([{ channelThumbnailUrl: YT_AVATAR, channelName: 'Blender', channelId: YT_ID }])
+    })
+
+    it('keeps the stored avatar for a channel without one', async () => {
+      layer.getChannel.mockResolvedValue(youTubeChannel({ thumbnail: '' }))
+      await openChannelPage(YT_PATH)
+
+      expect(dispatched('updateSubscriptionDetails')).toEqual([{ channelThumbnailUrl: null, channelName: 'Blender', channelId: YT_ID }])
+    })
+
+    it('refreshes an age-gated channel\'s name and avatar from its refusal', async () => {
+      layer.getChannel.mockRejectedValue(new PlatformError('refused', 'This channel is age restricted', {
+        reason: 'ageRestricted',
+        channel: { id: YT_ID, name: 'Grown-ups only', thumbnail: YT_AVATAR },
+      }))
+      await openChannelPage(YT_PATH)
+
+      expect(dispatched('updateSubscriptionDetails')).toEqual([{ channelThumbnailUrl: YT_AVATAR, channelName: 'Grown-ups only', channelId: YT_ID }])
+    })
+
+    it('writes nothing for a PeerTube channel', async () => {
+      layer.getChannel.mockResolvedValue(channelDetails())
+      store.setGetter('getSubscribedChannelIdSet', new Set([HANDLE]))
+      await openChannelPage(CHANNEL_PATH)
+
+      expect(dispatched('updateSubscriptionDetails')).toEqual([])
+      expect(cacheWrites()).toEqual([])
+    })
+
+    it('writes a subscribed channel\'s first page of videos, live and posts into the subscription cache, whichever tab it opens on', async () => {
+      subscribed()
+      await openChannelPage(`${YT_PATH}/playlists`)
+
+      expect(cacheWrites()).toEqual([
+        { type: 'updateSubscriptionVideosCacheByChannel', payload: { channelId: YT_ID, videos: [entry(youTubeVideo(1)), entry(youTubeVideo(2))] } },
+        { type: 'updateSubscriptionLiveCacheByChannel', payload: { channelId: YT_ID, videos: [entry(live(1)), entry(live(2))] } },
+        { type: 'updateSubscriptionPostsCacheByChannel', payload: { channelId: YT_ID, posts: [post(1), post(2)] } },
+      ])
+      // Not the shorts, whose tab has no dates
+      expect(layer.listChannelVideos).not.toHaveBeenCalledWith(YT_ID, expect.objectContaining({ kind: 'shorts' }))
+    })
+
+    it('neither loads nor writes the lists of a channel no profile is subscribed to', async () => {
+      await openChannelPage(YT_PATH)
+
+      expect(cacheWrites()).toEqual([])
+      expect(layer.listChannelVideos).toHaveBeenCalledTimes(1)
+      expect(layer.listChannelPosts).not.toHaveBeenCalled()
+    })
+
+    it('neither loads nor writes a list the user hides', async () => {
+      subscribed()
+      store.setGetter('getHideLiveStreams', true)
+      store.setGetter('getHideChannelCommunity', true)
+      await openChannelPage(YT_PATH)
+
+      expect(cacheWrites().map(({ type }) => type)).toEqual(['updateSubscriptionVideosCacheByChannel'])
+      expect(layer.listChannelPosts).not.toHaveBeenCalled()
+    })
+
+    it('writes an empty first page, a later page or another sort than newest not at all, and newest again', async () => {
+      subscribed()
+      layer.listChannelPosts.mockResolvedValue({ items: [], cursor: null })
+      const { wrapper } = await openChannelPage(YT_PATH)
+      store.dispatched.length = 0
+
+      await fetchMore(wrapper).trigger('click')
+      await flushPromises()
+      await wrapper.find('select').setValue('popular')
+      await flushPromises()
+
+      expect(cacheWrites()).toEqual([])
+
+      await wrapper.find('select').setValue('newest')
+      await flushPromises()
+
+      expect(cacheWrites()).toEqual([
+        { type: 'updateSubscriptionVideosCacheByChannel', payload: { channelId: YT_ID, videos: [entry(youTubeVideo(1)), entry(youTubeVideo(2))] } },
+      ])
+    })
+
+    it('on subscribing, writes the videos it shows and loads and writes the live and posts it has not loaded, as the old view writes them', async () => {
+      const { wrapper } = await openChannelPage(YT_PATH)
+      await fetchMore(wrapper).trigger('click')
+      await flushPromises()
+
+      // Subscribing does not wait for the profiles to say so
+      await wrapper.find('.subscribeButton').trigger('click')
+      await flushPromises()
+
+      expect(cacheWrites()).toEqual([
+        { type: 'updateSubscriptionVideosCacheByChannel', payload: { channelId: YT_ID, videos: [1, 2, 1, 2].map(n => entry(youTubeVideo(n))) } },
+        { type: 'updateSubscriptionLiveCacheByChannel', payload: { channelId: YT_ID, videos: [entry(live(1)), entry(live(2))] } },
+        { type: 'updateSubscriptionPostsCacheByChannel', payload: { channelId: YT_ID, posts: [post(1), post(2)] } },
+      ])
+    })
+
+    describe('watched videos', () => {
+      const WATCHED = youTubeVideo(1).videoId
+
+      beforeEach(() => {
+        store.setGetter('getHistoryCacheById', { [WATCHED]: { videoId: WATCHED } })
+        layer.listChannelVideos.mockImplementation(async (ref, { kind, sort }) => ({
+          items: kind === 'shorts'
+            ? [{ ...youTubeVideo(1, sort), type: 'shortVideo' }, { ...youTubeVideo(2, 's'), type: 'shortVideo' }]
+            : [youTubeVideo(1, sort), youTubeVideo(2, kind)],
+          cursor: null,
+          sort,
+        }))
+      })
+
+      it.each(['videos', 'shorts', 'live'])('are left out of the %s while hideWatchedSubs is on', async (tab) => {
+        store.setGetter('getHideWatchedSubs', true)
+        const { wrapper } = await openChannelPage(`${YT_PATH}/${tab}`)
+
+        expect(wrapper.findComponent({ name: 'FtElementList' }).props('data').map(item => item.videoId)).not.toContain(WATCHED)
+        expect(wrapper.findComponent({ name: 'FtElementList' }).props('data')).toHaveLength(1)
+      })
+
+      it.each(['videos', 'shorts', 'live'])('are shown in the %s while hideWatchedSubs is off', async (tab) => {
+        const { wrapper } = await openChannelPage(`${YT_PATH}/${tab}`)
+
+        expect(wrapper.findComponent({ name: 'FtElementList' }).props('data').map(item => item.videoId)).toContain(WATCHED)
+      })
+
+      it('are still written into the subscription cache', async () => {
+        store.setGetter('getHideWatchedSubs', true)
+        subscribed()
+        await openChannelPage(YT_PATH)
+
+        expect(dispatched('updateSubscriptionVideosCacheByChannel')[0].videos.map(video => video.videoId)).toContain(WATCHED)
+      })
+
+      it('leave no "has none" message when every video is watched', async () => {
+        store.setGetter('getHideWatchedSubs', true)
+        layer.listChannelVideos.mockResolvedValue({ items: [youTubeVideo(1)], cursor: null, sort: 'newest' })
+        const { wrapper } = await openChannelPage(YT_PATH)
+
+        expect(cardTitles(wrapper)).toEqual([])
+        expect(wrapper.text()).not.toContain('This channel does not currently have any videos')
+      })
     })
   })
 

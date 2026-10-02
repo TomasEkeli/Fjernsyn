@@ -124,7 +124,10 @@
                   @click="openLink"
                 />
               </template>
-              <LayerSubscribeButton :channel="channel" />
+              <LayerSubscribeButton
+                :channel="channel"
+                @subscribed="writeSubscriptionCacheOnSubscribe"
+              />
             </div>
           </div>
           <div class="infoTabs">
@@ -204,7 +207,7 @@
               <!-- Not where the layer answered another sort than the one asked: the tab offers no choice -->
               <FtSelect
                 v-if="currentSortedList?.isSortOffered.value"
-                v-show="currentSortedList.items.value.length > 1 || currentSortedList.cursor.value !== null || currentSortedList.sort.value !== 'newest'"
+                v-show="shownItems.length > 1 || currentSortedList.cursor.value !== null || currentSortedList.sort.value !== 'newest'"
                 :value="currentSortedList.sort.value"
                 :select-names="currentSortedList.sortNames.value"
                 :select-values="currentSortedList.sorts"
@@ -225,7 +228,7 @@
             />
             <FtElementList
               v-else
-              :data="currentItems"
+              :data="shownItems"
               :use-channels-hidden-preference="false"
               :display="currentTabInfo.posts ? 'list' : ''"
             />
@@ -312,6 +315,7 @@ import {
   openExternalLink,
 } from '../../helpers/utils'
 import { PLATFORM_YOUTUBE, isYouTubeChannelRef, parseChannelHandle, platformOf } from '../../platform/refs'
+import { subscriptionCacheEntries } from '../../platform/subscriptionCache'
 import { usePlatformLayer } from '../../platform/vue'
 
 /** The sorts the layer takes for a channel's videos, newest (its default) first */
@@ -322,6 +326,19 @@ const PLAYLIST_SORTS = ['newest', 'last']
 
 /** The tabs where the old view offers View All, each to the uploads playlist of its kind */
 const VIEW_ALL_TABS = ['videos', 'shorts', 'live']
+
+/** The tabs whose watched videos `hideWatchedSubs` hides, as in the old view */
+const WATCHED_FILTERED_TABS = ['videos', 'shorts', 'live']
+
+/**
+ * The lists a YouTube channel's page writes into the subscription cache, as
+ * the old view does, by the tab's name: the store action and its payload's key
+ */
+const SUBSCRIPTION_CACHE_LISTS = {
+  videos: { action: 'updateSubscriptionVideosCacheByChannel', key: 'videos' },
+  live: { action: 'updateSubscriptionLiveCacheByChannel', key: 'videos' },
+  community: { action: 'updateSubscriptionPostsCacheByChannel', key: 'posts' },
+}
 
 const layer = usePlatformLayer()
 const route = useRoute()
@@ -365,6 +382,7 @@ const hideChannelPodcasts = computed(() => store.getters.getHideChannelPodcasts)
 const hideChannelCourses = computed(() => store.getters.getHideChannelCourses)
 const hideChannelCommunity = computed(() => store.getters.getHideChannelCommunity)
 const hideChannelPlaylists = computed(() => store.getters.getHideChannelPlaylists)
+const hideWatchedSubs = computed(() => store.getters.getHideWatchedSubs)
 
 /** The search within the channel the route holds (`?searchQueryText=`, the old view's), `''` for none */
 const searchQuery = computed(() => {
@@ -539,8 +557,10 @@ function createPagedList(fetchPage, onFirstPage) {
  * @param {readonly string[]} sorts
  * @param {import('vue').ComputedRef<string[]>} sortNames
  * @param {(sort: string, cursor: unknown) => Promise<import('../../platform/shapes').Page<any>>} fetchPage
+ * @param {(page: import('../../platform/shapes').Page<any>, sort: string) => void} [onFirstPage]
+ *   sees the first page with the sort it is in
  */
-function createSortedList(sorts, sortNames, fetchPage) {
+function createSortedList(sorts, sortNames, fetchPage, onFirstPage) {
   const sort = ref(sorts[0])
   const isSortOffered = ref(true)
 
@@ -551,6 +571,8 @@ function createSortedList(sorts, sortNames, fetchPage) {
         isSortOffered.value = false
         sort.value = page.sort
       }
+
+      onFirstPage?.(page, sort.value)
     }
   )
 
@@ -576,7 +598,12 @@ function createSortedList(sorts, sortNames, fetchPage) {
 
 /** @param {'videos' | 'shorts' | 'live'} kind */
 function createVideoList(kind) {
-  return createSortedList(VIDEO_SORTS, videoSortNames, (sort, cursor) => layer.listChannelVideos(channel.value.id, { kind, sort, cursor }))
+  return createSortedList(
+    VIDEO_SORTS,
+    videoSortNames,
+    (sort, cursor) => layer.listChannelVideos(channel.value.id, { kind, sort, cursor }),
+    (page, sort) => writeFirstPageToSubscriptionCache(kind, page, sort)
+  )
 }
 
 /** @param {'releases' | 'podcasts' | 'courses'} kind YouTube's tabs of playlists, which have one order */
@@ -601,7 +628,10 @@ const lists = {
   podcasts: createPlaylistList('podcasts'),
   courses: createPlaylistList('courses'),
   // YouTube's community posts, in its one order
-  community: createPagedList(cursor => layer.listChannelPosts(channel.value.id, { cursor })),
+  community: createPagedList(
+    cursor => layer.listChannelPosts(channel.value.id, { cursor }),
+    page => writeFirstPageToSubscriptionCache('community', page, 'newest')
+  ),
   // The search the route holds; a later page keeps the query of the first
   search: createPagedList(cursor => layer.searchChannel(channel.value.id, searchQuery.value, { cursor })),
 }
@@ -609,10 +639,27 @@ const lists = {
 /** The current tab's list; none on the about tab */
 const currentList = computed(() => lists[currentTab.value] ?? null)
 
-/** The current list's items as shown: the search's playlists are hidden with the playlists, as in the old view */
+/** The current list's items: the search's playlists are hidden with the playlists, as in the old view */
 const currentItems = computed(() => {
   const items = currentList.value?.items.value ?? []
   return currentTab.value === 'search' && hideChannelPlaylists.value ? items.filter(item => item.type !== 'playlist') : items
+})
+
+/**
+ * The current list's items as shown: a YouTube channel's videos, shorts and
+ * live without the watched ones while `hideWatchedSubs` is on, as in the old
+ * view. Whether the tab says it has none is still read off `currentItems`,
+ * as the old view reads it off the unfiltered list.
+ */
+const shownItems = computed(() => {
+  const items = currentItems.value
+
+  if (!hideWatchedSubs.value || !isYouTube.value || !WATCHED_FILTERED_TABS.includes(currentTab.value)) {
+    return items
+  }
+
+  const historyCache = store.getters.getHistoryCacheById
+  return items.filter(item => historyCache[item.videoId] === undefined)
 })
 
 /**
@@ -653,7 +700,7 @@ const viewAllRoute = computed(() => {
   const list = sortedLists[tab]
   const sort = list.sort.value
 
-  if ((sort !== 'newest' && sort !== 'popular') || !(hasMore(list) || list.items.value.length > 1)) {
+  if ((sort !== 'newest' && sort !== 'popular') || !(hasMore(list) || shownItems.value.length > 1)) {
     return null
   }
 
@@ -801,13 +848,134 @@ function keyboardShortcutHandler(event) {
   ctrlFHandler(event, searchBar.value)
 }
 
-/** The current tab's first page, unless it is loaded, loading or failed, the tab lists nothing, or the channel is not shown */
-function loadCurrentTab() {
-  const list = currentList.value
-
+/**
+ * A list's first page, unless it is loaded, loading or failed, or the
+ * channel is not shown
+ *
+ * @param {ReturnType<typeof createPagedList> | null} list
+ */
+function loadFirstPage(list) {
   if (list !== null && channel.value !== null && !isFamilyFriendlyGated.value && !list.loaded.value && !list.loading.value && !list.error.value) {
     list.load()
   }
+}
+
+/** The current tab's first page; none where the tab lists nothing */
+function loadCurrentTab() {
+  loadFirstPage(currentList.value)
+}
+
+// ---------------------------------------------------------------------------
+// What a YouTube channel's page writes, as the old view does (spec, "Phase 3
+// decisions", C9): the subscription's name and avatar, and its videos, live
+// and posts into the subscription cache. A PeerTube channel's page writes
+// neither.
+// ---------------------------------------------------------------------------
+
+/** The cached lists a subscription asked to be written whatever their first page holds */
+const subscribeWrites = new Set()
+
+/** Whether a profile is subscribed to the channel */
+function isSubscribedInAnyProfile() {
+  return store.getters.getSubscribedChannelIdSet.has(channel.value.id)
+}
+
+/** @param {string} tab */
+function isTabShown(tab) {
+  return visibleTabs.value.some(shown => shown.name === tab)
+}
+
+/**
+ * Writes a list into the subscription cache for the channel, as the feed's
+ * own fetchers write it (`platform/subscriptionCache.js`)
+ *
+ * @param {keyof typeof SUBSCRIPTION_CACHE_LISTS} tab
+ * @param {object[]} items
+ */
+function writeSubscriptionCache(tab, items) {
+  const { action, key } = SUBSCRIPTION_CACHE_LISTS[tab]
+  store.dispatch(action, { channelId: channel.value.id, [key]: subscriptionCacheEntries(items) })
+}
+
+/**
+ * A first page of the videos, live or posts, into the subscription cache
+ * where the old view writes it: newest first, holding something, for a
+ * channel a profile is subscribed to. A later page, another sort, or the
+ * shorts (whose dates the tab lacks), never.
+ *
+ * @param {string} tab
+ * @param {import('../../platform/shapes').Page<any>} page
+ * @param {string} sort the sort the page is in
+ */
+function writeFirstPageToSubscriptionCache(tab, page, sort) {
+  const subscribing = subscribeWrites.delete(tab)
+
+  if (!Object.hasOwn(SUBSCRIPTION_CACHE_LISTS, tab) || !isYouTube.value || channel.value === null || sort !== 'newest') {
+    return
+  }
+
+  if (subscribing || (page.items.length > 0 && isSubscribedInAnyProfile())) {
+    writeSubscriptionCache(tab, page.items)
+  }
+}
+
+/**
+ * The old view loads every tab with the channel, and so writes a subscribed
+ * channel's videos, live and posts however it is opened. This page loads a
+ * tab when it is shown, so for a subscribed channel it loads those three
+ * too, where the channel has them and they are not hidden, as the old view
+ * would.
+ */
+function loadSubscriptionCacheLists() {
+  if (!isYouTube.value || channel.value === null || !isSubscribedInAnyProfile()) {
+    return
+  }
+
+  for (const tab of Object.keys(SUBSCRIPTION_CACHE_LISTS)) {
+    if (isTabShown(tab)) {
+      loadFirstPage(lists[tab])
+    }
+  }
+}
+
+/**
+ * On subscribing, as the old view's `handleSubscription`: each list loaded
+ * newest first is written as it stands (even empty), and one not loaded yet
+ * is loaded and written when it answers, so the feed has the channel at
+ * once.
+ */
+function writeSubscriptionCacheOnSubscribe() {
+  if (!isYouTube.value || channel.value === null) {
+    return
+  }
+
+  for (const tab of Object.keys(SUBSCRIPTION_CACHE_LISTS)) {
+    const list = lists[tab]
+
+    if (list.loaded.value) {
+      if ((sortedLists[tab]?.sort.value ?? 'newest') === 'newest') {
+        writeSubscriptionCache(tab, list.items.value)
+      }
+    } else if (isTabShown(tab)) {
+      subscribeWrites.add(tab)
+      loadFirstPage(list)
+    }
+  }
+}
+
+/**
+ * The subscription's name and avatar, as the old view refreshes them on
+ * every load, the age-gated channel's from its refusal. A name or avatar
+ * the channel does not have leaves the stored one.
+ *
+ * @param {{ id: string, name?: string, thumbnail?: string }} shown
+ */
+function updateSubscriptionDetails(shown) {
+  store.dispatch('updateSubscriptionDetails', {
+    channelThumbnailUrl: shown.thumbnail || null,
+    channelName: shown.name || null,
+    channelId: shown.id,
+  })
 }
 
 async function load() {
@@ -816,6 +984,7 @@ async function load() {
   isLoading.value = true
   channel.value = null
   loadError.value = null
+  subscribeWrites.clear()
 
   for (const list of Object.values(lists)) {
     list.reset()
@@ -830,6 +999,10 @@ async function load() {
 
     channel.value = details
     store.commit('setAppTitle', details.name)
+
+    if (platformOf(details) === PLATFORM_YOUTUBE) {
+      updateSubscriptionDetails(details)
+    }
   } catch (error) {
     if (thisLoad !== loadsStarted) {
       return
@@ -844,6 +1017,11 @@ async function load() {
     if (error?.channel?.name) {
       store.commit('setAppTitle', error.channel.name)
     }
+
+    // YouTube's age gate, whose name and avatar the old view stores too
+    if (error?.channel && isYouTubeChannelRef(channelRef.value)) {
+      updateSubscriptionDetails({ ...error.channel, id: error.channel.id || channelRef.value })
+    }
   } finally {
     if (thisLoad === loadsStarted) {
       isLoading.value = false
@@ -851,6 +1029,7 @@ async function load() {
   }
 
   loadCurrentTab()
+  loadSubscriptionCacheLists()
 }
 
 // The router reuses this view for another channel, or another search of it
