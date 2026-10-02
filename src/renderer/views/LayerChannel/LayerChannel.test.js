@@ -900,6 +900,16 @@ describe('a YouTube channel', () => {
       expect(layer.listChannelVideos).toHaveBeenLastCalledWith('UCnobannernobannernoban0', { kind: 'videos', sort: 'newest', cursor: null })
       expect(wrapper.find('select').exists()).toBe(true)
     })
+
+    it('offers an artist topic channel newest and popular only, as the old view does: it has no oldest first', async () => {
+      layer.getChannel.mockResolvedValue(youTubeChannel({ name: 'Artist - Topic', tabs: ['videos', 'releases'], isArtistTopicChannel: true }))
+      const { wrapper } = await openChannelPage(YT_PATH)
+
+      expect(wrapper.findAll('option').map(option => [option.element.value, option.text()])).toEqual([
+        ['newest', 'Newest'],
+        ['popular', 'Most Popular'],
+      ])
+    })
   })
 
   describe('shorts and live tabs', () => {
@@ -1108,6 +1118,21 @@ describe('a YouTube channel', () => {
       await flushPromises()
 
       expect(wrapper.find('select').exists()).toBe(false)
+    })
+
+    it('is hidden under getHideChannelPlaylists, a route naming it landing on the first shown and asking for none, while a PeerTube channel keeps its own', async () => {
+      store.setGetter('getHideChannelPlaylists', true)
+      const { wrapper } = await openChannelPage(`${YT_PATH}/playlists`)
+
+      expect(wrapper.find('#playlistsTab').exists()).toBe(false)
+      expect(wrapper.find('#videosTab').classes()).toContain('selectedTab')
+      expect(layer.listChannelPlaylists).not.toHaveBeenCalled()
+
+      layer.getChannel.mockResolvedValue(channelDetails())
+      const { wrapper: peerTube } = await openChannelPage(`${CHANNEL_PATH}/playlists`)
+
+      expect(peerTube.find('#playlistsTab').classes()).toContain('selectedTab')
+      expect(layer.listChannelPlaylists).toHaveBeenCalledWith(HANDLE, { kind: 'playlists', sort: 'newest', cursor: null })
     })
   })
 
@@ -1911,6 +1936,28 @@ describe('a YouTube channel', () => {
       expect(wrapper.find('.retryButton').exists()).toBe(false)
       expect(layer.listChannelVideos).not.toHaveBeenCalled()
       expect(store.committed).toContainEqual({ type: 'setAppTitle', payload: 'Grown-ups only' })
+    })
+
+    it('keeps the subscribe button on an age-gated channel only while the active profile is subscribed, as the old header does', async () => {
+      const refusal = new PlatformError('refused', 'This channel is age restricted', {
+        reason: 'ageRestricted',
+        channel: { id: YT_ID, name: 'Grown-ups only', thumbnail: YT_AVATAR },
+      })
+      layer.getChannel.mockRejectedValue(refusal)
+      const { wrapper: unsubscribed } = await openChannelPage(YT_PATH)
+
+      expect(unsubscribed.find('.subscribeButton').exists()).toBe(false)
+
+      const allChannels = { ...ALL_CHANNELS, subscriptions: [{ id: YT_ID, name: 'Grown-ups only', thumbnail: YT_AVATAR }] }
+      store.setGetter('getProfileList', [allChannels])
+      store.setGetter('getActiveProfile', allChannels)
+      const { wrapper } = await openChannelPage(YT_PATH)
+
+      expect(wrapper.find('.subscribeButton').text()).toBe('Unsubscribe')
+
+      await wrapper.find('.subscribeButton').trigger('click')
+
+      expect(dispatched('removeChannelFromProfiles')).toEqual([{ channelId: YT_ID, profileIds: ['allChannels'] }])
     })
 
     it('says a channel that does not exist does not, in the old view\'s words', async () => {

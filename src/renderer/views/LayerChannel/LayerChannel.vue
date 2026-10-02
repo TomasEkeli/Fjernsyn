@@ -32,6 +32,12 @@
             {{ loadError.channel.name }}
           </h1>
         </div>
+        <!-- The old header keeps the button on an error page only for a
+             channel the active profile is subscribed to (ChannelDetails) -->
+        <LayerSubscribeButton
+          v-if="isSubscribedInActiveProfile(loadError.channel.id)"
+          :channel="loadError.channel"
+        />
       </div>
       <p class="message">
         {{ errorMessage(loadError).text }}
@@ -215,7 +221,7 @@
                 v-show="shownItems.length > 1 || currentSortedList.cursor.value !== null || currentSortedList.sort.value !== 'newest'"
                 :value="currentSortedList.sort.value"
                 :select-names="currentSortedList.sortNames.value"
-                :select-values="currentSortedList.sorts"
+                :select-values="currentSortedList.sorts.value"
                 :placeholder="t('Global.Sort By')"
                 :icon="getIconForSortPreference(currentSortedList.sort.value)"
                 @change="currentSortedList.changeSort"
@@ -426,7 +432,8 @@ const tabs = computed(() => [
   { name: 'releases', label: t('Channel.Releases.Releases'), empty: t('Channel.Releases.This channel does not currently have any releases'), named: true, hidden: hideChannelReleases.value, playlists: true },
   { name: 'podcasts', label: t('Channel.Podcasts.Podcasts'), empty: t('Channel.Podcasts.This channel does not currently have any podcasts'), named: true, hidden: hideChannelPodcasts.value, playlists: true },
   { name: 'courses', label: t('Channel.Courses.Courses'), empty: t('Channel.Courses.This channel does not currently have any courses'), named: true, hidden: hideChannelCourses.value, playlists: true },
-  { name: 'playlists', label: t('Channel.Playlists.Playlists'), empty: t('Channel.Playlists.This channel does not currently have any playlists'), playlists: true },
+  // The setting is the old YouTube view's; PeerTube's channel page never read it
+  { name: 'playlists', label: t('Channel.Playlists.Playlists'), empty: t('Channel.Playlists.This channel does not currently have any playlists'), hidden: hideChannelPlaylists.value && isYouTube.value, playlists: true },
   { name: 'community', label: t('Global.Posts'), empty: t('Channel.Posts.This channel currently does not have any posts'), named: true, hidden: hideChannelCommunity.value, posts: true },
   { name: 'about', label: t('Channel.About.About'), about: true },
   { name: 'search', empty: t('Channel.Your search results have returned 0 results'), search: true },
@@ -472,11 +479,19 @@ const currentTab = computed(() => {
 
 const currentTabInfo = computed(() => tabs.value.find(tab => tab.name === currentTab.value))
 
+/**
+ * The video sorts the channel offers: an artist topic channel has no oldest
+ * first, which the layer refuses, so the old view offers newest and popular
+ */
+const videoSorts = computed(() => channel.value?.isArtistTopicChannel ? VIDEO_SORTS.slice(0, 2) : VIDEO_SORTS)
+
 const videoSortNames = computed(() => [
   t('Channel.Videos.Sort Types.Newest'),
   t('Channel.Videos.Sort Types.Most Popular'),
   t('Channel.Videos.Sort Types.Oldest'),
-])
+].slice(0, videoSorts.value.length))
+
+const playlistSorts = computed(() => PLAYLIST_SORTS)
 
 const playlistSortNames = computed(() => [
   t('Channel.Playlists.Sort Types.Newest'),
@@ -569,14 +584,14 @@ function createPagedList(fetchPage, onFirstPage) {
  * layer applied, which the select would show. `reset` forgets the sort with
  * the list.
  *
- * @param {readonly string[]} sorts
+ * @param {import('vue').ComputedRef<readonly string[]>} sorts
  * @param {import('vue').ComputedRef<string[]>} sortNames
  * @param {(sort: string, cursor: unknown) => Promise<import('../../platform/shapes').Page<any>>} fetchPage
  * @param {(page: import('../../platform/shapes').Page<any>, sort: string) => void} [onFirstPage]
  *   sees the first page with the sort it is in
  */
 function createSortedList(sorts, sortNames, fetchPage, onFirstPage) {
-  const sort = ref(sorts[0])
+  const sort = ref(sorts.value[0])
   const isSortOffered = ref(true)
 
   const list = createPagedList(
@@ -593,7 +608,7 @@ function createSortedList(sorts, sortNames, fetchPage, onFirstPage) {
 
   /** @param {string} value */
   function changeSort(value) {
-    if (value === sort.value || !sorts.includes(value)) {
+    if (value === sort.value || !sorts.value.includes(value)) {
       return
     }
 
@@ -603,7 +618,7 @@ function createSortedList(sorts, sortNames, fetchPage, onFirstPage) {
   }
 
   function reset() {
-    sort.value = sorts[0]
+    sort.value = sorts.value[0]
     isSortOffered.value = true
     list.reset()
   }
@@ -614,7 +629,7 @@ function createSortedList(sorts, sortNames, fetchPage, onFirstPage) {
 /** @param {'videos' | 'shorts' | 'live'} kind */
 function createVideoList(kind) {
   return createSortedList(
-    VIDEO_SORTS,
+    videoSorts,
     videoSortNames,
     (sort, cursor) => layer.listChannelVideos(channel.value.id, { kind, sort, cursor }),
     (page, sort) => writeFirstPageToSubscriptionCache(kind, page, sort)
@@ -632,7 +647,7 @@ const sortedLists = {
   shorts: createVideoList('shorts'),
   live: createVideoList('live'),
   // The channel's own playlists, newest or by the last video added (YouTube's)
-  playlists: createSortedList(PLAYLIST_SORTS, playlistSortNames, (sort, cursor) =>
+  playlists: createSortedList(playlistSorts, playlistSortNames, (sort, cursor) =>
     layer.listChannelPlaylists(channel.value.id, { kind: 'playlists', sort, cursor })),
 }
 
@@ -893,6 +908,16 @@ const subscribeWrites = new Set()
 /** Whether a profile is subscribed to the channel */
 function isSubscribedInAnyProfile() {
   return store.getters.getSubscribedChannelIdSet.has(channel.value.id)
+}
+
+/**
+ * Whether the active profile is subscribed to the channel, as the old view's
+ * `isSubscribed`
+ *
+ * @param {string} id
+ */
+function isSubscribedInActiveProfile(id) {
+  return store.getters.getActiveProfile.subscriptions.some(subscription => subscription.id === id)
 }
 
 /** @param {string} tab */
