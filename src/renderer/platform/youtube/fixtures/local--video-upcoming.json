@@ -1,0 +1,66 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "getLocalVideoInfo('UpCmNgPrm01')",
+  "notes": "No premiere could be found to record; written from the shape the recorded ones have, with YouTube's LIVE_STREAM_OFFLINE status and no streaming data. start_timestamp is a Date in youtubei.js, its ISO string here",
+  "answer": {
+    "info": {
+      "playability_status": {
+        "status": "LIVE_STREAM_OFFLINE",
+        "reason": "Premieres in 3 days"
+      },
+      "basic_info": {
+        "id": "UpCmNgPrm01",
+        "title": "The premiere",
+        "author": "A channel",
+        "channel_id": "UCaaaaaaaaaaaaaaaaaaaaaa",
+        "duration": 0,
+        "view_count": 0,
+        "is_live": false,
+        "is_upcoming": true,
+        "is_live_content": false,
+        "is_post_live_dvr": false,
+        "is_unlisted": true,
+        "is_family_safe": false,
+        "category": " Film & Animation ",
+        "keywords": [],
+        "short_description": "Coming soon & then some",
+        "thumbnail": [
+          {
+            "url": "https://i.ytimg.com/vi/UpCmNgPrm01/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        ],
+        "start_timestamp": "2026-10-05T18:00:00.000Z"
+      },
+      "primary_info": {
+        "title": {
+          "text": "The premiere"
+        }
+      },
+      "secondary_info": {
+        "owner": {
+          "author": {
+            "id": "UCaaaaaaaaaaaaaaaaaaaaaa",
+            "name": "A channel",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/a-channel=s176"
+            }
+          },
+          "subscriber_count": {
+            "text": "1,234 subscribers"
+          }
+        }
+      },
+      "page": [
+        {
+          "microformat": {
+            "publish_date": "2026-10-01T09:00:00-07:00"
+          }
+        }
+      ],
+      "watch_next_feed": []
+    }
+  }
+}

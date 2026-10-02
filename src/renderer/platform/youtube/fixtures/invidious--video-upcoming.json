@@ -1,0 +1,59 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "invidiousGetVideoInformation('UpCmNgPrm01')",
+  "notes": "No public Invidious instance answers the API from the devcontainer: written from the documented /api/v1/videos/{id} shape (the typedef on invidiousGetVideoInformation), with the recorded Local video's values; an upcoming premiere, unlisted, not family friendly",
+  "answer": {
+    "type": "video",
+    "title": "The premiere",
+    "videoId": "UpCmNgPrm01",
+    "videoThumbnails": [
+      {
+        "quality": "maxres",
+        "url": "https://inv.example/vi/UpCmNgPrm01/maxres.jpg",
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "description": "Coming soon & then some",
+    "descriptionHtml": "<p></p>",
+    "published": 1759334400,
+    "keywords": [],
+    "viewCount": 0,
+    "likeCount": 0,
+    "dislikeCount": 0,
+    "isFamilyFriendly": false,
+    "genre": " Film & Animation ",
+    "author": "A channel",
+    "authorId": "UCaaaaaaaaaaaaaaaaaaaaaa",
+    "authorThumbnails": [
+      {
+        "url": "https://yt3.ggpht.com/a-channel=s32",
+        "width": 32,
+        "height": 32
+      },
+      {
+        "url": "https://yt3.ggpht.com/a-channel=s48",
+        "width": 48,
+        "height": 48
+      },
+      {
+        "url": "https://yt3.ggpht.com/a-channel=s176",
+        "width": 176,
+        "height": 176
+      }
+    ],
+    "subCountText": "1.23K",
+    "lengthSeconds": 0,
+    "isListed": false,
+    "liveNow": false,
+    "isPostLiveDvr": false,
+    "isUpcoming": true,
+    "hlsUrl": null,
+    "adaptiveFormats": [],
+    "formatStreams": [],
+    "captions": [],
+    "recommendedVideos": [],
+    "premiereTimestamp": 1759687200
+  }
+}

@@ -63,7 +63,9 @@
  * One video in a list: a card's worth.
  *
  * @typedef {object} VideoSummary
- * @property {'video'} type
+ * @property {'video' | 'shortVideo'} type `'shortVideo'` is a YouTube short
+ *   in a list (Local's short parser, Invidious' shorts), which the card marks
+ *   and crops by this; PeerTube has no shorts
  * @property {'youtube' | 'peertube'} [platform] absent for YouTube
  * @property {string} [host] PeerTube: the origin
  * @property {string} videoId YouTube id or PeerTube uuid
@@ -71,7 +73,11 @@
  * @property {string} author the channel's display name
  * @property {string} authorId the channel ref (`UC` id or `name@host`)
  * @property {string} thumbnail an absolute URL; `''` where the card builds it from the id (YouTube)
- * @property {number} [lengthSeconds] absent for a live, which the card also reads as live
+ * @property {number | ''} [lengthSeconds] absent for a live, which the card
+ *   also reads as live. `''` is "not known, and not a live" (a YouTube Local
+ *   list item whose duration text does not read): the existing card then
+ *   takes the length from history, where dropping the field would make it a
+ *   live
  * @property {number} [published] ms since the epoch
  * @property {number} [viewCount]
  * @property {boolean} liveNow `liveNow`, not `isLive`: what the cards and feed filters read
@@ -175,7 +181,7 @@
  *
  * @typedef {VideoSummary & {
  *   description: string,
- *   descriptionKind: 'plain' | 'markdown',
+ *   descriptionKind: 'plain' | 'markdown' | 'html',
  *   likeCount: number | null,
  *   dislikeCount: number | null,
  *   tags: string[],
@@ -185,17 +191,33 @@
  *   url: string,
  *   channel: ChannelSummary | null,
  *   authorThumbnail: string,
- *   commentsEnabled: boolean,
+ *   commentsEnabled: boolean | null,
  *   downloadEnabled: boolean,
  *   liveStatus: 'live' | 'waiting' | 'ended' | null,
  *   playbackSource: PlaybackSource | null,
  *   downloadOptions: DownloadOption[],
+ *   isFamilyFriendly?: boolean,
+ *   isUnlisted?: boolean,
+ *   related?: VideoSummary[],
  * }} VideoDetails
  *
  * - `url`: the canonical URL on the origin, to share and open
  * - `authorThumbnail`: the channel's avatar, else its owner account's, `''` when neither
  * - `liveStatus`: `null` for a video that is not a live; a waiting live's
  *   scheduled start, where known, is the summary's `premiereDate`
+ * - `descriptionKind`: `'html'` is markup with its text escaped, rendered
+ *   only through the sanitising directive: a YouTube video's description
+ *   comes as markup with links from both backends (Local's text runs,
+ *   Invidious' `descriptionHtml`), not as plain text
+ * - `commentsEnabled`: `null` is "not known", which both YouTube backends
+ *   answer, since neither says in the details; the comments page says
+ * - `isFamilyFriendly`: YouTube's own rating (Local `is_family_safe`,
+ *   Invidious `isFamilyFriendly`), which the views check against
+ *   `showFamilyFriendlyOnly`; absent for PeerTube, whose flag is the
+ *   summary's `nsfw`
+ * - `isUnlisted`: YouTube only, shown on the watch page; absent for PeerTube
+ * - `related`: YouTube's watch-next list, as summaries; absent for PeerTube,
+ *   which has none
  */
 
 // ---------------------------------------------------------------------------

@@ -1,0 +1,74 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "invidiousGetVideoInformation('ODio2-1aFa8')",
+  "notes": "No public Invidious instance answers the API from the devcontainer: written from the documented /api/v1/videos/{id} shape (the typedef on invidiousGetVideoInformation), with the recorded Local video's values; a format stream kept to show a live keeps none",
+  "answer": {
+    "type": "video",
+    "title": "LIVE: ABC News Live - Friday, October 2",
+    "videoId": "ODio2-1aFa8",
+    "videoThumbnails": [
+      {
+        "quality": "maxres",
+        "url": "https://inv.example/vi/ODio2-1aFa8/maxres.jpg",
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "description": "Subscribe",
+    "descriptionHtml": "Subscribe",
+    "published": 1759168954,
+    "keywords": [
+      "news"
+    ],
+    "viewCount": 41105,
+    "likeCount": 193,
+    "dislikeCount": 0,
+    "isFamilyFriendly": true,
+    "genre": "News & Politics",
+    "author": "ABC News",
+    "authorId": "UCBi2mrWuNuyYy4gbM6fU18Q",
+    "authorThumbnails": [
+      {
+        "url": "https://yt3.ggpht.com/abc=s32",
+        "width": 32,
+        "height": 32
+      },
+      {
+        "url": "https://yt3.ggpht.com/abc=s48",
+        "width": 48,
+        "height": 48
+      },
+      {
+        "url": "https://yt3.ggpht.com/abc=s176",
+        "width": 176,
+        "height": 176
+      }
+    ],
+    "subCountText": "19.8M",
+    "lengthSeconds": 0,
+    "isListed": true,
+    "liveNow": true,
+    "isPostLiveDvr": false,
+    "isUpcoming": false,
+    "hlsUrl": "https://manifest.googlevideo.com/api/manifest/hls_variant/id/ODio2-1aFa8",
+    "adaptiveFormats": [],
+    "formatStreams": [
+      {
+        "url": "https://inv.example/videoplayback?itag=18&id=ODio2-1aFa8",
+        "itag": "18",
+        "type": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+        "quality": "medium",
+        "bitrate": "500000",
+        "fps": 25,
+        "container": "mp4",
+        "encoding": "h264",
+        "qualityLabel": "360p",
+        "resolution": "360p",
+        "size": "640x360"
+      }
+    ],
+    "captions": [],
+    "recommendedVideos": []
+  }
+}

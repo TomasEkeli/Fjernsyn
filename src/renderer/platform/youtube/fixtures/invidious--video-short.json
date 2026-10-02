@@ -1,0 +1,72 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "invidiousGetVideoInformation('4hDEK_1wPBk')",
+  "notes": "No public Invidious instance answers the API from the devcontainer: written from the documented /api/v1/videos/{id} shape (the typedef on invidiousGetVideoInformation), with the recorded Local video's values. Nothing in the details says it is a short",
+  "answer": {
+    "type": "video",
+    "title": "How To Learn Blender",
+    "videoId": "4hDEK_1wPBk",
+    "videoThumbnails": [
+      {
+        "quality": "maxres",
+        "url": "https://inv.example/vi/4hDEK_1wPBk/maxres.jpg",
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "description": "#PixelFire #Shorts #Blender",
+    "descriptionHtml": "<a href=\"/hashtag/pixelfire\">#PixelFire</a>",
+    "published": 1719514706,
+    "keywords": [],
+    "viewCount": 701853,
+    "likeCount": 36013,
+    "dislikeCount": 0,
+    "isFamilyFriendly": true,
+    "genre": "Entertainment",
+    "author": "PixelFire",
+    "authorId": "UCYk-yy4tkrWpvYu_iM6fjtA",
+    "authorThumbnails": [
+      {
+        "url": "https://yt3.ggpht.com/pixelfire=s32",
+        "width": 32,
+        "height": 32
+      },
+      {
+        "url": "https://yt3.ggpht.com/pixelfire=s48",
+        "width": 48,
+        "height": 48
+      },
+      {
+        "url": "https://yt3.ggpht.com/pixelfire=s176",
+        "width": 176,
+        "height": 176
+      }
+    ],
+    "subCountText": "16K",
+    "lengthSeconds": 60,
+    "isListed": true,
+    "liveNow": false,
+    "isPostLiveDvr": false,
+    "isUpcoming": false,
+    "hlsUrl": null,
+    "adaptiveFormats": [],
+    "formatStreams": [
+      {
+        "url": "https://inv.example/videoplayback?itag=18&id=4hDEK_1wPBk",
+        "itag": "18",
+        "type": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+        "quality": "medium",
+        "bitrate": "500000",
+        "fps": 25,
+        "container": "mp4",
+        "encoding": "h264",
+        "qualityLabel": "360p",
+        "resolution": "360p",
+        "size": "360x640"
+      }
+    ],
+    "captions": [],
+    "recommendedVideos": []
+  }
+}

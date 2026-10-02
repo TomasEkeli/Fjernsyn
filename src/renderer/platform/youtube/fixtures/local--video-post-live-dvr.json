@@ -1,0 +1,106 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "getLocalVideoInfo('jfKfPfyJRdk')",
+  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised; the one muxed format is synthesised, to show a post-live DVR keeps none",
+  "answer": {
+    "info": {
+      "playability_status": {
+        "status": "OK"
+      },
+      "basic_info": {
+        "id": "jfKfPfyJRdk",
+        "title": "lofi hip hop radio 📚 beats to relax/study to",
+        "author": "Lofi Girl",
+        "channel_id": "UCSJ4gkVC6NrvII8umztf0Ow",
+        "duration": 121601512,
+        "view_count": 651847107,
+        "like_count": 3487767,
+        "is_live": false,
+        "is_upcoming": false,
+        "is_live_content": true,
+        "is_post_live_dvr": true,
+        "is_unlisted": false,
+        "is_family_safe": true,
+        "category": "Music",
+        "keywords": [
+          "lofi"
+        ],
+        "short_description": "🎼 | Listen on Spotify, Apple music and more",
+        "thumbnail": [
+          {
+            "url": "https://i.ytimg.com/vi/jfKfPfyJRdk/maxresdefault.jpg?v=6911ace0",
+            "width": 1920,
+            "height": 1080
+          }
+        ],
+        "start_timestamp": "2022-07-12T15:59:30.000Z"
+      },
+      "primary_info": {
+        "title": {
+          "text": "lofi hip hop radio 📚 beats to relax/study to"
+        },
+        "view_count": {
+          "text": "651,847,107 views"
+        },
+        "published": {
+          "text": "Streamed live on Jul 12, 2022"
+        }
+      },
+      "secondary_info": {
+        "owner": {
+          "author": {
+            "id": "UCSJ4gkVC6NrvII8umztf0Ow",
+            "name": "Lofi Girl",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/GyVPysrx-cVIWIQDfi2MkaYr7oRIxuOgGeZihnw-hgTv6E5LBQ67v5yXTFvqP2Bl7BB_S-0L-A=s176-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "subscriber_count": {
+            "text": "15.8M subscribers"
+          }
+        },
+        "description": {
+          "runs": [
+            {
+              "text": "🎼 | Listen on Spotify, Apple music and more",
+              "bold": false
+            }
+          ]
+        },
+        "metadata": {
+          "rows": []
+        }
+      },
+      "page": [
+        {
+          "microformat": {
+            "publish_date": "2022-07-12T05:12:29-07:00"
+          }
+        }
+      ],
+      "watch_next_feed": [
+        {
+          "type": "LockupView",
+          "content_type": "VIDEO",
+          "content_id": "fqFpp-sjZ00"
+        }
+      ],
+      "streaming_data": {
+        "formats": [
+          {
+            "itag": 18,
+            "quality_label": "360p",
+            "fps": 25,
+            "bitrate": 500000,
+            "mime_type": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+            "width": 640,
+            "height": 360,
+            "freeTubeUrl": "https://rr4---sn.googlevideo.com/videoplayback?itag=18"
+          }
+        ],
+        "adaptive_formats": []
+      }
+    }
+  }
+}

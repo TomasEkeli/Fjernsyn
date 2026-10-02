@@ -1,0 +1,108 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "getLocalVideoInfo('ODio2-1aFa8')",
+  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised; the one muxed format is synthesised, to show a live keeps none",
+  "answer": {
+    "info": {
+      "playability_status": {
+        "status": "OK"
+      },
+      "basic_info": {
+        "id": "ODio2-1aFa8",
+        "title": "LIVE: ABC News Live - Friday, October 2",
+        "author": "ABC News",
+        "channel_id": "UCBi2mrWuNuyYy4gbM6fU18Q",
+        "duration": 0,
+        "view_count": 41105,
+        "like_count": 193,
+        "is_live": true,
+        "is_upcoming": false,
+        "is_live_content": true,
+        "is_post_live_dvr": false,
+        "is_unlisted": false,
+        "is_family_safe": true,
+        "category": "News & Politics",
+        "keywords": [
+          "news",
+          "breaking news"
+        ],
+        "short_description": "Subscribe to ABC News on YouTube",
+        "thumbnail": [
+          {
+            "url": "https://i.ytimg.com/vi/ODio2-1aFa8/maxresdefault.jpg?v=6abbf952",
+            "width": 1920,
+            "height": 1080
+          }
+        ],
+        "start_timestamp": "2026-10-02T09:59:38.000Z"
+      },
+      "primary_info": {
+        "title": {
+          "text": "LIVE: ABC News Live - Friday, October 2"
+        },
+        "view_count": {
+          "text": "1,822 watching now"
+        },
+        "published": {
+          "text": "Started streaming 8 hours ago"
+        }
+      },
+      "secondary_info": {
+        "owner": {
+          "author": {
+            "id": "UCBi2mrWuNuyYy4gbM6fU18Q",
+            "name": "ABC News",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/GJ8V0NX6NddGh9bf4zED4tsjPjjBK2hdp5FWHMy09pV7sdSkkE3yEhCRSch4waEb9ZavyUrWfw=s176-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "subscriber_count": {
+            "text": "19.8M subscribers"
+          }
+        },
+        "description": {
+          "runs": [
+            {
+              "text": "Subscribe to ABC News on YouTube",
+              "bold": false
+            }
+          ]
+        },
+        "metadata": {
+          "rows": []
+        }
+      },
+      "page": [
+        {
+          "microformat": {
+            "publish_date": "2026-09-29T10:45:54-07:00"
+          }
+        }
+      ],
+      "watch_next_feed": [
+        {
+          "type": "LockupView",
+          "content_type": "VIDEO",
+          "content_id": "z4Nph7EoRd4"
+        }
+      ],
+      "streaming_data": {
+        "formats": [
+          {
+            "itag": 18,
+            "quality_label": "360p",
+            "fps": 25,
+            "bitrate": 500000,
+            "mime_type": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+            "width": 640,
+            "height": 360,
+            "freeTubeUrl": "https://rr3---sn.googlevideo.com/videoplayback?itag=18"
+          }
+        ],
+        "adaptive_formats": [],
+        "hls_manifest_url": "https://manifest.googlevideo.com/api/manifest/hls_variant/id/ODio2-1aFa8"
+      }
+    }
+  }
+}

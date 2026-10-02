@@ -1,0 +1,159 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "getLocalVideoInfo('dQw4w9WgXcQ')",
+  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised; the License row and the watch-next variety (a playlist lockup, a station, a compact video and movie, an unreadable item) synthesised, YouTube answered lockups only",
+  "answer": {
+    "info": {
+      "playability_status": {
+        "status": "OK"
+      },
+      "basic_info": {
+        "id": "dQw4w9WgXcQ",
+        "title": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)",
+        "author": "Rick Astley",
+        "channel_id": "UCuAXFkgsw1L7xaCfnd5JJOw",
+        "duration": 213,
+        "view_count": 1822420518,
+        "like_count": 19455015,
+        "is_live": false,
+        "is_upcoming": false,
+        "is_live_content": false,
+        "is_post_live_dvr": false,
+        "is_unlisted": false,
+        "is_family_safe": true,
+        "category": "Music",
+        "keywords": [
+          "rick astley",
+          "Never Gonna Give You Up",
+          "nggyu"
+        ],
+        "short_description": "The official video for “Never Gonna Give You Up” by Rick Astley.",
+        "thumbnail": [
+          {
+            "url": "https://i.ytimg.com/vi_webp/dQw4w9WgXcQ/maxresdefault.webp",
+            "width": 1920,
+            "height": 1080
+          }
+        ],
+        "start_timestamp": null
+      },
+      "primary_info": {
+        "title": {
+          "text": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)"
+        },
+        "view_count": {
+          "text": "1,822,420,518 views"
+        },
+        "published": {
+          "text": "Oct 25, 2009"
+        }
+      },
+      "secondary_info": {
+        "owner": {
+          "author": {
+            "id": "UCuAXFkgsw1L7xaCfnd5JJOw",
+            "name": "Rick Astley",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/_ShEGOdg-t5YGJse14Ooq6FYBZqX_QSlhaTNjG06miYusm5lWm1UroLyVxnYtahADfRTVLtuVQ=s176-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "subscriber_count": {
+            "text": "4.55M subscribers"
+          }
+        },
+        "description": {
+          "runs": [
+            {
+              "text": "The official video for “Never Gonna Give You Up” by Rick Astley. \n",
+              "bold": false
+            },
+            {
+              "text": "#RickAstleyNever",
+              "bold": false,
+              "endpoint": {
+                "metadata": {
+                  "url": "/hashtag/rickastleynever",
+                  "page_type": "WEB_PAGE_TYPE_BROWSE",
+                  "api_url": "browse"
+                }
+              }
+            },
+            {
+              "text": " <3",
+              "bold": true
+            }
+          ]
+        },
+        "metadata": {
+          "rows": [
+            {
+              "title": {
+                "text": "License"
+              },
+              "contents": [
+                {
+                  "text": "Creative Commons Attribution licence (reuse allowed)"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "page": [
+        {
+          "microformat": {
+            "publish_date": "2009-10-24T23:57:33-07:00"
+          }
+        }
+      ],
+      "watch_next_feed": [
+        {
+          "type": "LockupView",
+          "content_type": "VIDEO",
+          "content_id": "pCJ9JGG0GQI"
+        },
+        {
+          "type": "LockupView",
+          "content_type": "PLAYLIST",
+          "content_id": "PL0123456789"
+        },
+        {
+          "type": "LockupView",
+          "content_type": "STATION",
+          "content_id": "RDdQw4w9WgX"
+        },
+        {
+          "type": "CompactVideo",
+          "video_id": "TMpUsykbezI"
+        },
+        {
+          "type": "CompactMovie",
+          "id": "xr1fSpQadVk"
+        },
+        {
+          "type": "CompactPlaylist",
+          "id": "PL9876543210"
+        },
+        {
+          "type": "CompactVideo"
+        }
+      ],
+      "streaming_data": {
+        "formats": [
+          {
+            "itag": 18,
+            "quality_label": "360p",
+            "fps": 25,
+            "bitrate": 500000,
+            "mime_type": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+            "width": 640,
+            "height": 360,
+            "freeTubeUrl": "https://rr1---sn.googlevideo.com/videoplayback?itag=18&expire=1790000000"
+          }
+        ],
+        "adaptive_formats": []
+      }
+    }
+  }
+}
