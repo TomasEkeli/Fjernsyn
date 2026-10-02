@@ -1,5 +1,5 @@
 // The layout of views/Watch/Watch.scss, less what only YouTube's watch page
-// has (premiere overlay, playlist, live chat, recommendations)
+// has (premiere overlay, playlist, live chat)
 
 @mixin dual-column-template {
   grid-template: 'video video sidebar' 0fr 'info info sidebar' auto 'info info sidebar' 1fr / 1fr 1fr 1fr;

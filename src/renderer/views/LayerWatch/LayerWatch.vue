@@ -45,6 +45,8 @@
             :vr-projection="source.vrProjection ?? null"
             :theatre-possible="theatrePossible"
             :use-theatre-mode="useTheatreMode"
+            :autoplay-possible="autoplayPossible"
+            :autoplay-enabled="autoplayEnabled"
             :start-in-fullscreen="startInFullscreen"
             :start-in-fullwindow="startInFullwindow"
             :start-in-pip="startInPip"
@@ -55,6 +57,8 @@
             @timeupdate="updateCurrentChapter"
             @ended="handleVideoEnded"
             @toggle-theatre-mode="useTheatreMode = !useTheatreMode"
+            @toggle-autoplay="toggleAutoplay"
+            @skip-to-next="handleSkipToNext"
             @playback-rate-updated="currentPlaybackRate = $event"
             @sabr-refresh-requested="onSabrRefreshRequested"
             @player-reload-requested="onPlayerReloadRequested"
@@ -165,11 +169,18 @@
         class="sidebarArea"
       >
         <WatchVideoChapters
+          v-if="chaptersShown"
           :chapters="chapters"
           :current-chapter-index="currentChapterIndex"
           :kind="video.chaptersKind ?? 'chapters'"
           class="watchVideoSidebar"
           @timestamp-event="changeTimestamp"
+        />
+        <WatchVideoRecommendations
+          v-if="recommendationsShown"
+          :data="recommendedVideos"
+          class="watchVideoSidebar"
+          @pause-player="pausePlayer"
         />
       </div>
     </template>
@@ -183,7 +194,8 @@
 // the PeerTube route one by host and uuid. Where the two platforms differ is
 // in what is written beside the player, chosen by `platformOf(video)`: the
 // history entry's extra fields, the subscription details refresh and the
-// download button. Upstream's Watch view (views/Watch) is the model for
+// download button. The recommendations, and the autoplay into them, are the
+// details' `related`, which only YouTube answers. Upstream's Watch view (views/Watch) is the model for
 // everything a viewer sees and for when history and progress are written; it
 // is not edited. A `sabr` source's regulator is hosted by `useSabrHosting`,
 // beside this view (ADR-0006, ADR-0016).
@@ -192,7 +204,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import shaka from 'shaka-player'
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute } from 'vue-router'
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 
 import FtAgeRestricted from '../../components/FtAgeRestricted/FtAgeRestricted.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
@@ -206,6 +218,7 @@ import LayerSubscribeButton from '../../components/LayerSubscribeButton/LayerSub
 import LayerVideoDescription from '../../components/LayerVideoDescription/LayerVideoDescription.vue'
 import LayerVideoInfo from '../../components/LayerVideoInfo/LayerVideoInfo.vue'
 import WatchVideoChapters from '../../components/WatchVideoChapters/WatchVideoChapters.vue'
+import WatchVideoRecommendations from '../../components/WatchVideoRecommendations/WatchVideoRecommendations.vue'
 import { toStoredPlainText } from '../../components/LayerMarkdown/plainText'
 
 import store from '../../store/index'
@@ -228,6 +241,7 @@ const FORMAT_RING = ['dash', 'legacy', 'audio']
 
 const layer = usePlatformLayer()
 const route = useRoute()
+const router = useRouter()
 const { t } = useI18n()
 
 const player = useTemplateRef('player')
@@ -238,6 +252,7 @@ const autosaveWatchedProgress = computed(() => store.getters.getWatchedProgressS
 const hideChapters = computed(() => store.getters.getHideChapters)
 const hideVideoDescription = computed(() => store.getters.getHideVideoDescription)
 const showFamilyFriendlyOnly = computed(() => store.getters.getShowFamilyFriendlyOnly)
+const hideRecommendedVideos = computed(() => store.getters.getHideRecommendedVideos)
 
 const isLoading = ref(true)
 /** @type {import('vue').ShallowRef<import('../../platform/shapes').VideoDetails | null>} */
@@ -264,6 +279,17 @@ const startTime = ref(null)
 const currentChapterIndex = ref(0)
 const currentPlaybackRate = ref(store.getters.getDefaultPlayback)
 
+/**
+ * The video's recommendations, those already watched last, ordered once when
+ * the video is opened, as Watch.js orders them
+ *
+ * @type {import('vue').ShallowRef<import('../../platform/shapes').VideoSummary[]>}
+ */
+const recommendedVideos = shallowRef([])
+// For as long as the viewer stays on watch pages, whatever the setting says
+// meanwhile, as Watch.js keeps it
+const autoplayNextRecommendedVideo = ref(store.getters.getPlayNextVideo)
+
 const useTheatreMode = ref(false)
 const startInFullscreen = ref(false)
 const startInFullwindow = ref(false)
@@ -283,6 +309,13 @@ let loadsStarted = 0
 let destroyedPlayer = null
 /** @type {Promise<void>} */
 let destruction = Promise.resolve()
+/** The countdown to the next video, and what closes its toast, while it runs */
+let playNextTimeout = null
+/** @type {AbortController | null} */
+let playNextToast = null
+/** Set once the viewer has done nothing for the interruption interval */
+let blockVideoAutoplay = false
+let autoplayInterruptionTimeout = null
 
 /** What the player plays from, either transport */
 const source = computed(() => video.value?.playbackSource ?? null)
@@ -376,9 +409,47 @@ const chapters = computed(() => source.value?.chapters ?? [])
 // does by not reading them at all
 const chaptersShown = computed(() => !hideChapters.value && chapters.value.length > 0)
 
-// The sidebar holds the chapters; without it there is nothing for theatre
-// mode to move out of the way
-const theatrePossible = computed(() => !isLoading.value && chaptersShown.value && !hiddenAsNotFamilyFriendly.value)
+/**
+ * As Watch.vue under `hideRecommendedVideos`, for a video with a watch-next
+ * list: YouTube's. PeerTube's details have none, and so no panel.
+ */
+const recommendationsShown = computed(() => !hideRecommendedVideos.value && Array.isArray(video.value?.related))
+
+// The sidebar holds the chapters and the recommendations; without either
+// there is nothing for theatre mode to move out of the way
+const theatrePossible = computed(() => {
+  return !isLoading.value && (chaptersShown.value || recommendationsShown.value) && !hiddenAsNotFamilyFriendly.value
+})
+
+/**
+ * As Watch.js's `nextRecommendedVideo`: the first recommendation not of a
+ * hidden channel nor matching a forbidden title. None while the
+ * recommendations are hidden, as the player's skip to next has it (hiding
+ * them switches `playNextVideo` off too).
+ */
+const nextRecommendedVideo = computed(() => {
+  if (hideRecommendedVideos.value) {
+    return null
+  }
+
+  const channelsHidden = JSON.parse(store.getters.getChannelsHidden).map((channel) => {
+    // Legacy support, as Watch.js has it
+    return typeof channel === 'string' ? { name: channel } : channel
+  })
+  const forbiddenTitles = JSON.parse(store.getters.getForbiddenTitles.toLowerCase())
+
+  return recommendedVideos.value.find((recommended) => {
+    return !(channelsHidden.some(channel => channel.name === recommended.authorId || channel.name === recommended.author) ||
+      forbiddenTitles.some(text => recommended.title?.toLowerCase().includes(text) || recommended.author?.toLowerCase().includes(text)))
+  }) ?? null
+})
+
+/**
+ * Whether the end of the video plays the next one, and the player's toggle
+ * says so. Ticket 47's playlist brings its own, `autoplayPlaylists`.
+ */
+const autoplayEnabled = computed(() => autoplayNextRecommendedVideo.value)
+const autoplayPossible = computed(() => nextRecommendedVideo.value !== null)
 
 // A SABR source's adaptive and audio are one manifest, the one held for the
 // session: the source's, or a rebuild's since
@@ -640,6 +711,7 @@ async function load() {
 
   isLoading.value = true
   video.value = null
+  recommendedVideos.value = []
   loadError.value = null
   playbackFailure.value = null
   failedFormats.clear()
@@ -665,6 +737,7 @@ async function load() {
     }
 
     video.value = details
+    recommendedVideos.value = sortWatchedVideosLast(details.related ?? [])
 
     // As Watch.js: shown as age restricted, and moved on from as if it had
     // ended, without a title or the subscription's details
@@ -1058,8 +1131,151 @@ function handleWatchProgressManualSave() {
   showToast(t('Video.Watched Progress Saved'))
 }
 
+/**
+ * As Watch.js's `sortWatchedVideosLast`: watched recommendations after the
+ * rest, each group in YouTube's order
+ *
+ * @param {import('../../platform/shapes').VideoSummary[]} videos
+ */
+function sortWatchedVideosLast(videos) {
+  const history = store.getters.getHistoryCacheById
+  const watched = videos.filter(summary => Object.hasOwn(history, summary.videoId))
+
+  return [...videos.filter(summary => !Object.hasOwn(history, summary.videoId)), ...watched]
+}
+
+/**
+ * What the end of this video moves on to, or `null` for nothing: the next
+ * recommendation. Ticket 47 puts the playlist's next video ahead of it.
+ *
+ * @returns {{ play: () => void } | null}
+ */
+function nextToPlay() {
+  const next = nextRecommendedVideo.value
+
+  if (next === null) {
+    return null
+  }
+
+  return {
+    play: () => {
+      router.push({ path: `/watch/${next.videoId}` })
+      showToast(t('Playing Next Video'))
+    },
+  }
+}
+
+/**
+ * As Watch.js's `handleVideoEnded`: the position saved, then, with autoplay
+ * on, the next video after the countdown (`defaultInterval` seconds, its
+ * toast a click away from cancelling it), unless nothing has been touched for
+ * the interruption interval. The countdown moves on only if the video is
+ * still stopped when it ends; a video hidden as not family friendly has no
+ * player to be playing, and moves on.
+ */
 function handleVideoEnded() {
   handleWatchProgressAutoSaveWhenProgressEnabled()
+
+  if (!autoplayEnabled.value) {
+    return
+  }
+
+  if (blockVideoAutoplay) {
+    const hours = store.getters.getDefaultAutoplayInterruptionIntervalHours
+    showToast(t('Autoplay Interruption Timer', { autoplayInterruptionIntervalHours: hours }), 3_600_000)
+    resetAutoplayInterruptionTimeout()
+    return
+  }
+
+  const next = nextToPlay()
+
+  if (next === null) {
+    return
+  }
+
+  abortAutoplayCountdown(true)
+
+  const interval = store.getters.getDefaultInterval
+  const toast = new AbortController()
+  playNextToast = toast
+
+  playNextTimeout = setTimeout(() => {
+    playNextTimeout = null
+    playNextToast = null
+
+    if (player.value?.isPaused() ?? true) {
+      next.play()
+    }
+  }, interval * 1000)
+
+  // No countdown for an interval of 0
+  if (interval > 0) {
+    showToast(
+      ({ remainingMs }) => {
+        const seconds = remainingMs / 1000
+        return t('Playing Next Video Interval', { nextVideoInterval: seconds }, seconds)
+      },
+      // So that the countdown's last text is not 0 seconds
+      interval * 1000,
+      () => abortAutoplayCountdown(),
+      toast.signal
+    )
+  }
+}
+
+/**
+ * As Watch.js's `handleSkipToNext` from the player: the next recommendation
+ * at once. Ticket 47 puts the playlist's next video ahead of it.
+ */
+function handleSkipToNext() {
+  nextToPlay()?.play()
+}
+
+/**
+ * Stops the countdown to the next video, with a toast saying so unless
+ * `quietly`, and closes the countdown's toast
+ *
+ * @param {boolean} [quietly]
+ */
+function abortAutoplayCountdown(quietly = false) {
+  const wasRunning = playNextTimeout !== null
+
+  clearTimeout(playNextTimeout)
+  playNextTimeout = null
+  playNextToast?.abort()
+  playNextToast = null
+
+  if (wasRunning && !quietly) {
+    showToast(t('Canceled next video autoplay'))
+  }
+}
+
+/** As Watch.js's `toggleAutoplay`: switching it off stops a countdown */
+function toggleAutoplay() {
+  if (autoplayEnabled.value && playNextTimeout !== null) {
+    abortAutoplayCountdown()
+  }
+
+  autoplayNextRecommendedVideo.value = !autoplayNextRecommendedVideo.value
+}
+
+/**
+ * As Watch.js's: every click and key press starts the interruption interval
+ * (`defaultAutoplayInterruptionIntervalHours`) afresh; once it passes
+ * untouched, the end of a video does not move on.
+ */
+function resetAutoplayInterruptionTimeout() {
+  clearTimeout(autoplayInterruptionTimeout)
+  autoplayInterruptionTimeout = setTimeout(() => {
+    blockVideoAutoplay = true
+  }, store.getters.getDefaultAutoplayInterruptionIntervalHours * 3_600_000)
+  blockVideoAutoplay = false
+}
+
+function stopAutoplayInterruptionTimer() {
+  document.removeEventListener('keydown', resetAutoplayInterruptionTimeout)
+  document.removeEventListener('click', resetAutoplayInterruptionTimeout)
+  clearTimeout(autoplayInterruptionTimeout)
 }
 
 /**
@@ -1092,9 +1308,11 @@ function destroyPlayer() {
 }
 
 onBeforeRouteLeave(async () => {
+  abortAutoplayCountdown(true)
   handleWatchProgressAutoSave()
   savedOnLeave = true
   window.removeEventListener('beforeunload', handleWatchProgressAutoSave)
+  stopAutoplayInterruptionTimer()
   await destroyPlayer()
 })
 
@@ -1106,6 +1324,8 @@ onBeforeRouteUpdate(async (to, from) => {
     return
   }
 
+  // As Watch.js's `handleRouteChange`: the countdown is for the video left
+  abortAutoplayCountdown(true)
   handleWatchProgressAutoSave()
   await destroyPlayer()
 })
@@ -1124,11 +1344,16 @@ watch(
 
 onMounted(() => {
   window.addEventListener('beforeunload', handleWatchProgressAutoSave)
+  document.addEventListener('keydown', resetAutoplayInterruptionTimeout)
+  document.addEventListener('click', resetAutoplayInterruptionTimeout)
+  resetAutoplayInterruptionTimeout()
   load()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', handleWatchProgressAutoSave)
+  abortAutoplayCountdown(true)
+  stopAutoplayInterruptionTimer()
 
   // Unmounted without leaving the route, as when the app goes away
   if (!savedOnLeave) {

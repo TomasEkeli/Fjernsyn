@@ -44,6 +44,8 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
         thumbnail: { type: String, default: '' },
         theatrePossible: { type: Boolean, default: false },
         useTheatreMode: { type: Boolean, default: false },
+        autoplayPossible: { type: Boolean, default: false },
+        autoplayEnabled: { type: Boolean, default: false },
         startInFullscreen: { type: Boolean, default: false },
         startInFullwindow: { type: Boolean, default: false },
         startInPip: { type: Boolean, default: false },
@@ -57,7 +59,7 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
       },
       // Emitted by the tests, through `vm.$emit`
       // eslint-disable-next-line vue/no-unused-emit-declarations
-      emits: ['error', 'loaded', 'ended', 'timeupdate', 'toggle-theatre-mode', 'playback-rate-updated', 'sabr-refresh-requested', 'player-reload-requested'],
+      emits: ['error', 'loaded', 'ended', 'timeupdate', 'toggle-theatre-mode', 'toggle-autoplay', 'skip-to-next', 'playback-rate-updated', 'sabr-refresh-requested', 'player-reload-requested'],
       setup(_props, { expose }) {
         expose({
           get hasLoaded() { return player.hasLoaded },
@@ -104,6 +106,14 @@ const SETTINGS = vi.hoisted(() => ({
   getHideChapters: false,
   getHideVideoDescription: false,
   getShowFamilyFriendlyOnly: false,
+  // Recommendations and autoplay
+  getHideRecommendedVideos: false,
+  getPlayNextVideo: false,
+  getDefaultInterval: 5,
+  getDefaultAutoplayInterruptionIntervalHours: 3,
+  getChannelsHidden: '[]',
+  getForbiddenTitles: '[]',
+  getHideChannelsBasedOnText: true,
   getHideVideoViews: false,
   getHideVideoLikesAndDislikes: false,
   getHideUploader: false,
@@ -1809,5 +1819,203 @@ describe('the family-friendly gate', () => {
     const { wrapper } = await openWatchPage(youtubeVideo({ isFamilyFriendly: false }), YT_PATH)
 
     expect(findPlayer(wrapper).exists()).toBe(true)
+  })
+})
+
+describe('recommendations', () => {
+  const NEXT_IDS = ['pCJ9JGG0GQI', 'z-Xl9tGqH14', 'TMpUsykbezI']
+
+  /** A watch-next summary, as the layer answers it */
+  function recommendation(videoId, overrides = {}) {
+    return { type: 'video', videoId, title: `Video ${videoId}`, author: 'Someone', authorId: 'UCsomeone', lengthSeconds: 60, ...overrides }
+  }
+
+  function withRecommendations(overrides = {}) {
+    return youtubeVideo({ related: NEXT_IDS.map(id => recommendation(id)), ...overrides })
+  }
+
+  function listed(wrapper) {
+    return wrapper.findComponent({ name: 'WatchVideoRecommendations' }).props('data').map(summary => summary.videoId)
+  }
+
+  it('lists a YouTube video\'s recommendations beside it, and makes theatre mode possible', async () => {
+    store.setGetter('getHideChapters', true)
+    const { wrapper } = await openWatchPage(withRecommendations(), YT_PATH)
+
+    expect(wrapper.text()).toContain('Up Next')
+    expect(listed(wrapper)).toEqual(NEXT_IDS)
+    expect(findPlayer(wrapper).props('theatrePossible')).toBe(true)
+  })
+
+  it('lists the watched ones last, in YouTube\'s order otherwise', async () => {
+    store.setGetter('getHistoryCacheById', { [NEXT_IDS[0]]: { videoId: NEXT_IDS[0], watchProgress: 10 } })
+    const { wrapper } = await openWatchPage(withRecommendations(), YT_PATH)
+
+    expect(listed(wrapper)).toEqual([NEXT_IDS[1], NEXT_IDS[2], NEXT_IDS[0]])
+  })
+
+  it('shows none, and offers no autoplay, while recommendations are hidden', async () => {
+    store.setGetter('getHideRecommendedVideos', true)
+    store.setGetter('getPlayNextVideo', true)
+    const { wrapper } = await openWatchPage(withRecommendations(), YT_PATH)
+
+    expect(wrapper.text()).not.toContain('Up Next')
+    expect(findPlayer(wrapper).props('autoplayPossible')).toBe(false)
+  })
+
+  it('has no panel for a PeerTube video, whose details have none', async () => {
+    const { wrapper } = await openWatchPage(playableVideo())
+
+    expect(wrapper.findComponent({ name: 'WatchVideoRecommendations' }).exists()).toBe(false)
+    expect(findPlayer(wrapper).props('autoplayPossible')).toBe(false)
+  })
+})
+
+describe('autoplay at the end of a video', () => {
+  const NEXT_ID = 'pCJ9JGG0GQI'
+  const HIDDEN_ID = 'z-Xl9tGqH14'
+
+  const withNext = () => youtubeVideo({
+    related: [
+      { type: 'video', videoId: HIDDEN_ID, title: 'Hidden', author: 'Hidden channel', authorId: 'UChidden', lengthSeconds: 60 },
+      { type: 'video', videoId: NEXT_ID, title: 'Next', author: 'Someone', authorId: 'UCsomeone', lengthSeconds: 60 },
+    ],
+  })
+
+  beforeEach(() => {
+    // Not `setImmediate`, which flushPromises is made of
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] })
+    store.setGetter('getPlayNextVideo', true)
+    store.setGetter('getChannelsHidden', JSON.stringify([{ name: 'UChidden', preferredName: '', icon: '' }]))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  async function endVideo(wrapper) {
+    player.paused = true
+    findPlayer(wrapper).vm.$emit('ended')
+    await flushPromises()
+  }
+
+  /** The countdown toast's text, `remainingMs` before it ends */
+  function countdownText(remainingMs) {
+    const call = showToast.mock.calls.find(([message]) => typeof message === 'function')
+    return call?.[0]({ elapsedMs: 0, remainingMs })
+  }
+
+  it('offers the player\'s toggle, on as the setting has it', async () => {
+    const { wrapper } = await openWatchPage(withNext(), YT_PATH)
+
+    expect(findPlayer(wrapper).props()).toMatchObject({ autoplayPossible: true, autoplayEnabled: true })
+  })
+
+  it('plays the next recommendation not hidden, after the countdown', async () => {
+    const { wrapper, router } = await openWatchPage(withNext(), YT_PATH)
+
+    await endVideo(wrapper)
+
+    expect(countdownText(5000)).toBe('Playing next video in 5 seconds. Click to cancel.')
+    expect(showToast).toHaveBeenCalledWith(expect.any(Function), 5000, expect.any(Function), expect.any(AbortSignal))
+
+    await vi.advanceTimersByTimeAsync(4999)
+    expect(router.currentRoute.value.path).toBe(YT_PATH)
+
+    await vi.advanceTimersByTimeAsync(1)
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe(`/watch/${NEXT_ID}`)
+    expect(showToast).toHaveBeenCalledWith('Playing Next Video')
+    expect(layer.getVideo).toHaveBeenLastCalledWith(NEXT_ID)
+  })
+
+  it('does not move on when the video plays again during the countdown', async () => {
+    const { wrapper, router } = await openWatchPage(withNext(), YT_PATH)
+
+    await endVideo(wrapper)
+    player.paused = false
+    await vi.advanceTimersByTimeAsync(5000)
+
+    expect(router.currentRoute.value.path).toBe(YT_PATH)
+  })
+
+  it('does nothing at the end while the setting is off', async () => {
+    store.setGetter('getPlayNextVideo', false)
+    const { wrapper, router } = await openWatchPage(withNext(), YT_PATH)
+
+    await endVideo(wrapper)
+    await vi.advanceTimersByTimeAsync(5000)
+
+    expect(countdownText(5000)).toBeUndefined()
+    expect(router.currentRoute.value.path).toBe(YT_PATH)
+  })
+
+  it('is cancelled by the player\'s toggle, which then stays off', async () => {
+    const { wrapper, router } = await openWatchPage(withNext(), YT_PATH)
+
+    await endVideo(wrapper)
+    findPlayer(wrapper).vm.$emit('toggle-autoplay')
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(5000)
+
+    expect(showToast).toHaveBeenCalledWith('Canceled next video autoplay')
+    expect(router.currentRoute.value.path).toBe(YT_PATH)
+    expect(findPlayer(wrapper).props('autoplayEnabled')).toBe(false)
+  })
+
+  it('is cancelled by a click on its toast', async () => {
+    const { wrapper, router } = await openWatchPage(withNext(), YT_PATH)
+
+    await endVideo(wrapper)
+    const [, , cancel, signal] = showToast.mock.calls.find(([message]) => typeof message === 'function')
+    cancel()
+    await vi.advanceTimersByTimeAsync(5000)
+
+    expect(signal.aborted).toBe(true)
+    expect(router.currentRoute.value.path).toBe(YT_PATH)
+  })
+
+  it('is cancelled by the interruption timer after its hours of nothing touched', async () => {
+    const { wrapper, router } = await openWatchPage(withNext(), YT_PATH)
+
+    await vi.advanceTimersByTimeAsync(3 * 3_600_000)
+    await endVideo(wrapper)
+    await vi.advanceTimersByTimeAsync(5000)
+
+    expect(showToast).toHaveBeenCalledWith('Autoplay canceled due to 3 hours of inactivity', 3_600_000)
+    expect(router.currentRoute.value.path).toBe(YT_PATH)
+  })
+
+  it('counts the interruption interval afresh from a click', async () => {
+    const { wrapper, router } = await openWatchPage(withNext(), YT_PATH)
+
+    await vi.advanceTimersByTimeAsync(3 * 3_600_000 - 1000)
+    document.dispatchEvent(new MouseEvent('click'))
+    await vi.advanceTimersByTimeAsync(2000)
+    await endVideo(wrapper)
+    await vi.advanceTimersByTimeAsync(5000)
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe(`/watch/${NEXT_ID}`)
+  })
+
+  it('moves on from a video hidden as not family friendly', async () => {
+    store.setGetter('getShowFamilyFriendlyOnly', true)
+    const { router } = await openWatchPage(youtubeVideo({ ...withNext(), isFamilyFriendly: false }), YT_PATH)
+
+    await vi.advanceTimersByTimeAsync(5000)
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe(`/watch/${NEXT_ID}`)
+  })
+
+  it('skips to the next recommendation at once from the player', async () => {
+    const { wrapper, router } = await openWatchPage(withNext(), YT_PATH)
+
+    findPlayer(wrapper).vm.$emit('skip-to-next')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe(`/watch/${NEXT_ID}`)
   })
 })
