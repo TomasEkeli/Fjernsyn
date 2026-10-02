@@ -18,6 +18,8 @@
       "is_family_safe": false,
       "vanity_channel_url": "http://www.youtube.com/channel/UCnobannernobannernoban0"
     },
+    "tabs": ["Videos"],
+    "has_home": false,
     "has_videos": true,
     "has_shorts": false,
     "has_live_streams": false,
@@ -28,5 +30,5 @@
     "has_community": false,
     "has_about": false
   },
-  "notes": "The older C4TabbedHeader, as parseLocalChannelHeader reads it, with no banner, a protocol-relative avatar and no about tab."
+  "notes": "The older C4TabbedHeader, as parseLocalChannelHeader reads it, with no banner, a protocol-relative avatar and no about tab. No home tab either, its videos first (tabs and has_home added for ticket 41)."
 }

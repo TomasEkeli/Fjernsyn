@@ -1,0 +1,100 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "(await (await getLocalChannel('UCSMOQeBJ2RAnuFungnQOxLg')).search('animation')).getContinuation()",
+  "answer": {
+    "contents": {
+      "contents": [
+        {
+          "type": "ItemSection",
+          "contents": [
+            {
+              "type": "Video",
+              "parsed": {
+                "type": "video",
+                "videoId": "qZz9uG96Xk4",
+                "title": "The Art of Real-Time Viewport Cheats — BCON26",
+                "author": "Blender",
+                "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+                "description": "\"The Art of Real-Time Viewport Cheats\" by Bao-Thinh Dinh at Blender Conference 2026\n\nViewports and Eevee are no longer just for quick previews; they are a powerful end-to-end production tool...",
+                "viewCount": 71603,
+                "published": 1790200641062,
+                "lengthSeconds": 1324,
+                "liveNow": false,
+                "isUpcoming": false,
+                "isPremiere": false,
+                "is4k": false,
+                "is8k": false,
+                "isNew": false,
+                "isVr180": false,
+                "isVr360": false,
+                "is3d": false,
+                "hasCaptions": false
+              }
+            }
+          ]
+        },
+        {
+          "type": "ItemSection",
+          "contents": [
+            {
+              "type": "Video",
+              "parsed": {
+                "type": "video",
+                "videoId": "eOxVdBgoehk",
+                "title": "The Reference of Animation - Tips and tricks for Blender animators",
+                "author": "Blender",
+                "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+                "description": "Hjalti talks about how to plan, perform, record, analyze and craft reference footage for character animation.\n\n\"The Reference of Animation\" by Hjalti Hjálmarsson --\n\nLearn more about Blender...",
+                "viewCount": 11700,
+                "published": 1727864337062,
+                "lengthSeconds": 1308,
+                "liveNow": false,
+                "isUpcoming": false,
+                "isPremiere": false,
+                "is4k": false,
+                "is8k": false,
+                "isNew": false,
+                "isVr180": false,
+                "isVr360": false,
+                "is3d": false,
+                "hasCaptions": false
+              }
+            }
+          ]
+        },
+        {
+          "type": "ItemSection",
+          "contents": [
+            {
+              "type": "Video",
+              "parsed": {
+                "type": "video",
+                "videoId": "MF1qEhBSfq4",
+                "title": "First Steps - Blender 2.80 Fundamentals",
+                "author": "Blender",
+                "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+                "description": "Blender is Free and Open Source Software\nDownload: https://blender.org/download\nSupport core Blender development - https://fund.blender.org\n\n--\n\nThis tutorial is part of the Blender Fundamentals...",
+                "viewCount": 4412160,
+                "published": 1570079577062,
+                "lengthSeconds": 59,
+                "liveNow": false,
+                "isUpcoming": false,
+                "isPremiere": false,
+                "is4k": false,
+                "is8k": false,
+                "isNew": false,
+                "isVr180": false,
+                "isVr360": false,
+                "is3d": false,
+                "hasCaptions": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "has_continuation": true
+  },
+  "notes": "Trimmed as local--channel-search.json, to the first 3 sections and their first 2 items. getContinuation() is the test's."
+}

@@ -1,0 +1,11 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "searchInvidiousChannel('UCSMOQeBJ2RAnuFungnQOxLg', 'animation', 1)",
+  "answer": [
+    { "type": "playlist", "title": "Official Blender Open Movies", "playlistId": "PL6B3937A5D230E335", "playlistThumbnail": "https://i.ytimg.com/vi/WhWc3b3KhnY/hqdefault.jpg", "author": "Blender", "authorId": "UCSMOQeBJ2RAnuFungnQOxLg", "videoCount": 17, "videos": [] },
+    { "type": "video", "title": "The animation of Flow — Blender Conference 2024", "videoId": "fxz6p-QATfs", "author": "Blender", "authorId": "UCSMOQeBJ2RAnuFungnQOxLg", "viewCount": 86338, "lengthSeconds": 3456, "published": 1729699200000, "liveNow": false, "isUpcoming": false, "videoThumbnails": [] },
+    { "type": "video", "title": "The Appeal of Animation", "videoId": "e_0ppK_f_rY", "author": "Blender", "authorId": "UCSMOQeBJ2RAnuFungnQOxLg", "viewCount": 20145, "lengthSeconds": 1862, "published": 1667001600000, "liveNow": false, "isUpcoming": false, "videoThumbnails": [] }
+  ],
+  "notes": "From the Invidious API's /api/v1/channels/{id}/search shape after the module's own normalising (an empty authorId filled with the channel's, published in ms): a playlist and two videos, the items of local--channel-search.json for the same query. The API answers a page by number and never says it is the last; an empty array is the end."
+}

@@ -1,0 +1,123 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "parseLocalCommunityPosts((await (await getLocalChannel('UCSMOQeBJ2RAnuFungnQOxLg')).getCommunity()).posts)",
+  "answer": [
+    {
+      "postText": "👋 Blender Today...Blender Thursday! Same time, same place, just two days later.\n\n**Remember tomorrow Blender 5.2 LTS Release Candidate comes out!**",
+      "postId": "UgkxTCPUkgLnqdzLXkgPYDT8mWvXCLVNFSA7",
+      "authorThumbnails": [
+        {
+          "url": "https://yt3.googleusercontent.com/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s76-c-k-c0x00ffffff-no-rj-mo",
+          "width": 76,
+          "height": 76
+        },
+        {
+          "url": "https://yt3.googleusercontent.com/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s48-c-k-c0x00ffffff-no-rj-mo",
+          "width": 48,
+          "height": 48
+        },
+        {
+          "url": "https://yt3.googleusercontent.com/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s32-c-k-c0x00ffffff-no-rj-mo",
+          "width": 32,
+          "height": 32
+        }
+      ],
+      "publishedTime": 1785792207289,
+      "voteCount": 462,
+      "postContent": null,
+      "commentCount": 20,
+      "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+      "author": "Blender",
+      "type": "community"
+    },
+    {
+      "postText": "<a href=\"https://www.youtube.com/channel/UCz75RVbH8q2jdBJ4SnwuZZQ\" target=\"_blank\" rel=\"noopener noreferrer\">youtube.com/channel/UCz75RVbH8q2jdBJ4SnwuZZQ</a> invites everyone to OVERGROWN Open Doors!\n\nFor one week, all things OVERGROWN are free. The content gallery is now open to anyone curious about how this project is coming together. \n\nTo reach the next stage of the OVERGROWN project, Blender Studio needs more support: the target of 7,000 supporters hasn&apos;t been met yet. So before the teaser drops, the team wants to give you a taste of what it&apos;s like to be an OVERGROWN supporter. Here&apos;s what&apos;s on the menu: \n\n- Production Logs covering several months of the project&apos;s development\n- Masterclass on painterly shadows\n- Content Gallery\n\nRead the announcement: <a href=\"https://studio.blender.org/blog/overgrown-open-doors-week/\" target=\"_blank\" rel=\"noopener noreferrer\">studio.blender.org/blog/overgrown-open-doors-week</a> \n\n<a href=\"https://www.youtube.com/hashtag/b3d\">#b3d</a> <a href=\"https://www.youtube.com/hashtag/openmovie\">#OpenMovie</a> <a href=\"https://www.youtube.com/hashtag/blenderstudio\">#BlenderStudio</a>",
+      "postId": "UgkxAOck4GIqXg8TLZuEKUt__RYcP36NGB_j",
+      "authorThumbnails": [
+        {
+          "url": "https://yt3.googleusercontent.com/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s76-c-k-c0x00ffffff-no-rj-mo",
+          "width": 76,
+          "height": 76
+        },
+        {
+          "url": "https://yt3.googleusercontent.com/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s48-c-k-c0x00ffffff-no-rj-mo",
+          "width": 48,
+          "height": 48
+        },
+        {
+          "url": "https://yt3.googleusercontent.com/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s32-c-k-c0x00ffffff-no-rj-mo",
+          "width": 32,
+          "height": 32
+        }
+      ],
+      "publishedTime": 1788384207277,
+      "voteCount": 1100,
+      "postContent": {
+        "type": "image",
+        "content": [
+          {
+            "url": "https://yt3.ggpht.com/-axbs9xLL8j8zyAWXLMq6q7ad9F8qf-lZZT3xLJTBSuIkwmo3kFoe__Xu11e-8d-k_K2cwcyUYUmdw=s640-c-fcrop64=1,00000000ffffffff-nd-v1",
+            "width": 640,
+            "height": 640
+          }
+        ]
+      },
+      "commentCount": 20,
+      "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+      "author": "Blender",
+      "type": "community"
+    },
+    {
+      "postText": "Francesco is here to talk about Blender content-driven development. Learn how OVERGROWN, a potential feature film project by Blender Studio, could make Blender a better tool for everyone!\n\n<a href=\"https://www.youtube.com/hashtag/b3d\">#b3d</a> <a href=\"https://www.youtube.com/hashtag/openmovie\">#openmovie</a>",
+      "postId": "UgkxPELlMnbhedGXNaBBY5hyL6k68meKH4Y9",
+      "authorThumbnails": [
+        {
+          "url": "https://yt3.googleusercontent.com/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s76-c-k-c0x00ffffff-no-rj-mo",
+          "width": 76,
+          "height": 76
+        },
+        {
+          "url": "https://yt3.googleusercontent.com/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s48-c-k-c0x00ffffff-no-rj-mo",
+          "width": 48,
+          "height": 48
+        },
+        {
+          "url": "https://yt3.googleusercontent.com/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s32-c-k-c0x00ffffff-no-rj-mo",
+          "width": 32,
+          "height": 32
+        }
+      ],
+      "publishedTime": 1789766607270,
+      "voteCount": 64,
+      "postContent": {
+        "type": "video",
+        "content": {
+          "type": "video",
+          "videoId": "685eur9lMGc",
+          "title": "OVERGROWN Project: What will you get?",
+          "author": "Blender Studio and Blender",
+          "description": "OVERGROWN project goes beyond the feature film: it is also meant to make Blender a better software for long-format content creation and serve as a foundation for documentation and tutorials...",
+          "viewCount": 57474,
+          "published": 1789766607271,
+          "lengthSeconds": 282,
+          "liveNow": false,
+          "isUpcoming": false,
+          "isPremiere": false,
+          "is4k": false,
+          "is8k": false,
+          "isNew": false,
+          "isVr180": false,
+          "isVr360": false,
+          "is3d": false,
+          "hasCaptions": false
+        }
+      },
+      "commentCount": null,
+      "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+      "author": "Blender",
+      "type": "community"
+    }
+  ],
+  "notes": "A text post, an image post and a video post, the first of each kind on the first page (10 posts on YouTube), as the module parsed them. publishedTime is estimated from relative text at recording. The tab's pages and has_continuation are the test's."
+}

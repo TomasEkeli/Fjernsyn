@@ -1,14 +1,14 @@
 {
   "recordedAt": "2026-10-02",
   "source": "recorded",
-  "call": "getLocalChannel('UCSMOQeBJ2RAnuFungnQOxLg')",
+  "call": "getLocalChannel('UCXuqSBlHAE6Xw-yeJA0Tunw')",
   "answer": {
     "header": {
       "type": "PageHeader",
       "content": {
         "title": {
           "text": {
-            "text": "Blender"
+            "text": "Linus Tech Tips"
           }
         },
         "image": {
@@ -16,7 +16,7 @@
           "avatar": {
             "image": [
               {
-                "url": "https://yt3.googleusercontent.com/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s160-c-k-c0x00ffffff-no-rj",
+                "url": "https://yt3.googleusercontent.com/gnvYLhXy8FAlPXZ2RTrkrgj-5kyt0vdE2FUGVOiKGdEZIa-wN5A-7nwZBlWJLzUMmoh1NWAU=s160-c-k-c0x00ffffff-no-rj",
                 "width": 160,
                 "height": 160
               }
@@ -26,7 +26,7 @@
         "banner": {
           "image": [
             {
-              "url": "https://yt3.googleusercontent.com/6pYvl5Jl7MszRRlhjlRuEfil7B1sgt3u4WbCCl7yHPv1LbsSVAcaoGfs3gyrJUM201DQnzrUOA=w2560-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj",
+              "url": "https://yt3.googleusercontent.com/U_7GWetO6k4sq3pAkbFEIIWzZLKcIJlGJqNz6NQAhgqF6DVD5pllwWF6trSUWEIRn4MkhNlhy9Y=w2560-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj",
               "width": 2560,
               "height": 424
             }
@@ -38,7 +38,7 @@
               "metadata_parts": [
                 {
                   "text": {
-                    "text": "@BlenderOfficial"
+                    "text": "@LinusTechTips"
                   }
                 }
               ]
@@ -47,12 +47,12 @@
               "metadata_parts": [
                 {
                   "text": {
-                    "text": "1.25M subscribers"
+                    "text": "16.9M subscribers"
                   }
                 },
                 {
                   "text": {
-                    "text": "1.5K videos"
+                    "text": "7.9K videos"
                   }
                 }
               ]
@@ -62,34 +62,26 @@
       }
     },
     "metadata": {
-      "external_id": "UCSMOQeBJ2RAnuFungnQOxLg",
-      "title": "Blender",
+      "external_id": "UCXuqSBlHAE6Xw-yeJA0Tunw",
+      "title": "Linus Tech Tips",
       "is_family_safe": true,
       "tags": [
-        "blender",
-        "Blender Foundation",
-        "3d",
-        "free software",
-        "Creative Commons",
-        "tutorials",
-        "blender conference",
-        "sintel",
-        "cosmos laundromat",
-        "caminandes",
-        "tears of steel",
-        "elephants dream",
-        "big buck bunny"
+        "Unboxing",
+        "Review",
+        "Computer"
       ],
-      "vanity_channel_url": "http://www.youtube.com/@BlenderOfficial"
+      "vanity_channel_url": "http://www.youtube.com/@LinusTechTips"
     },
     "tabs": [
       "Home",
       "Videos",
       "Shorts",
       "Live",
+      "Shows",
       "Podcasts",
       "Playlists",
-      "Posts"
+      "Posts",
+      "Store"
     ],
     "has_home": true,
     "has_videos": true,
@@ -103,5 +95,5 @@
     "has_search": true,
     "has_about": true
   },
-  "notes": "The has_* getters of YT.Channel recorded as plain fields; the header trimmed to what parseLocalChannelHeader reads (no actions, so the id comes from metadata.external_id). has_search (true) added 2026-10-02 from the recording of local--channel-search.json, the same channel. has_home and tabs added 2026-10-02 (ticket 41) from the recording of local--channel-ordinary-home.json, the same channel."
+  "notes": "The has_* getters and tabs of YT.Channel recorded as plain fields; the header trimmed to what parseLocalChannelHeader reads; the tags cut to three."
 }

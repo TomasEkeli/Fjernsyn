@@ -6,7 +6,8 @@
 // (typed operators are an explicit choice of filters). A search typed with operators is also
 // kept in the search history as typed, operators and all, so that it can be
 // run again from there; the page keeps the text it searched, as for any
-// search.
+// search. A channel's tag searches the same way (`layerTagSearchRoute`), but
+// writes nothing.
 
 import { parseOperators } from '../../platform/search/operators'
 import { isPlain, parameters, readRemembered, sameParameters, toRoute } from '../../platform/search/query'
@@ -51,4 +52,28 @@ export function layerSearchRoute(store, text, event) {
   }
 
   return toRoute(query)
+}
+
+/**
+ * The route of a search for one of a channel's tags (its about tab): what a
+ * search for the tag typed alone in the box runs, the remembered set when the
+ * pill is lit and no filters when it is not, with the tag taken as it is,
+ * never read for operators. Writes nothing.
+ *
+ * @param {import('vuex').Store<any>} store
+ * @param {string} tag
+ * @returns {{ path: string, query: Record<string, string> }}
+ */
+export function layerTagSearchRoute(store, tag) {
+  const { getters } = store
+  const peertubeEnabled = getters.getEnablePeerTube === true
+
+  const query = searchBoxQuery('', {
+    remembered: readRemembered(getters.getSearchRememberedParameters, { peertubeEnabled }),
+    latched: getters.getSearchLatched === true,
+    defaultScope: getters.getDefaultSearchScope,
+    peertubeEnabled,
+  })
+
+  return toRoute({ ...query, text: tag })
 }

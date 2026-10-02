@@ -5,7 +5,13 @@
   "answer": {
     "type": "AboutChannel",
     "metadata": {
-      "description": "Official YouTube channel for Blender, the Free and Open Source 3D Creation Suite.\n\nThe Freedom to Create\n"
+      "description": "Official YouTube channel for Blender, the Free and Open Source 3D Creation Suite.\n\nThe Freedom to Create\n",
+      "view_count": "133,470,200 views",
+      "video_count": "1,588 videos",
+      "joined_date": {
+        "text": "Joined May 29, 2008"
+      }
     }
-  }
+  },
+  "notes": "Trimmed to what the adapter reads: the description, the view and video counts, the joined date (a Text, as its text), the country (none given)."
 }

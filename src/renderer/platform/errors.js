@@ -38,8 +38,11 @@ export class PlatformError extends Error {
    * @param {unknown} [details.body] the answer's parsed JSON body, for an
    *   HTTP error answer; `undefined` when it had none that parsed
    * @param {unknown} [details.cause]
+   * @param {import('./shapes').ChannelSummary} [details.channel] for a refused
+   *   channel, what the platform shows of it all the same (YouTube's age
+   *   gate: the name and avatar)
    */
-  constructor(kind, message, { status = null, retryAfterMs = null, reason = null, host = null, body, cause } = {}) {
+  constructor(kind, message, { status = null, retryAfterMs = null, reason = null, host = null, body, cause, channel } = {}) {
     if (!KINDS.has(kind)) {
       throw new TypeError(`Unknown platform error kind: ${kind}`)
     }
@@ -61,6 +64,11 @@ export class PlatformError extends Error {
     if (body !== undefined) {
       /** @type {unknown} */
       this.body = body
+    }
+
+    if (channel !== undefined) {
+      /** @type {import('./shapes').ChannelSummary} */
+      this.channel = channel
     }
   }
 }

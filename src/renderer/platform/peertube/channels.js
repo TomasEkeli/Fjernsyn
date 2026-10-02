@@ -10,6 +10,10 @@
 //   `./nsfw.js`); a page the filter empties is followed by the next (see
 //   `fetchSkippingEmpty`). Lives and scheduled lives are listed with their flags.
 //   The `shorts` and `live` kinds are YouTube's tabs: an empty page here.
+// - Playlists are the channel's, in PeerTube's order. The `releases`,
+//   `podcasts` and `courses` kinds are YouTube's tabs: an empty page here.
+//   The playlist sort is YouTube's too, and not read.
+// - Posts are YouTube's community tab: an empty page here.
 // - A handle the instance does not know is `notFound` (see `./client.js`).
 // - An account's channels (`listAccountChannels`) are asked of the account's
 //   host, `/api/v1/accounts/{name@host}/video-channels`, all at once: 100 is
@@ -40,6 +44,9 @@ export const CHANNEL_VIDEO_SORTS = Object.freeze({
 
 /** The lists of a channel's videos the layer knows, YouTube's tabs; PeerTube has the first only */
 export const CHANNEL_VIDEO_KINDS = Object.freeze(['videos', 'shorts', 'live'])
+
+/** The lists of a channel's playlists the layer knows, YouTube's tabs; PeerTube has the first only */
+export const CHANNEL_PLAYLIST_KINDS = Object.freeze(['playlists', 'releases', 'podcasts', 'courses'])
 
 /**
  * An actor's handle (a channel's or an account's, both `name@host`), parsed.
@@ -156,16 +163,40 @@ export function createChannelReader({ client, config }) {
   }
 
   /**
+   * A page of the channel's playlists. PeerTube has no releases, podcasts or
+   * courses tab, so those kinds are an empty page, without a request.
+   *
    * @param {import('../shapes').PeerTubeChannelRef} ref
-   * @param {{ cursor?: unknown }} [options]
+   * @param {{ kind?: 'playlists' | 'releases' | 'podcasts' | 'courses', cursor?: unknown }} [options]
    * @returns {Promise<import('../shapes').Page<import('../shapes').PlaylistSummary>>}
    */
-  async function listChannelPlaylists(ref, { cursor = null } = {}) {
+  async function listChannelPlaylists(ref, { kind = 'playlists', cursor = null } = {}) {
     const { host, handle } = channelOf(ref)
+
+    if (!CHANNEL_PLAYLIST_KINDS.includes(kind)) {
+      throw new PlatformError('invalid', `Not a kind of a channel's playlists: ${String(kind)}`)
+    }
+
+    if (kind !== 'playlists') {
+      return { items: [], cursor: null }
+    }
+
     const start = startOf(cursor)
     const body = await client.get(host, `/video-channels/${handle}/video-playlists`, { start, count: PAGE_COUNT })
 
     return pageOf(body, start, playlist => playlistSummary(playlist, host))
+  }
+
+  /**
+   * The channel's posts. PeerTube has none, so an empty page, without a
+   * request; the handle is still checked.
+   *
+   * @param {import('../shapes').PeerTubeChannelRef} ref
+   * @returns {Promise<import('../shapes').Page<import('../shapes').Post>>}
+   */
+  async function listChannelPosts(ref) {
+    channelOf(ref)
+    return { items: [], cursor: null }
   }
 
   /**
@@ -183,5 +214,5 @@ export function createChannelReader({ client, config }) {
     return body.data.map(channel => channelSummary(channel, host)).filter(channel => channel !== null)
   }
 
-  return Object.freeze({ getChannel, listChannelVideos, listChannelPlaylists, listAccountChannels })
+  return Object.freeze({ getChannel, listChannelVideos, listChannelPlaylists, listChannelPosts, listAccountChannels })
 }

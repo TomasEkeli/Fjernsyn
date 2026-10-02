@@ -209,12 +209,36 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   }
 
   /**
+   * The `UC` ref of the YouTube channel a channel URL names: a link by name
+   * (`/c/`, `/user/`, `@handle`, with or without a tab after it) through the
+   * backend policy (see `./youtube/channelUrls.js`), a `/channel/UC…` URL
+   * without a request. A URL that resolves to no channel is `notFound`, on
+   * the other backend's word too when fallback is on (ADR-0012). YouTube
+   * only: anything but a URL on a YouTube host (as `resolveUrl` recognises
+   * them) rejects as `invalid`, without a request.
+   *
+   * @param {string} url
+   * @returns {Promise<import('./shapes').ChannelRef>}
+   */
+  async function resolveChannel(url) {
+    const trimmed = typeof url === 'string' ? url.trim() : ''
+
+    if (!isYouTubeUrl(trimmed)) {
+      throw new PlatformError('invalid', 'Not a YouTube channel URL')
+    }
+
+    return youtubeAdapter.resolveChannel(trimmed)
+  }
+
+  /**
    * A page of a channel's videos, sorted `newest` (the default), `popular` or
    * `oldest`, filtered by the NSFW preference. `kind` picks the list:
    * `videos` (the default), or YouTube's `shorts` and `live` tabs, which a
    * channel without them, and every PeerTube channel, answers as an empty
    * page. Hand the page's `cursor` back for the next page, which keeps the
-   * first page's kind and sort; `null` is the end.
+   * first page's kind and sort; `null` is the end. A YouTube page says the
+   * sort it applied (`sort`), which on Local may be `newest` where the
+   * channel's tab has no filter for the sort asked.
    *
    * @param {import('./shapes').ChannelRef} ref
    * @param {{ kind?: 'videos' | 'shorts' | 'live', sort?: 'newest' | 'popular' | 'oldest', cursor?: unknown }} [options]
@@ -225,15 +249,61 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   }
 
   /**
-   * A page of a channel's playlists, in the order the platform lists them
-   * (YouTube: newest first, the channel's own playlists).
+   * A page of a channel's playlists. `kind` picks the list: `playlists` (the
+   * default), the channel's own, or YouTube's `releases`, `podcasts` and
+   * `courses` tabs, which a channel without them, and every PeerTube channel,
+   * answers as an empty page. `sort` is YouTube's, for the channel's own
+   * playlists only: `newest` (the default) or `last` (by the last video
+   * added); the page says the sort it applied (`sort`), which on Local is
+   * `newest` where the tab cannot be sorted. The other kinds have one order
+   * and take no sort. PeerTube lists in its own order. Hand the page's
+   * `cursor` back for the next page, which keeps the first page's kind and
+   * sort; `null` is the end.
    *
    * @param {import('./shapes').ChannelRef} ref
-   * @param {{ cursor?: unknown }} [options]
+   * @param {{ kind?: 'playlists' | 'releases' | 'podcasts' | 'courses', sort?: 'newest' | 'last', cursor?: unknown }} [options]
    * @returns {Promise<import('./shapes').Page<import('./shapes').PlaylistSummary>>}
    */
   function listChannelPlaylists(ref, options) {
     return isYouTubeChannelRef(ref) ? youtubeAdapter.listChannelPlaylists(ref, options) : channels.listChannelPlaylists(ref, options)
+  }
+
+  /**
+   * A page of a channel's posts (YouTube's community tab), newest first, in
+   * the shape the existing post component reads (`Post`). A YouTube channel
+   * goes through the backend policy; one without the tab, and every PeerTube
+   * channel (without a request), answers an empty page. Hand the page's
+   * `cursor` back for the next page; `null` is the end.
+   *
+   * @param {import('./shapes').ChannelRef} ref
+   * @param {{ cursor?: unknown }} [options]
+   * @returns {Promise<import('./shapes').Page<import('./shapes').Post>>}
+   */
+  function listChannelPosts(ref, options) {
+    return isYouTubeChannelRef(ref) ? youtubeAdapter.listChannelPosts(ref, options) : channels.listChannelPosts(ref)
+  }
+
+  /**
+   * A page of a YouTube channel's videos and playlists matching `query`, in
+   * YouTube's order, through the backend policy: the items are card-ready
+   * video and playlist summaries, as the channel's own lists answer them. A
+   * blank query is an empty page, without a request. A channel whose details
+   * say `hasSearch: false` cannot be searched (`invalid` on Local). Hand the
+   * page's `cursor` back for the next page, which keeps the first page's
+   * query; `null` is the end. PeerTube has no search within a channel: any
+   * other ref rejects as `invalid`, without a request.
+   *
+   * @param {import('./shapes').ChannelRef} ref
+   * @param {string} query
+   * @param {{ cursor?: unknown }} [options]
+   * @returns {Promise<import('./shapes').Page<import('./shapes').VideoSummary | import('./shapes').PlaylistSummary>>}
+   */
+  async function searchChannel(ref, query, options) {
+    if (!isYouTubeChannelRef(ref)) {
+      throw new PlatformError('invalid', 'Only a YouTube channel can be searched')
+    }
+
+    return youtubeAdapter.searchChannel(ref, query, options)
   }
 
   /**
@@ -394,8 +464,11 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
     resolveUrl,
     getVideo,
     getChannel,
+    resolveChannel,
     listChannelVideos,
     listChannelPlaylists,
+    listChannelPosts,
+    searchChannel,
     listAccountChannels,
     search,
     searchQuery,

@@ -451,9 +451,17 @@ describe('listChannelPlaylists (PeerTube)', () => {
     expect(second).toEqual({ items: [], cursor: null })
   })
 
+  it.each(['releases', 'podcasts', 'courses'])('answers YouTube\'s %s tab as an empty page, without a request', async (kind) => {
+    const { fake, layer } = setUp()
+
+    expect(await layer.listChannelPlaylists(BLENDER, { kind })).toEqual({ items: [], cursor: null })
+    expect(fake.requests).toHaveLength(0)
+  })
+
   it.each([
     [{ cursor: -1 }],
     [{ cursor: '5' }],
+    [{ kind: 'videos' }],
   ])('refuses %o, without a request', async (options) => {
     const { fake, layer } = setUp()
 
@@ -473,6 +481,22 @@ describe('listChannelPlaylists (PeerTube)', () => {
 
     expect(items[0].thumbnail).toBe('https://video.blender.org/lazy-static/thumbnails/playlist-759335bd-eed5-41ce-9a83-cca8f60201d6.png')
     expect(items[1].thumbnail).toBe('')
+  })
+})
+
+describe('listChannelPosts (PeerTube)', () => {
+  it('answers YouTube\'s posts tab as an empty page, without a request', async () => {
+    const { fake, layer } = setUp()
+
+    expect(await layer.listChannelPosts(BLENDER)).toEqual({ items: [], cursor: null })
+    expect(fake.requests).toHaveLength(0)
+  })
+
+  it('refuses what is not a handle, without a request', async () => {
+    const { fake, layer } = setUp()
+
+    expect((await failure(layer.listChannelPosts('blender'))).kind).toBe('invalid')
+    expect(fake.requests).toHaveLength(0)
   })
 })
 
