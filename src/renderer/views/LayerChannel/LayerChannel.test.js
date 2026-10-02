@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 import { RouterView } from 'vue-router'
 
-import { openExternalLink } from '../../helpers/utils'
+import { copyToClipboard, openExternalLink } from '../../helpers/utils'
 import { describe as describeEntity } from '../../platform/describe'
 import { PlatformError } from '../../platform/errors'
 import { PLATFORM_LAYER_KEY, isPeerTubeEnabled } from '../../platform/vue'
@@ -84,6 +84,16 @@ const SETTINGS = vi.hoisted(() => ({
   getExternalPlayer: '',
   getDefaultPlayback: 1,
   getDisableChannelLinks: false,
+  // The header's actions and the tab row's
+  getUseSponsorBlock: false,
+  getSponsorBlockExcludedChannels: '[]',
+  getListDensity: 'standard',
+  // The about tab's tag links, as the search box runs a search
+  getHideSearchBar: false,
+  getEnablePeerTube: false,
+  getDefaultSearchScope: 'all',
+  getSearchRememberedParameters: null,
+  getSearchLatched: false,
 }))
 
 vi.mock('../../store/index', async () => {
@@ -102,6 +112,7 @@ vi.mock('../../i18n/index', async () => {
 vi.mock('../../helpers/utils', async (importOriginal) => ({
   ...(await importOriginal()),
   openExternalLink: vi.fn(),
+  copyToClipboard: vi.fn(),
   showToast: vi.fn(),
 }))
 
@@ -200,6 +211,7 @@ beforeEach(() => {
   layer.listChannelPosts.mockReset().mockResolvedValue({ items: [], cursor: null })
 
   openExternalLink.mockClear()
+  copyToClipboard.mockClear()
   isPeerTubeEnabled.mockReset().mockReturnValue(true)
 })
 
@@ -224,6 +236,7 @@ async function openChannelPage(path = CHANNEL_PATH) {
     // YouTube's, unnamed as in the app's router
     { path: '/channel/:id/:currentTab?', component: LayerChannel },
     { path: '/playlist/:id' },
+    { path: '/search/:query' },
   ])
   await router.push(path)
 
@@ -680,6 +693,48 @@ describe('subscribing', () => {
   })
 })
 
+describe('a PeerTube channel\'s actions', () => {
+  it('shares the channel\'s canonical link: copied, or opened in the browser', async () => {
+    store.setGetter('getHideSharingActions', false)
+    const { wrapper } = await openChannelPage()
+
+    await wrapper.find('.copyLinkButton button').trigger('click')
+    await wrapper.find('.openLinkButton button').trigger('click')
+
+    expect(copyToClipboard).toHaveBeenCalledWith(`https://${HOST}/video-channels/blender`, { messageOnSuccess: 'Link copied' })
+    expect(openExternalLink).toHaveBeenCalledWith(`https://${HOST}/video-channels/blender`)
+  })
+
+  it('offers no sharing when sharing actions are hidden', async () => {
+    const { wrapper } = await openChannelPage()
+
+    expect(wrapper.find('.copyLinkButton').exists()).toBe(false)
+    expect(wrapper.find('.openLinkButton').exists()).toBe(false)
+  })
+
+  it('has no SponsorBlock button, no View All and no about tab, and keeps its description above the tabs', async () => {
+    store.setGetter('getUseSponsorBlock', true)
+    const { wrapper } = await openChannelPage()
+
+    expect(wrapper.findComponent({ name: 'FtSponsorBlockExcludeChannelButton' }).exists()).toBe(false)
+    expect(wrapper.find('.viewAllButton').exists()).toBe(false)
+    expect(wrapper.find('#aboutTab').exists()).toBe(false)
+    expect(wrapper.find('.layerMarkdown em').text()).toBe('official')
+  })
+
+  it('has the density switch over its videos, which writes the setting, and none over its playlists, a list of their own', async () => {
+    const { wrapper, router } = await openChannelPage()
+
+    await wrapper.find('.densitySwitch input[value="wall"]').setValue(true)
+    expect(dispatched('updateListDensity')).toEqual(['wall'])
+
+    await router.replace(`${CHANNEL_PATH}/playlists`)
+    await flushPromises()
+
+    expect(wrapper.find('.densitySwitch').exists()).toBe(false)
+  })
+})
+
 describe('a YouTube channel', () => {
   const YT_ID = 'UCSMOQeBJ2RAnuFungnQOxLg'
   const YT_PATH = `/channel/${YT_ID}`
@@ -774,7 +829,7 @@ describe('a YouTube channel', () => {
       layer.getChannel.mockResolvedValue(youTubeChannel({ tabs: ['videos', 'community'] }))
       const { wrapper } = await openChannelPage(`${YT_PATH}/playlists`)
 
-      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Posts'])
+      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Posts', 'About'])
       expect(wrapper.find('#videosTab').classes()).toContain('selectedTab')
       expect(layer.listChannelPlaylists).not.toHaveBeenCalled()
     })
@@ -859,19 +914,19 @@ describe('a YouTube channel', () => {
     it('appear where the channel has them, in the old view\'s order and words', async () => {
       const { wrapper } = await openChannelPage(YT_PATH)
 
-      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Shorts', 'Live', 'Playlists'])
+      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Shorts', 'Live', 'Playlists', 'About'])
     })
 
     it('are absent for a channel without them', async () => {
       layer.getChannel.mockResolvedValue(youTubeChannel({ tabs: ['videos', 'playlists'] }))
       const { wrapper } = await openChannelPage(YT_PATH)
 
-      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Playlists'])
+      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Playlists', 'About'])
     })
 
     it.each([
-      ['shorts', 'getHideChannelShorts', ['Videos', 'Live', 'Playlists']],
-      ['live', 'getHideLiveStreams', ['Videos', 'Shorts', 'Playlists']],
+      ['shorts', 'getHideChannelShorts', ['Videos', 'Live', 'Playlists', 'About']],
+      ['live', 'getHideLiveStreams', ['Videos', 'Shorts', 'Playlists', 'About']],
     ])('hide %s under %s', async (kind, setting, shown) => {
       store.setGetter(setting, true)
       const { wrapper } = await openChannelPage(YT_PATH)
@@ -976,7 +1031,7 @@ describe('a YouTube channel', () => {
       layer.listChannelVideos.mockResolvedValue({ items: [], cursor: null })
       const { wrapper } = await openChannelPage(`${YT_PATH}/playlists`)
 
-      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Live'])
+      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Live', 'About'])
       expect(wrapper.find('#liveTab').classes()).toContain('selectedTab')
       expect(layer.listChannelVideos).toHaveBeenCalledWith(YT_ID, { kind: 'live', sort: 'newest', cursor: null })
       expect(layer.listChannelPlaylists).not.toHaveBeenCalled()
@@ -1060,14 +1115,14 @@ describe('a YouTube channel', () => {
     it('appear where the channel has them, in the old view\'s order and words', async () => {
       const { wrapper } = await openChannelPage(YT_PATH)
 
-      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Shorts', 'Live', 'Releases', 'Podcasts', 'Courses', 'Playlists'])
+      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Shorts', 'Live', 'Releases', 'Podcasts', 'Courses', 'Playlists', 'About'])
     })
 
     it('are absent for a channel without them', async () => {
       layer.getChannel.mockResolvedValue(youTubeChannel({ tabs: ['videos', 'podcasts', 'playlists'] }))
       const { wrapper } = await openChannelPage(YT_PATH)
 
-      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Podcasts', 'Playlists'])
+      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Podcasts', 'Playlists', 'About'])
     })
 
     it.each(KINDS)('%s: hidden under %s, and a route naming it lands on the first shown', async (kind, setting) => {
@@ -1075,7 +1130,8 @@ describe('a YouTube channel', () => {
       const { wrapper } = await openChannelPage(`${YT_PATH}/${kind}`)
 
       expect(wrapper.find(`#${kind}Tab`).exists()).toBe(false)
-      expect(wrapper.findAll('.tab')).toHaveLength(ALL_TABS.length - 1)
+      // Less the hidden one, and with the about tab
+      expect(wrapper.findAll('.tab')).toHaveLength(ALL_TABS.length)
       expect(wrapper.find('#videosTab').classes()).toContain('selectedTab')
       expect(layer.listChannelPlaylists).not.toHaveBeenCalled()
     })
@@ -1134,10 +1190,10 @@ describe('a YouTube channel', () => {
       return wrapper.findAll('.fakePostCard .postText').map(text => text.text())
     }
 
-    it('appears where the channel has posts, last, in the old view\'s word', async () => {
+    it('appears where the channel has posts, last before the about tab, in the old view\'s word', async () => {
       const { wrapper } = await openChannelPage(YT_PATH)
 
-      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Shorts', 'Playlists', 'Posts'])
+      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Shorts', 'Playlists', 'Posts', 'About'])
     })
 
     it('is absent for a channel without posts, and a route naming it lands on the first shown', async () => {
@@ -1153,7 +1209,7 @@ describe('a YouTube channel', () => {
       store.setGetter('getHideChannelCommunity', true)
       const { wrapper } = await openChannelPage(`${YT_PATH}/community`)
 
-      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Shorts', 'Playlists'])
+      expect(wrapper.findAll('.tab').map(tab => tab.text())).toEqual(['Videos', 'Shorts', 'Playlists', 'About'])
       expect(wrapper.find('#videosTab').classes()).toContain('selectedTab')
       expect(layer.listChannelPosts).not.toHaveBeenCalled()
     })
@@ -1201,6 +1257,194 @@ describe('a YouTube channel', () => {
       const { wrapper } = await openChannelPage(`${YT_PATH}/community`)
 
       expect(wrapper.text()).toContain('This channel currently does not have any posts')
+    })
+  })
+
+  describe('about tab', () => {
+    const DESCRIPTION = 'Free and open 3D: https://www.blender.org/download/?os=linux&arch=x64\n<img src=x onerror="alert(1)"> <b>not bold</b>'
+
+    beforeEach(() => {
+      layer.getChannel.mockResolvedValue(youTubeChannel({ description: DESCRIPTION, tags: ['3d modelling', 'open source'] }))
+    })
+
+    it('is the last tab, reached from its tab, in the route, and lists nothing', async () => {
+      const { wrapper, router } = await openChannelPage(YT_PATH)
+
+      await wrapper.find('#aboutTab').trigger('click')
+      await flushPromises()
+
+      expect(router.currentRoute.value.path).toBe(`${YT_PATH}/about`)
+      expect(wrapper.find('#aboutTab').classes()).toContain('selectedTab')
+      expect(wrapper.find('#aboutPanel').exists()).toBe(true)
+      expect(wrapper.find('.fakeElementList').exists()).toBe(false)
+      expect(wrapper.find('.getNextPage').exists()).toBe(false)
+    })
+
+    it('opened from the route, asks for no list', async () => {
+      await openChannelPage(`${YT_PATH}/about`)
+
+      expect(layer.listChannelVideos).not.toHaveBeenCalled()
+      expect(layer.listChannelPlaylists).not.toHaveBeenCalled()
+      expect(layer.listChannelPosts).not.toHaveBeenCalled()
+    })
+
+    it('shows the description there, not above the tabs, with its links made links and its text never read as markup', async () => {
+      const { wrapper } = await openChannelPage(`${YT_PATH}/about`)
+
+      expect(wrapper.find('.videoDescription').exists()).toBe(false)
+
+      const description = wrapper.find('#aboutPanel .aboutInfo')
+      expect(description.find('a').attributes('href')).toBe('https://www.blender.org/download/?os=linux&arch=x64')
+      expect(description.findAll('a')).toHaveLength(1)
+      expect(description.find('img').exists()).toBe(false)
+      expect(description.find('b').exists()).toBe(false)
+      expect(description.text()).toContain('<img src=x onerror="alert(1)"> <b>not bold</b>')
+    })
+
+    it('links each tag to a search for it on the search page, with no filters while the pill is not lit', async () => {
+      const { wrapper, router } = await openChannelPage(`${YT_PATH}/about`)
+
+      const tags = wrapper.findAll('a.aboutTagLink')
+      expect(tags.map(tag => tag.text())).toEqual(['3d modelling', 'open source'])
+      expect(tags[0].attributes('title')).toBe('Search for "3d modelling"')
+
+      await tags[0].trigger('click')
+      await flushPromises()
+
+      expect(router.currentRoute.value.path).toBe('/search/3d%20modelling')
+      expect(router.currentRoute.value.query).toEqual({ scope: 'youtube' })
+      expect(store.dispatched).toEqual([])
+    })
+
+    it('searches a tag with the remembered filters while the pill is lit, as the search box does', async () => {
+      store.setGetter('getSearchLatched', true)
+      store.setGetter('getSearchRememberedParameters', { scope: 'youtube', sort: 'date', time: 'week' })
+      const { wrapper, router } = await openChannelPage(`${YT_PATH}/about`)
+
+      await wrapper.find('a.aboutTagLink').trigger('click')
+      await flushPromises()
+
+      expect(router.currentRoute.value.query).toEqual({ scope: 'youtube', sort: 'date', time: 'week' })
+    })
+
+    it('shows the tags as words only while the search bar is hidden', async () => {
+      store.setGetter('getHideSearchBar', true)
+      const { wrapper } = await openChannelPage(`${YT_PATH}/about`)
+
+      expect(wrapper.find('a.aboutTagLink').exists()).toBe(false)
+      expect(wrapper.findAll('.aboutTagLink').map(tag => tag.text())).toEqual(['3d modelling', 'open source'])
+    })
+  })
+
+  describe('header actions', () => {
+    it('shares the channel through the share button, unless sharing actions are hidden', async () => {
+      store.setGetter('getHideSharingActions', false)
+      const { wrapper } = await openChannelPage(YT_PATH)
+
+      expect(wrapper.findComponent({ name: 'FtShareButton' }).props()).toMatchObject({ id: YT_ID, shareTargetType: 'Channel' })
+
+      store.setGetter('getHideSharingActions', true)
+      await flushPromises()
+
+      expect(wrapper.findComponent({ name: 'FtShareButton' }).exists()).toBe(false)
+    })
+
+    it('excludes the channel from SponsorBlock\'s skipping while SponsorBlock is on', async () => {
+      store.setGetter('getUseSponsorBlock', true)
+      const { wrapper } = await openChannelPage(YT_PATH)
+
+      const button = wrapper.find('button[title="Never skip SponsorBlock segments on this channel"]')
+      await button.trigger('click')
+      await flushPromises()
+
+      expect(dispatched('updateSponsorBlockExcludedChannels').map(value => JSON.parse(value)))
+        .toEqual([[{ name: YT_ID, preferredName: 'Blender' }]])
+    })
+
+    it('has no SponsorBlock button while SponsorBlock is off', async () => {
+      const { wrapper } = await openChannelPage(YT_PATH)
+
+      expect(wrapper.find('button[title="Never skip SponsorBlock segments on this channel"]').exists()).toBe(false)
+    })
+
+    it('has the density switch on the tab row of the card tabs, and none on the about or posts tabs', async () => {
+      layer.listChannelPosts.mockResolvedValue({ items: [], cursor: null })
+      const { wrapper, router } = await openChannelPage(YT_PATH)
+
+      expect(wrapper.find('#videosPanel .select-container .densitySwitch').exists()).toBe(true)
+
+      await wrapper.find('.densitySwitch input[value="tight"]').setValue(true)
+      expect(dispatched('updateListDensity')).toEqual(['tight'])
+
+      for (const tab of ['shorts', 'playlists']) {
+        await router.replace(`${YT_PATH}/${tab}`)
+        await flushPromises()
+        expect(wrapper.find('.densitySwitch').exists()).toBe(true)
+      }
+
+      for (const tab of ['community', 'about']) {
+        await router.replace(`${YT_PATH}/${tab}`)
+        await flushPromises()
+        expect(wrapper.find('.densitySwitch').exists()).toBe(false)
+      }
+    })
+  })
+
+  describe('View All', () => {
+    const LIVE_TABS = ['videos', 'shorts', 'live', 'playlists']
+
+    beforeEach(() => {
+      layer.getChannel.mockResolvedValue(youTubeChannel({ tabs: LIVE_TABS }))
+      layer.listChannelVideos.mockImplementation(async (ref, { sort }) => ({ items: [youTubeVideo(1, sort), youTubeVideo(2, sort)], cursor: null, sort }))
+    })
+
+    it.each([
+      ['videos', 'newest', '/playlist/UULFSMOQeBJ2RAnuFungnQOxLg'],
+      ['videos', 'popular', '/playlist/UULPSMOQeBJ2RAnuFungnQOxLg'],
+      ['shorts', 'newest', '/playlist/UUSHSMOQeBJ2RAnuFungnQOxLg'],
+      ['shorts', 'popular', '/playlist/UUPSSMOQeBJ2RAnuFungnQOxLg'],
+      ['live', 'newest', '/playlist/UULVSMOQeBJ2RAnuFungnQOxLg'],
+      ['live', 'popular', '/playlist/UUPVSMOQeBJ2RAnuFungnQOxLg'],
+    ])('on %s, %s, opens the uploads playlist of that kind and sort', async (tab, sort, target) => {
+      const { wrapper, router } = await openChannelPage(`${YT_PATH}/${tab}`)
+
+      if (sort !== 'newest') {
+        await wrapper.find('select').setValue(sort)
+        await flushPromises()
+      }
+
+      await wrapper.find('.viewAllButton').trigger('click')
+      await flushPromises()
+
+      expect(router.currentRoute.value.path).toBe(target)
+    })
+
+    it('is not offered oldest first, which no uploads playlist is', async () => {
+      const { wrapper } = await openChannelPage(YT_PATH)
+
+      await wrapper.find('select').setValue('oldest')
+      await flushPromises()
+
+      expect(wrapper.find('.viewAllButton').exists()).toBe(false)
+    })
+
+    it('is offered for one card with more to come, and not for one card alone', async () => {
+      layer.listChannelVideos.mockResolvedValueOnce({ items: [youTubeVideo(1)], cursor: 'next', sort: 'newest' })
+      const { wrapper, router } = await openChannelPage(YT_PATH)
+
+      expect(wrapper.find('.viewAllButton').exists()).toBe(true)
+
+      layer.listChannelVideos.mockResolvedValueOnce({ items: [youTubeVideo(1)], cursor: null, sort: 'newest' })
+      await router.replace(`${YT_PATH}/shorts`)
+      await flushPromises()
+
+      expect(wrapper.find('.viewAllButton').exists()).toBe(false)
+    })
+
+    it('is not on the playlists tab', async () => {
+      const { wrapper } = await openChannelPage(`${YT_PATH}/playlists`)
+
+      expect(wrapper.find('.viewAllButton').exists()).toBe(false)
     })
   })
 

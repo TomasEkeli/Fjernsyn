@@ -93,6 +93,37 @@
               </div>
             </div>
             <div class="infoActionsContainer">
+              <!-- YouTube's actions are the old header's (ChannelDetails); a
+                   PeerTube channel's link is shared as the watch page shares
+                   a video's (LayerVideoInfo), and SponsorBlock is YouTube's -->
+              <template v-if="isYouTube">
+                <FtSponsorBlockExcludeChannelButton
+                  :channel-id="channel.id"
+                  :channel-name="channel.name"
+                />
+                <FtShareButton
+                  v-if="!hideSharingActions"
+                  :id="channel.id"
+                  share-target-type="Channel"
+                  class="shareIcon"
+                />
+              </template>
+              <template v-else-if="!hideSharingActions && shareUrl">
+                <FtIconButton
+                  :title="t('PeerTube.Watch.Copy link')"
+                  :icon="['fas', 'copy']"
+                  theme="secondary"
+                  class="copyLinkButton"
+                  @click="copyLink"
+                />
+                <FtIconButton
+                  :title="t('PeerTube.Watch.Open in browser')"
+                  :icon="['fas', 'globe']"
+                  theme="secondary"
+                  class="openLinkButton"
+                  @click="openLink"
+                />
+              </template>
               <LayerSubscribeButton :channel="channel" />
             </div>
           </div>
@@ -118,61 +149,83 @@
           </nav>
         </div>
       </FtCard>
+      <!-- A YouTube channel's description is on its about tab, as in the old view -->
       <LayerVideoDescription
+        v-if="!isYouTube"
         :description="channel.description ?? ''"
         :kind="channel.descriptionKind"
         :base-url="channel.host ? `https://${channel.host}` : ''"
         class="card"
       />
       <FtCard class="card">
-        <!-- One list per tab: the videos, shorts and live, the playlists, releases, podcasts and courses, the posts -->
+        <!-- One list per tab: the videos, shorts and live, the playlists, releases, podcasts and courses, the posts; and YouTube's about -->
         <div
           :id="`${currentTab}Panel`"
           role="tabpanel"
           :aria-labelledby="`${currentTab}Tab`"
         >
-          <div
-            v-if="currentSortedList"
-            class="select-container"
-          >
-            <!-- Not where the layer answered another sort than the one asked: the tab offers no choice -->
-            <FtSelect
-              v-if="currentSortedList.isSortOffered.value"
-              v-show="currentSortedList.items.value.length > 1 || currentSortedList.cursor.value !== null || currentSortedList.sort.value !== 'newest'"
-              :value="currentSortedList.sort.value"
-              :select-names="currentSortedList.sortNames.value"
-              :select-values="currentSortedList.sorts"
-              :placeholder="t('Global.Sort By')"
-              :icon="getIconForSortPreference(currentSortedList.sort.value)"
-              @change="currentSortedList.changeSort"
+          <LayerChannelAbout
+            v-if="currentTabInfo.about"
+            :description="channel.description ?? ''"
+            :tags="channel.tags ?? []"
+          />
+          <template v-else>
+            <div
+              v-if="showDensitySwitch || viewAllRoute || currentSortedList"
+              class="select-container"
+            >
+              <!-- The old view's rule: not on a tab without a card grid (the
+                   about tab, the posts, and PeerTube's playlists, a list of
+                   their own), where the switch would visibly do nothing -->
+              <FtDensitySwitch
+                v-if="showDensitySwitch"
+                class="channelDensity"
+              />
+              <FtButton
+                v-if="viewAllRoute"
+                class="viewAllButton"
+                :label="t('Channel.View All')"
+                @click="router.push(viewAllRoute)"
+              />
+              <!-- Not where the layer answered another sort than the one asked: the tab offers no choice -->
+              <FtSelect
+                v-if="currentSortedList?.isSortOffered.value"
+                v-show="currentSortedList.items.value.length > 1 || currentSortedList.cursor.value !== null || currentSortedList.sort.value !== 'newest'"
+                :value="currentSortedList.sort.value"
+                :select-names="currentSortedList.sortNames.value"
+                :select-values="currentSortedList.sorts"
+                :placeholder="t('Global.Sort By')"
+                :icon="getIconForSortPreference(currentSortedList.sort.value)"
+                @change="currentSortedList.changeSort"
+              />
+            </div>
+            <!-- A PeerTube playlist links to its instance; a YouTube playlist
+                 opens on the app's own playlist page, through the existing
+                 card, and a short is `type: 'shortVideo'`, which the card badges.
+                 Posts are `type: 'community'`, which the list renders with the
+                 existing post component, always as a list, as the old view
+                 forces them -->
+            <LayerPlaylistList
+              v-if="currentTabInfo.playlists && !isYouTube"
+              :playlists="currentList.items.value"
             />
-          </div>
-          <!-- A PeerTube playlist links to its instance; a YouTube playlist
-               opens on the app's own playlist page, through the existing
-               card, and a short is `type: 'shortVideo'`, which the card badges.
-               Posts are `type: 'community'`, which the list renders with the
-               existing post component, always as a list, as the old view
-               forces them -->
-          <LayerPlaylistList
-            v-if="currentTabInfo.playlists && !isYouTube"
-            :playlists="currentList.items.value"
-          />
-          <FtElementList
-            v-else
-            :data="currentList.items.value"
-            :use-channels-hidden-preference="false"
-            :display="currentTabInfo.posts ? 'list' : ''"
-          />
-          <p
-            v-if="isFinishedAndEmpty(currentList)"
-            class="message"
-          >
-            {{ currentTabInfo.empty }}
-          </p>
+            <FtElementList
+              v-else
+              :data="currentList.items.value"
+              :use-channels-hidden-preference="false"
+              :display="currentTabInfo.posts ? 'list' : ''"
+            />
+            <p
+              v-if="isFinishedAndEmpty(currentList)"
+              class="message"
+            >
+              {{ currentTabInfo.empty }}
+            </p>
+          </template>
         </div>
-        <FtLoader v-if="currentList.loading.value" />
+        <FtLoader v-if="currentList?.loading.value" />
         <div
-          v-else-if="currentList.error.value"
+          v-else-if="currentList?.error.value"
           class="pageError"
         >
           <p class="message">
@@ -187,7 +240,7 @@
           />
         </div>
         <FtAutoLoadNextPageWrapper
-          v-else-if="hasMore(currentList)"
+          v-else-if="currentList && hasMore(currentList)"
           @load-next-page="currentList.load"
         >
           <div
@@ -216,21 +269,32 @@
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import FtAgeRestricted from '../../components/FtAgeRestricted/FtAgeRestricted.vue'
 import FtAutoLoadNextPageWrapper from '../../components/FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
 import FtCard from '../../components/ft-card/ft-card.vue'
+import FtDensitySwitch from '../../components/FtDensitySwitch/FtDensitySwitch.vue'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
+import FtIconButton from '../../components/FtIconButton/FtIconButton.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
 import FtSelect from '../../components/FtSelect/FtSelect.vue'
+import FtShareButton from '../../components/FtShareButton/FtShareButton.vue'
+import FtSponsorBlockExcludeChannelButton from '../../components/FtSponsorBlockExcludeChannelButton/FtSponsorBlockExcludeChannelButton.vue'
+import LayerChannelAbout from '../../components/LayerChannelAbout/LayerChannelAbout.vue'
 import LayerPlaylistList from '../../components/LayerPlaylistList/LayerPlaylistList.vue'
 import LayerSubscribeButton from '../../components/LayerSubscribeButton/LayerSubscribeButton.vue'
 import LayerVideoDescription from '../../components/LayerVideoDescription/LayerVideoDescription.vue'
 
 import store from '../../store/index'
-import { formatNumber, getIconForSortPreference } from '../../helpers/utils'
+import {
+  copyToClipboard,
+  formatNumber,
+  getChannelPlaylistId,
+  getIconForSortPreference,
+  openExternalLink,
+} from '../../helpers/utils'
 import { PLATFORM_YOUTUBE, isYouTubeChannelRef, parseChannelHandle, platformOf } from '../../platform/refs'
 import { usePlatformLayer } from '../../platform/vue'
 
@@ -240,8 +304,12 @@ const VIDEO_SORTS = ['newest', 'popular', 'oldest']
 /** The sorts the layer takes for a YouTube channel's own playlists, newest (its default) first */
 const PLAYLIST_SORTS = ['newest', 'last']
 
+/** The tabs where the old view offers View All, each to the uploads playlist of its kind */
+const VIEW_ALL_TABS = ['videos', 'shorts', 'live']
+
 const layer = usePlatformLayer()
 const route = useRoute()
+const router = useRouter()
 const { t } = useI18n()
 
 // The route this view serves, so that its watchers ignore the navigation
@@ -255,6 +323,7 @@ function isOnThisView() {
 }
 
 const hideChannelSubscriptions = computed(() => store.getters.getHideChannelSubscriptions)
+const hideSharingActions = computed(() => store.getters.getHideSharingActions)
 const showFamilyFriendlyOnly = computed(() => store.getters.getShowFamilyFriendlyOnly)
 
 /** The channel ref the route names */
@@ -286,7 +355,8 @@ const hideChannelCommunity = computed(() => store.getters.getHideChannelCommunit
  * a channel whose `tabs` names it has; `hidden` is the user's setting
  * against it; `empty` what its list says when the channel has nothing in it;
  * `playlists` a tab listing playlists; `posts` the posts tab, a list layout
- * whatever the density setting.
+ * whatever the density setting; `about` YouTube's about tab, which every
+ * YouTube channel has, as in the old view, and which lists nothing.
  */
 const tabs = computed(() => [
   { name: 'videos', label: t('Channel.Videos.Videos'), empty: t('Channel.Videos.This channel does not currently have any videos') },
@@ -297,17 +367,25 @@ const tabs = computed(() => [
   { name: 'courses', label: t('Channel.Courses.Courses'), empty: t('Channel.Courses.This channel does not currently have any courses'), named: true, hidden: hideChannelCourses.value, playlists: true },
   { name: 'playlists', label: t('Channel.Playlists.Playlists'), empty: t('Channel.Playlists.This channel does not currently have any playlists'), playlists: true },
   { name: 'community', label: t('Global.Posts'), empty: t('Channel.Posts.This channel currently does not have any posts'), named: true, hidden: hideChannelCommunity.value, posts: true },
+  { name: 'about', label: t('Channel.About.About'), about: true },
 ])
 
 /**
  * The tabs the channel has and the user does not hide: a tab its `tabs` does
  * not name is not shown, and PeerTube, which names none, has those every
- * channel has (not shorts, live, releases, podcasts, courses or posts). The
+ * channel has (not shorts, live, releases, podcasts, courses or posts). A
+ * PeerTube channel has no about tab: its description is above the tabs. The
  * first stands in for none.
  */
 const visibleTabs = computed(() => {
   const named = channel.value?.tabs
-  const shown = tabs.value.filter(tab => !tab.hidden && (Array.isArray(named) ? named.includes(tab.name) : !tab.named))
+  const shown = tabs.value.filter((tab) => {
+    if (tab.about) {
+      return isYouTube.value
+    }
+
+    return !tab.hidden && (Array.isArray(named) ? named.includes(tab.name) : !tab.named)
+  })
 
   return shown.length > 0 ? shown : tabs.value.slice(0, 1)
 })
@@ -485,7 +563,8 @@ const lists = {
   community: createPagedList(cursor => layer.listChannelPosts(channel.value.id, { cursor })),
 }
 
-const currentList = computed(() => lists[currentTab.value])
+/** The current tab's list; none on the about tab */
+const currentList = computed(() => lists[currentTab.value] ?? null)
 
 /**
  * The current tab's list where it offers a sort, else `null`. A PeerTube
@@ -498,6 +577,50 @@ const currentSortedList = computed(() => {
 
   return sortedLists[currentTab.value] ?? null
 })
+
+/**
+ * Whether the tab lists cards in the density setting's layout, so that the
+ * density switch shows: not the about tab, not the posts (always a list), not
+ * a PeerTube channel's playlists (a list of their own)
+ */
+const showDensitySwitch = computed(() => {
+  const tab = currentTabInfo.value
+  return !tab.about && !tab.posts && !(tab.playlists && !isYouTube.value)
+})
+
+/**
+ * View All, as the old view offers it: on a YouTube channel's videos, shorts
+ * and live, newest or popular, when there is more than one card or more to
+ * come, to the uploads playlist of that kind and sort. `null` where it is not
+ * offered.
+ */
+const viewAllRoute = computed(() => {
+  const tab = currentTab.value
+
+  if (!isYouTube.value || !VIEW_ALL_TABS.includes(tab)) {
+    return null
+  }
+
+  const list = sortedLists[tab]
+  const sort = list.sort.value
+
+  if ((sort !== 'newest' && sort !== 'popular') || !(hasMore(list) || list.items.value.length > 1)) {
+    return null
+  }
+
+  return `/playlist/${getChannelPlaylistId(channel.value.id, tab, sort)}`
+})
+
+/** A PeerTube channel's canonical URL on its origin, to share and open */
+const shareUrl = computed(() => channel.value?.url || (channel.value ? layer.describe(channel.value).shareUrl : null))
+
+function copyLink() {
+  copyToClipboard(shareUrl.value, { messageOnSuccess: t('PeerTube.Watch.Link copied') })
+}
+
+function openLink() {
+  openExternalLink(shareUrl.value)
+}
 
 /** @param {ReturnType<typeof createPagedList>} list */
 function hasMore(list) {
@@ -579,11 +702,11 @@ function youTubeErrorMessage(error) {
   return { text: t('PeerTube.Channel.Could not load'), retryable: true }
 }
 
-/** The current tab's first page, unless it is loaded, loading or failed, or the channel is not shown */
+/** The current tab's first page, unless it is loaded, loading or failed, the tab lists nothing, or the channel is not shown */
 function loadCurrentTab() {
   const list = currentList.value
 
-  if (channel.value !== null && !isFamilyFriendlyGated.value && !list.loaded.value && !list.loading.value && !list.error.value) {
+  if (list !== null && channel.value !== null && !isFamilyFriendlyGated.value && !list.loaded.value && !list.loading.value && !list.error.value) {
     list.load()
   }
 }
