@@ -1,11 +1,20 @@
 <template>
   <FtCard class="layerVideoInfo">
-    <h1
-      class="videoTitle"
-      dir="auto"
-    >
-      {{ video.title }}
-    </h1>
+    <div>
+      <h1
+        class="videoTitle"
+        dir="auto"
+      >
+        {{ video.title }}
+      </h1>
+      <!-- As WatchVideoInfo's; YouTube only, as PeerTube's details carry no `isUnlisted` -->
+      <div
+        v-if="video.isUnlisted"
+        class="unlistedBadge"
+      >
+        {{ t('Video.Unlisted') }}
+      </div>
+    </div>
     <div class="videoMetrics">
       <div class="datePublishedAndViewCount">
         <template v-if="dateText">

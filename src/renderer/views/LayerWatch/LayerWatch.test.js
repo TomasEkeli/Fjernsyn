@@ -49,6 +49,8 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
         startInPip: { type: Boolean, default: false },
         currentPlaybackRate: { type: Number, default: 1 },
         loudnessDb: { type: Number, default: null },
+        delayLoadUntilUnix: { type: Number, default: 0 },
+        vrProjection: { type: String, default: null },
         platform: { type: String, default: 'youtube' },
         sabrData: { type: Object, default: null },
         sabrRegulator: { type: Object, default: null },
@@ -101,6 +103,7 @@ const SETTINGS = vi.hoisted(() => ({
   getDefaultPlayback: 1,
   getHideChapters: false,
   getHideVideoDescription: false,
+  getShowFamilyFriendlyOnly: false,
   getHideVideoViews: false,
   getHideVideoLikesAndDislikes: false,
   getHideUploader: false,
@@ -361,6 +364,8 @@ describe('the layer watch page, for a playable video', () => {
       thumbnail: THUMBNAIL,
       platform: 'peertube',
       loudnessDb: null,
+      delayLoadUntilUnix: 0,
+      vrProjection: null,
       currentPlaybackRate: 1,
     })
   })
@@ -1184,6 +1189,18 @@ function youtubeVideo(overrides = {}, sourceOverrides = {}) {
   }
 }
 
+/** A player error for an HTTP status answered for a media request */
+function badStatus(status) {
+  const { Severity, Category, Code } = shaka.util.Error
+  return new shaka.util.Error(Severity.CRITICAL, Category.NETWORK, Code.BAD_HTTP_STATUS, 'https://rr1---sn.googlevideo.com/videoplayback', status)
+}
+
+/** A player error for the media element failing to play what it was given */
+function videoError() {
+  const { Severity, Category, Code } = shaka.util.Error
+  return new shaka.util.Error(Severity.CRITICAL, Category.MEDIA, Code.VIDEO_ERROR)
+}
+
 /** A YouTube live that is live, over HLS: no legacy formats, no audio only */
 function youtubeLive() {
   const { lengthSeconds: _, ...video } = youtubeVideo({ liveNow: true, liveStatus: 'live' }, {
@@ -1344,7 +1361,7 @@ describe('a YouTube video', () => {
       expect(wrapper.text()).toContain('Fjernsyn cannot play this video.')
     })
 
-    it('says it cannot play at the end of the ladder, without the format ring, and trying again starts the ladder afresh', async () => {
+    it('says why it cannot play at the end of the ladder, as the old watch page does, without the format ring, and trying again starts the ladder afresh', async () => {
       const { wrapper } = await openWatchPage(sabrVideo(), YT_PATH)
       regulators[0].reset.mockClear()
 
@@ -1352,7 +1369,7 @@ describe('a YouTube video', () => {
       await flushPromises()
 
       expect(findPlayer(wrapper).exists()).toBe(false)
-      expect(wrapper.text()).toContain('Fjernsyn cannot play this video.')
+      expect(wrapper.text()).toContain('YouTube is not serving this video to the current session (PO token rejected). Trying again sometimes works, otherwise wait a while or switch networks.')
 
       await wrapper.find('.errorRetryButton').trigger('click')
       await flushPromises()
@@ -1376,6 +1393,20 @@ describe('a YouTube video', () => {
       expect(findPlayer(wrapper).props('startTime')).toBe(42)
       expect(regulators[0].reset).not.toHaveBeenCalled()
       expect(showToast).toHaveBeenCalledWith('Reloading player: the session reload failed')
+    })
+
+    it('reads a 403 against the expiry of the session renewed since, not the source\'s', async () => {
+      const video = sabrVideo()
+      const expired = youtubeVideo({}, { ...video.playbackSource, expiresAt: new Date(Date.now() - 1000) })
+      expired.playbackSource.renew.mockResolvedValue({ sabrData: SABR_DATA, formatIds: [], expiresAt: new Date(Date.now() + 60 * 60 * 1000) })
+      const { wrapper } = await openWatchPage(expired, YT_PATH)
+
+      findPlayer(wrapper).vm.$emit('sabr-refresh-requested', { onResult: vi.fn(), rebuilding: false })
+      await flushPromises()
+      findPlayer(wrapper).vm.$emit('error', badStatus(403))
+      await flushPromises()
+
+      expect(wrapper.text()).toContain('[BAD_HTTP_STATUS: 403] Potential causes: IP block, streaming URL deciphering failed or music video geo-block')
     })
   })
 
@@ -1513,5 +1544,270 @@ describe('a YouTube video', () => {
 
       expect(dispatched('updateHistory')).toEqual([])
     })
+  })
+})
+
+describe('what the layer answers of a YouTube video, passed on', () => {
+  it('hands the player its loudness, the end of the ad it waits out and its VR projection', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo({}, { delayLoadUntilMs: 1_790_000_012_345, vrProjection: 'EQUIRECTANGULAR' }), YT_PATH)
+
+    expect(findPlayer(wrapper).props()).toMatchObject({
+      loudnessDb: -7.5,
+      delayLoadUntilUnix: 1_790_000_012_345,
+      vrProjection: 'EQUIRECTANGULAR',
+    })
+  })
+
+  it('hands the player a measured loudness of 0 as it is', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo({}, { loudnessDb: 0 }), YT_PATH)
+
+    expect(findPlayer(wrapper).props('loudnessDb')).toBe(0)
+  })
+
+  it('labels a translated caption track in the display language, the language\'s own name where YouTube gives none', async () => {
+    const translated = (language) => ({
+      url: 'https://www.youtube.com/api/timedtext?v=dQw4w9WgXcQ&fmt=srt&tlang=en',
+      language: 'en',
+      label: `${language ?? 'en'} (translated from "German")`,
+      mimeType: 'text/srt',
+      isAutotranslated: true,
+      translation: { language, originalLanguage: 'German' },
+    })
+    const { wrapper } = await openWatchPage(youtubeVideo({}, { captions: [YT_CAPTIONS[0], translated('Englisch'), translated(null)] }), YT_PATH)
+
+    expect(findPlayer(wrapper).props('captions').map(track => track.label)).toEqual([
+      'English',
+      'Englisch (translated from "German")',
+      'English (US) (translated from "German")',
+    ])
+  })
+
+  describe('in a window narrower than 500px', () => {
+    let width
+
+    beforeEach(() => {
+      width = window.innerWidth
+      Object.defineProperty(window, 'innerWidth', { value: 400, configurable: true, writable: true })
+    })
+
+    afterEach(() => {
+      Object.defineProperty(window, 'innerWidth', { value: width, configurable: true, writable: true })
+    })
+
+    it('hands the player the storyboard of the smaller board', async () => {
+      const { wrapper } = await openWatchPage(youtubeVideo({}, { narrowStoryboard: 'data:text/vtt;charset=utf-8,WEBVTT%20narrow' }), YT_PATH)
+
+      expect(findPlayer(wrapper).props('storyboardSrc')).toBe('data:text/vtt;charset=utf-8,WEBVTT%20narrow')
+    })
+
+    it('hands it no storyboard where there is no smaller board', async () => {
+      const { wrapper } = await openWatchPage(youtubeVideo({}, { narrowStoryboard: null }), YT_PATH)
+
+      expect(findPlayer(wrapper).props('storyboardSrc')).toBe('')
+    })
+
+    it('hands it the only storyboard there is where the layer answers one only', async () => {
+      const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+      expect(findPlayer(wrapper).props('storyboardSrc')).toBe('data:text/vtt;charset=utf-8,WEBVTT%20storyboard')
+    })
+  })
+
+  it('hands the player the full storyboard in a wider window', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo({}, { narrowStoryboard: 'data:text/vtt;charset=utf-8,WEBVTT%20narrow' }), YT_PATH)
+
+    expect(findPlayer(wrapper).props('storyboardSrc')).toBe('data:text/vtt;charset=utf-8,WEBVTT%20storyboard')
+  })
+
+  it('names YouTube\'s key moments as such', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo({ chaptersKind: 'keyMoments' }), YT_PATH)
+
+    expect(wrapper.find('.sidebarArea').text()).toContain('Key Moments')
+  })
+
+  it('names the uploader\'s chapters as chapters', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+    expect(wrapper.find('.sidebarArea').text()).toContain('Chapters')
+    expect(wrapper.find('.sidebarArea').text()).not.toContain('Key Moments')
+  })
+
+  it('marks an unlisted video, and only an unlisted one', async () => {
+    const unlisted = await openWatchPage(youtubeVideo({ isUnlisted: true }), YT_PATH)
+    expect(unlisted.wrapper.find('.unlistedBadge').text()).toBe('Unlisted')
+
+    const listed = await openWatchPage(youtubeVideo(), YT_PATH)
+    expect(listed.wrapper.find('.unlistedBadge').exists()).toBe(false)
+  })
+
+  it('walks a post-live recording\'s ring from adaptive straight to audio, as it has no legacy formats to play', async () => {
+    const recording = youtubeVideo({ liveStatus: 'ended' }, { isPostLiveDvr: true })
+    const { wrapper } = await openWatchPage(recording, YT_PATH)
+
+    findPlayer(wrapper).vm.$emit('error', new Error('adaptive failed'))
+    await flushPromises()
+
+    expect(findPlayer(wrapper).props('format')).toBe('audio')
+  })
+
+  it('asks for its comments top first, and newest first once chosen', async () => {
+    layer.getComments.mockResolvedValue({
+      items: [{ id: 'c1', threadId: 'c1', text: 'Great', textKind: 'plain', author: 'Bob', authorAccount: '', authorId: YT_CHANNEL, authorThumbnail: '', createdAt: Date.now(), isDeleted: false, replyCount: 0, repliesCursor: null }],
+      cursor: null,
+    })
+    const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+    await wrapper.find('.getCommentsTitle').trigger('click')
+    await flushPromises()
+    expect(layer.getComments).toHaveBeenLastCalledWith(YT_ID, { cursor: null, sort: 'top' })
+
+    await wrapper.find('.commentSort select').setValue('newest')
+    await flushPromises()
+    expect(layer.getComments).toHaveBeenLastCalledWith(YT_ID, { cursor: null, sort: 'newest' })
+  })
+
+  it('offers no comment sort for a PeerTube video, whose comments come newest first', async () => {
+    layer.getComments.mockResolvedValue({
+      items: [{ id: 1, threadId: 1, text: 'Lovely', textKind: 'markdown', author: 'Alice', authorAccount: `alice@${HOST}`, authorThumbnail: '', createdAt: Date.now(), isDeleted: false, replyCount: 0 }],
+      cursor: null,
+    })
+    const { wrapper } = await openWatchPage(playableVideo())
+
+    await wrapper.find('.getCommentsTitle').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.commentSort').exists()).toBe(false)
+    expect(wrapper.find('.unlistedBadge').exists()).toBe(false)
+  })
+})
+
+describe('a YouTube video\'s stream failing', () => {
+  const PAST = () => new Date(Date.now() - 1000)
+
+  it('says the watch session expired on a 403 after the streaming URLs expire, and offers to try again', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo({}, { expiresAt: PAST() }), YT_PATH)
+    Object.assign(player, { hasLoaded: true, currentTime: 42.5 })
+
+    findPlayer(wrapper).vm.$emit('error', badStatus(403))
+    await flushPromises()
+
+    expect(findPlayer(wrapper).exists()).toBe(false)
+    expect(wrapper.text()).toContain('[BAD_HTTP_STATUS: 403] YouTube watch session expired.')
+    expect(wrapper.find('.errorRetryButton').exists()).toBe(true)
+    expect(dispatched('updateWatchProgress')).toEqual([{ videoId: YT_ID, watchProgress: 42.5 }])
+  })
+
+  it.each([
+    ['a music video', 'Music', '[BAD_HTTP_STATUS: 403] Potential causes: IP block, streaming URL deciphering failed or music video geo-block'],
+    ['any other video', 'Film & Animation', '[BAD_HTTP_STATUS: 403] Potential causes: IP block or streaming URL deciphering failed'],
+  ])('names the likely causes of a 403 before the expiry, for %s, without trying another format or again', async (_case, category, text) => {
+    const { wrapper } = await openWatchPage(youtubeVideo({ category }), YT_PATH)
+
+    findPlayer(wrapper).vm.$emit('error', badStatus(403))
+    await flushPromises()
+
+    expect(findPlayer(wrapper).exists()).toBe(false)
+    expect(wrapper.text()).toContain(text)
+    expect(wrapper.find('.errorRetryButton').exists()).toBe(false)
+  })
+
+  it('reads a 403 as the address refused where the layer does not know the expiry', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo({}, { expiresAt: null }), YT_PATH)
+
+    findPlayer(wrapper).vm.$emit('error', badStatus(403))
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('[BAD_HTTP_STATUS: 403] Potential causes:')
+  })
+
+  it('says the watch session expired when a legacy format fails to play after the expiry', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo({}, { manifestUrl: null, manifestMimeType: null, audio: null, expiresAt: PAST() }), YT_PATH)
+    expect(findPlayer(wrapper).props('format')).toBe('legacy')
+
+    findPlayer(wrapper).vm.$emit('error', videoError())
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('[VIDEO_ERROR] YouTube watch session expired.')
+    expect(wrapper.find('.errorRetryButton').exists()).toBe(true)
+  })
+
+  it('walks the ring when a legacy format fails before the expiry', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+    findPlayer(wrapper).vm.$emit('error', new Error('adaptive failed'))
+    await flushPromises()
+    expect(findPlayer(wrapper).props('format')).toBe('legacy')
+
+    findPlayer(wrapper).vm.$emit('error', videoError())
+    await flushPromises()
+
+    expect(findPlayer(wrapper).props('format')).toBe('audio')
+  })
+
+  it('leaves a PeerTube video\'s 403 to the ring, as before', async () => {
+    const { wrapper } = await openWatchPage(playableVideo())
+
+    findPlayer(wrapper).vm.$emit('error', badStatus(403))
+    await flushPromises()
+
+    expect(findPlayer(wrapper).props('format')).toBe('legacy')
+  })
+})
+
+describe('a refused YouTube video', () => {
+  it.each([
+    ['private', 'Private videos cannot be watched in Fjernsyn as they require Google login and ownership of the video.'],
+    ['membersOnly', 'Members-only videos cannot be watched with Fjernsyn as they require Google login and paid membership to the uploader\'s channel.'],
+    ['ageRestricted', 'Age-restricted videos cannot be watched with Fjernsyn as they require Google login and using an age-verified YouTube account.'],
+    ['drm', 'DRM protected videos cannot be played in Fjernsyn, as they require proprietary, closed source components.'],
+    ['ipBlock', 'YouTube has blocked your IP address from watching videos. Please try switching to a different VPN or proxy.'],
+    ['unexplained', 'YouTube refused playback without giving a reason. If you use a VPN or proxy, try another server or disable it.'],
+  ])('refused as %s says so in the old watch page\'s words', async (reason, message) => {
+    const { wrapper } = await openWatchPage(new PlatformError('refused', '[UNPLAYABLE] Video unavailable', { reason }), YT_PATH)
+
+    expect(findPlayer(wrapper).exists()).toBe(false)
+    expect(wrapper.text()).toContain(message)
+    expect(wrapper.find('.errorRetryButton').exists()).toBe(false)
+  })
+
+  it('refused for no reason the layer knows shows YouTube\'s own, as the old watch page does', async () => {
+    const { wrapper } = await openWatchPage(new PlatformError('refused', '[LOGIN_REQUIRED] This video may be inappropriate: Sign in to watch'), YT_PATH)
+
+    expect(wrapper.text()).toContain('[LOGIN_REQUIRED] This video may be inappropriate: Sign in to watch')
+  })
+})
+
+describe('the family-friendly gate', () => {
+  beforeEach(() => {
+    store.setGetter('getShowFamilyFriendlyOnly', true)
+  })
+
+  it('shows a YouTube video YouTube does not rate family friendly as age restricted, and nothing of it', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo({ isFamilyFriendly: false }), YT_PATH)
+
+    expect(wrapper.text()).toContain('This video is age restricted')
+    expect(findPlayer(wrapper).exists()).toBe(false)
+    expect(wrapper.find('h1').exists()).toBe(false)
+    expect(wrapper.find('.getCommentsTitle').exists()).toBe(false)
+    expect(dispatched('updateSubscriptionDetails')).toEqual([])
+  })
+
+  it('plays a family-friendly YouTube video', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+    expect(findPlayer(wrapper).exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('This video is age restricted')
+  })
+
+  it('lets a PeerTube video through, which YouTube does not rate', async () => {
+    const { wrapper } = await openWatchPage(playableVideo())
+
+    expect(findPlayer(wrapper).exists()).toBe(true)
+  })
+
+  it('stays out of the way while the setting is off', async () => {
+    store.setGetter('getShowFamilyFriendlyOnly', false)
+    const { wrapper } = await openWatchPage(youtubeVideo({ isFamilyFriendly: false }), YT_PATH)
+
+    expect(findPlayer(wrapper).exists()).toBe(true)
   })
 })

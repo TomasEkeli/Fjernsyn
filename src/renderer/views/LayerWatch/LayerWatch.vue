@@ -11,6 +11,11 @@
       v-if="isLoading"
       :fullscreen="true"
     />
+    <!-- As Watch.vue: nothing of the video but that it is age restricted -->
+    <FtAgeRestricted
+      v-else-if="hiddenAsNotFamilyFriendly"
+      class="ageRestricted"
+    />
     <template v-else>
       <div class="videoArea">
         <div class="videoAreaMargin">
@@ -25,17 +30,19 @@
             :sabr-regulator="isSabr ? sabrRegulator : null"
             :legacy-formats="source.legacyFormats"
             :start-time="startTime"
-            :captions="source.captions"
+            :captions="captions"
             :chapters="chaptersShown ? chapters : []"
             :current-chapter-index="currentChapterIndex"
             :chapters-src="chaptersShown ? (source.chaptersSrc ?? '') : ''"
-            :storyboard-src="source.storyboard ?? ''"
+            :storyboard-src="storyboardSrc"
             :video-id="video.videoId"
             :channel-id="video.authorId"
             :title="video.title"
             :thumbnail="video.thumbnail"
             :platform="platformOf(video)"
-            :loudness-db="null"
+            :loudness-db="source.loudnessDb ?? null"
+            :delay-load-until-unix="source.delayLoadUntilMs ?? 0"
+            :vr-projection="source.vrProjection ?? null"
             :theatre-possible="theatrePossible"
             :use-theatre-mode="useTheatreMode"
             :start-in-fullscreen="startInFullscreen"
@@ -149,6 +156,7 @@
           :video-ref="videoRef"
           :comments-enabled="video.commentsEnabled !== false"
           :base-url="video.host ? `https://${video.host}` : ''"
+          :sortable="isYouTube"
           class="watchVideo"
         />
       </div>
@@ -159,6 +167,7 @@
         <WatchVideoChapters
           :chapters="chapters"
           :current-chapter-index="currentChapterIndex"
+          :kind="video.chaptersKind ?? 'chapters'"
           class="watchVideoSidebar"
           @timestamp-event="changeTimestamp"
         />
@@ -185,6 +194,7 @@ import { computed, onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef, 
 import { useI18n } from 'vue-i18n'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute } from 'vue-router'
 
+import FtAgeRestricted from '../../components/FtAgeRestricted/FtAgeRestricted.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
 import FtIconButton from '../../components/FtIconButton/FtIconButton.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
@@ -205,6 +215,7 @@ import { usePlatformLayer } from '../../platform/vue'
 import { useSabrHosting } from './useSabrHosting'
 
 /** @typedef {'dash' | 'legacy' | 'audio'} Format */
+/** @typedef {{ icon: string[], text: string, detail?: string, retryable?: boolean }} Message */
 
 /**
  * The format ring: adaptive first, then the legacy (single file) formats,
@@ -226,6 +237,7 @@ const watchedProgressSavingEnabled = computed(() => store.getters.getWatchedProg
 const autosaveWatchedProgress = computed(() => store.getters.getWatchedProgressSavingMode === 'auto')
 const hideChapters = computed(() => store.getters.getHideChapters)
 const hideVideoDescription = computed(() => store.getters.getHideVideoDescription)
+const showFamilyFriendlyOnly = computed(() => store.getters.getShowFamilyFriendlyOnly)
 
 const isLoading = ref(true)
 /** @type {import('vue').ShallowRef<import('../../platform/shapes').VideoDetails | null>} */
@@ -237,7 +249,15 @@ const loadError = shallowRef(null)
 const activeFormat = ref('dash')
 /** The formats that have failed for this video */
 const failedFormats = new Set()
-const playbackFailed = ref(false)
+/**
+ * Why the video stopped playing, once nothing more is tried, `null` while it
+ * plays
+ *
+ * @type {import('vue').ShallowRef<Message | null>}
+ */
+const playbackFailure = shallowRef(null)
+/** Whether the window was narrower than 500px when the video was opened */
+const narrowWindow = ref(false)
 
 /** @type {import('vue').Ref<number | null>} */
 const startTime = ref(null)
@@ -276,6 +296,7 @@ const isSabr = computed(() => source.value?.transport === 'sabr')
 const {
   regulator: sabrRegulator,
   sabrData,
+  expiresAt: sabrExpiresAt,
   manifestUrl: sabrManifestUrl,
   manifestMimeType: sabrManifestMimeType,
   onSabrRefreshRequested,
@@ -291,6 +312,55 @@ const {
 const isYouTube = computed(() => video.value !== null && platformOf(video.value) === PLATFORM_YOUTUBE)
 
 const isLive = computed(() => video.value?.liveStatus === 'live' || source.value?.isLive === true)
+
+/**
+ * As Watch.vue under `showFamilyFriendlyOnly`: a YouTube video YouTube does
+ * not rate family friendly is not shown. PeerTube's flag is `nsfw`, which the
+ * layer filters itself.
+ */
+const hiddenAsNotFamilyFriendly = computed(() => {
+  return isYouTube.value && showFamilyFriendlyOnly.value && video.value.isFamilyFriendly !== true
+})
+
+/**
+ * The caption tracks, a translated one labelled in the display language, as
+ * Watch.js's `getTranslatedLocaleCaption` labels it: the layer, without i18n,
+ * can only fill the template in English. Under SABR the manifest carries the
+ * tracks as the layer labelled them.
+ */
+const captions = computed(() => {
+  return (source.value?.captions ?? []).map((track) => {
+    if (!track.translation) {
+      return track
+    }
+
+    return {
+      ...track,
+      label: t('Video.Player.TranslatedCaptionTemplate', {
+        language: track.translation.language ?? t('Locale Name'),
+        originalLanguage: track.translation.originalLanguage,
+      }),
+    }
+  })
+})
+
+/**
+ * The storyboard, from the smaller board where the layer has one and the
+ * window was narrower than 500px when the video was opened, as Watch.js
+ * chooses (`narrowStoryboard`, YouTube Local only)
+ */
+const storyboardSrc = computed(() => {
+  const playbackSource = source.value
+
+  if (narrowWindow.value && playbackSource.narrowStoryboard !== undefined) {
+    return playbackSource.narrowStoryboard ?? ''
+  }
+
+  return playbackSource.storyboard ?? ''
+})
+
+/** When the streaming URLs playing now expire: the session's under SABR, else the source's */
+const expiresAt = computed(() => (isSabr.value ? sabrExpiresAt.value : source.value?.expiresAt) ?? null)
 
 /** The video as the layer names it, for its comments */
 const videoRef = computed(() => {
@@ -308,7 +378,7 @@ const chaptersShown = computed(() => !hideChapters.value && chapters.value.lengt
 
 // The sidebar holds the chapters; without it there is nothing for theatre
 // mode to move out of the way
-const theatrePossible = computed(() => !isLoading.value && chaptersShown.value)
+const theatrePossible = computed(() => !isLoading.value && chaptersShown.value && !hiddenAsNotFamilyFriendly.value)
 
 // A SABR source's adaptive and audio are one manifest, the one held for the
 // session: the source's, or a rebuild's since
@@ -347,7 +417,8 @@ function canUseFormat(format) {
     case 'dash':
       return !!playbackSource.manifestUrl
     case 'legacy':
-      return !playbackSource.isLive && playbackSource.legacyFormats.length > 0
+      // As Watch.js: neither a live nor a post-live DVR recording plays from them
+      return !playbackSource.isLive && !playbackSource.isPostLiveDvr && playbackSource.legacyFormats.length > 0
     case 'audio':
       return !!playbackSource.audio
     default:
@@ -358,7 +429,7 @@ function canUseFormat(format) {
 /**
  * What to show instead of the player, or `null` to show the player.
  *
- * @type {import('vue').ComputedRef<{ icon: string[], text: string, detail?: string, retryable?: boolean } | null>}
+ * @type {import('vue').ComputedRef<Message | null>}
  */
 const message = computed(() => {
   if (loadError.value !== null) {
@@ -388,12 +459,21 @@ const message = computed(() => {
     return { icon: ['fas', 'tower-broadcast'], text: t('PeerTube.Watch.Live ended') }
   }
 
-  if (playbackFailed.value || !canUseFormat(activeFormat.value)) {
-    return { icon: ['fas', 'exclamation-circle'], text: t('PeerTube.Watch.Cannot play'), retryable: true }
+  if (playbackFailure.value !== null) {
+    return playbackFailure.value
+  }
+
+  if (!canUseFormat(activeFormat.value)) {
+    return cannotPlay()
   }
 
   return null
 })
+
+/** @returns {Message} */
+function cannotPlay() {
+  return { icon: ['fas', 'exclamation-circle'], text: t('PeerTube.Watch.Cannot play'), retryable: true }
+}
 
 const showPlayer = computed(() => message.value === null && source.value !== null)
 
@@ -402,11 +482,15 @@ const showPlayer = computed(() => message.value === null && source.value !== nul
  */
 function loadErrorMessage(error) {
   // A YouTube video's messages name YouTube where a PeerTube one names its
-  // instance, until the old view's own YouTube messages are passed on
+  // instance; the old view has words of its own for its refusals only
   const host = error.host ?? route.params.host ?? 'YouTube'
 
   switch (error.kind) {
     case 'refused':
+      if (route.params.id !== undefined) {
+        return youtubeRefusalMessage(error)
+      }
+
       return { icon: ['fas', 'lock'], text: refusalText(error.reason, host) }
     case 'notFound':
       return { icon: ['fas', 'exclamation-circle'], text: t('PeerTube.Watch.Not found', { host }) }
@@ -435,6 +519,36 @@ function refusalText(reason, host) {
       return t('PeerTube.Watch.Refused.Blocked', { host })
     default:
       return t('PeerTube.Watch.Refused.Other', { host })
+  }
+}
+
+/**
+ * A refused YouTube video, in Watch.js's words for each reason, with its icon
+ * for members only. None of them offers to try again, as there. Without a
+ * reason, YouTube's own (`[STATUS] reason: explanation`, which the layer
+ * keeps as the message), as Watch.js shows it.
+ *
+ * @param {{ reason?: string | null, message?: string }} error
+ * @returns {Message}
+ */
+function youtubeRefusalMessage(error) {
+  const icon = ['fas', 'exclamation-circle']
+
+  switch (error.reason) {
+    case 'private':
+      return { icon, text: t('Video.Private') }
+    case 'membersOnly':
+      return { icon: ['fas', 'money-check-dollar'], text: t('Video.MembersOnly') }
+    case 'ageRestricted':
+      return { icon, text: t('Video.AgeRestricted') }
+    case 'drm':
+      return { icon, text: t('Video.DRMProtected') }
+    case 'ipBlock':
+      return { icon, text: t('Video.IP block') }
+    case 'unexplained':
+      return { icon, text: t('Video.Unexplained playback refusal') }
+    default:
+      return { icon, text: error.message || t('PeerTube.Watch.Refused.Other', { host: 'YouTube' }) }
   }
 }
 
@@ -527,8 +641,9 @@ async function load() {
   isLoading.value = true
   video.value = null
   loadError.value = null
-  playbackFailed.value = false
+  playbackFailure.value = null
   failedFormats.clear()
+  narrowWindow.value = window.innerWidth < 500
   historyWritten = false
   savedOnLeave = false
   startTime.value = null
@@ -550,6 +665,15 @@ async function load() {
     }
 
     video.value = details
+
+    // As Watch.js: shown as age restricted, and moved on from as if it had
+    // ended, without a title or the subscription's details
+    if (hiddenAsNotFamilyFriendly.value) {
+      isLoading.value = false
+      handleVideoEnded()
+      return
+    }
+
     activeFormat.value = FORMAT_RING.find(canUseFormat) ?? 'dash'
     startTime.value = initialStartTime(resumePosition)
     // Theatre mode is only possible once the page knows what the sidebar holds
@@ -611,6 +735,15 @@ async function handlePlayerError(error) {
     return
   }
 
+  // What a YouTube stream's failure says of itself, which no other format
+  // would mend, as Watch.js reads it
+  const said = isYouTube.value ? youtubeStreamFailure(error) : null
+
+  if (said !== null) {
+    await stopPlaying(said)
+    return
+  }
+
   failedFormats.add(activeFormat.value)
 
   // As Watch.js: a failed SABR transport is not a failed format. Adaptive and
@@ -621,20 +754,77 @@ async function handlePlayerError(error) {
     failedFormats.add('audio')
   }
 
-  // The end of the ladder (ADR-0011) is no format's fault, and no other format
-  // escapes it: straight to the message, whose retry starts the ladder afresh
-  const next = isEndOfLadder(error)
-    ? undefined
-    : FORMAT_RING.find(format => !failedFormats.has(format) && canUseFormat(format))
+  const next = FORMAT_RING.find(format => !failedFormats.has(format) && canUseFormat(format))
 
   if (next) {
     switchFormat(next)
     return
   }
 
-  // The player goes away with the message, so its position is taken now. It
-  // is destroyed before that too: unmounted by the message, it would be left
-  // running, as a live that goes on refreshing its playlist
+  await stopPlaying(cannotPlay())
+}
+
+/**
+ * Whether the streaming URLs have expired: only where the layer said when.
+ * (Watch.js, comparing the time with an unknown expiry, takes it as expired.)
+ */
+function streamExpired() {
+  return expiresAt.value !== null && Date.now() > expiresAt.value.getTime()
+}
+
+/**
+ * Watch.js's `handlePlayerError` for a YouTube video, before its format ring:
+ * the end of the SABR ladder (ADR-0011), which no other format escapes, its
+ * retry starting the ladder afresh; a 403, which reads as an expired session
+ * once the streaming URLs have expired and otherwise as the address refused,
+ * a music video's possibly by country; a legacy format failing after the
+ * expiry. Its words, hard-coded in English there, are kept as they are.
+ * `null` for anything else, which the ring takes.
+ *
+ * @param {any} error a player error
+ * @returns {Message | null}
+ */
+function youtubeStreamFailure(error) {
+  const { Code } = shaka.util.Error
+  const clock = ['fas', 'clock']
+
+  if (isEndOfLadder(error)) {
+    return {
+      icon: ['fas', 'shield'],
+      text: 'YouTube is not serving this video to the current session (PO token rejected). Trying again sometimes works, otherwise wait a while or switch networks.',
+      retryable: true,
+    }
+  }
+
+  if (error?.code === Code.BAD_HTTP_STATUS && error.data?.[1] === 403) {
+    if (streamExpired()) {
+      return { icon: clock, text: '[BAD_HTTP_STATUS: 403] YouTube watch session expired.', retryable: true }
+    }
+
+    return {
+      icon: ['fas', 'exclamation-circle'],
+      text: video.value.category === 'Music'
+        ? '[BAD_HTTP_STATUS: 403] Potential causes: IP block, streaming URL deciphering failed or music video geo-block'
+        : '[BAD_HTTP_STATUS: 403] Potential causes: IP block or streaming URL deciphering failed',
+    }
+  }
+
+  if (error?.code === Code.VIDEO_ERROR && activeFormat.value === 'legacy' && streamExpired()) {
+    return { icon: clock, text: '[VIDEO_ERROR] YouTube watch session expired.', retryable: true }
+  }
+
+  return null
+}
+
+/**
+ * Nothing more is tried: the message replaces the player. The player goes
+ * away with it, so its position is taken now. It is destroyed before that
+ * too: unmounted by the message, it would be left running, as a live that
+ * goes on refreshing its playlist.
+ *
+ * @param {Message} failure
+ */
+async function stopPlaying(failure) {
   handleWatchProgressAutoSaveWhenProgressEnabled()
 
   const thisLoad = loadsStarted
@@ -647,7 +837,7 @@ async function handlePlayerError(error) {
 
   // Unless another video has started loading meanwhile
   if (thisLoad === loadsStarted) {
-    playbackFailed.value = true
+    playbackFailure.value = failure
   }
 }
 

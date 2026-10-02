@@ -110,6 +110,12 @@
     margin-inline: 0;
   }
 
+  // As Watch.scss's, in the one column the page has without a sidebar
+  .ageRestricted {
+    display: inline-block;
+    max-inline-size: calc(80vh * 1.78);
+  }
+
   .infoArea {
     grid-area: info;
     position: relative;
