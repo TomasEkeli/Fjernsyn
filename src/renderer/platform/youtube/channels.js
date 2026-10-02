@@ -137,7 +137,14 @@ function forCard(item) {
  * @param {any} item
  */
 function asShort(item) {
-  return { ...forCard(item), type: 'shortVideo', lengthSeconds: item.lengthSeconds || '' }
+  return {
+    ...forCard(item),
+    type: 'shortVideo',
+    lengthSeconds: item.lengthSeconds || '',
+    // Local's shorts parser says neither, and a short is never live
+    liveNow: item.liveNow === true,
+    isUpcoming: item.isUpcoming === true,
+  }
 }
 
 /**

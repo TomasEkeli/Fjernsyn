@@ -79,7 +79,9 @@
  *   takes the length from history, where dropping the field would make it a
  *   live
  * @property {number} [published] ms since the epoch
- * @property {number} [viewCount]
+ * @property {number | null} [viewCount] `null` where the platform lists the
+ *   video without a count (a YouTube Local list item that says only when it
+ *   was streamed)
  * @property {boolean} liveNow `liveNow`, not `isLive`: what the cards and feed filters read
  * @property {boolean} isUpcoming
  * @property {Date} [premiereDate] only when scheduled
@@ -212,7 +214,7 @@
  * @property {string} poToken the content-bound PO token the response was made with
  * @property {string} ustreamerConfig the response's
  *   `video_playback_ustreamer_config`
- * @property {{ clientName: number, clientVersion: string, osName: string, osVersion: string }} clientInfo
+ * @property {{ clientName: number | string, clientVersion: string, osName: string, osVersion: string }} clientInfo
  *   the client the response was asked as
  */
 
