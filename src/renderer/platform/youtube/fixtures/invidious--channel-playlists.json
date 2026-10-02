@@ -1,0 +1,13 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "getInvidiousChannelPlaylists('UCSMOQeBJ2RAnuFungnQOxLg', 'newest', null)",
+  "answer": {
+    "playlists": [
+      { "type": "playlist", "title": "Blender Conference 2025", "playlistId": "PLa1F2ddGya_8acrgoQr1fTeskX2-uzIJJ", "playlistThumbnail": "https://i.ytimg.com/vi/X-zb1FxHuCw/hqdefault.jpg", "author": "Blender", "authorId": "UCSMOQeBJ2RAnuFungnQOxLg", "videoCount": 42, "videos": [] },
+      { "type": "playlist", "title": "Sprite Fright (Soundtrack)", "playlistId": "OLAK5uy_kqOt5Cz5bN0Wj8qD3oR9Gk0Vbq1Zxk3Xc", "playlistThumbnail": "https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg", "author": "", "authorId": "", "videoCount": 12, "videos": [] }
+    ],
+    "continuation": "playlists-token-2"
+  },
+  "notes": "From the Invidious API's /api/v1/channels/{id}/playlists shape. The second is an auto-generated album, which names no author."
+}

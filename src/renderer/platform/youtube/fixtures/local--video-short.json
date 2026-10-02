@@ -1,0 +1,110 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "getLocalVideoInfo('4hDEK_1wPBk')",
+  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised. Nothing in the details says it is a short",
+  "answer": {
+    "info": {
+      "playability_status": {
+        "status": "OK"
+      },
+      "basic_info": {
+        "id": "4hDEK_1wPBk",
+        "title": "How To Learn Blender",
+        "author": "PixelFire",
+        "channel_id": "UCYk-yy4tkrWpvYu_iM6fjtA",
+        "duration": 60,
+        "view_count": 701853,
+        "like_count": 36013,
+        "is_live": false,
+        "is_upcoming": false,
+        "is_live_content": false,
+        "is_post_live_dvr": false,
+        "is_unlisted": false,
+        "is_family_safe": true,
+        "category": "Entertainment",
+        "short_description": "#PixelFire #Shorts #Blender",
+        "thumbnail": [
+          {
+            "url": "https://i.ytimg.com/vi/4hDEK_1wPBk/maxres2.jpg",
+            "width": 1920,
+            "height": 1080
+          }
+        ],
+        "start_timestamp": null
+      },
+      "primary_info": {
+        "title": {
+          "text": "How To Learn Blender"
+        },
+        "view_count": {
+          "text": "701,853 views"
+        },
+        "published": {
+          "text": "Jun 27, 2024"
+        }
+      },
+      "secondary_info": {
+        "owner": {
+          "author": {
+            "id": "UCYk-yy4tkrWpvYu_iM6fjtA",
+            "name": "PixelFire",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/6bGHuUouoR3BnftOWmwxJ_8nko8e7C8MIvuvSCKMctZOQ46jSfXkD0srNM3GkghXg_yjCtIjTQ=s176-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "subscriber_count": {
+            "text": "16K subscribers"
+          }
+        },
+        "description": {
+          "runs": [
+            {
+              "text": "#PixelFire",
+              "bold": false,
+              "endpoint": {
+                "metadata": {
+                  "url": "/hashtag/pixelfire",
+                  "page_type": "WEB_PAGE_TYPE_BROWSE",
+                  "api_url": "browse"
+                }
+              }
+            }
+          ]
+        },
+        "metadata": {
+          "rows": []
+        }
+      },
+      "page": [
+        {
+          "microformat": {
+            "publish_date": "2024-06-27T11:58:26-07:00"
+          }
+        }
+      ],
+      "watch_next_feed": [
+        {
+          "type": "LockupView",
+          "content_type": "VIDEO",
+          "content_id": "z-Xl9tGqH14"
+        }
+      ],
+      "streaming_data": {
+        "formats": [
+          {
+            "itag": 18,
+            "quality_label": "360p",
+            "fps": 25,
+            "bitrate": 500000,
+            "mime_type": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+            "width": 360,
+            "height": 640,
+            "freeTubeUrl": "https://rr2---sn.googlevideo.com/videoplayback?itag=18"
+          }
+        ],
+        "adaptive_formats": []
+      }
+    }
+  }
+}

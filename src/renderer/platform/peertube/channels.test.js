@@ -373,7 +373,15 @@ describe('listChannelVideos (PeerTube)', () => {
     })
   })
 
+  it.each(['shorts', 'live'])('answers YouTube\'s %s tab as an empty page, without a request', async (kind) => {
+    const { fake, layer } = setUp()
+
+    expect(await layer.listChannelVideos(BLENDER, { kind })).toEqual({ items: [], cursor: null })
+    expect(fake.requests).toHaveLength(0)
+  })
+
   it.each([
+    [{ kind: 'posts' }],
     [{ sort: 'trending' }],
     [{ cursor: -5 }],
     [{ cursor: 'next' }],

@@ -1,0 +1,68 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "getLocalChannel('UCRr1xG_2WIDs18a6cIiCxeA')",
+  "answer": {
+    "header": {
+      "type": "PageHeader",
+      "content": {
+        "title": {
+          "text": {
+            "text": "Daft Punk - Topic"
+          }
+        },
+        "image": {
+          "type": "DecoratedAvatarView",
+          "avatar": {
+            "image": [
+              {
+                "url": "https://yt3.googleusercontent.com/n6O2knhK-rj6cV6or8qgbY6pz4uJ4dxSxN4ofD6dGOZ--trq9dtNWftcXNArIHwnB7S1IS28=s160-c-k-c0x00ffffff-no-rj",
+                "width": 160,
+                "height": 160
+              }
+            ]
+          }
+        },
+        "banner": {
+          "image": [
+            {
+              "url": "https://yt3.googleusercontent.com/b5PqZG_zIrCRZpXJ4FcIrrACXz6xEOdpuTSE954Xd0EOLqBkNpf8BoHIemcgYXWkeoaU8SSM=w2560-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj",
+              "width": 2560,
+              "height": 424
+            }
+          ]
+        },
+        "metadata": {
+          "metadata_rows": [
+            {
+              "metadata_parts": [
+                {
+                  "text": {
+                    "text": "350 videos"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "metadata": {
+      "external_id": "UCRr1xG_2WIDs18a6cIiCxeA",
+      "title": "Daft Punk - Topic",
+      "is_family_safe": true,
+      "music_artist_name": "Daft Punk",
+      "vanity_channel_url": "http://www.youtube.com/channel/UCRr1xG_2WIDs18a6cIiCxeA"
+    },
+    "has_videos": false,
+    "has_shorts": false,
+    "has_live_streams": false,
+    "has_releases": false,
+    "has_podcasts": false,
+    "has_courses": false,
+    "has_playlists": false,
+    "has_community": false,
+    "has_about": true
+  },
+  "notes": "The has_* getters of YT.Channel recorded as plain fields; the header trimmed to what parseLocalChannelHeader reads (no actions, so the id comes from metadata.external_id)."
+}

@@ -63,7 +63,9 @@
  * One video in a list: a card's worth.
  *
  * @typedef {object} VideoSummary
- * @property {'video'} type
+ * @property {'video' | 'shortVideo'} type `'shortVideo'` is a YouTube short
+ *   in a list (Local's short parser, Invidious' shorts), which the card marks
+ *   and crops by this; PeerTube has no shorts
  * @property {'youtube' | 'peertube'} [platform] absent for YouTube
  * @property {string} [host] PeerTube: the origin
  * @property {string} videoId YouTube id or PeerTube uuid
@@ -71,7 +73,11 @@
  * @property {string} author the channel's display name
  * @property {string} authorId the channel ref (`UC` id or `name@host`)
  * @property {string} thumbnail an absolute URL; `''` where the card builds it from the id (YouTube)
- * @property {number} [lengthSeconds] absent for a live, which the card also reads as live
+ * @property {number | ''} [lengthSeconds] absent for a live, which the card
+ *   also reads as live. `''` is "not known, and not a live" (a YouTube Local
+ *   list item whose duration text does not read): the existing card then
+ *   takes the length from history, where dropping the field would make it a
+ *   live
  * @property {number} [published] ms since the epoch
  * @property {number} [viewCount]
  * @property {boolean} liveNow `liveNow`, not `isLive`: what the cards and feed filters read
@@ -88,6 +94,9 @@
  * @property {string} timestamp `m:ss` or `h:mm:ss`, as `formatDurationAsTimestamp`
  * @property {number} startSeconds
  * @property {number} endSeconds the next chapter's start, the last one's the video's end
+ * @property {{ url: string, width?: number, height?: number }} [thumbnail] YouTube
+ *   Local only: the frame its player bar and key-moments panel show for the
+ *   chapter, which the chapter list shows; neither PeerTube nor Invidious has one
  */
 
 /**
@@ -98,8 +107,24 @@
  * @property {string} url a WebVTT file, absolute
  * @property {string} language BCP 47 code
  * @property {string} label the language's name, as the instance gives it
- * @property {string} mimeType `text/vtt`
+ * @property {string} mimeType `text/vtt`; `text/srt` for a YouTube Local
+ *   translated track, since YouTube answers a translation asked for as WebVTT
+ *   with HTTP 429
  * @property {boolean} [isAutomatic] generated rather than written
+ * @property {string} [id] YouTube Local: the track's own id (`vss_id`, with
+ *   the target language for a translation), which the player keys tracks by
+ *   and the SABR manifest carries
+ * @property {boolean} [isAutotranslated] YouTube Local: a track YouTube
+ *   translates on request into the display language, added when no track is
+ *   in it, and ordered after written and generated ones
+ * @property {{ language: string | null, originalLanguage: string }} [translation]
+ *   YouTube Local, on a translated track: what its label is made of, because
+ *   the label is a translated template (`Video.Player.TranslatedCaptionTemplate`)
+ *   that the layer, without i18n, cannot fill. `language` is the target
+ *   language's name, `null` when YouTube has no name for it, which the old view
+ *   fills with the display language's own name (`Locale Name`);
+ *   `originalLanguage` the translated track's name. `label` holds the English
+ *   template filled in, with the language code for a missing name
  */
 
 /**
@@ -148,18 +173,88 @@
  * @property {Chapter[]} chapters for the chapter list
  * @property {string | null} chaptersSrc the chapters as a `data:text/vtt,` URI, for the
  *   player's `chaptersSrc` (built as the Watch view builds its own); `null` without chapters
- * @property {string | null} storyboard a WebVTT thumbnails track as a
- *   `data:text/vtt;charset=utf-8,` URI, for the player's `storyboardSrc`
+ * @property {string | null} storyboard a WebVTT thumbnails track, for the
+ *   player's `storyboardSrc`: a `data:text/vtt;charset=utf-8,` URI built by the
+ *   layer (PeerTube, YouTube Local), or any URL answering one (YouTube
+ *   Invidious' `/api/v1/storyboards/{id}`, which the layer cannot build since
+ *   the instance has the sprites' layout)
  * @property {boolean} isLive a live that is live now
+ * @property {number | null} [loudnessDb] YouTube Local only: the loudness
+ *   YouTube measured, for the player's normalisation (`0` is a real value,
+ *   `null` unknown); absent where the backend never says (Invidious, PeerTube)
+ * @property {number} [delayLoadUntilMs] YouTube Local only: when the
+ *   pre-roll ad time YouTube counts against the response is over (ms since the
+ *   epoch), which the player waits out before loading, or legacy formats fail
+ * @property {Date | null} [expiresAt] YouTube: when the stream URLs expire, so
+ *   that a failure after it reads as an expired session rather than a broken
+ *   video; `null` when the backend did not say
+ * @property {'EQUIRECTANGULAR' | 'EQUIRECTANGULAR_THREED_TOP_BOTTOM' | 'MESH' | null} [vrProjection]
+ *   YouTube: the first video format's projection when it is not rectangular,
+ *   for the player's VR mode; `null` for a flat video
+ * @property {boolean} [isPostLiveDvr] YouTube: a finished broadcast served as
+ *   a seekable recording, which plays as a live does (no legacy formats) while
+ *   not live now, which `isLive` alone cannot say
  */
 
 /**
- * The existing SABR manifest and regulator data, passed through untouched.
- * The layer does not model SABR.
+ * The SABR credentials of one session (YouTube Local only), exactly what the
+ * player's `sabrData` prop and the `sabr://` scheme plugin read.
  *
- * @typedef {object} SabrPlaybackSource
- * @property {'sabr'} transport
- * @property {unknown} data opaque to the layer
+ * @typedef {object} SabrData
+ * @property {string} url the SABR streaming URL, deciphered, with `alr=yes`
+ *   and the response's `cpn`
+ * @property {string} videoId
+ * @property {string} poToken the content-bound PO token the response was made with
+ * @property {string} ustreamerConfig the response's
+ *   `video_playback_ustreamer_config`
+ * @property {{ clientName: number, clientVersion: string, osName: string, osVersion: string }} clientInfo
+ *   the client the response was asked as
+ */
+
+/**
+ * What a SABR source's `renew` answers: the credentials of a fresh player
+ * response, and for a rebuild a manifest agreeing with them. A refresh keeps
+ * its buffer, so its formats must be the ones playing, and has no manifest.
+ *
+ * @typedef {object} SabrRenewResult
+ * @property {SabrData} sabrData
+ * @property {string[]} formatIds the formats the fresh session serves, as the
+ *   manifest parser names them (`itag-lastModified-xtags`)
+ * @property {Date | null} expiresAt when the fresh streaming URLs expire;
+ *   `null` where the response does not say
+ * @property {string} [manifestUrl] a rebuild only
+ * @property {'application/sabr+json'} [manifestMimeType] a rebuild only
+ */
+
+/**
+ * A YouTube Local video over SABR (ADR-0016). Every `ManifestPlaybackSource`
+ * field, so that the watch view reads captions, chapters, storyboard, legacy
+ * formats, audio and the extras one way for both transports, and branches on
+ * transport only to hand `sabrData` and its regulator to the player:
+ *
+ * - `manifestUrl`: the project's own SABR manifest (formats, and the source's
+ *   captions, chapters and `sabrStoryboards`) as a `data:` URI
+ * - `audio`: the same manifest, since a SABR failure is one of adaptive and
+ *   audio alike
+ * - `sabrStoryboards`: the storyboards the manifest embeds, kept because they
+ *   come from `/next`, which a rebuild does not re-read
+ * - `renew`: fetches a fresh player response, passing the server's reload
+ *   token on, and answers its credentials (and for `rebuilding` a manifest
+ *   built from this source's captions, chapters and `sabrStoryboards`), or
+ *   `null` when none can be had. The one function a shape holds. It decides
+ *   nothing, and never changes the source: the regulator that calls it is the
+ *   watch view's (ADR-0006), as are the current credentials and expiry
+ *
+ * The source is frozen.
+ *
+ * @typedef {Omit<ManifestPlaybackSource, 'transport' | 'manifestUrl' | 'manifestMimeType'> & {
+ *   transport: 'sabr',
+ *   manifestUrl: string,
+ *   manifestMimeType: 'application/sabr+json',
+ *   sabrData: SabrData,
+ *   sabrStoryboards: object[],
+ *   renew: (options?: { reloadPlaybackContext?: object, rebuilding?: boolean }) => Promise<SabrRenewResult | null>,
+ * }} SabrPlaybackSource
  */
 
 /**
@@ -175,7 +270,7 @@
  *
  * @typedef {VideoSummary & {
  *   description: string,
- *   descriptionKind: 'plain' | 'markdown',
+ *   descriptionKind: 'plain' | 'markdown' | 'html',
  *   likeCount: number | null,
  *   dislikeCount: number | null,
  *   tags: string[],
@@ -185,17 +280,37 @@
  *   url: string,
  *   channel: ChannelSummary | null,
  *   authorThumbnail: string,
- *   commentsEnabled: boolean,
+ *   commentsEnabled: boolean | null,
  *   downloadEnabled: boolean,
  *   liveStatus: 'live' | 'waiting' | 'ended' | null,
  *   playbackSource: PlaybackSource | null,
  *   downloadOptions: DownloadOption[],
+ *   isFamilyFriendly?: boolean,
+ *   isUnlisted?: boolean,
+ *   related?: VideoSummary[],
+ *   chaptersKind?: 'chapters' | 'keyMoments',
  * }} VideoDetails
  *
  * - `url`: the canonical URL on the origin, to share and open
  * - `authorThumbnail`: the channel's avatar, else its owner account's, `''` when neither
  * - `liveStatus`: `null` for a video that is not a live; a waiting live's
  *   scheduled start, where known, is the summary's `premiereDate`
+ * - `descriptionKind`: `'html'` is markup with its text escaped, rendered
+ *   only through the sanitising directive: a YouTube video's description
+ *   comes as markup with links from both backends (Local's text runs,
+ *   Invidious' `descriptionHtml`), not as plain text
+ * - `commentsEnabled`: `null` is "not known", which both YouTube backends
+ *   answer, since neither says in the details; the comments page says
+ * - `isFamilyFriendly`: YouTube's own rating (Local `is_family_safe`,
+ *   Invidious `isFamilyFriendly`), which the views check against
+ *   `showFamilyFriendlyOnly`; absent for PeerTube, whose flag is the
+ *   summary's `nsfw`
+ * - `isUnlisted`: YouTube only, shown on the watch page; absent for PeerTube
+ * - `chaptersKind`: YouTube only: `'keyMoments'` when the source's chapters
+ *   are YouTube's automatic key moments (Local's engagement panel) rather
+ *   than the uploader's, which the chapter list names differently
+ * - `related`: YouTube's watch-next list, as summaries; absent for PeerTube,
+ *   which has none
  */
 
 // ---------------------------------------------------------------------------
@@ -222,12 +337,29 @@
  * header (`''` when none). For PeerTube, `banner` is the largest banner or
  * `null`, and `description` and `support` the channel's Markdown.
  *
+ * YouTube adds four, absent for PeerTube (phase 2):
+ * - `tabs`: which content lists the channel has (`videos`, `shorts`, `live`,
+ *   `releases`, `podcasts`, `courses`, `playlists`, `community`), since a
+ *   YouTube channel shows only the tabs it has, and the old view asks the
+ *   backend which.
+ * - `tags`: the channel's keywords, which the page shows.
+ * - `isFamilyFriendly`: YouTube's own rating, which the view checks against
+ *   `showFamilyFriendlyOnly` as the old one does (spec, Q6). PeerTube's flag
+ *   is `nsfw`, on list items.
+ * - `isArtistTopicChannel`: an artist's auto-generated `- Topic` channel
+ *   (Local only), which has no videos tab and whose videos may be other
+ *   channels', so the view treats it apart.
+ *
  * @typedef {ChannelSummary & {
  *   avatarLarge: string,
  *   banner: string | null,
  *   description: string,
  *   descriptionKind: 'plain' | 'markdown',
  *   support?: string | null,
+ *   tabs?: string[],
+ *   tags?: string[],
+ *   isFamilyFriendly?: boolean,
+ *   isArtistTopicChannel?: boolean,
  * }} ChannelDetails
  */
 
@@ -271,7 +403,12 @@
  * @property {string} url the canonical URL on the origin
  * @property {string} description
  * @property {string} channelName
- * @property {string} channelId the channel ref
+ * @property {string | null} channelId the channel ref; `null` where YouTube
+ *   names no channel, as for an auto-generated album (phase 2)
+ * @property {'local'} [dataSource] YouTube's, always (phase 2): `FtListPlaylist`
+ *   reads these field names only when `dataSource` is `'local'`, and otherwise
+ *   reads Invidious' (`playlistThumbnail`). Absent for PeerTube, whose card
+ *   path does not depend on it, so that it keeps the path it has.
  */
 
 // ---------------------------------------------------------------------------
@@ -293,6 +430,16 @@
  *   `getCommentReplies` for it returns.
  * - A deleted comment is kept, since it may have replies, with its text and
  *   author empty.
+ * - YouTube's (both backends) add what the comment component shows and
+ *   PeerTube does not have, so the fields are optional: `authorId`, the
+ *   author's channel ref, since a YouTube commenter is a channel the comment
+ *   links to, unlike PeerTube's account; `likes`; the flags `isPinned`,
+ *   `isHearted`, `isOwner`, `isMember` with `memberIconUrl`, and
+ *   `hasOwnerReplied` (Local only, Invidious does not say); and
+ *   `repliesCursor`, what `getCommentReplies` starts from (Local's thread
+ *   instance, Invidious' reply token, `null` without replies), because
+ *   neither backend can reach the replies from `id` alone. A cursor like any
+ *   other: held as it is, never stored or cloned.
  *
  * @typedef {object} Comment
  * @property {number | string} id
@@ -307,6 +454,15 @@
  * @property {number} createdAt ms since the epoch
  * @property {boolean} isDeleted
  * @property {number} replyCount
+ * @property {string} [authorId] YouTube: the author's channel ref
+ * @property {number} [likes] YouTube
+ * @property {boolean} [isPinned] YouTube
+ * @property {boolean} [isHearted] YouTube: hearted by the video's channel
+ * @property {boolean} [isOwner] YouTube: written by the video's channel
+ * @property {boolean} [isMember] YouTube: a member of the video's channel
+ * @property {string} [memberIconUrl] YouTube: the member badge, `''` when none
+ * @property {boolean} [hasOwnerReplied] YouTube, Local only
+ * @property {unknown} [repliesCursor] YouTube: `null` when there are no replies
  */
 
 /**
@@ -318,10 +474,15 @@
  * empty a page, and the adapter follows such a page with only a few more
  * requests before handing back what it has. Ask again with the cursor.
  *
+ * `commentsEnabled: false` is on a first page of comments only, when the
+ * platform answered that the video's comments are off rather than that there
+ * are none (YouTube; spec, "Phase 2 decisions", Q7). Absent otherwise.
+ *
  * @template T
  * @typedef {object} Page
  * @property {T[]} items
  * @property {unknown} cursor
+ * @property {boolean} [commentsEnabled]
  */
 
 export {}

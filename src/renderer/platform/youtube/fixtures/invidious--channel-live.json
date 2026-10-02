@@ -1,0 +1,14 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "getInvidiousChannelLive('UCSMOQeBJ2RAnuFungnQOxLg', 'newest', null)",
+  "answer": {
+    "videos": [
+      { "type": "video", "title": "Blender Today Live", "videoId": "liveliveliv", "author": "Blender", "authorId": "UCSMOQeBJ2RAnuFungnQOxLg", "viewCount": 812, "lengthSeconds": 0, "published": 1790000000000, "liveNow": true, "isUpcoming": false, "videoThumbnails": [] },
+      { "type": "video", "title": "Blender Conference keynote", "videoId": "upcomingupc", "author": "Blender", "authorId": "UCSMOQeBJ2RAnuFungnQOxLg", "viewCount": 0, "lengthSeconds": 0, "published": 1791000000000, "premiereTimestamp": 1791000000, "liveNow": false, "isUpcoming": true, "videoThumbnails": [] },
+      { "type": "video", "title": "Blender Today Live #212", "videoId": "finishedfin", "author": "Blender", "authorId": "UCSMOQeBJ2RAnuFungnQOxLg", "viewCount": 15000, "lengthSeconds": 3600, "published": 1780000000000, "liveNow": false, "isUpcoming": false, "videoThumbnails": [] }
+    ],
+    "continuation": "live-token-2"
+  },
+  "notes": "From the Invidious API's /api/v1/channels/{id}/streams shape after the module's `setMultiplePublishedTimestamps` (published in ms): a live, an upcoming and a finished broadcast."
+}

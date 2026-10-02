@@ -1,0 +1,172 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "getLocalVideoInfo('jfKfPfyJRdk')",
+  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised; the one muxed format is synthesised, to show a post-live DVR keeps none; the adaptive formats and YouTube's HLS manifest URL synthesised; for SABR, synthesised: the SABR streaming URL, the ustreamer config, the cpn, the client info and the formats' SABR fields. No PO token, as from Node: a test adds one",
+  "answer": {
+    "info": {
+      "playability_status": {
+        "status": "OK"
+      },
+      "basic_info": {
+        "id": "jfKfPfyJRdk",
+        "title": "lofi hip hop radio 📚 beats to relax/study to",
+        "author": "Lofi Girl",
+        "channel_id": "UCSJ4gkVC6NrvII8umztf0Ow",
+        "duration": 121601512,
+        "view_count": 651847107,
+        "like_count": 3487767,
+        "is_live": false,
+        "is_upcoming": false,
+        "is_live_content": true,
+        "is_post_live_dvr": true,
+        "is_unlisted": false,
+        "is_family_safe": true,
+        "category": "Music",
+        "keywords": [
+          "lofi"
+        ],
+        "short_description": "🎼 | Listen on Spotify, Apple music and more",
+        "thumbnail": [
+          {
+            "url": "https://i.ytimg.com/vi/jfKfPfyJRdk/maxresdefault.jpg?v=6911ace0",
+            "width": 1920,
+            "height": 1080
+          }
+        ],
+        "start_timestamp": "2022-07-12T15:59:30.000Z"
+      },
+      "primary_info": {
+        "title": {
+          "text": "lofi hip hop radio 📚 beats to relax/study to"
+        },
+        "view_count": {
+          "text": "651,847,107 views"
+        },
+        "published": {
+          "text": "Streamed live on Jul 12, 2022"
+        }
+      },
+      "secondary_info": {
+        "owner": {
+          "author": {
+            "id": "UCSJ4gkVC6NrvII8umztf0Ow",
+            "name": "Lofi Girl",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/GyVPysrx-cVIWIQDfi2MkaYr7oRIxuOgGeZihnw-hgTv6E5LBQ67v5yXTFvqP2Bl7BB_S-0L-A=s176-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "subscriber_count": {
+            "text": "15.8M subscribers"
+          }
+        },
+        "description": {
+          "runs": [
+            {
+              "text": "🎼 | Listen on Spotify, Apple music and more",
+              "bold": false
+            }
+          ]
+        },
+        "metadata": {
+          "rows": []
+        }
+      },
+      "page": [
+        {
+          "microformat": {
+            "publish_date": "2022-07-12T05:12:29-07:00"
+          }
+        }
+      ],
+      "watch_next_feed": [
+        {
+          "type": "LockupView",
+          "content_type": "VIDEO",
+          "content_id": "fqFpp-sjZ00"
+        }
+      ],
+      "streaming_data": {
+        "formats": [
+          {
+            "itag": 18,
+            "quality_label": "360p",
+            "fps": 25,
+            "bitrate": 500000,
+            "mime_type": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+            "width": 640,
+            "height": 360,
+            "freeTubeUrl": "https://rr4---sn.googlevideo.com/videoplayback?itag=18"
+          }
+        ],
+        "adaptive_formats": [
+          {
+            "itag": 299,
+            "mime_type": "video/mp4; codecs=\"avc1.640028\"",
+            "has_video": true,
+            "has_audio": false,
+            "width": 1920,
+            "height": 1080,
+            "projection_type": "RECTANGULAR",
+            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=299",
+            "approx_duration_ms": 213040,
+            "last_modified_ms": "1700000000000000",
+            "bitrate": 4000000,
+            "init_range": {
+              "start": 0,
+              "end": 740
+            },
+            "index_range": {
+              "start": 741,
+              "end": 1500
+            },
+            "quality": "hd1080",
+            "fps": 30
+          },
+          {
+            "itag": 140,
+            "mime_type": "audio/mp4; codecs=\"mp4a.40.2\"",
+            "has_video": false,
+            "has_audio": true,
+            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=140",
+            "approx_duration_ms": 213081,
+            "last_modified_ms": "1700000000000000",
+            "bitrate": 130000,
+            "init_range": {
+              "start": 0,
+              "end": 740
+            },
+            "index_range": {
+              "start": 741,
+              "end": 1500
+            },
+            "quality": "tiny",
+            "xtags": "CggKA2RyYxIBMQ",
+            "language": "en",
+            "audio_sample_rate": 44100,
+            "audio_channels": 2,
+            "is_original": true,
+            "is_drc": false
+          }
+        ],
+        "expires": "2026-10-02T23:59:59.000Z",
+        "hls_manifest_url": "https://manifest.googlevideo.com/api/manifest/hls_variant/id/jfKfPfyJRdk",
+        "server_abr_streaming_url": "https://rr1---sn.googlevideo.com/videoplayback?id=jfKfPfyJRdk&sabr=1"
+      },
+      "cpn": "cpnFromTheResponse",
+      "player_config": {
+        "media_common_config": {
+          "media_ustreamer_request_config": {
+            "video_playback_ustreamer_config": "ustreamer-config-jfKfPfyJRdk"
+          }
+        }
+      }
+    },
+    "clientInfo": {
+      "clientName": 1,
+      "clientVersion": "2.20261001.00.00",
+      "osName": "Windows",
+      "osVersion": "10.0"
+    }
+  }
+}

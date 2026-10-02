@@ -1,0 +1,340 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "getLocalVideoInfo('dQw4w9WgXcQ')",
+  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised; the License row and the watch-next variety (a playlist lockup, a station, a compact video and movie, an unreadable item) synthesised, YouTube answered lockups only. For the playback source, synthesised: adaptive formats, captions with translation languages, storyboards, the player bar's chapter markers, the loudness, the expiry and the ad end time (none of which Node is given without a PO token); for SABR, synthesised: the SABR streaming URL, the ustreamer config, the cpn, the client info and the formats' SABR fields. No PO token, as from Node: a test adds one",
+  "answer": {
+    "info": {
+      "playability_status": {
+        "status": "OK"
+      },
+      "basic_info": {
+        "id": "dQw4w9WgXcQ",
+        "title": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)",
+        "author": "Rick Astley",
+        "channel_id": "UCuAXFkgsw1L7xaCfnd5JJOw",
+        "duration": 213,
+        "view_count": 1822420518,
+        "like_count": 19455015,
+        "is_live": false,
+        "is_upcoming": false,
+        "is_live_content": false,
+        "is_post_live_dvr": false,
+        "is_unlisted": false,
+        "is_family_safe": true,
+        "category": "Music",
+        "keywords": [
+          "rick astley",
+          "Never Gonna Give You Up",
+          "nggyu"
+        ],
+        "short_description": "The official video for “Never Gonna Give You Up” by Rick Astley.",
+        "thumbnail": [
+          {
+            "url": "https://i.ytimg.com/vi_webp/dQw4w9WgXcQ/maxresdefault.webp",
+            "width": 1920,
+            "height": 1080
+          }
+        ],
+        "start_timestamp": null
+      },
+      "primary_info": {
+        "title": {
+          "text": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)"
+        },
+        "view_count": {
+          "text": "1,822,420,518 views"
+        },
+        "published": {
+          "text": "Oct 25, 2009"
+        }
+      },
+      "secondary_info": {
+        "owner": {
+          "author": {
+            "id": "UCuAXFkgsw1L7xaCfnd5JJOw",
+            "name": "Rick Astley",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/_ShEGOdg-t5YGJse14Ooq6FYBZqX_QSlhaTNjG06miYusm5lWm1UroLyVxnYtahADfRTVLtuVQ=s176-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "subscriber_count": {
+            "text": "4.55M subscribers"
+          }
+        },
+        "description": {
+          "runs": [
+            {
+              "text": "The official video for “Never Gonna Give You Up” by Rick Astley. \n",
+              "bold": false
+            },
+            {
+              "text": "#RickAstleyNever",
+              "bold": false,
+              "endpoint": {
+                "metadata": {
+                  "url": "/hashtag/rickastleynever",
+                  "page_type": "WEB_PAGE_TYPE_BROWSE",
+                  "api_url": "browse"
+                }
+              }
+            },
+            {
+              "text": " <3",
+              "bold": true
+            }
+          ]
+        },
+        "metadata": {
+          "rows": [
+            {
+              "title": {
+                "text": "License"
+              },
+              "contents": [
+                {
+                  "text": "Creative Commons Attribution licence (reuse allowed)"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "page": [
+        {
+          "microformat": {
+            "publish_date": "2009-10-24T23:57:33-07:00"
+          }
+        }
+      ],
+      "watch_next_feed": [
+        {
+          "type": "LockupView",
+          "content_type": "VIDEO",
+          "content_id": "pCJ9JGG0GQI"
+        },
+        {
+          "type": "LockupView",
+          "content_type": "PLAYLIST",
+          "content_id": "PL0123456789"
+        },
+        {
+          "type": "LockupView",
+          "content_type": "STATION",
+          "content_id": "RDdQw4w9WgX"
+        },
+        {
+          "type": "CompactVideo",
+          "video_id": "TMpUsykbezI"
+        },
+        {
+          "type": "CompactMovie",
+          "id": "xr1fSpQadVk"
+        },
+        {
+          "type": "CompactPlaylist",
+          "id": "PL9876543210"
+        },
+        {
+          "type": "CompactVideo"
+        }
+      ],
+      "streaming_data": {
+        "formats": [
+          {
+            "itag": 18,
+            "quality_label": "360p",
+            "fps": 25,
+            "bitrate": 500000,
+            "mime_type": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+            "width": 640,
+            "height": 360,
+            "freeTubeUrl": "https://rr1---sn.googlevideo.com/videoplayback?itag=18&expire=1790000000"
+          }
+        ],
+        "adaptive_formats": [
+          {
+            "itag": 137,
+            "mime_type": "video/mp4; codecs=\"avc1.640028\"",
+            "has_video": true,
+            "has_audio": false,
+            "width": 1920,
+            "height": 1080,
+            "projection_type": "RECTANGULAR",
+            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=137",
+            "approx_duration_ms": 213040,
+            "last_modified_ms": "1700000000000000",
+            "bitrate": 4000000,
+            "init_range": {
+              "start": 0,
+              "end": 740
+            },
+            "index_range": {
+              "start": 741,
+              "end": 1500
+            },
+            "quality": "hd1080",
+            "fps": 30
+          },
+          {
+            "itag": 140,
+            "mime_type": "audio/mp4; codecs=\"mp4a.40.2\"",
+            "has_video": false,
+            "has_audio": true,
+            "url": "https://rr1---sn.googlevideo.com/videoplayback?itag=140",
+            "approx_duration_ms": 213081,
+            "last_modified_ms": "1700000000000000",
+            "bitrate": 130000,
+            "init_range": {
+              "start": 0,
+              "end": 740
+            },
+            "index_range": {
+              "start": 741,
+              "end": 1500
+            },
+            "quality": "tiny",
+            "xtags": "CggKA2RyYxIBMQ",
+            "language": "en",
+            "audio_sample_rate": 44100,
+            "audio_channels": 2,
+            "is_original": true,
+            "is_drc": false
+          }
+        ],
+        "expires": "2026-10-02T23:59:59.000Z",
+        "server_abr_streaming_url": "https://rr1---sn.googlevideo.com/videoplayback?id=dQw4w9WgXcQ&sabr=1"
+      },
+      "player_config": {
+        "audio_config": {
+          "loudness_db": -7.25
+        },
+        "media_common_config": {
+          "media_ustreamer_request_config": {
+            "video_playback_ustreamer_config": "ustreamer-config-dQw4w9WgXcQ"
+          }
+        }
+      },
+      "captions": {
+        "caption_tracks": [
+          {
+            "base_url": "https://www.youtube.com/api/timedtext?v=dQw4w9WgXcQ&lang=en&kind=asr",
+            "name": {
+              "text": "English (auto-generated)"
+            },
+            "vss_id": "a.en",
+            "language_code": "en",
+            "kind": "asr",
+            "is_translatable": true
+          },
+          {
+            "base_url": "https://www.youtube.com/api/timedtext?v=dQw4w9WgXcQ&lang=de",
+            "name": {
+              "text": "German"
+            },
+            "vss_id": ".de",
+            "language_code": "de",
+            "is_translatable": true
+          },
+          {
+            "base_url": "https://www.youtube.com/api/timedtext?v=dQw4w9WgXcQ&lang=en-GB",
+            "name": {
+              "text": "English (United Kingdom)"
+            },
+            "vss_id": ".en-GB",
+            "language_code": "en-GB",
+            "is_translatable": true
+          }
+        ],
+        "translation_languages": [
+          {
+            "language_code": "fr",
+            "language_name": {
+              "text": "French"
+            }
+          },
+          {
+            "language_code": "nb",
+            "language_name": {
+              "text": "Norwegian Bokmål"
+            }
+          }
+        ]
+      },
+      "storyboards": {
+        "type": "PlayerStoryboardSpec",
+        "boards": [
+          {
+            "template_url": "https://i.ytimg.com/sb/dQw4w9WgXcQ/storyboard3_L0/default.jpg?sigh=a",
+            "thumbnail_width": 48,
+            "thumbnail_height": 27,
+            "thumbnail_count": 100,
+            "interval": 0,
+            "columns": 10,
+            "rows": 10,
+            "storyboard_count": 1
+          },
+          {
+            "template_url": "https://i.ytimg.com/sb/dQw4w9WgXcQ/storyboard3_L2/M$M.jpg?sigh=c",
+            "thumbnail_width": 160,
+            "thumbnail_height": 90,
+            "thumbnail_count": 107,
+            "interval": 2000,
+            "columns": 5,
+            "rows": 5,
+            "storyboard_count": 5
+          }
+        ]
+      },
+      "player_overlays": {
+        "decorated_player_bar": {
+          "player_bar": {
+            "markers_map": [
+              {
+                "marker_key": "DESCRIPTION_CHAPTERS",
+                "value": {
+                  "chapters": [
+                    {
+                      "title": {
+                        "text": "Intro"
+                      },
+                      "time_range_start_millis": 0,
+                      "thumbnail": [
+                        {
+                          "url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault_0.jpg",
+                          "width": 168,
+                          "height": 94
+                        }
+                      ]
+                    },
+                    {
+                      "title": {
+                        "text": "Chorus"
+                      },
+                      "time_range_start_millis": 43000,
+                      "thumbnail": [
+                        {
+                          "url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault_43000.jpg",
+                          "width": 168,
+                          "height": 94
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "cpn": "cpnFromTheResponse"
+    },
+    "adEndTimeUnixMs": 1790000012345,
+    "clientInfo": {
+      "clientName": 1,
+      "clientVersion": "2.20261001.00.00",
+      "osName": "Windows",
+      "osVersion": "10.0"
+    }
+  }
+}

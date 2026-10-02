@@ -1,0 +1,143 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "invidiousGetVideoInformation('dQw4w9WgXcQ')",
+  "notes": "No public Invidious instance answers the API from the devcontainer: written from the documented /api/v1/videos/{id} shape (the typedef on invidiousGetVideoInformation), with the recorded Local video's values; descriptionHtml as Invidious writes links (YouTube's redirect already undone) and hashtags (relative); adaptive formats, captions and description chapters added for the playback source",
+  "answer": {
+    "type": "video",
+    "title": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)",
+    "videoId": "dQw4w9WgXcQ",
+    "videoThumbnails": [
+      {
+        "quality": "maxres",
+        "url": "https://inv.example/vi/dQw4w9WgXcQ/maxres.jpg",
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "description": "The official video.\n0:00 Intro\n0:43 Chorus\n0:43 Chorus, again\n3:00 - Outro",
+    "descriptionHtml": "The official video.\n<a href=\"https://linktr.ee/rickastleynever\">https://linktr.ee/rickastleynever</a> <a href=\"/hashtag/rickastleynever\">#RickAstleyNever</a>",
+    "published": 1256453853,
+    "keywords": [
+      "rick astley",
+      "Never Gonna Give You Up"
+    ],
+    "viewCount": 1822420518,
+    "likeCount": 19455015,
+    "dislikeCount": 0,
+    "isFamilyFriendly": true,
+    "genre": "Music",
+    "author": "Rick Astley",
+    "authorId": "UCuAXFkgsw1L7xaCfnd5JJOw",
+    "authorThumbnails": [
+      {
+        "url": "https://yt3.ggpht.com/rick=s32",
+        "width": 32,
+        "height": 32
+      },
+      {
+        "url": "https://yt3.ggpht.com/rick=s48",
+        "width": 48,
+        "height": 48
+      },
+      {
+        "url": "https://yt3.ggpht.com/rick=s176",
+        "width": 176,
+        "height": 176
+      }
+    ],
+    "subCountText": "4.55M",
+    "lengthSeconds": 213,
+    "isListed": true,
+    "liveNow": false,
+    "isPostLiveDvr": false,
+    "isUpcoming": false,
+    "hlsUrl": null,
+    "adaptiveFormats": [
+      {
+        "init": "0-740",
+        "index": "741-1500",
+        "bitrate": "4000000",
+        "url": "https://rr1---sn.googlevideo.com/videoplayback?id=dQw4w9WgXcQ&itag=137&dur=213.040&expire=1790000000",
+        "itag": "137",
+        "type": "video/mp4; codecs=\"avc1.640028\"",
+        "clen": "100",
+        "lmt": "1",
+        "projectionType": "RECTANGULAR",
+        "fps": 30,
+        "size": "1920x1080",
+        "qualityLabel": "1080p",
+        "container": "mp4",
+        "encoding": "h264"
+      },
+      {
+        "init": "0-631",
+        "index": "632-900",
+        "bitrate": "130000",
+        "url": "https://rr1---sn.googlevideo.com/videoplayback?id=dQw4w9WgXcQ&itag=140&dur=213.081&expire=1790000000",
+        "itag": "140",
+        "type": "audio/mp4; codecs=\"mp4a.40.2\"",
+        "clen": "50",
+        "lmt": "1",
+        "projectionType": "RECTANGULAR",
+        "container": "m4a",
+        "encoding": "aac",
+        "audioQuality": "AUDIO_QUALITY_MEDIUM",
+        "audioSampleRate": 44100,
+        "audioChannels": 2
+      }
+    ],
+    "formatStreams": [
+      {
+        "url": "https://inv.example/videoplayback?itag=18&id=dQw4w9WgXcQ",
+        "itag": "18",
+        "type": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+        "quality": "medium",
+        "bitrate": "500000",
+        "fps": 25,
+        "container": "mp4",
+        "encoding": "h264",
+        "qualityLabel": "360p",
+        "resolution": "360p",
+        "size": "640x360"
+      }
+    ],
+    "captions": [
+      {
+        "label": "English (auto-generated)",
+        "language_code": "en",
+        "url": "/api/v1/captions/dQw4w9WgXcQ?label=English+%28auto-generated%29"
+      },
+      {
+        "label": "Deutsch",
+        "language_code": "de",
+        "url": "/api/v1/captions/dQw4w9WgXcQ?label=Deutsch"
+      },
+      {
+        "label": "English",
+        "language_code": "en",
+        "url": "/api/v1/captions/dQw4w9WgXcQ?label=English"
+      }
+    ],
+    "recommendedVideos": [
+      {
+        "videoId": "pCJ9JGG0GQI",
+        "title": "Recommended",
+        "author": "Someone",
+        "authorId": "UCbbbbbbbbbbbbbbbbbbbbbb",
+        "lengthSeconds": 240,
+        "viewCount": 1000,
+        "viewCountText": "1K",
+        "published": "2024-01-02T03:04:05Z"
+      },
+      {
+        "videoId": "TMpUsykbezI",
+        "title": "Another",
+        "author": "Someone",
+        "authorId": "UCbbbbbbbbbbbbbbbbbbbbbb",
+        "lengthSeconds": 100,
+        "viewCount": 10
+      }
+    ]
+  }
+}

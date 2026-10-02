@@ -1,0 +1,88 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "invidiousGetVideoInformation('MuLtiAud10A')",
+  "notes": "Written from the documented /api/v1/videos/{id} shape: a VR video with an original English and a dubbed German audio track, which Invidious tells apart only by the URLs' xtags",
+  "answer": {
+    "type": "video",
+    "title": "Dubbed",
+    "videoId": "MuLtiAud10A",
+    "videoThumbnails": [
+      {
+        "quality": "maxres",
+        "url": "https://inv.example/vi/MuLtiAud10A/maxres.jpg"
+      }
+    ],
+    "description": "",
+    "descriptionHtml": "",
+    "published": 1759334400,
+    "keywords": [],
+    "viewCount": 10,
+    "likeCount": 1,
+    "dislikeCount": 0,
+    "isFamilyFriendly": true,
+    "genre": "Education",
+    "author": "A channel",
+    "authorId": "UCaaaaaaaaaaaaaaaaaaaaaa",
+    "authorThumbnails": [],
+    "subCountText": "1",
+    "lengthSeconds": 213,
+    "isListed": true,
+    "liveNow": false,
+    "isPostLiveDvr": false,
+    "isUpcoming": false,
+    "adaptiveFormats": [
+      {
+        "init": "0-740",
+        "index": "741-1500",
+        "bitrate": "4000000",
+        "url": "https://rr1---sn.googlevideo.com/videoplayback?id=MuLtiAud10A&itag=137&dur=213.040&expire=1790000000",
+        "itag": "137",
+        "type": "video/mp4; codecs=\"avc1.640028\"",
+        "clen": "100",
+        "lmt": "1",
+        "projectionType": "EQUIRECTANGULAR",
+        "fps": 30,
+        "size": "1920x1080",
+        "qualityLabel": "1080p",
+        "container": "mp4",
+        "encoding": "h264"
+      },
+      {
+        "init": "0-631",
+        "index": "632-900",
+        "bitrate": "130000",
+        "url": "https://rr1---sn.googlevideo.com/videoplayback?id=MuLtiAud10A&itag=140&dur=213.081&expire=1790000000&xtags=acont%3Doriginal%3Alang%3Den",
+        "itag": "140",
+        "type": "audio/mp4; codecs=\"mp4a.40.2\"",
+        "clen": "50",
+        "lmt": "1",
+        "projectionType": "RECTANGULAR",
+        "container": "m4a",
+        "encoding": "aac",
+        "audioQuality": "AUDIO_QUALITY_MEDIUM",
+        "audioSampleRate": 44100,
+        "audioChannels": 2
+      },
+      {
+        "init": "0-631",
+        "index": "632-900",
+        "bitrate": "130000",
+        "url": "https://rr1---sn.googlevideo.com/videoplayback?id=MuLtiAud10A&itag=141&dur=213.081&expire=1790000000&xtags=acont%3Ddubbed%3Alang%3Dde",
+        "itag": "141",
+        "type": "audio/mp4; codecs=\"mp4a.40.2\"",
+        "clen": "50",
+        "lmt": "1",
+        "projectionType": "RECTANGULAR",
+        "container": "m4a",
+        "encoding": "aac",
+        "audioQuality": "AUDIO_QUALITY_MEDIUM",
+        "audioSampleRate": 44100,
+        "audioChannels": 2
+      }
+    ],
+    "formatStreams": [],
+    "captions": [],
+    "recommendedVideos": []
+  }
+}

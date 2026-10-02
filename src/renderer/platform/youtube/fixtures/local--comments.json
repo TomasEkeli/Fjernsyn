@@ -1,0 +1,156 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "getLocalComments('jNQXAC9IVRw')",
+  "notes": "A YT.Comments, trimmed to the threads read through parseLocalComment; a test adds applySort and getContinuation. Four of the twenty threads. The fourth thread is synthesised as a member with a badge whose thread the owner replied to, since the recorded page had neither.",
+  "answer": {
+    "header": {
+      "sort_menu": {
+        "sub_menu_items": [
+          {
+            "title": "Top",
+            "selected": true
+          },
+          {
+            "title": "Newest",
+            "selected": false
+          }
+        ]
+      }
+    },
+    "contents": [
+      {
+        "comment": {
+          "comment_id": "UgzuC3zzpRZkjc5Qzsd4AaABAg",
+          "author": {
+            "id": "UCC5NfQ6Mf0dq_eEwv4P_hWA",
+            "name": "@SanDiegoZoo",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/i8RqA9tYqbbnOi4mlnYEY7IR3kXAoDqQbM_5Sfzw7OjTubiGsOaTdlrIZmj-I0q0Vup68eqs=s88-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "content": {
+            "runs": [
+              {
+                "text": "We're so honored that the first ever YouTube video was filmed here!"
+              }
+            ]
+          },
+          "published_time": "6 years ago",
+          "like_count": "4.8M",
+          "reply_count_a11y": "985 replies",
+          "reply_level": 0,
+          "is_pinned": true,
+          "is_hearted": true,
+          "is_member": false,
+          "author_is_channel_owner": false
+        },
+        "has_replies": true,
+        "comment_replies_data": {
+          "has_channel_owner_replied": false
+        }
+      },
+      {
+        "comment": {
+          "comment_id": "Ugxnp9ws0dexjE9L5UB4AaABAg",
+          "author": {
+            "id": "UC4QobU6STFB0P71PMvOGN5A",
+            "name": "@jawed",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/uI3VE4PVqvCy0xnWLqMJnEzyBUm3T8VHOCp4ee-1RxdHqKXCdUE_qXYQnpf9AfuEoIPactVyDhM=s88-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "content": {
+            "runs": [
+              {
+                "text": "Hello"
+              }
+            ]
+          },
+          "published_time": "5 months ago",
+          "like_count": "285K",
+          "reply_count_a11y": "995 replies",
+          "reply_level": 0,
+          "is_pinned": false,
+          "is_hearted": true,
+          "is_member": false,
+          "author_is_channel_owner": true
+        },
+        "has_replies": true,
+        "comment_replies_data": {
+          "has_channel_owner_replied": false
+        }
+      },
+      {
+        "comment": {
+          "comment_id": "Ugw5F4x1UQGJzax0Wa54AaABAg",
+          "author": {
+            "id": "UCaiQv94tMba64sjpfNCxYWg",
+            "name": "@magnej1520",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/ZrRkNgGBKplfNReMN5-tb7kE8z3KXh3-9mDDjFt8gb3uL9qpaaeIZ66jA808nTC3zACPbgYdrp4=s88-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "content": {
+            "runs": [
+              {
+                "text": "randomly got recommended on october 1st 2026"
+              }
+            ]
+          },
+          "published_time": "23 hours ago",
+          "like_count": "2.1K",
+          "reply_count_a11y": "258 replies",
+          "reply_level": 0,
+          "is_pinned": false,
+          "is_hearted": false,
+          "is_member": true,
+          "author_is_channel_owner": false,
+          "member_badge": {
+            "url": "https://yt3.ggpht.com/member-badge=s16-c-k"
+          }
+        },
+        "has_replies": true,
+        "comment_replies_data": {
+          "has_channel_owner_replied": true
+        }
+      },
+      {
+        "comment": {
+          "comment_id": "Ugxntm7ENWKYEacDZft4AaABAg",
+          "author": {
+            "id": "UCHpKUEaa1VYi2imxJcZyZlg",
+            "name": "@Tactical_Assets",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/GAfFY4t2QEipWmpL78af1-SlrJaIMk1LrKN916OKNoHrPeZr9XCwxNbW4glHk8jhUnjqOYQMY7Q=s88-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "content": {
+            "runs": [
+              {
+                "text": "Getting recommended 21 years later is wild "
+              },
+              {
+                "text": "😭"
+              },
+              {
+                "text": ". Old gem."
+              }
+            ]
+          },
+          "published_time": "53 minutes ago",
+          "like_count": "9",
+          "reply_count_a11y": "0 replies",
+          "reply_level": 0,
+          "is_pinned": false,
+          "is_hearted": false,
+          "is_member": false,
+          "author_is_channel_owner": false
+        },
+        "has_replies": false,
+        "comment_replies_data": null
+      }
+    ],
+    "has_continuation": true
+  }
+}

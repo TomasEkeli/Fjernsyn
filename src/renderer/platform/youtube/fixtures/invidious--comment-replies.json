@@ -1,0 +1,63 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "invidiousGetComments({ id: 'jNQXAC9IVRw', nextPageToken: 'REPLIES-ZOO', sortNewest: false })",
+  "notes": "Synthesised from the documented /api/v1/comments shape: no Invidious instance answers from here. commentData is what parseInvidiousCommentData makes of the entries (instance https://inv.example, time as the en-US relative text); response is trimmed to what the adapter reads besides it, each entry's commentId and published.",
+  "answer": {
+    "response": {
+      "comments": [
+        {
+          "commentId": "UgzuC3zzpRZkjc5Qzsd4AaABAg.958xaQsh63D95AEkVnh_di",
+          "published": 1600000100
+        },
+        {
+          "commentId": "UgzuC3zzpRZkjc5Qzsd4AaABAg.958xaQsh63D958yN1-HDaK",
+          "published": 1600000200
+        }
+      ],
+      "continuation": "REPLIES-ZOO-2"
+    },
+    "commentData": [
+      {
+        "id": "UgzuC3zzpRZkjc5Qzsd4AaABAg.958xaQsh63D95AEkVnh_di",
+        "dataType": "invidious",
+        "authorId": "UCS2FiwDUXi_VJwC7HGJl4sw",
+        "authorThumb": "https://inv.example/ggpht/UgzuC3zzpRZkjc5Qzsd4AaABAg.958xaQsh63D95AEkVnh_di=s88",
+        "author": "@tacticals.1811",
+        "likes": 56000,
+        "text": "How did I randomly go to this video",
+        "isOwner": false,
+        "isPinned": false,
+        "numReplies": 0,
+        "hasOwnerReplied": false,
+        "hasReplyToken": false,
+        "replyToken": "",
+        "replyLevel": 0,
+        "isHearted": false,
+        "isMember": false,
+        "memberIconUrl": "",
+        "time": "6 years ago"
+      },
+      {
+        "id": "UgzuC3zzpRZkjc5Qzsd4AaABAg.958xaQsh63D958yN1-HDaK",
+        "dataType": "invidious",
+        "authorId": "UC8h3BHk1Pk1_-VH9PRIxtgg",
+        "authorThumb": "https://inv.example/ggpht/UgzuC3zzpRZkjc5Qzsd4AaABAg.958xaQsh63D958yN1-HDaK=s88",
+        "author": "@TheGreekPianist",
+        "likes": 205000,
+        "text": "That&#39;s so awesome!",
+        "isOwner": false,
+        "isPinned": false,
+        "numReplies": 8,
+        "hasOwnerReplied": false,
+        "hasReplyToken": true,
+        "replyToken": "REPLIES-PIANIST",
+        "replyLevel": 0,
+        "isHearted": false,
+        "isMember": false,
+        "memberIconUrl": "",
+        "time": "6 years ago"
+      }
+    ]
+  }
+}

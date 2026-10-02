@@ -12,8 +12,9 @@ import { createFeedReader } from './peertube/feed'
 import { createSearcher } from './peertube/search'
 import { createUrlResolver, parsePeerTubeInput } from './peertube/urls'
 import { createVideoReader } from './peertube/videos'
+import { isYouTubeChannelRef, isYouTubeVideoRef } from './refs'
 import { SCOPE_ALL, SCOPE_PEERTUBE, SCOPE_YOUTUBE, normalise } from './search/query'
-import { createYouTubeSearcher } from './youtube/search'
+import { createYouTubeAdapter } from './youtube/index'
 
 // The wiring builds one client for the session with this and hands it to
 // every rebuild of the layer, so that what is known of each host survives
@@ -33,6 +34,7 @@ export { createPeerTubeClient }
  * @property {string} locale for ordering captions
  * @property {boolean} showFamilyFriendlyOnly YouTube search's safety mode, on Local
  * @property {boolean} supportsLocalApi false in the web build, where YouTube is Invidious alone
+ * @property {boolean} proxyVideos YouTube streams through the current Invidious instance
  */
 
 /** @type {Readonly<PlatformConfig>} */
@@ -47,6 +49,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   locale: 'en-US',
   showFamilyFriendlyOnly: false,
   supportsLocalApi: true,
+  proxyVideos: false,
 })
 
 // The hosts whose URLs are YouTube's, handed to the YouTube parser and never
@@ -90,15 +93,6 @@ function hostOf(instanceUrl) {
 }
 
 /**
- * @typedef {object} YouTubeDeps
- * @property {(url: string) => unknown} [resolveUrl] the existing YouTube URL
- *   parser; its answer is returned as it is
- * @property {import('./youtube/search').YouTubeSearchDeps['getLocalSearchResults']} [getLocalSearchResults]
- * @property {import('./youtube/search').YouTubeSearchDeps['getLocalSearchContinuation']} [getLocalSearchContinuation]
- * @property {import('./youtube/search').YouTubeSearchDeps['getInvidiousSearchResults']} [getInvidiousSearchResults]
- */
-
-/**
  * @param {object} deps
  * @param {typeof fetch} [deps.fetch] the fetch PeerTube requests go through;
  *   not needed when `peertubeClient` is given
@@ -107,7 +101,8 @@ function hostOf(instanceUrl) {
  *   per-host state (configs, which hosts are PeerTube, rate limits), so the
  *   wiring passes the same one to every rebuild. Without it, a new client is
  *   made from `fetch` and `now`, knowing nothing.
- * @param {YouTubeDeps} [deps.youtube] the existing YouTube functions the layer wraps
+ * @param {import('./youtube/deps').YouTubeDeps} [deps.youtube] the existing YouTube
+ *   module functions the layer wraps, as `./youtube/deps.js` lists them
  * @param {Partial<PlatformConfig>} [deps.config]
  * @param {() => number} [deps.now] the clock, for rate limits of a new client
  *   and for search's time buckets
@@ -122,7 +117,7 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   const videos = createVideoReader({ client: peertube, config: frozenConfig })
   const channels = createChannelReader({ client: peertube, config: frozenConfig })
   const searcher = createSearcher({ client: peertube, config: frozenConfig, now })
-  const youtubeSearcher = createYouTubeSearcher({ youtube, config: frozenConfig })
+  const youtubeAdapter = createYouTubeAdapter({ youtube, config: frozenConfig })
   const comments = createCommentReader({ client: peertube })
   const feeds = createFeedReader({ client: peertube, config: frozenConfig })
 
@@ -185,9 +180,10 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   }
 
   /**
-   * A video's details, its playback source and its download options (see
-   * `./peertube/videos.js`). PeerTube only, until phase 2 teaches the layer
-   * YouTube: any other ref rejects as `invalid`, without a request.
+   * A video's details, its playback source and its download options: a
+   * PeerTube ref from its origin (see `./peertube/videos.js`), a YouTube
+   * `videoId` from the backend the policy picks (see `./youtube/videos.js`).
+   * Any other ref rejects as `invalid`, without a request.
    *
    * Rejects with a `PlatformError`: `refused` (with a `reason` where the
    * instance gives one), `notFound`, `rateLimited`, `unavailable`, `invalid`.
@@ -196,44 +192,48 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
    * @returns {Promise<import('./shapes').VideoDetails>}
    */
   function getVideo(ref) {
-    return videos.getVideo(ref)
+    return isYouTubeVideoRef(ref) ? youtubeAdapter.getVideo(ref) : videos.getVideo(ref)
   }
 
   /**
-   * A channel's details, from its origin (see `./peertube/channels.js`).
-   * PeerTube only for now: the ref is a `name@host` handle; anything else
-   * rejects as `invalid`, without a request. A channel the instance does not
-   * know is `notFound`.
+   * A channel's details: a PeerTube `name@host` handle from its origin (see
+   * `./peertube/channels.js`), a YouTube `UC` id through the backend policy
+   * (see `./youtube/channels.js`). Anything else rejects as `invalid`,
+   * without a request. A channel that does not exist is `notFound`.
    *
    * @param {import('./shapes').ChannelRef} ref
    * @returns {Promise<import('./shapes').ChannelDetails>}
    */
   function getChannel(ref) {
-    return channels.getChannel(ref)
+    return isYouTubeChannelRef(ref) ? youtubeAdapter.getChannel(ref) : channels.getChannel(ref)
   }
 
   /**
    * A page of a channel's videos, sorted `newest` (the default), `popular` or
-   * `oldest`, filtered by the NSFW preference. Hand the page's `cursor` back
-   * for the next page; `null` is the end.
+   * `oldest`, filtered by the NSFW preference. `kind` picks the list:
+   * `videos` (the default), or YouTube's `shorts` and `live` tabs, which a
+   * channel without them, and every PeerTube channel, answers as an empty
+   * page. Hand the page's `cursor` back for the next page, which keeps the
+   * first page's kind and sort; `null` is the end.
    *
    * @param {import('./shapes').ChannelRef} ref
-   * @param {{ sort?: 'newest' | 'popular' | 'oldest', cursor?: unknown }} [options]
+   * @param {{ kind?: 'videos' | 'shorts' | 'live', sort?: 'newest' | 'popular' | 'oldest', cursor?: unknown }} [options]
    * @returns {Promise<import('./shapes').Page<import('./shapes').VideoSummary>>}
    */
   function listChannelVideos(ref, options) {
-    return channels.listChannelVideos(ref, options)
+    return isYouTubeChannelRef(ref) ? youtubeAdapter.listChannelVideos(ref, options) : channels.listChannelVideos(ref, options)
   }
 
   /**
-   * A page of a channel's playlists.
+   * A page of a channel's playlists, in the order the platform lists them
+   * (YouTube: newest first, the channel's own playlists).
    *
    * @param {import('./shapes').ChannelRef} ref
    * @param {{ cursor?: unknown }} [options]
    * @returns {Promise<import('./shapes').Page<import('./shapes').PlaylistSummary>>}
    */
   function listChannelPlaylists(ref, options) {
-    return channels.listChannelPlaylists(ref, options)
+    return isYouTubeChannelRef(ref) ? youtubeAdapter.listChannelPlaylists(ref, options) : channels.listChannelPlaylists(ref, options)
   }
 
   /**
@@ -303,7 +303,7 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
     }
 
     if (query.scope === SCOPE_YOUTUBE) {
-      return youtubeSearcher.search(query, { cursor })
+      return youtubeAdapter.search(query, { cursor })
     }
 
     if (query.scope === SCOPE_PEERTUBE) {
@@ -315,7 +315,7 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
     }
 
     const [youtubeAnswer, peertubeAnswer] = await Promise.allSettled([
-      youtubeSearcher.search({ ...query, scope: SCOPE_YOUTUBE }),
+      youtubeAdapter.search({ ...query, scope: SCOPE_YOUTUBE }),
       searcher.searchQuery({ ...query, scope: SCOPE_PEERTUBE }),
     ])
 
@@ -330,21 +330,25 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   }
 
   /**
-   * A page of a video's comment threads, newest first, read only (see
-   * `./peertube/comments.js`). A video whose details say comments are off
-   * (`commentsEnabled: false`) is an empty page, without a request.
+   * A page of a video's comment threads, read only. PeerTube: newest first
+   * (see `./peertube/comments.js`); a video whose details say comments are off
+   * (`commentsEnabled: false`) is an empty page, without a request. YouTube
+   * (see `./youtube/comments.js`): `sort` `top` (the default) or `newest`,
+   * ignored by PeerTube; a video whose backend says its comments are off is
+   * `{ items: [], cursor: null, commentsEnabled: false }`.
    *
    * @param {import('./shapes').VideoRef} ref
-   * @param {{ cursor?: unknown }} [options]
+   * @param {{ sort?: 'top' | 'newest', cursor?: unknown }} [options]
    * @returns {Promise<import('./shapes').Page<import('./shapes').Comment>>}
    */
   function getComments(ref, options) {
-    return comments.getComments(ref, options)
+    return isYouTubeVideoRef(ref) ? youtubeAdapter.getComments(ref, options) : comments.getComments(ref, options)
   }
 
   /**
    * A page of a comment's direct replies, each with its own `replyCount`, so
-   * that deeper replies load on demand in the same way.
+   * that deeper replies load on demand in the same way. A YouTube comment's
+   * replies start from its `repliesCursor` and stay on that backend.
    *
    * @param {import('./shapes').VideoRef} ref
    * @param {import('./shapes').Comment} comment as `getComments` or this returned it
@@ -352,7 +356,9 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
    * @returns {Promise<import('./shapes').Page<import('./shapes').Comment>>}
    */
   function getCommentReplies(ref, comment, options) {
-    return comments.getCommentReplies(ref, comment, options)
+    return isYouTubeVideoRef(ref)
+      ? youtubeAdapter.getCommentReplies(ref, comment, options)
+      : comments.getCommentReplies(ref, comment, options)
   }
 
   /**

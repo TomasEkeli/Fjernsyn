@@ -601,7 +601,10 @@ function changeTimestamp(seconds) {
  * fields and names. A video of another platform than YouTube adds what its
  * record needs to render and route (spec, "Refs and stored shapes"), and a
  * YouTube record written here would have nothing added. `category` is left
- * out: it is the YouTube category the profile suggestions read.
+ * out: it is the YouTube category the profile suggestions read. A PeerTube
+ * video's own category label goes to `peertubeCategory` instead, where it
+ * has one, so that the two vocabularies never meet (docs/CONTEXT.md,
+ * "Watched category"). Nothing reads it yet.
  *
  * @param {number} watchProgress
  */
@@ -629,6 +632,10 @@ function historyRecord(watchProgress) {
     record.host = details.host
     record.thumbnail = details.thumbnail
     record.authorThumbnail = details.authorThumbnail
+
+    if (typeof details.category === 'string' && details.category !== '') {
+      record.peertubeCategory = details.category
+    }
   }
 
   return record

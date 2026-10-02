@@ -11,6 +11,7 @@ import {
   isPeerTubeEnabled,
   usePlatformLayer,
 } from './vue.js'
+import { YOUTUBE_DEP_NAMES } from './youtube/deps'
 
 // The layer itself is under test elsewhere; here it only records what it was
 // built with, and says so through `describe`
@@ -43,6 +44,7 @@ const SETTINGS = {
   getBackendFallback: true,
   getCurrentInvidiousInstanceUrl: 'https://invidious.example',
   getThumbnailPreference: '',
+  getProxyVideos: false,
 }
 
 let store
@@ -136,6 +138,28 @@ describe('the platform layer wiring', () => {
       .toEqual({ platform: 'youtube', kind: 'video', ref: 'dQw4w9WgXcQ' })
     expect(resolveUrl('https://video.blender.org/w/9c9de5e8-0a1e-484a-b099-e80766180a6d')).toBeNull()
     expect(resolveUrl('not a url')).toBeNull()
+  })
+
+  it('hands the layer the YouTube module functions its contract lists, by name', () => {
+    install()
+    const { youtube } = lastDeps()
+
+    for (const names of Object.values(YOUTUBE_DEP_NAMES)) {
+      for (const name of names) {
+        expect(typeof youtube[name], name).toBe('function')
+      }
+    }
+  })
+
+  it('reads whether YouTube streams are proxied, and rebuilds when it changes', async () => {
+    install()
+    expect(lastDeps().config.proxyVideos).toBe(false)
+
+    store.setGetter('getProxyVideos', true)
+    await nextTick()
+
+    expect(createPlatformLayer).toHaveBeenCalledTimes(2)
+    expect(lastDeps().config.proxyVideos).toBe(true)
   })
 
   it('rebuilds the layer when one of its settings changes, and not otherwise', async () => {

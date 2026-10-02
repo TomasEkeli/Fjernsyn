@@ -1,0 +1,13 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "getInvidiousChannelShorts('UCSMOQeBJ2RAnuFungnQOxLg', 'newest', null)",
+  "answer": {
+    "videos": [
+      { "type": "shortVideo", "title": "BLENDERHEADS - Ep. 13 teaser #shorts", "videoId": "A9Yn8Ad_cH8", "author": "Blender", "authorId": "UCSMOQeBJ2RAnuFungnQOxLg", "viewCount": 13000, "lengthSeconds": 0, "liveNow": false, "isUpcoming": false, "videoThumbnails": [] },
+      { "type": "shortVideo", "title": "Stay in touch with your Blender", "videoId": "bchuTN1Hrd0", "author": "Blender", "authorId": "UCSMOQeBJ2RAnuFungnQOxLg", "viewCount": 83000, "lengthSeconds": 0, "liveNow": false, "isUpcoming": false, "videoThumbnails": [] }
+    ],
+    "continuation": "shorts-token-2"
+  },
+  "notes": "From the Invidious API's /api/v1/channels/{id}/shorts shape after the module's workaround: `type: 'shortVideo'`, `isUpcoming: false`, no `published` or `premiereTimestamp`. Invidious gives a short no duration (0)."
+}

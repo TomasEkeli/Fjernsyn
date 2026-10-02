@@ -1,0 +1,69 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "thread.getContinuation()",
+  "notes": "A CommentsContinuation: later replies of the same thread; has_continuation set false to end the list.",
+  "answer": {
+    "replies": [
+      {
+        "comment": {
+          "comment_id": "UgzuC3zzpRZkjc5Qzsd4AaABAg.958xaQsh63D95GJsn3iBB9",
+          "author": {
+            "id": "UCVKE4RcrpPmVNpUhRw2MV6Q",
+            "name": "@frandovian",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/ytc/AIdro_nBOym1rCexJjV-P1fo3ONU37V77V7Zh-r44gmLboiikys=s88-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "content": {
+            "runs": [
+              {
+                "text": "very cool"
+              }
+            ]
+          },
+          "published_time": "6 years ago",
+          "like_count": "18K",
+          "reply_count_a11y": "0 replies",
+          "reply_level": 1,
+          "is_pinned": false,
+          "is_hearted": false,
+          "is_member": false,
+          "author_is_channel_owner": false
+        },
+        "has_replies": false,
+        "comment_replies_data": null
+      },
+      {
+        "comment": {
+          "comment_id": "UgzuC3zzpRZkjc5Qzsd4AaABAg.958xaQsh63D95HXRrjueyD",
+          "author": {
+            "id": "UCv6VmpUB7_fTZN2phtfY3_Q",
+            "name": "@jonathanaugustin647",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/ytc/AIdro_ld50T3Hhxptyduz5SEeGrJ2QgQL7qKII7SE4Ih7DBygqE=s88-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "content": {
+            "runs": [
+              {
+                "text": "So you comment frequently or did I just happen to catch your first comment on this video? Lol"
+              }
+            ]
+          },
+          "published_time": "6 years ago",
+          "like_count": "13K",
+          "reply_count_a11y": "0 replies",
+          "reply_level": 1,
+          "is_pinned": false,
+          "is_hearted": false,
+          "is_member": false,
+          "author_is_channel_owner": false
+        },
+        "has_replies": false,
+        "comment_replies_data": null
+      }
+    ],
+    "has_continuation": false
+  }
+}

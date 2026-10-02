@@ -12,6 +12,9 @@
 export const PLATFORM_YOUTUBE = 'youtube'
 export const PLATFORM_PEERTUBE = 'peertube'
 
+const YOUTUBE_VIDEO_ID_PATTERN = /^[\w-]{11}$/
+const YOUTUBE_CHANNEL_ID_PATTERN = /^UC[\w-]{22}$/
+
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // One label: letters, digits and inner hyphens, at most 63 characters
@@ -34,6 +37,26 @@ const ACTOR_NAME_PATTERN = /^[a-zA-Z0-9_.:-]+$/
  */
 export function platformOf(record) {
   return record?.platform === PLATFORM_PEERTUBE ? PLATFORM_PEERTUBE : PLATFORM_YOUTUBE
+}
+
+/**
+ * Whether a value is a YouTube video ref: an 11 character `videoId`.
+ *
+ * @param {unknown} value
+ * @returns {value is string}
+ */
+export function isYouTubeVideoRef(value) {
+  return typeof value === 'string' && YOUTUBE_VIDEO_ID_PATTERN.test(value)
+}
+
+/**
+ * Whether a value is a YouTube channel ref: a `UC` id, 24 characters.
+ *
+ * @param {unknown} value
+ * @returns {value is string}
+ */
+export function isYouTubeChannelRef(value) {
+  return typeof value === 'string' && YOUTUBE_CHANNEL_ID_PATTERN.test(value)
 }
 
 /**

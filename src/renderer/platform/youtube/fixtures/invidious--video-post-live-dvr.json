@@ -1,0 +1,74 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "invidiousGetVideoInformation('jfKfPfyJRdk')",
+  "notes": "No public Invidious instance answers the API from the devcontainer: written from the documented /api/v1/videos/{id} shape (the typedef on invidiousGetVideoInformation), with the recorded Local video's values; a format stream kept to show a post-live DVR keeps none",
+  "answer": {
+    "type": "video",
+    "title": "lofi hip hop radio 📚 beats to relax/study to",
+    "videoId": "jfKfPfyJRdk",
+    "videoThumbnails": [
+      {
+        "quality": "maxres",
+        "url": "https://inv.example/vi/jfKfPfyJRdk/maxres.jpg",
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "description": "Listen",
+    "descriptionHtml": "Listen",
+    "published": 1657627949,
+    "keywords": [
+      "lofi"
+    ],
+    "viewCount": 651847107,
+    "likeCount": 3487767,
+    "dislikeCount": 0,
+    "isFamilyFriendly": true,
+    "genre": "Music",
+    "author": "Lofi Girl",
+    "authorId": "UCSJ4gkVC6NrvII8umztf0Ow",
+    "authorThumbnails": [
+      {
+        "url": "https://yt3.ggpht.com/lofi=s32",
+        "width": 32,
+        "height": 32
+      },
+      {
+        "url": "https://yt3.ggpht.com/lofi=s48",
+        "width": 48,
+        "height": 48
+      },
+      {
+        "url": "https://yt3.ggpht.com/lofi=s176",
+        "width": 176,
+        "height": 176
+      }
+    ],
+    "subCountText": "15.8M",
+    "lengthSeconds": 121601512,
+    "isListed": true,
+    "liveNow": false,
+    "isPostLiveDvr": true,
+    "isUpcoming": false,
+    "hlsUrl": "https://manifest.googlevideo.com/api/manifest/hls_variant/id/jfKfPfyJRdk",
+    "adaptiveFormats": [],
+    "formatStreams": [
+      {
+        "url": "https://inv.example/videoplayback?itag=18&id=jfKfPfyJRdk",
+        "itag": "18",
+        "type": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+        "quality": "medium",
+        "bitrate": "500000",
+        "fps": 25,
+        "container": "mp4",
+        "encoding": "h264",
+        "qualityLabel": "360p",
+        "resolution": "360p",
+        "size": "640x360"
+      }
+    ],
+    "captions": [],
+    "recommendedVideos": []
+  }
+}

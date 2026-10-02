@@ -1,0 +1,90 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "comments.getContinuation()",
+  "notes": "Threads from later in the same recorded page, standing in for the next page; has_continuation set false to end the list.",
+  "answer": {
+    "header": {
+      "sort_menu": {
+        "sub_menu_items": [
+          {
+            "title": "Top",
+            "selected": true
+          },
+          {
+            "title": "Newest",
+            "selected": false
+          }
+        ]
+      }
+    },
+    "contents": [
+      {
+        "comment": {
+          "comment_id": "UgwVNlctFgmvFU1PTuN4AaABAg",
+          "author": {
+            "id": "UC9tXyGZiEft9J4ZiI8dHb3Q",
+            "name": "@TapL",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/ytc/AIdro_namTJrSuMiu1I6rruLNWbcuh3_dCBFRsG5oIK7atmR_xs=s88-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "content": {
+            "runs": [
+              {
+                "text": "Seeing \"20 years ago\" on a YouTube video makes me feel a certain type of way"
+              }
+            ]
+          },
+          "published_time": "1 year ago",
+          "like_count": "209K",
+          "reply_count_a11y": "996 replies",
+          "reply_level": 0,
+          "is_pinned": false,
+          "is_hearted": true,
+          "is_member": false,
+          "author_is_channel_owner": false
+        },
+        "has_replies": true,
+        "comment_replies_data": {
+          "has_channel_owner_replied": false
+        }
+      },
+      {
+        "comment": {
+          "comment_id": "UgjHIgj8NXiRaHgCoAEC",
+          "author": {
+            "id": "UCjhNRJc7wYKsU3HPxTagh3Q",
+            "name": "@kobwmoose",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/21jh77AE33NvNjs5LiR0rxNtyHdsEqP9BHiFhHWWvrBGyhFDzudyownrCQh_Jkl4G4wqAFef=s88-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "content": {
+            "runs": [
+              {
+                "text": "First word on Youtube ever:\n"
+              },
+              {
+                "text": "Alright"
+              }
+            ]
+          },
+          "published_time": "11 years ago",
+          "like_count": "114K",
+          "reply_count_a11y": "915 replies",
+          "reply_level": 0,
+          "is_pinned": false,
+          "is_hearted": false,
+          "is_member": false,
+          "author_is_channel_owner": false
+        },
+        "has_replies": true,
+        "comment_replies_data": {
+          "has_channel_owner_replied": false
+        }
+      }
+    ],
+    "has_continuation": false
+  }
+}

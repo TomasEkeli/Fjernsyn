@@ -1,0 +1,96 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "getLocalChannel('UCSMOQeBJ2RAnuFungnQOxLg')",
+  "answer": {
+    "header": {
+      "type": "PageHeader",
+      "content": {
+        "title": {
+          "text": {
+            "text": "Blender"
+          }
+        },
+        "image": {
+          "type": "DecoratedAvatarView",
+          "avatar": {
+            "image": [
+              {
+                "url": "https://yt3.googleusercontent.com/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s160-c-k-c0x00ffffff-no-rj",
+                "width": 160,
+                "height": 160
+              }
+            ]
+          }
+        },
+        "banner": {
+          "image": [
+            {
+              "url": "https://yt3.googleusercontent.com/6pYvl5Jl7MszRRlhjlRuEfil7B1sgt3u4WbCCl7yHPv1LbsSVAcaoGfs3gyrJUM201DQnzrUOA=w2560-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj",
+              "width": 2560,
+              "height": 424
+            }
+          ]
+        },
+        "metadata": {
+          "metadata_rows": [
+            {
+              "metadata_parts": [
+                {
+                  "text": {
+                    "text": "@BlenderOfficial"
+                  }
+                }
+              ]
+            },
+            {
+              "metadata_parts": [
+                {
+                  "text": {
+                    "text": "1.25M subscribers"
+                  }
+                },
+                {
+                  "text": {
+                    "text": "1.5K videos"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "metadata": {
+      "external_id": "UCSMOQeBJ2RAnuFungnQOxLg",
+      "title": "Blender",
+      "is_family_safe": true,
+      "tags": [
+        "blender",
+        "Blender Foundation",
+        "3d",
+        "free software",
+        "Creative Commons",
+        "tutorials",
+        "blender conference",
+        "sintel",
+        "cosmos laundromat",
+        "caminandes",
+        "tears of steel",
+        "elephants dream",
+        "big buck bunny"
+      ],
+      "vanity_channel_url": "http://www.youtube.com/@BlenderOfficial"
+    },
+    "has_videos": true,
+    "has_shorts": true,
+    "has_live_streams": true,
+    "has_releases": false,
+    "has_podcasts": true,
+    "has_courses": false,
+    "has_playlists": true,
+    "has_community": true,
+    "has_about": true
+  },
+  "notes": "The has_* getters of YT.Channel recorded as plain fields; the header trimmed to what parseLocalChannelHeader reads (no actions, so the id comes from metadata.external_id)."
+}

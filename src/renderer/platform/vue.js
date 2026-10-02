@@ -31,6 +31,7 @@ import i18n from '../i18n/index'
 import { getVideoParamsFromUrl } from '../helpers/utils'
 import { createPlatformLayer } from './index.js'
 import { createPeerTubeClient } from './peertube/client'
+import { YOUTUBE_DEP_NAMES } from './youtube/deps'
 
 export const PLATFORM_LAYER_KEY = Symbol('platformLayer')
 
@@ -60,6 +61,7 @@ function readConfig(store) {
     currentInvidiousInstanceUrl: getters.getCurrentInvidiousInstanceUrl,
     thumbnailPreference: getters.getThumbnailPreference,
     showFamilyFriendlyOnly: getters.getShowFamilyFriendlyOnly,
+    proxyVideos: getters.getProxyVideos,
     supportsLocalApi: !!process.env.SUPPORTS_LOCAL_API,
     // The locale in use; the `currentLocale` setting may say `system`
     locale: unref(i18n.global.locale),
@@ -94,15 +96,50 @@ function resolveYouTubeUrl(url) {
 }
 
 /**
- * The existing YouTube search functions the layer wraps (see
- * `./youtube/search.js`), loaded when first called: the API modules pull in
- * youtubei.js, which nothing else here needs.
+ * The modules the `youtube` dependencies come from, by the keys of
+ * `YOUTUBE_DEP_NAMES`. Loaded together, on the first call of any of them:
+ * they pull in youtubei.js and the store, which nothing else here needs.
  */
-const youtubeSearch = {
-  getLocalSearchResults: async (...args) => (await import('../helpers/api/local')).getLocalSearchResults(...args),
-  getLocalSearchContinuation: async (...args) => (await import('../helpers/api/local')).getLocalSearchContinuation(...args),
-  getInvidiousSearchResults: async (...args) => (await import('../helpers/api/invidious')).getInvidiousSearchResults(...args),
+const YOUTUBE_MODULES = {
+  local: () => import('../helpers/api/local'),
+  invidious: () => import('../helpers/api/invidious'),
+  playerUtils: () => import('../helpers/player/utils'),
+  utils: () => import('../helpers/utils'),
+  sabrManifest: () => import('../helpers/player/SabrManifestParser'),
 }
+
+/** @type {Record<string, any> | null} */
+let loadedYouTubeModules = null
+/** @type {Promise<Record<string, any>> | null} */
+let loadingYouTubeModules = null
+
+function loadYouTubeModules() {
+  loadingYouTubeModules ??= Promise.all(
+    Object.entries(YOUTUBE_MODULES).map(async ([key, load]) => [key, await load()])
+  ).then((entries) => {
+    loadedYouTubeModules = Object.fromEntries(entries)
+    return loadedYouTubeModules
+  })
+
+  return loadingYouTubeModules
+}
+
+/**
+ * The existing YouTube module functions the layer wraps (the contract is
+ * `./youtube/deps.js`). Before the modules have loaded, a call loads them and
+ * answers a promise; after, it is the module's own function. So an
+ * asynchronous one can be called at any time, and a synchronous helper
+ * answers synchronously once any asynchronous one has been called, which
+ * every YouTube operation does before it parses anything.
+ */
+const youtubeModuleFunctions = Object.fromEntries(
+  Object.entries(YOUTUBE_DEP_NAMES).flatMap(([key, names]) => names.map(name => [
+    name,
+    (...args) => loadedYouTubeModules
+      ? loadedYouTubeModules[key][name](...args)
+      : loadYouTubeModules().then(modules => modules[key][name](...args)),
+  ]))
+)
 
 /**
  * The renderer's own fetch, looked up at call time. Main gives the requests
@@ -123,7 +160,7 @@ function buildLayer(store, peertubeClient) {
   return createPlatformLayer({
     fetch: rendererFetch,
     peertubeClient,
-    youtube: { resolveUrl: resolveYouTubeUrl, ...youtubeSearch },
+    youtube: { resolveUrl: resolveYouTubeUrl, ...youtubeModuleFunctions },
     config: readConfig(store),
   })
 }

@@ -8,18 +8,21 @@
 //   already take: `{ prioritize, time, type, duration, features }`. YouTube
 //   sorts by relevance or popularity only; `date` and `trending` are not
 //   honoured and are left out of `applied` (see `../search/capabilities.js`).
-// - The first page goes to the preferred backend (Invidious alone where the
+// - Which backend answers is the shared policy's (`./policy.js`, ADR-0015):
+//   the first page goes to the preferred backend (Invidious alone where the
 //   build has no Local API) and, when that fails and fallback is on, to the
 //   other. A cursor names the backend that made it, and the next page goes
-//   there, never falling back mid-list (see `./types.js`).
+//   there, never falling back mid-list.
 // - Results are the backends' list items as the cards already read them
 //   (`parseLocalListVideo` and Invidious' objects); hashtags are dropped,
 //   playlists and channels kept.
 // - Failures reject as `PlatformError` `unavailable`, with the backend's error
-//   as the cause.
+//   as the cause: nothing refuses a search, so every failure may be the
+//   backend's own and falls back.
 
 import { PlatformError } from '../errors'
 import { appliedFilters, honours } from '../search/capabilities'
+import { createBackendPolicy } from './policy'
 
 const DURATIONS = Object.freeze({
   short: 'under_three_mins',
@@ -79,19 +82,7 @@ function asPlatformError(error, backend) {
  * @param {{ backendPreference: string, backendFallback: boolean, showFamilyFriendlyOnly?: boolean, supportsLocalApi?: boolean }} deps.config
  */
 export function createYouTubeSearcher({ youtube, config }) {
-  const localSupported = config.supportsLocalApi !== false
-
-  /** The backends to try for a first page, in order */
-  function backendOrder() {
-    if (!localSupported) {
-      return ['invidious']
-    }
-
-    const preferred = config.backendPreference === 'invidious' ? 'invidious' : 'local'
-    const other = preferred === 'local' ? 'invidious' : 'local'
-
-    return config.backendFallback ? [preferred, other] : [preferred]
-  }
+  const policy = createBackendPolicy({ config })
 
   /**
    * @param {string} backend
@@ -142,28 +133,20 @@ export function createYouTubeSearcher({ youtube, config }) {
       const backend = /** @type {any} */ (cursor)?.backend
       const continuation = backend === 'local' ? /** @type {any} */ (cursor).continuation : /** @type {any} */ (cursor)?.page
 
-      if ((backend !== 'local' && backend !== 'invidious') || continuation == null || (backend === 'local' && !localSupported)) {
+      if (continuation == null) {
         throw new PlatformError('invalid', 'Not a YouTube search cursor')
       }
 
-      try {
-        return { ...await fetchPage(backend, query.text, filters, continuation), applied }
-      } catch (error) {
-        throw asPlatformError(error, backend)
+      return {
+        ...await policy.later(cursor, backend => fetchPage(backend, query.text, filters, continuation), asPlatformError),
+        applied,
       }
     }
 
-    let lastError = null
-
-    for (const backend of backendOrder()) {
-      try {
-        return { ...await fetchPage(backend, query.text, filters, null), applied }
-      } catch (error) {
-        lastError = asPlatformError(error, backend)
-      }
+    return {
+      ...await policy.first(backend => fetchPage(backend, query.text, filters, null), asPlatformError),
+      applied,
     }
-
-    throw lastError
   }
 
   return Object.freeze({ search })

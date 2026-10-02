@@ -1,0 +1,11 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "(await getLocalChannel('UCRr1xG_2WIDs18a6cIiCxeA')).getAbout()",
+  "answer": {
+    "type": "AboutChannel",
+    "metadata": {
+      "description": "Daft Punk were a French electronic music duo formed in 1993 in Paris by Thomas Bangalter and Guy-Manuel de Homem-Christo. They achieved popularity in the late 1990s as part of the French house movement, combining elements of house, funk, disco, techno and rock. They are regarded as one of the most influential acts in electronic dance music.\nDaft Punk formed after their previous group, the indie rock band Darlin', disbanded. They were managed from 1996 to 2008 by Pedro Winter, the head of Ed Banger Records. Their debut album, Homework, was released by Virgin Records in 1997 to positive reviews, backed by the singles \"Around the World\" and \"Da Funk\". Alive 1997, a live album that was recorded in November 1997 in Birmingham, was released four years later in 2001. From 1999, Daft Punk assumed robot personas for their rare public and media appearances, with helmets, outfits and gloves to disguise their identities; Bangalter took on a silver-helmet, while Homem-Christo wore gold. Daft Punk's second album, Discovery, earned acclaim and further success, with the hit singles \"One More Time\", \"Digital Love\" and \"Harder, Better, Faster, Stronger\"."
+    }
+  }
+}

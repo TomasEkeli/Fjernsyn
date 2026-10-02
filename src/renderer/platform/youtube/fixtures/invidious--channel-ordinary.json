@@ -1,0 +1,27 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "invidiousGetChannelInfo('UCSMOQeBJ2RAnuFungnQOxLg')",
+  "answer": {
+    "author": "Blender",
+    "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+    "authorBanners": [
+      { "url": "https://yt3.googleusercontent.com/blender-banner=w2560-fcrop64=1", "width": 2560, "height": 424 },
+      { "url": "https://yt3.googleusercontent.com/blender-banner=w2120-fcrop64=1", "width": 2120, "height": 351 }
+    ],
+    "authorThumbnails": [
+      { "url": "https://yt3.googleusercontent.com/blender-avatar=s32-c-k-c0x00ffffff-no-rj", "width": 32, "height": 32 },
+      { "url": "https://yt3.googleusercontent.com/blender-avatar=s48-c-k-c0x00ffffff-no-rj", "width": 48, "height": 48 },
+      { "url": "https://yt3.googleusercontent.com/blender-avatar=s76-c-k-c0x00ffffff-no-rj", "width": 76, "height": 76 },
+      { "url": "https://yt3.googleusercontent.com/blender-avatar=s100-c-k-c0x00ffffff-no-rj", "width": 100, "height": 100 },
+      { "url": "https://yt3.googleusercontent.com/blender-avatar=s176-c-k-c0x00ffffff-no-rj", "width": 176, "height": 176 },
+      { "url": "https://yt3.googleusercontent.com/blender-avatar=s512-c-k-c0x00ffffff-no-rj", "width": 512, "height": 512 }
+    ],
+    "subCount": 1250000,
+    "isFamilyFriendly": true,
+    "description": "Official YouTube channel for Blender, the Free and Open Source 3D Creation Suite.\n\nThe Freedom to Create\n",
+    "tabs": ["videos", "shorts", "live", "podcasts", "playlists", "community"],
+    "tags": ["blender", "Blender Foundation", "3d"]
+  },
+  "notes": "From the Invidious API's /api/v1/channels/{id} shape, after the module's own mapping of `streams` to `live` and `posts` to `community`."
+}

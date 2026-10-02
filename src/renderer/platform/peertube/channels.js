@@ -9,6 +9,7 @@
 //   `oldest` (`publishedAt`), and filtered by the NSFW preference (see
 //   `./nsfw.js`); a page the filter empties is followed by the next (see
 //   `fetchSkippingEmpty`). Lives and scheduled lives are listed with their flags.
+//   The `shorts` and `live` kinds are YouTube's tabs: an empty page here.
 // - A handle the instance does not know is `notFound` (see `./client.js`).
 // - An account's channels (`listAccountChannels`) are asked of the account's
 //   host, `/api/v1/accounts/{name@host}/video-channels`, all at once: 100 is
@@ -36,6 +37,9 @@ export const CHANNEL_VIDEO_SORTS = Object.freeze({
   popular: '-views',
   oldest: 'publishedAt',
 })
+
+/** The lists of a channel's videos the layer knows, YouTube's tabs; PeerTube has the first only */
+export const CHANNEL_VIDEO_KINDS = Object.freeze(['videos', 'shorts', 'live'])
 
 /**
  * An actor's handle (a channel's or an account's, both `name@host`), parsed.
@@ -117,15 +121,26 @@ export function createChannelReader({ client, config }) {
   }
 
   /**
+   * A page of the channel's videos. PeerTube has no shorts or live tab, so
+   * those kinds are an empty page, without a request.
+   *
    * @param {import('../shapes').PeerTubeChannelRef} ref
-   * @param {{ sort?: 'newest' | 'popular' | 'oldest', cursor?: unknown }} [options]
+   * @param {{ kind?: 'videos' | 'shorts' | 'live', sort?: 'newest' | 'popular' | 'oldest', cursor?: unknown }} [options]
    * @returns {Promise<import('../shapes').Page<import('../shapes').VideoSummary>>}
    */
-  async function listChannelVideos(ref, { sort = 'newest', cursor = null } = {}) {
+  async function listChannelVideos(ref, { kind = 'videos', sort = 'newest', cursor = null } = {}) {
     const { host, handle } = channelOf(ref)
+
+    if (!CHANNEL_VIDEO_KINDS.includes(kind)) {
+      throw new PlatformError('invalid', `Not a kind of a channel's videos: ${String(kind)}`)
+    }
 
     if (!Object.hasOwn(CHANNEL_VIDEO_SORTS, sort)) {
       throw new PlatformError('invalid', `Not a channel video sort: ${String(sort)}`)
+    }
+
+    if (kind !== 'videos') {
+      return { items: [], cursor: null }
     }
 
     return fetchSkippingEmpty(async (start) => {

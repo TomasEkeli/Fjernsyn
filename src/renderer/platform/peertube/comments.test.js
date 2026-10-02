@@ -237,7 +237,8 @@ describe('getComments (PeerTube)', () => {
   it.each([
     [{ platform: 'peertube', host: 'makertube.net', videoId: '42' }],
     [{ platform: 'peertube', host: 'www.youtube.com', videoId: MAKERTUBE.videoId }],
-    ['dQw4w9WgXcQ'],
+    // A YouTube video id goes to the YouTube adapter now (`../youtube/comments.test.js`)
+    ['not a ref'],
   ])('refuses %o, without a request', async (ref) => {
     const { fake, layer } = setUp()
 
