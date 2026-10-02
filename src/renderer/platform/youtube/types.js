@@ -1,10 +1,18 @@
-// How YouTube Local and YouTube Invidious results would map onto the common
-// shapes in ../shapes.js. A sketch, not an implementation: types only, so that
-// the shapes and the cursor are known to fit YouTube before phase 2 depends on
-// them. See "YouTube adapters (phase 2)" and "Further Notes" in
-// .scratch/platform-layer/spec.md, and ticket 17.
+// How YouTube Local and YouTube Invidious results map onto the common shapes
+// in ../shapes.js, field by field. Written in phase 1 as the sketch the
+// shapes were checked against (ticket 17), and now implemented: details in
+// `./videos.js` and `./videoDetails.js`, playback sources in `./playback.js`
+// and `./sabr.js`, channels, their lists and playlists in `./channels.js`,
+// comments in `./comments.js`, search in `./search.js`. Which backend answers
+// is `./policy.js`, how its failures read is `./errors.js` (ADR-0015). Kept as
+// the reference table the modules point to; where a module and this file
+// disagree, the module and its tests are right, and this file is to be
+// corrected.
 //
-// Grounded in what the existing code reads today:
+// Where a typedef here had to become a common shape, the shape is in
+// ../shapes.js and only a pointer is left here.
+//
+// Grounded in what the existing code reads:
 // - Local: src/renderer/helpers/api/local.js (`getLocalVideoInfo`,
 //   `getLocalChannel`, `parseLocalChannelHeader`, `parseLocalListVideo`,
 //   `parseLocalListPlaylist`, `getLocalSearchResults`, `parseLocalComment`,
@@ -23,47 +31,55 @@
 //   FtComment.vue), and the feed descriptors in
 //   src/renderer/helpers/subscriptionFeeds/
 //
-// `describe` for YouTube is already built (../describe.js): routes, the
-// i.ytimg.com or Invidious thumbnail, share and external player URLs. Nothing
-// here changes it; where a mapping says "`''`, the card builds it", `describe`
-// is what builds it.
+// The adapters call those module functions unedited, through the `youtube`
+// dependency object listed in `./deps.js`.
+//
+// `describe` for YouTube (../describe.js) builds routes, the i.ytimg.com or
+// Invidious thumbnail, share and external player URLs. Nothing here changes
+// it; where a mapping says "`''`, the card builds it", `describe` is what
+// builds it.
 //
 // Convention in the tables below: `L:` is Local, `I:` is Invidious, `—` means
 // the backend does not give it, and the common field is then absent, `null` or
-// empty as its type allows. "Proposed" marks a field the phase 1 common shape
-// does not have and YouTube needs; each one is optional, so adding it keeps
-// every PeerTube result valid.
+// empty as its type allows.
 
 // ---------------------------------------------------------------------------
 // Backends and cursors
 // ---------------------------------------------------------------------------
 
-/** @typedef {'local' | 'invidious'} YouTubeBackend */
+// `YouTubeBackend` is in `./policy.js`.
 
 /**
  * A YouTube cursor names the backend that made it, because only that backend
  * can continue it: a Local continuation is meaningless to Invidious and an
- * Invidious token or page is meaningless to Local. The fallback policy reads
- * `backend` to route "the next page" to the backend that served the first,
- * and never falls back mid-list (see the open questions).
+ * Invidious token or page is meaningless to Local. The policy (`./policy.js`,
+ * ADR-0015) reads `backend` to route a later page to the backend that served
+ * the first, never falls back mid-list, and rejects a cursor naming a backend
+ * this build lacks as `invalid`.
  *
- * Local continuations are youtubei.js class instances (`YT.Channel` tabs,
- * `YT.ChannelListContinuation`, `YT.FilteredChannelList`, `YT.Search`,
- * `YT.Comments`, `YTNodes.CommentThread`, `YT.Playlist`), each carrying its
- * session's `actions`. They live in memory only: not serialisable, not
- * structured-clonable, and must never be made reactive (the old views hold
- * them in `shallowRef`). Two have a serialisable form already
- * (`extractLocalCacheableSearchContinuation`,
- * `extractLocalCacheablePlaylistContinuation`: path, payload and session
- * context as a JSON string), which the search page uses for its session
- * search history and `getLocalSearchContinuation` accepts in place of the
- * instance.
+ * Local continuations are youtubei.js class instances (`YT.Channel` tabs and
+ * their continuations, `YT.Playlist`, `YT.Search`, `YT.Comments`,
+ * `YTNodes.CommentThread`), each carrying its session's `actions`. They live
+ * in memory only: not serialisable, not structured-clonable, and never to be
+ * made reactive. The `Page` typedef says so (spec, "Phase 2 decisions", Q1):
+ * a caller holds a cursor in a `shallowRef` or a plain variable and hands it
+ * back as it is.
+ *
+ * A channel list's cursor also names its list (`kind`), so a later page uses
+ * the first page's kind and sort whatever the options say, and a cursor of
+ * another list is `invalid`.
  *
  * @typedef {object} YouTubeLocalCursor
  * @property {'local'} backend
- * @property {unknown} continuation the youtubei.js instance to call
- *   `getContinuation()` on, or for search and playlists its serialised JSON
- *   string; see YouTubeCursorTable
+ * @property {any} continuation the youtubei.js instance to continue; see
+ *   YouTubeCursorTable
+ * @property {'tab' | 'playlist'} [from] channel lists: a channel tab, or an
+ *   artist topic channel's uploads playlist standing in for it
+ * @property {'videos' | 'shorts' | 'live' | 'playlists'} [kind] channel lists
+ * @property {{ id: string, name: string } | null} [owner] channel tabs: whose
+ *   items the page holds, named after the channel where the page leaves them
+ *   unnamed; `null` for a channel showing other channels' items, whose items
+ *   are left unattributed
  */
 
 /**
@@ -72,8 +88,10 @@
  * @property {string} continuation Invidious' `continuation`, passed back as the
  *   `continuation` query parameter
  * @property {string} [sort] the sort the token was issued under, which
- *   Invidious needs repeated (`sort_by`) on every page of channel tabs and
- *   comments
+ *   Invidious needs repeated (`sort_by`) on every page: `newest`, `popular`
+ *   or `oldest` for channel lists, `top` or `newest` for comments; absent for
+ *   replies
+ * @property {'videos' | 'shorts' | 'live' | 'playlists'} [kind] channel lists
  */
 
 /**
@@ -85,41 +103,66 @@
 /** @typedef {YouTubeLocalCursor | YouTubeInvidiousTokenCursor | YouTubeInvidiousPageCursor} YouTubeCursor */
 
 /**
- * What the cursor holds, per operation and backend. "End" is how the backend
+ * What the cursor holds, per operation and backend. Implemented in
+ * `./channels.js`, `./comments.js` and `./search.js`. "End" is how the backend
  * says there is no next page, which the adapter turns into a `null` cursor.
  *
- * - `listChannelVideos` (and the shorts and live tabs)
- *   - L: the tab instance from `(await innertube.getChannel(id)).getVideos()`,
- *     after `applyFilter(filters[i])` for a sort other than newest; later
- *     pages from `getContinuation()`. End: `!has_continuation`. An artist
- *     topic channel has no videos tab: the uploads `YT.Playlist`
- *     (`getChannelPlaylistId(id, 'videos', sort)`), serialisable.
- *   - I: `continuation` string from `/channels/{id}/videos`, with `sort_by`
- *     repeated. End: no `continuation`.
- * - `listChannelPlaylists` (and releases, podcasts, courses)
- *   - L: the tab instance from `getPlaylists()`, sorted by
- *     `applySort(sort_filters[i])`. End: `!has_continuation`.
- *   - I: `continuation` string from `/channels/{id}/playlists`, with `sort_by`.
+ * - `listChannelVideos` (`kind` `videos`, `shorts` or `live`)
+ *   - L: the tab instance from `getVideos()`, `getShorts()` or
+ *     `getLiveStreams()` on the `YT.Channel`, after `applyFilter(filters[i])`
+ *     for a sort other than newest (a tab without that filter lists newest
+ *     first); later pages from `getContinuation()`. `{ backend, continuation,
+ *     from: 'tab', kind, owner }`. End: `!has_continuation`. The live tab's
+ *     first page follows up to 3 empty pages, as the old view does. An artist
+ *     topic channel has no videos tab: its uploads `YT.Playlist`
+ *     (`getLocalPlaylist(getChannelPlaylistId(id, 'videos', sort))`, newest or
+ *     popular only, `oldest` is `invalid`), continued with
+ *     `getLocalPlaylistContinuation`. `{ backend, continuation,
+ *     from: 'playlist', kind }`. End: `!has_continuation`, or `null` from the
+ *     continuation.
+ *   - I: `continuation` string from `getInvidiousChannelVideos`,
+ *     `getInvidiousChannelShorts` or `getInvidiousChannelLive` (`/videos`,
+ *     `/shorts`, `/streams`), with the sort repeated. `{ backend,
+ *     continuation, sort, kind }`. End: no `continuation`.
+ *   - A channel without the tab is an empty page: L reads the channel's
+ *     `has_*` flags, I the `tabs` `getChannel` cached on this layer, and
+ *     otherwise asks the tab.
+ * - `listChannelPlaylists`: the channel's own playlists, newest first, no
+ *   sort option. Releases, podcasts and courses are not lists of the layer.
+ *   - L: the tab instance from `getPlaylists()`, narrowed to "Created
+ *     playlists" (`view=1`) where YouTube offers other categories. `{ backend,
+ *     continuation, from: 'tab', kind: 'playlists', owner }`. End:
+ *     `!has_continuation`.
+ *   - I: `continuation` string from `getInvidiousChannelPlaylists`, with
+ *     `sort: 'newest'`.
  * - `search`
- *   - L: the `YT.Search` instance (or its serialised JSON string). End: the
- *     module's own `continuationData: null`, which it also returns when a page
- *     had nothing left after filtering, so the "empty page, non-null cursor"
- *     case does not arise on Local.
- *   - I: a page number; the first call is page 1. End: Invidious never says,
- *     so an empty result ends it. The adapter must answer `null` there rather
- *     than an empty page with a cursor, or a caller following the common
- *     "ask again" rule asks forever.
- * - `getComments`
- *   - L: the `YT.Comments` instance from `getLocalComments(id)`; a sort
- *     change is `applySort('NEWEST_FIRST' | 'TOP_COMMENTS')` on the first
- *     instance, not a new request. End: `!has_continuation`.
- *   - I: `continuation` string, with `sort_by` `new` or `top`.
- * - `getCommentReplies`
+ *   - L: the `YT.Search` instance `getLocalSearchResults` answers as
+ *     `continuationData`, continued by `getLocalSearchContinuation`.
+ *     `{ backend, continuation }`. End: the module's own `continuationData:
+ *     null`, which it also answers when a page had nothing left after
+ *     filtering, so the "empty page, non-null cursor" case does not arise on
+ *     Local. The module's serialised form of a search continuation is the
+ *     search page's, for its session history, outside the `Page` contract.
+ *   - I: a page number; the first call is page 1. `{ backend, page }`. End:
+ *     Invidious never says, so an empty result ends it: the adapter answers
+ *     `null` there rather than an empty page with a cursor, or a caller
+ *     following the common "ask again" rule would ask forever.
+ * - `getComments` (`sort` `top`, the default, or `newest`)
+ *   - L: the `YT.Comments` instance from `getLocalComments(id)`, after
+ *     `applySort('NEWEST_FIRST' | 'TOP_COMMENTS')` when YouTube's header says
+ *     the other sort is selected. `{ backend, continuation }`. End:
+ *     `!has_continuation`.
+ *   - I: `continuation` string from `invidiousGetComments`, with the sort it
+ *     was issued under. `{ backend, continuation, sort }`.
+ * - `getCommentReplies`: starts from the comment's `repliesCursor` and pages
+ *   on from each page's cursor, both through `policy.later`, so replies never
+ *   fall back.
  *   - L: the thread's `YTNodes.CommentThread` (`getReplies()` unless
- *     `is_prepopulated`, then `getContinuation()`), which is the reply token
- *     `parseLocalComment` puts on the comment. End: `!has_continuation`.
- *   - I: the comment's `replies.continuation`, then each answer's
- *     `continuation`.
+ *     `is_prepopulated`), then `getContinuation()` on what answered last.
+ *     End: no replies or `!has_continuation`.
+ *   - I: the comment's reply token, then each answer's `continuation`, both
+ *     through `invidiousGetComments` (see the comments section). `{ backend,
+ *     continuation }`, no sort.
  *
  * @typedef {never} YouTubeCursorTable
  */
@@ -129,35 +172,39 @@
 // ---------------------------------------------------------------------------
 
 /**
- * A YouTube video in a list. The Local list parsers already produce the
+ * A YouTube video in a list. Implemented in `./channels.js` for a channel's
+ * videos, shorts and lives; `./search.js` hands the modules' items on as they
+ * are (see the search section). The Local list parsers already produce the
  * common field names (they are what the cards read), so on Local the summary
  * is `parseLocalListVideo`'s answer as it is. Invidious' video objects also
  * mostly carry them.
  *
  * | common          | L (`parseLocalListVideo`)                        | I (`InvidiousVideoType`)                  |
  * | --------------- | ------------------------------------------------ | ----------------------------------------- |
- * | type            | `'video'`, `'shortVideo'` from `parseShort`      | `'video'`, `'shortVideo'`                 |
+ * | type            | `'video'`; `'shortVideo'` from `parseShort`      | `'video'`; `'shortVideo'` on the shorts tab and in search |
  * | platform, host  | absent                                           | absent                                    |
  * | videoId         | `video_id` / `id`                                | `videoId`                                 |
  * | title           | `title.text`, trimmed                            | `title`                                   |
  * | author          | `author.name`, else the channel page's name      | `author`                                  |
  * | authorId        | `author.id`, else the channel page's id          | `authorId`, else the channel's (`normalizeManyInvidiousVideosAttributes`) |
- * | thumbnail       | `''`, the card builds it (`describe`)            | `''`, likewise; never `videoThumbnails`   |
- * | lengthSeconds   | `duration.seconds`; `''` when live or unknown    | `lengthSeconds`; 0 when live              |
- * | published       | ms, estimated from relative text ("3 days ago") by `calculatePublishedDate`; absent when unreadable | `published` s → ms (`setPublishedTimestamp`); now for a live; the premiere for upcoming |
+ * | thumbnail       | `''` in channel lists, the card builds it (`describe`) | `''` in channel lists likewise, not `videoThumbnails` |
+ * | lengthSeconds   | `duration.seconds`; `''` when live or unknown, and for every short | `lengthSeconds`; 0 when live; `''` for a short with none or 0 |
+ * | published       | ms, estimated from relative text ("3 days ago") by `calculatePublishedDate`; absent when unreadable | `published` s → ms (`setPublishedTimestamp`); now for a live; the premiere for upcoming; absent on the shorts tab |
  * | viewCount       | parsed text, `null` when none                    | `viewCount`                               |
  * | liveNow         | `is_live`, or duration text `LIVE`               | `liveNow`                                 |
- * | isUpcoming      | `is_upcoming \|\| is_premiere`                   | `isUpcoming`                              |
+ * | isUpcoming      | `is_upcoming \|\| is_premiere`                   | `isUpcoming`; `false` on the shorts tab   |
  * | premiereDate    | `upcoming` (a Date)                              | `new Date(premiereTimestamp * 1000)`; the card also reads `premiereTimestamp` itself |
  * | nsfw            | —                                                | —                                         |
+ *
+ * `type` and `lengthSeconds` are the common `VideoSummary`'s, widened for
+ * YouTube (see ../shapes.js): `''` is "unknown, not live", which the card
+ * reads as a plain video, where an absent length reads as a live.
  *
  * The badges and flags the card reads on YouTube only ride along as they are:
  * `description` (a snippet), `isPremiere`, `is4k`, `is8k`, `isNew`,
  * `isVr180`, `isVr360`, `is3d`, `hasCaptions`, `premium` (I), `isStation`.
  *
- * @typedef {Omit<import('../shapes').VideoSummary, 'type' | 'lengthSeconds'> & {
- *   type: 'video' | 'shortVideo',
- *   lengthSeconds?: number | '',
+ * @typedef {import('../shapes').VideoSummary & {
  *   description?: string,
  *   isPremiere?: boolean,
  *   premiereTimestamp?: number,
@@ -171,13 +218,6 @@
  *   premium?: boolean,
  *   isStation?: boolean,
  * }} YouTubeVideoSummary
- *
- * - `type`: proposed widening. A short is `'shortVideo'` on both backends, and
- *   the card marks and crops it by that.
- * - `lengthSeconds`: proposed widening. `''` is "unknown, not live": the card
- *   then takes the length from history. Absent means live to the card
- *   (`lengthSeconds === undefined`), so an adapter that dropped `''` would
- *   turn every Local short and every unreadable duration into a live.
  */
 
 // ---------------------------------------------------------------------------
@@ -185,302 +225,254 @@
 // ---------------------------------------------------------------------------
 
 /**
- * A YouTube video's details. Local: the `YT.VideoInfo` in
+ * A YouTube video's details, the common `VideoDetails` (../shapes.js, which
+ * took every field YouTube needed). Implemented in `./videoDetails.js` (read)
+ * and `./videos.js` (fetched). Local: the `YT.VideoInfo` in
  * `getLocalVideoInfo(id)`'s `info`, as `getVideoInformationLocal` reads it.
- * Invidious: `invidiousGetVideoInformation(id)`, as `getVideoInformationInvidious`
- * reads it.
+ * Invidious: `invidiousGetVideoInformation(id)`, as
+ * `getVideoInformationInvidious` reads it.
  *
  * | common           | L (`YT.VideoInfo`)                                     | I (`/api/v1/videos/{id}`)            |
  * | ---------------- | ------------------------------------------------------ | ------------------------------------ |
+ * | type             | `'video'`: neither backend marks a short in a video's details | `'video'`                   |
  * | title            | `getLocalVideoTitle(info)` (localised, then basic)     | `title`                              |
  * | author, authorId | `basic_info.author`, `basic_info.channel_id` (then `secondary_info.owner.author`) | `author`, `authorId`   |
- * | thumbnail        | by `thumbnailPreference`: `maxres1..3.jpg`, else `basic_info.thumbnail[0].url` | by preference on the instance `/vi/`, else `videoThumbnails[0].url` |
- * | lengthSeconds    | `basic_info.duration`                                  | `lengthSeconds`                      |
- * | published        | `Date.parse(page[0].microformat.publish_date)`, else `primary_info.published` text | `published * 1000` |
- * | viewCount        | `basic_info.view_count`, else `primary_info.view_count` text | `viewCount`                    |
+ * | thumbnail        | by `thumbnailPreference`: `maxres1..3.jpg` on i.ytimg.com, else `basic_info.thumbnail[0].url`, else `maxresdefault.jpg` | by preference on the instance `/vi/`, else `videoThumbnails[0].url`, made absolute on the instance where relative |
+ * | lengthSeconds    | `basic_info.duration`, `''` when unknown; absent for a live | `lengthSeconds`, the same        |
+ * | published        | `Date.parse(page[0].microformat.publish_date)`, else `Date.parse` of the `primary_info.published` text; absent when neither reads | `published * 1000` |
+ * | viewCount        | `basic_info.view_count`, else `primary_info.view_count` text (`extractNumberFromString`); absent when neither reads | `viewCount` |
  * | liveNow          | `basic_info.is_live`                                   | `liveNow`                            |
  * | isUpcoming       | `basic_info.is_upcoming`                               | `isUpcoming`                         |
- * | premiereDate     | `basic_info.start_timestamp` (a Date)                  | `premiereTimestamp` s → Date         |
- * | nsfw             | `!basic_info.is_family_safe`? (see open questions)     | `!isFamilyFriendly`?                 |
- * | description      | `parseLocalTextRuns(secondary_info.description.runs)`, else `basic_info.short_description` | `descriptionHtml` (through `parseDescriptionHtml`), else `description` |
- * | descriptionKind  | `'html'` (proposed): the runs parser emits links       | `'html'` (proposed)                  |
- * | likeCount        | `basic_info.like_count`                                | `likeCount`                          |
- * | dislikeCount     | `null`: YouTube no longer gives it (the old view shows 0) | `dislikeCount`, as the instance reports it |
+ * | premiereDate     | `basic_info.start_timestamp` (a Date), when upcoming   | `premiereTimestamp` s → Date, when upcoming |
+ * | nsfw             | — (YouTube's rating is `isFamilyFriendly`, Q6)          | —                                    |
+ * | description      | `parseLocalTextRuns(secondary_info.description.runs)`, else `basic_info.short_description` escaped | `descriptionHtml` cleaned as `WatchVideoDescription.vue` cleans it (`cleanInvidiousDescriptionHtml`), else `description` escaped |
+ * | descriptionKind  | `'html'`: the runs parser emits escaped markup with links | `'html'`                          |
+ * | likeCount        | `basic_info.like_count`, `null` when unknown           | `likeCount`, `null` when unknown     |
+ * | dislikeCount     | `null`: YouTube no longer gives it (the old view shows 0) | `dislikeCount`, as the instance reports it, else `null` |
  * | tags             | `basic_info.keywords`                                  | `keywords`                           |
- * | category         | `basic_info.category`, trimmed, `null` when empty      | `genre`, trimmed, `null` when empty  |
+ * | category         | `basic_info.category`, trimmed, `null` when empty; in the backend's language | `genre`, the same     |
  * | licence          | `secondary_info.metadata.rows` titled `License`        | — (`null`)                           |
- * | language         | — (`null`; not read today)                             | — (`null`)                           |
+ * | language         | — (`null`)                                             | — (`null`)                           |
  * | url              | `https://www.youtube.com/watch?v={id}`                 | the same                             |
- * | channel          | id, name, `secondary_info.owner.author.best_thumbnail`, `parseLocalSubscriberCount(owner.subscriber_count.text)` | id, name, `authorThumbnails[1]` via `youtubeImageUrlToInvidious`, `parseLocalSubscriberCount(subCountText)` |
+ * | channel          | id, name, `secondary_info.owner.author.best_thumbnail.url`, `parseLocalSubscriberCount(owner.subscriber_count.text)`; `null` without an id | id, name, `authorThumbnails[1]` via `youtubeImageUrlToInvidious`, `parseLocalSubscriberCount(subCountText)`; the same |
  * | authorThumbnail  | the channel's thumbnail, `''` when none                | the same                             |
- * | commentsEnabled  | unknown until comments are fetched (see open questions) | unknown                             |
- * | downloadEnabled  | `false`: YouTube downloads are yt-dlp, never download options | `false`                      |
+ * | commentsEnabled  | `null`: not known until comments are fetched (Q7)      | `null`                               |
+ * | downloadEnabled  | `false`: YouTube downloads are yt-dlp, never download options (Q9) | `false`                  |
  * | liveStatus       | `is_live` → `live`; `is_upcoming` → `waiting`; `is_post_live_dvr` → `ended`; else `null` | `liveNow`, `isUpcoming`, `isPostLiveDvr` the same way |
- * | playbackSource   | YouTubeLocalPlaybackSource                             | YouTubeInvidiousPlaybackSource       |
+ * | playbackSource   | a `manifest` or `sabr` source (below); `null` for a waiting live, unless Local answered a playable trailer in its place, and without streaming data | a `manifest` source; `null` for a waiting live |
  * | downloadOptions  | `[]`                                                   | `[]`                                 |
+ * | isFamilyFriendly | `basic_info.is_family_safe`, absent when not a boolean | `isFamilyFriendly`, the same         |
+ * | isUnlisted       | `basic_info.is_unlisted`                               | `isListed === false`                 |
+ * | related          | `watch_next_feed` (`CompactVideo`, `CompactMovie`, and `LockupView` of a video or station) through `parseLocalWatchNextVideo` | `recommendedVideos` as `type: 'video'`, their ISO `published` made ms |
+ * | chaptersKind     | `'keyMoments'` when the chapters are the engagement panel's auto chapters, else `'chapters'` (`./playback.js`) | `'chapters'` |
  *
- * What the old watch view reads besides, which the common details lack. All
- * proposed as optional fields, absent for PeerTube:
+ * Not carried, and the old view's still: `isLiveContent` (L only), the live
+ * chat (L `info.getLiveChat()`, a library instance), and the channel's
+ * formatted subscriber count, which the view can format from
+ * `channel.subscriberCount`. So are hiding likes and chapters, the
+ * `showFamilyFriendlyOnly` gate and putting watched recommendations last.
  *
- * - `isFamilyFriendly`: L `basic_info.is_family_safe`, I `isFamilyFriendly`;
- *   the view's `showFamilyFriendlyOnly` gate. Could instead be `nsfw`
- *   inverted; see the open questions.
- * - `isUnlisted`: L `basic_info.is_unlisted`, I `!isListed`.
- * - `isLiveContent`: L `basic_info.is_live_content`; I —.
- * - `related`: the watch-next list as video summaries. L `watch_next_feed`
- *   through `parseLocalWatchNextVideo`; I `recommendedVideos` (whose
- *   `published` is an ISO string, not seconds).
- * - `liveChat`: L only, `info.getLiveChat()`, a live library instance (never
- *   reactive); I —.
- * - `chaptersKind`: `'chapters'` or `'keyMoments'` (L only: the engagement
- *   panel's auto chapters).
- * - `subscriberCountText`: the view shows the channel's count formatted; it
- *   can be formatted from `channel.subscriberCount` instead.
+ * Refusals and other failures are classified in `./errors.js`: Local's from
+ * the playability status (`classifyLocalPlayability`, a removed video
+ * `notFound`), Invidious' from the error message, into `PlatformError` kinds
+ * and YouTube's `RefusalReason`s (`private`, `membersOnly`, `ageRestricted`,
+ * `drm`, `ipBlock`, `unexplained`). A refusal is final (ADR-0015).
  *
- * Refusals are `PlatformError` `refused`, and need reasons the phase 1
- * `RefusalReason` lacks: members only (`error_screen.offer_id ===
- * 'sponsors_only_video'`), age restricted, DRM protected, private (L only
- * distinguishes it), IP block and unexplained refusal
- * (`classifyPlayabilityError`). Members only, age restricted, DRM and private
- * are final: the old view does not fall back to Invidious for them.
- *
- * @typedef {Omit<import('../shapes').VideoDetails, 'descriptionKind' | 'commentsEnabled' | 'playbackSource'> & {
- *   descriptionKind: 'plain' | 'markdown' | 'html',
- *   commentsEnabled: boolean | null,
- *   playbackSource: YouTubePlaybackSource | null,
- *   isFamilyFriendly?: boolean,
- *   isUnlisted?: boolean,
- *   isLiveContent?: boolean,
- *   related?: YouTubeVideoSummary[],
- *   liveChat?: unknown,
- *   chaptersKind?: 'chapters' | 'keyMoments',
- * }} YouTubeVideoDetails
+ * @typedef {never} YouTubeVideoDetailsTable
  */
 
 /**
- * What a YouTube playback source adds to the common manifest source. All
- * optional, so a PeerTube source needs none of them.
+ * What a YouTube playback source adds to the common manifest source: the
+ * optional fields of `ManifestPlaybackSource` in ../shapes.js, which says what
+ * each means. Where each comes from, implemented in `./playback.js`:
  *
  * - `loudnessDb`: L `player_config.audio_config.loudness_db` (`0` is a real
- *   value, `null` unknown); I — (`null`). The player's `loudnessDb` prop.
+ *   value, `null` unknown); I absent. The player's `loudnessDb` prop.
  * - `delayLoadUntilMs`: L only, `getLocalVideoInfo`'s `adEndTimeUnixMs`, the
  *   player's `delayLoadUntilUnix`: the response time plus the pre-roll ad
  *   time, which the player waits out before loading (legacy needs it).
- * - `expiresAt`: when the streaming URLs expire, so that a 403 or a legacy
- *   video error after it reads as "session expired" (`handlePlayerError`).
- *   L `streaming_data.expires`; I the `expire` parameter of the first
- *   adaptive format's URL (`extractExpiryDateFromStreamingUrl`).
- * - `vrProjection`: the first non-`RECTANGULAR` projection of a video
- *   format, L `projection_type`, I `projectionType`; `null` otherwise.
- * - `isPostLiveDvr`: a finished broadcast still served as a seekable
- *   recording. It behaves as a live in the format ring (no legacy formats,
- *   DASH and audio only) although it is not live now, which `isLive` alone
- *   cannot say.
+ * - `expiresAt`: L `streaming_data.expires`; I the `expire` parameter of the
+ *   first adaptive format's URL (for a live, else the HLS URL's); `null` when
+ *   neither says.
+ * - `vrProjection`: the first non-`RECTANGULAR` projection of a video format,
+ *   L `projection_type` (for a video played from its formats only), I
+ *   `projectionType`; `null` otherwise, and for every live.
+ * - `isPostLiveDvr`: L `basic_info.is_post_live_dvr`, I `isPostLiveDvr`. Such
+ *   a broadcast plays as a live in the format ring (no legacy formats, DASH
+ *   and audio only) although it is not live now, which `isLive` alone cannot
+ *   say.
  *
- * Captions carry what the Local caption list adds to the common track: `id`
- * (L `vss_id`) and `isAutotranslated` (the track `getTranslatedLocaleCaption`
- * adds when none is in the display language). L caption URLs carry the PO
- * token (`pot`) and so share the credentials' lifetime; I caption URLs are
- * instance-relative and made absolute. Both are ordered by `sortCaptions`
- * with the configured locale.
+ * Captions: L from `info.captions.caption_tracks`, as WebVTT (`fmt=vtt`), with
+ * `id` (`vss_id`) and `isAutomatic` (`kind === 'asr'`). When no track is in
+ * the display language, a translated track is added as the old view's
+ * `getTranslatedLocaleCaption` makes it: SRT (YouTube answers a translation
+ * asked for as WebVTT with HTTP 429), `id` `{vss_id}.{language}`,
+ * `isAutotranslated`, and `translation: { language, originalLanguage }` for
+ * the view's localised label, since the layer has no i18n and `label` is the
+ * English form. `config.locale` decides only that track's language. L caption
+ * URLs carry the PO token (`pot`), which `getLocalVideoInfo` sets, and are
+ * kept from the first load across a SABR renew. I caption URLs are
+ * instance-relative and made absolute on the instance. Both are ordered by
+ * `sortCaptions`, which reads the app's display language. A Local live has no
+ * captions (the old view reads them for a video only); an Invidious live
+ * keeps its own.
  *
  * Chapters may carry a `thumbnail` (L only, from the markers map and the
  * engagement panel). Chapters come from the player bar markers, then the
- * auto-chapters panel, then description timestamps (L); description
- * timestamps only (I). `hideChapters` stays the view's: the adapter always
- * returns them.
+ * auto-chapters panel (`chaptersKind: 'keyMoments'`), then description
+ * timestamps (L); description timestamps only (I). `hideChapters` stays the
+ * view's: the adapter always returns them. `chaptersSrc` is built by
+ * `chaptersSrcOf` in ../peertube/playback.js.
  *
  * `storyboard`: L builds a WebVTT data URI from the largest
- * `storyboards.boards` entry (`buildVTTFileLocally`; the old view takes the
+ * `storyboards.boards` entry (`buildVTTFileLocally`); the old view takes the
  * largest at most 90px high below 500px of window width, which the layer
- * cannot see); I is a URL, `{instance}/api/v1/storyboards/{id}?height=90`,
- * answering WebVTT, not a data URI. None for lives on either.
+ * cannot see and stays the view's. I is a URL,
+ * `{instance}/api/v1/storyboards/{id}?height=90`, answering WebVTT, not a
+ * data URI. None for lives on either.
  *
- * @typedef {object} YouTubePlaybackExtras
- * @property {number | null} [loudnessDb]
- * @property {number} [delayLoadUntilMs]
- * @property {Date | null} [expiresAt]
- * @property {'EQUIRECTANGULAR' | 'EQUIRECTANGULAR_THREED_TOP_BOTTOM' | 'MESH' | null} [vrProjection]
- * @property {boolean} [isPostLiveDvr]
+ * @typedef {Pick<import('../shapes').ManifestPlaybackSource, 'loudnessDb' | 'delayLoadUntilMs' | 'expiresAt' | 'vrProjection' | 'isPostLiveDvr'>} YouTubePlaybackExtras
  */
 
 /**
- * A YouTube `manifest` source, per case. `audio` is the same manifest (the
- * player picks the audio-only renditions out of a DASH or SABR manifest),
- * except where noted.
+ * A YouTube `manifest` source, per case, implemented in `./playback.js`.
+ * `audio` is the same manifest (the player picks the audio-only renditions out
+ * of a DASH manifest), except where noted.
  *
- * - L, ordinary video, no PO token or no SABR URL: `manifestUrl` is
- *   `data:application/dash+xml;charset=UTF-8,...` from `info.toDash()`
- *   (`createLocalDashManifest`), which needs the library instance, so the
- *   adapter builds it inside `getVideo`. No adaptive format with a URL or
- *   cipher: `manifestUrl: null`, legacy only.
+ * - L, ordinary video that cannot play over SABR (see the `sabr` source):
+ *   `manifestUrl` is `data:application/dash+xml;charset=UTF-8,...` from
+ *   `info.toDash()` (`createLocalDashManifest`), which needs the library
+ *   instance, so the adapter builds it inside `getVideo`. When the first
+ *   adaptive format has neither a URL nor a cipher: `manifestUrl: null`,
+ *   legacy only.
  * - L, live: `selectLiveManifest(streaming_data)`: YouTube's deciphered DASH
  *   URL with the PO token, else its HLS URL (after the ANDROID client
  *   fallback in `getLocalVideoInfo`). An HLS manifest has no separate audio
- *   unless its URL contains `/demuxed/1`: `audio: null` otherwise.
+ *   unless its URL contains `/demuxed/1`: `audio: null` otherwise. No legacy
+ *   formats, storyboard or captions.
  * - L, post-live DVR: a DASH data URI from `toDash({ include_thumbnails: true })`
  *   (only the last four hours), else the live manifest as above.
  * - L `legacyFormats`: `streaming_data.formats` through `mapLocalLegacyFormat`
  *   (`url` is the deciphered `freeTubeUrl`); none for lives.
- * - I, ordinary video: where the build has the Local API, a DASH data URI
- *   generated locally from `adaptiveFormats` (`convertInvidiousToLocalFormat`,
+ * - I, ordinary video: where the build has the Local API
+ *   (`config.supportsLocalApi`), a DASH data URI generated here from copies of
+ *   `adaptiveFormats` (`convertInvidiousToLocalFormat`,
  *   `generateInvidiousDashManifestLocally`, which gains multiple audio
- *   tracks); otherwise `{instance}/api/manifest/dash/id/{id}`, with
- *   `?local=true` when proxying.
+ *   tracks), `null` without adaptive formats; otherwise
+ *   `{instance}/api/manifest/dash/id/{id}`, with `?local=true` when proxying.
  * - I, live or post-live DVR: `hlsUrl` (`local=true` when proxying), HLS of
- *   muxed streams: `audio: null`, `legacyFormats: []`. No `hlsUrl` is no
- *   playable live (`NoPlayableLiveStreamError`).
+ *   muxed streams: `audio: null`, `legacyFormats: []`.
  * - I `legacyFormats`: `formatStreams` through `mapInvidiousLegacyFormat`,
  *   URLs through `getProxyUrl` in the web build or when proxying.
+ * - A live or post-live DVR with no playable manifest (L no live manifest, I
+ *   no `hlsUrl`) rejects as `unavailable`, the old view's retryable
+ *   `NoPlayableLiveStreamError`, which falls back.
  *
- * Proxying reads `proxyVideos`, which `PlatformConfig` does not yet carry.
+ * Proxying reads `config.proxyVideos`; `getProxyUrl` is a `youtube`
+ * dependency (spec, "Phase 2 decisions", Q10).
  *
- * @typedef {import('../shapes').ManifestPlaybackSource & YouTubePlaybackExtras} YouTubeManifestPlaybackSource
+ * @typedef {import('../shapes').ManifestPlaybackSource} YouTubeManifestPlaybackSource
  */
 
-/**
- * The credentials half of a SABR setup, exactly `SabrData` in
- * src/renderer/views/Watch/Watch.js (`buildSabrData`), restated here so that
- * the layer does not import a view. What the player's `sabrData` prop and the
- * scheme plugin read.
- *
- * @typedef {object} YouTubeSabrData
- * @property {string} url `streaming_data.server_abr_streaming_url`, deciphered,
- *   with `alr=yes` and `cpn` set
- * @property {string} videoId
- * @property {string} poToken the content-bound PO token `getLocalVideoInfo` minted
- * @property {string} ustreamerConfig `player_config.media_common_config
- *   .media_ustreamer_request_config.video_playback_ustreamer_config`
- * @property {{ clientName: number, clientVersion: string, osName: string, osVersion: string }} clientInfo
- *   `getLocalVideoInfo`'s `clientInfo` (the WEB_EMBEDDED client's after the age bypass)
- */
+// `YouTubeSabrData` is `SabrData`, and `YouTubeSabrRefreshResult` is
+// `SabrRenewResult`, in ../shapes.js.
 
 /**
- * What a credential refresh or a session rebuild answers with: exactly what
- * `onSabrRefreshRequested` hands its `onResult` today. `null` when fresh
- * credentials cannot be had (no token minted, no SABR URL, the request
- * failed), and the player falls back to a reload.
+ * A YouTube Local `sabr` source (ADR-0016), the common `SabrPlaybackSource`
+ * in ../shapes.js, implemented in `./sabr.js`: everything a `manifest` source
+ * has, so the watch view reads captions, chapters, storyboard, legacy formats
+ * and the audio source in one way for both transports, plus the SABR
+ * credentials and a way to renew them. The watch view never branches on
+ * platform; it branches on transport only to hand `sabrData` and its
+ * regulator to the player.
  *
- * @typedef {object} YouTubeSabrRefreshResult
- * @property {YouTubeSabrData} sabrData
- * @property {string[]} formatIds the formats the new session serves, by
- *   `buildFormatId` (`itag-lastModified-xtags`)
- * @property {string} [manifestUrl] a rebuild only: a fresh SABR manifest
- *   agreeing with the new session; a refresh keeps its buffer and must not
- *   have one
- * @property {'application/sabr+json'} [manifestMimeType] a rebuild only
- */
-
-/**
- * A YouTube Local `sabr` source: everything a `manifest` source has, so the
- * watch view reads captions, chapters, storyboard, legacy formats and the
- * audio source in one way for both transports, plus the SABR credentials and
- * a way to renew them. The watch view never branches on platform; it
- * branches on transport only to hand `sabrData` and its regulator to the
- * player.
- *
+ * - Chosen over DASH only when `getLocalVideoInfo` answered a PO token, a
+ *   `server_abr_streaming_url`, a `media_ustreamer_request_config` and
+ *   adaptive formats (`canPlaySabr`); the Local adapter answers a DASH
+ *   `manifest` source otherwise. Never for a live or a post-live DVR.
  * - `manifestUrl`: `data:application/sabr+json,...`, the project's own SABR
- *   manifest (`createLocalSabrManifest`): duration, the adaptive formats'
- *   SABR fields, and the source's own `captions`, `chapters` and
- *   `sabrStoryboards`, embedded.
- * - `manifestMimeType`: `application/sabr+json` (`MANIFEST_TYPE_SABR`).
+ *   manifest (`createLocalSabrManifest`): duration (the shortest format's),
+ *   the adaptive formats' SABR fields, and the source's own `captions`,
+ *   `chapters` and `sabrStoryboards`, embedded.
+ * - `manifestMimeType`: `application/sabr+json` (`MANIFEST_TYPE_SABR`,
+ *   restated as `SABR_MIME_TYPE`, since its module imports shaka).
  * - `audio`: the same manifest. The format ring treats a SABR failure as a
  *   failure of DASH and audio alike, so after one only legacy is worth trying.
- * - Chosen over DASH only when there is a PO token, a
- *   `server_abr_streaming_url` and a `media_ustreamer_request_config`; the
- *   Local adapter answers a DASH `manifest` source otherwise. Never for a
- *   live or a post-live DVR.
+ * - `sabrData`: the old view's `buildSabrData`: the SABR URL with `alr=yes`
+ *   and the response's `cpn`, the video id, the PO token, the
+ *   `video_playback_ustreamer_config`, and `getLocalVideoInfo`'s `clientInfo`.
+ * - `sabrStoryboards`: the SABR manifest's storyboard entry, from the board
+ *   the storyboard track is built from (`[]` without one), kept because it
+ *   comes from `/next`, which a rebuild does not re-read.
+ * - `renew({ reloadPlaybackContext, rebuilding })`: a closure over the video
+ *   id and the Local module: `getLocalVideoInfo(id, { reloadPlaybackContext })`,
+ *   then `{ sabrData, formatIds, expiresAt }` (`formatIds` by `buildFormatId`,
+ *   `expiresAt` `null` when the fresh response has no `streaming_data.expires`)
+ *   and, for `rebuilding`, a new manifest from this source's captions,
+ *   chapters and `sabrStoryboards`. `reloadPlaybackContext` is the server's
+ *   reload token from a `RELOAD_PLAYER_RESPONSE` part and must ride on the
+ *   `/player` call. `null` when the fresh response lacks a token, a SABR URL
+ *   or a ustreamer config, or the request fails: it never throws. It does not
+ *   read the backend preference: a `sabr` source only ever comes from Local.
  *
  * The regulator is not here. ADR-0006: the watch view owns the regulator and
  * every recovery decision, so that its budgets outlive the player it
  * destroys; a source is created per load and would die with the rung. The
  * source is data plus `renew`, and `renew` decides nothing: it fetches, the
- * view's regulator decides when to call it and what to do with a `null`.
+ * view's regulator decides when to call it and what to do with a `null`. The
+ * source is frozen (its arrays are not) and `renew` writes nothing to it: the
+ * view holds the current credentials and expiry.
  *
- * @typedef {Omit<import('../shapes').ManifestPlaybackSource, 'transport' | 'manifestMimeType'> & YouTubePlaybackExtras & {
- *   transport: 'sabr',
- *   manifestUrl: string,
- *   manifestMimeType: 'application/sabr+json',
- *   sabrData: YouTubeSabrData,
- *   sabrStoryboards: object[],
- *   renew: (options: { reloadPlaybackContext?: object, rebuilding?: boolean }) => Promise<YouTubeSabrRefreshResult | null>,
- * }} YouTubeSabrPlaybackSource
- *
- * - `sabrStoryboards`: the SABR manifest's storyboard entries
- *   (`SabrManifest['storyboards']`), kept because they come from `/next`,
- *   which a rebuild does not re-read.
- * - `renew`: a closure over the video id and the Local module:
- *   `getLocalVideoInfo(id, { reloadPlaybackContext })`, then the credentials
- *   (`buildSabrData`) and, for `rebuilding`, a new manifest from the retained
- *   captions, chapters and `sabrStoryboards`. `reloadPlaybackContext` is the
- *   server's reload token from a `RELOAD_PLAYER_RESPONSE` part and must ride
- *   on the `/player` call. The new `expiresAt` comes back with it (see the
- *   open questions).
+ * @typedef {import('../shapes').SabrPlaybackSource} YouTubeSabrPlaybackSource
  */
 
-/**
- * Local answers either transport; Invidious only `manifest`, since it cannot
- * mint a PO token or run SABR.
- *
- * @typedef {YouTubeManifestPlaybackSource | YouTubeSabrPlaybackSource} YouTubeLocalPlaybackSource
- * @typedef {YouTubeManifestPlaybackSource} YouTubeInvidiousPlaybackSource
- * @typedef {YouTubeLocalPlaybackSource} YouTubePlaybackSource
- */
+// The union of the two is `PlaybackSource` in ../shapes.js: Local answers
+// either transport, Invidious only `manifest`, since it cannot mint a PO
+// token or run SABR.
 
 // ---------------------------------------------------------------------------
 // Channels
 // ---------------------------------------------------------------------------
 
 /**
- * A YouTube channel. Local: `getLocalChannel(id)` (a `YT.Channel`, or
- * `{ alert }` for a terminated channel, which is `notFound`), read through
- * `parseLocalChannelHeader`; the description needs a second request,
- * `channel.getAbout()`. Invidious: `invidiousGetChannelInfo(id)`.
+ * A YouTube channel, the common `ChannelDetails` (../shapes.js, which took
+ * `tabs`, `tags`, `isFamilyFriendly` and `isArtistTopicChannel`). Implemented
+ * in `./channels.js`. Local: `getLocalChannel(id)` (a `YT.Channel`, or
+ * `{ alert }` for a terminated channel, which is `notFound`; an age gate is
+ * `refused`, `ageRestricted`), read through `parseLocalChannelHeader`; the
+ * description needs a second request, `channel.getAbout()`. Invidious:
+ * `invidiousGetChannelInfo(id)`.
  *
- * | common           | L                                                  | I                                            |
- * | ---------------- | -------------------------------------------------- | -------------------------------------------- |
- * | platform, host   | absent                                             | absent                                       |
- * | id               | header id, else `metadata.external_id`, else the ref | `authorId`                                 |
- * | name             | header name                                        | `author`                                     |
- * | thumbnail        | header `thumbnailUrl`                              | `authorThumbnails[3]` (instance-rewritten by `describe` when shown) |
- * | handle           | — on the channel page; a search `Channel` node's `subscriber_count` text when it starts with `@` | — (not read today) |
- * | subscriberCount  | `parseLocalSubscriberCount(subscriberText)`, `null` when unreadable | `subCount`                  |
- * | url              | `https://www.youtube.com/channel/{id}`             | the same                                     |
- * | avatarLarge      | the same `thumbnailUrl` (the header gives one)     | `authorThumbnails.at(-1)`                    |
- * | banner           | `bannerUrl`, `null` when none                      | `authorBanners[0]` via `youtubeImageUrlToInvidious` |
- * | description      | `about.description.text`, else `about.metadata.description` | `description`                       |
- * | descriptionKind  | `'plain'` (the view autolinks it)                  | `'plain'`                                    |
- * | support          | absent                                             | absent                                       |
+ * | common               | L                                                  | I                                            |
+ * | -------------------- | -------------------------------------------------- | -------------------------------------------- |
+ * | platform, host       | absent                                             | absent                                       |
+ * | id                   | header id, else `metadata.external_id`, else the ref | `authorId`, else the ref                   |
+ * | name                 | header name, else `metadata.title`                 | `author`                                     |
+ * | thumbnail            | header `thumbnailUrl`, `//` made `https:`          | `authorThumbnails[3]`, else the last, as a subscription stores it (`describe` moves it onto the instance when shown) |
+ * | handle               | the `@handle` `metadata.vanity_channel_url` ends in, `null` without | `null` (not read)           |
+ * | subscriberCount      | `parseLocalSubscriberCount(subscriberText)`, `null` when unreadable | `subCount`, `null` when not a number |
+ * | url                  | `https://www.youtube.com/channel/{id}`             | the same                                     |
+ * | avatarLarge          | the same `thumbnailUrl` (the header gives one)     | `authorThumbnails.at(-1)` via `youtubeImageUrlToInvidious` |
+ * | banner               | `bannerUrl`, `null` when none                      | `authorBanners[0]` via `youtubeImageUrlToInvidious`, `null` when none |
+ * | description          | `getAbout()`'s `description.text` (`ChannelAboutFullMetadata`), else `metadata.description`; `''` without `has_about` | `description` |
+ * | descriptionKind      | `'plain'` (the view autolinks it)                  | `'plain'`                                    |
+ * | support              | absent                                             | absent                                       |
+ * | tabs                 | by the `has_*` flags; an artist topic channel also `videos` and `releases` | `tabs`, as the module maps them (`streams` → `live`, `posts` → `community`) |
+ * | tags                 | header tags and `metadata.tags`, without repeats   | `tags`, without repeats                      |
+ * | isFamilyFriendly     | `metadata.is_family_safe === true`                 | `isFamilyFriendly === true`                  |
+ * | isArtistTopicChannel | a name ending `- Topic` with `metadata.music_artist_name`, which changes where its videos come from | absent |
  *
- * Proposed, absent for PeerTube: `tabs` (which of videos, shorts, live,
- * playlists, podcasts, releases, courses, posts exist; L from the channel
- * instance, I `tabs` with `streams` → `live`, `posts` → `community`),
- * `tags` (L `metadata.tags` and header badges, I `tags`), `isFamilyFriendly`
- * (L `metadata.is_family_safe`, I `isFamilyFriendly`), and
- * `isArtistTopicChannel` (L only: a name ending `- Topic` with
- * `metadata.music_artist_name`), which changes where its videos come from.
- * `getLocalChannel` also records channel tags as a side effect
- * (`rememberChannelTags`); phase 2 decides whether the adapter keeps it.
+ * `tabs` uses the old view's names in its order (`videos`, `shorts`, `live`,
+ * `releases`, `podcasts`, `courses`, `playlists`, `community`), without home
+ * or about, and with no hide settings applied. Channel tags are recorded by
+ * the modules themselves (`rememberChannelTags` in `getLocalChannel` and
+ * `invidiousGetChannelInfo`), so the adapter does not.
  *
- * @typedef {import('../shapes').ChannelDetails & {
- *   tabs?: string[],
- *   tags?: string[],
- *   isFamilyFriendly?: boolean,
- *   isArtistTopicChannel?: boolean,
- * }} YouTubeChannelDetails
- */
-
-/**
- * A YouTube channel in search results. L: `parseListItem`'s `Channel` and
- * `GridChannel` answer already has this shape (`dataSource: 'local'`,
- * `thumbnail` with `//` made `https://`, `subscribers`, `videos`, `handle`,
- * `descriptionShort`); `GameCard` adds `isGame`. I: `InvidiousChannelObject`
- * renamed into it: `author` → `name`, `authorId` → `id`,
- * `authorThumbnails.at(-1)` → `thumbnail`, `subCount` → `subscribers` and
- * `subscriberCount`, `videoCount` → `videos`, `description` → both
- * descriptions (`descriptionShort` truncated as the common shape says).
+ * The Local `YT.Channel` instances `getChannel` fetched are kept in an LRU of
+ * 5 per layer instance (Q8), so a first page of a channel list does not cost
+ * a second `/browse`; a miss fetches the channel again.
  *
- * @typedef {import('../shapes').ChannelListItem & { isGame?: boolean }} YouTubeChannelListItem
+ * @typedef {never} YouTubeChannelDetailsTable
  */
 
 // ---------------------------------------------------------------------------
@@ -488,8 +480,9 @@
 // ---------------------------------------------------------------------------
 
 /**
- * A YouTube playlist in a list. L: `parseLocalListPlaylist` answers the
- * card's Local field names already, with `dataSource: 'local'`. I:
+ * A YouTube playlist in a list, implemented in `./channels.js` for a
+ * channel's own playlists. L: `parseLocalListPlaylist` answers the card's
+ * Local field names already, with `dataSource: 'local'`. I:
  * `InvidiousPlaylistObject` renamed into them.
  *
  * | common       | L (`parseLocalListPlaylist`)                   | I (`InvidiousPlaylistObject`)                     |
@@ -497,21 +490,17 @@
  * | playlistId   | `id` / `playlistId`                            | `playlistId`                                      |
  * | title        | `title.text`                                   | `title`                                           |
  * | thumbnail    | the renderer's or `thumbnails[0].url`          | `playlistThumbnail`, with `i.ytimg.com` → the instance and `hqdefault` → `mqdefault`, as the card does for Invidious |
- * | videoCount   | number from `video_count.text`                 | `videoCount`                                      |
+ * | videoCount   | number from `video_count.text`                 | `videoCount`, `null` when not a number            |
  * | url          | `https://www.youtube.com/playlist?list={id}`   | the same                                          |
  * | description  | `''`                                           | `''`                                              |
- * | channelName  | `author.name`, else the channel page's         | `author`                                          |
- * | channelId    | `author.id`, else the channel page's; `null` for auto-generated albums | `authorId`                |
+ * | channelName  | `author.name`, else the channel page's; `''` when none | `author`, `''` when none                  |
+ * | channelId    | `author.id`, else the channel page's; `null` for auto-generated albums and stations | `authorId`, `null` when empty |
  *
- * `dataSource: 'local'` is required, not optional: `FtListPlaylist` reads
- * the Local field names only when `dataSource === 'local'`, and otherwise
- * reads `playlistThumbnail` and fails. The common `PlaylistSummary` does not
- * carry it yet.
+ * `dataSource: 'local'` is on every YouTube playlist, from either backend:
+ * `FtListPlaylist` reads the Local field names only when `dataSource ===
+ * 'local'`, and otherwise reads `playlistThumbnail` and fails.
  *
- * @typedef {Omit<import('../shapes').PlaylistSummary, 'channelId'> & {
- *   dataSource: 'local',
- *   channelId: string | null,
- * }} YouTubePlaylistSummary
+ * @typedef {import('../shapes').PlaylistSummary & { dataSource: 'local' }} YouTubePlaylistSummary
  */
 
 // ---------------------------------------------------------------------------
@@ -519,46 +508,50 @@
 // ---------------------------------------------------------------------------
 
 /**
- * A YouTube comment. L: `parseLocalComment(thread.comment, thread)` per
- * thread of the `YT.Comments` page. I: `parseInvidiousCommentData`, or the
- * raw `/api/v1/comments` entries under it.
+ * A YouTube comment, implemented in `./comments.js`. Mapped from what the
+ * modules parsed, except the time. L: `parseLocalComment(thread.comment,
+ * thread)` per thread of the `YT.Comments` page. I: `invidiousGetComments`'s
+ * `commentData`, with the time from the raw `/api/v1/comments` entries in its
+ * `response`. Both modules answer the time as localised relative text, which
+ * is why it is read apart.
  *
  * | common          | L (`YTNodes.CommentView`)                                  | I (comment entry)                         |
  * | --------------- | ---------------------------------------------------------- | ----------------------------------------- |
  * | id              | `comment_id`                                               | `commentId`                               |
- * | threadId        | the thread's first comment's `comment_id`                  | the same                                  |
+ * | threadId        | its own id for a thread; the thread's for a reply          | the same                                  |
  * | text            | `parseLocalTextRuns(content.runs)` (or the voice reply transcript), autolinked | `contentHtml`, instance-rewritten, autolinked |
  * | textKind        | `'html'`                                                   | `'html'`                                  |
  * | author          | `author.name`                                              | `author`                                  |
  * | authorAccount   | `''`: YouTube has no accounts apart from channels          | `''`                                      |
  * | authorThumbnail | `author.best_thumbnail.url`                                | `authorThumbnail` via `youtubeImageUrlToInvidious` |
- * | createdAt       | estimated from `published_time` text ("2 weeks ago", `(edited)` removed) | `published * 1000`, exact   |
+ * | createdAt       | estimated from `published_time` ("2 weeks ago", `(edited)` removed) by `calculatePublishedDate`; 0 when unreadable | `published * 1000`, exact; 0 when missing |
  * | isDeleted       | `false`: neither backend reports a deleted comment         | `false`                                   |
  * | replyCount      | from `reply_count_a11y`, when the thread has replies       | `replies.replyCount`                      |
  *
- * Proposed, absent for PeerTube, all read by `FtComment` today:
- * `authorId` (a channel ref: a YouTube comment's author is a channel and the
- * comment links to it, unlike PeerTube's account), `likes`, `isPinned`,
- * `isHearted`, `isOwner`, `isMember` and `memberIconUrl`,
- * `hasOwnerReplied` (L only), and `repliesCursor`: what `getCommentReplies`
- * starts from. L the `YTNodes.CommentThread` instance; I the
- * `replies.continuation` string. The common comment's `id` is not enough on
- * either backend: Local needs the thread instance, and Invidious' reply token
- * is not derivable from the id.
+ * The optional YouTube fields of the common `Comment`, all read by
+ * `FtComment`: `authorId`, `likes`, `isPinned`, `isHearted`, `isOwner`,
+ * `isMember` and `memberIconUrl` on both; `hasOwnerReplied` on Local only;
+ * and `repliesCursor`, what `getCommentReplies` starts from: L
+ * `{ backend: 'local', continuation }` around the `YTNodes.CommentThread`, I
+ * `{ backend: 'invidious', continuation }` around `replies.continuation`,
+ * `null` without replies. The comment's `id` is not enough on either
+ * backend: Local needs the thread instance, and Invidious' reply token is not
+ * derivable from the id.
  *
- * `getComments` needs a `sort` option (`newest` or `top`), which both
- * backends take and the old section offers.
+ * Invidious replies go through `invidiousGetComments` with the reply token as
+ * `nextPageToken`, not `invidiousGetCommentReplies`: only the former hands
+ * back the raw entries with their exact `published`. It is meant to be the
+ * same request (Invidious ignores `sort_by` with a continuation), not
+ * confirmed against a live instance.
+ *
+ * `getComments` takes a `sort`, `top` (the default) or `newest`. When the
+ * backend says the video's comments are off (Local "The comments page did not
+ * have any content", Invidious "Comments not found"), the first page is
+ * `{ items: [], cursor: null, commentsEnabled: false }` (Q7); on a later page
+ * it is an ordinary error.
  *
  * @typedef {import('../shapes').Comment & {
- *   authorId?: string,
- *   likes?: number,
- *   isPinned?: boolean,
- *   isHearted?: boolean,
- *   isOwner?: boolean,
- *   isMember?: boolean,
- *   memberIconUrl?: string,
- *   hasOwnerReplied?: boolean,
- *   repliesCursor?: YouTubeCursor | null,
+ *   repliesCursor: YouTubeLocalCursor | YouTubeInvidiousTokenCursor | null,
  * }} YouTubeComment
  */
 
@@ -567,124 +560,46 @@
 // ---------------------------------------------------------------------------
 
 /**
- * YouTube search results are wider than the common page's videos and
- * channels. L `getLocalSearchResults(query, filters, safetyMode)` and I
- * `getInvidiousSearchResults(query, page, searchSettings)` both answer
- * videos, channels, playlists and hashtags (`{ type: 'hashtag', title,
- * videoCount, channelCount }`), and L also movies and lockup views. The old
- * search page also passes filters the common `search` options
- * do not have: sort (`prioritize`), upload time, duration, type (including
- * playlist) and features, plus `safetyMode` from `showFamilyFriendlyOnly`.
+ * YouTube search, implemented in `./search.js`. The items are the modules'
+ * own list items, handed on as they are, as the old search page's cards read
+ * them; not mapped into the common shapes. L `getLocalSearchResults(query,
+ * filters, safetyMode)` answers `parseListItem`'s videos, channels (with
+ * `dataSource: 'local'`, so `FtListChannel` reads the Local field names, as
+ * the common `ChannelListItem` says), playlists, movies and lockup views. I
+ * `getInvidiousSearchResults(query, page, filters)` answers the API's video,
+ * channel and playlist objects, after the module's own normalising of videos.
+ * Hashtags, which both answer, are dropped by the adapter.
  *
- * @typedef {YouTubeVideoSummary | YouTubeChannelListItem | YouTubePlaylistSummary | { type: 'hashtag', title: string, videoCount: number | null, channelCount?: number | null }} YouTubeSearchItem
+ * Filters come from the layer's search query (../search/query.js):
+ * `youtubeFilters` turns it into the `{ prioritize, time, type, duration,
+ * features }` both modules take, sending only what YouTube honours
+ * (../search/capabilities.js), and `safetyMode` on Local is
+ * `config.showFamilyFriendlyOnly`. Every search failure is `unavailable`:
+ * nothing refuses a search, so each falls back on a first page (ADR-0015).
+ *
+ * @typedef {never} YouTubeSearchTable
  */
 
 // ---------------------------------------------------------------------------
 // Channel feed
 // ---------------------------------------------------------------------------
 
-/**
- * `fetchChannelFeed` for a YouTube channel answers the existing fetch status
- * contract exactly as `SubscriptionFeedDescriptor.fetchChannel` does
- * (src/renderer/helpers/subscriptionFeeds/index.js):
- * `{ status, entries, name?, thumbnailUrl? }`, `status` one of `FETCH_OK`,
- * `FETCH_RATE_LIMITED`, `FETCH_UNAVAILABLE`, `FETCH_FAILED`
- * (src/renderer/helpers/subscriptionFetchStatus.js). The entries are the
- * cache's own shapes, not video summaries: RSS entries marked `isRSS`, which
- * the detail back-fill enriches later, and the scraper's list videos.
- *
- * Per feed and backend, what exists today: `videos`, `shorts`, `live` choose
- * RSS by the setting (Local RSS, Local scraper, Invidious RSS, Invidious
- * scraper), with a 404 corroborated by the channel liveness probe before it
- * is `FETCH_UNAVAILABLE` (`resolveGoneVerdict`, ADR-0012); `posts` never has
- * RSS. Each reads the backend preference and fallback from the store.
- *
- * @typedef {{ status: 'ok' | 'rateLimited' | 'unavailable' | 'failed', entries: object[] | null, name?: string, thumbnailUrl?: string }} YouTubeChannelFeedStatus
- */
+// `fetchChannelFeed` stays PeerTube only (spec, "Phase 2 decisions", Q4). A
+// YouTube channel's feeds go where they go today: the subscription feed
+// descriptors (src/renderer/helpers/subscriptionFeeds/) keep dispatching
+// YouTube themselves, with their store reads, RSS choice, liveness probe
+// (ADR-0012) and the back-fill's `isRSS` contract untouched. The layer's
+// `fetchChannelFeed` answers `failed` with an `invalid` error for a YouTube
+// ref, which is the documented contract.
 
 // ---------------------------------------------------------------------------
-// Open questions for phase 2
+// Decisions
 // ---------------------------------------------------------------------------
-//
-// 1. Can a Local continuation be a cursor at all? It is a library instance:
-//    in memory only, never reactive, never persisted. The spec's cursor is
-//    "held by the caller and handed back unchanged", which an instance
-//    satisfies as long as no caller stores, clones or proxies it, and a view
-//    keeps it in `shallowRef` or a plain variable. Phase 2 should state that
-//    rule on `Page` (cursors are not serialisable) rather than serialise:
-//    only search and playlists have a serialised form today.
-// 2. Does the `sabr` source hold data or a factory? The credentials are short
-//    lived and the rebuild needs a fresh manifest, so it cannot be data only.
-//    Sketched here as data plus `renew`, a fetch-only closure, with the
-//    regulator staying in the view (ADR-0006). Alternatives: a layer
-//    operation `renewSabr(ref, options)`, which keeps sources plain data at
-//    the cost of the view passing the retained captions, chapters and
-//    storyboards back in. `renew` must also hand back the new `expiresAt`,
-//    and the new caption URLs if the token in them matters.
-// 3. Where does the backend fallback policy sit relative to cursors? A Local
-//    cursor cannot be handed to Invidious, so the first page chooses the
-//    backend for the whole list and later pages go to the backend the cursor
-//    names. A later page failing is an error, not a fallback, unless the
-//    policy restarts the list from page one on the other backend, which the
-//    caller would see as a reset. Refusals that are final (members only, age
-//    restricted, DRM, private) must not fall back at all.
-// 4. `fetchChannelFeed` for YouTube: keep RSS, the scraper choice, the
-//    liveness probe and the back-fill's `isRSS` contract inside, by wrapping
-//    the existing descriptors' `fetchChannel` as a dependency? They read the
-//    store, which the layer must not; the spec's "a YouTube channel goes where
-//    it goes today" suggests the layer's `fetchChannelFeed` stays PeerTube
-//    only and the descriptors keep dispatching YouTube themselves.
-// 5. The category: `VideoDetails.category` is YouTube's category on YouTube
-//    and PeerTube's on PeerTube. The old view writes it to the history entry
-//    as `category` when non-empty, and the Channels page reads it as the
-//    watched category, which is YouTube-only by the spec. The layer watch
-//    view must write it for YouTube only, or the shape needs a YouTube-only
-//    field. Whether Local's `basic_info.category` and Invidious' `genre`
-//    name categories the same way (both English?) is unchecked.
-// 6. `nsfw` versus `isFamilyFriendly`: PeerTube's NSFW flag is filtered in the
-//    layer by a PeerTube setting; YouTube's family-safe flag is filtered in
-//    the views by `showFamilyFriendlyOnly`, and on Local search also passed
-//    as `safetyMode`. One field inverted, or two?
-// 7. `commentsEnabled`: neither YouTube backend says in the details; Local
-//    finds out from `getComments` ("The comments page did not have any
-//    content"). `boolean | null` (unknown), or the comments page says it.
-// 8. Local `listChannelVideos` needs the `YT.Channel` instance that
-//    `getChannel` fetched: without it the first page costs a second
-//    `/browse` (`getLocalChannelVideos` answers no continuation). Cache it in
-//    the adapter per layer instance, or accept the request?
-// 9. YouTube downloads are yt-dlp, not download options: `downloadEnabled:
-//    false` and `downloadOptions: []` for YouTube, and the layer watch view
-//    needs another way to show the yt-dlp button when watch moves (phase 3).
-// 10. Config the YouTube adapters need beyond `PlatformConfig`: `proxyVideos`,
-//    `showFamilyFriendlyOnly` (search `safetyMode`), and whether the build
-//    has the Local API (`SUPPORTS_LOCAL_API`, which changes how Invidious'
-//    DASH manifest is made).
-//
-// Where a phase 1 common shape bends for YouTube (all additions or widenings,
-// none a rename):
-//
-// - `SabrPlaybackSource` as `{ transport, data }` does not fit: the view needs
-//   captions, chapters, storyboard, legacy formats and audio from a SABR
-//   source just as from a manifest source, so it should share the manifest
-//   source's fields and add `sabrData`, `sabrStoryboards` and `renew`.
-// - `VideoSummary.type` needs `'shortVideo'`; `lengthSeconds` needs `''`
-//   (unknown, not live), since absent means live to the card.
-// - `VideoDetails.descriptionKind` needs `'html'`: both backends give a
-//   YouTube video description as markup with links, not plain text (a
-//   channel's is plain). `commentsEnabled` needs `null`; the details lack
-//   `isFamilyFriendly`, `isUnlisted`, `related` and the chapters kind.
-// - `ManifestPlaybackSource` lacks `loudnessDb`, `expiresAt`, `vrProjection`,
-//   `delayLoadUntilMs` and `isPostLiveDvr`; its `storyboard` is typed as a
-//   data URI, but Invidious' is a WebVTT URL. `CaptionTrack` lacks `id` and
-//   `isAutotranslated`, `Chapter` a `thumbnail`.
-// - `PlaylistSummary` needs `dataSource: 'local'` for the existing card, and
-//   `channelId` may be `null`.
-// - `Comment` needs a way to its replies other than `id` (`repliesCursor`),
-//   the author's channel ref, and the counts and flags the comment component
-//   shows; `getComments` needs a sort.
-// - `ChannelDetails` lacks `tabs`, `tags` and `isFamilyFriendly`.
-// - `search` returns playlists and hashtags as well, and takes filters.
-// - `RefusalReason` lacks YouTube's reasons (members only, age restricted,
-//   DRM, IP block, unexplained).
+
+// The open questions this file ended with in phase 1 are settled in the
+// spec's "Phase 2 decisions" (.scratch/platform-layer/spec.md), ADR-0015
+// (backend fallback and cursors) and ADR-0016 (the `sabr` source). What the
+// implementation changed on the way is dated in the amendments at the end of
+// .scratch/platform-layer/design.md.
 
 export {}
