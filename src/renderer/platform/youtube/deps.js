@@ -34,9 +34,10 @@
 // From the player and utility helpers, which import i18n or shaka and so are
 // not imported by the layer either: `sortCaptions`
 // (`helpers/player/utils.js`), `buildVTTFileLocally`,
-// `formatDurationAsTimestamp`, `extractNumberFromString`, `getChannelPlaylistId`
-// (`helpers/utils.js`; the last names a channel's auto-generated uploads
-// playlist), `buildFormatId` (`helpers/player/SabrManifestParser.js`).
+// `formatDurationAsTimestamp`, `extractNumberFromString`,
+// `calculatePublishedDate`, `getChannelPlaylistId` (`helpers/utils.js`; the
+// last names a channel's auto-generated uploads playlist), `buildFormatId`
+// (`helpers/player/SabrManifestParser.js`).
 //
 // And `resolveUrl(url)`, the existing YouTube URL parser (`../vue.js`).
 
@@ -82,6 +83,12 @@ export const YOUTUBE_DEP_NAMES = Object.freeze({
     'getInvidiousSearchResults',
   ]),
   playerUtils: Object.freeze(['sortCaptions']),
-  utils: Object.freeze(['buildVTTFileLocally', 'formatDurationAsTimestamp', 'extractNumberFromString', 'getChannelPlaylistId']),
+  utils: Object.freeze([
+    'buildVTTFileLocally',
+    'formatDurationAsTimestamp',
+    'extractNumberFromString',
+    'calculatePublishedDate',
+    'getChannelPlaylistId',
+  ]),
   sabrManifest: Object.freeze(['buildFormatId']),
 })

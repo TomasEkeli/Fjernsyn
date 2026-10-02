@@ -1,0 +1,83 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "comments.applySort('NEWEST_FIRST')",
+  "notes": "The recent threads of the recorded page, standing in for the newest-first page; the header marked newest. Ends the list.",
+  "answer": {
+    "header": {
+      "sort_menu": {
+        "sub_menu_items": [
+          {
+            "title": "Top",
+            "selected": false
+          },
+          {
+            "title": "Newest",
+            "selected": true
+          }
+        ]
+      }
+    },
+    "contents": [
+      {
+        "comment": {
+          "comment_id": "Ugzt1jVA4vSAQ8_OqVV4AaABAg",
+          "author": {
+            "id": "UC_6s_Rg8-T2znlPOGuSpwsQ",
+            "name": "@milkyy.mochiii",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/Rtck9npLGFKPf3chThKr2P8H4Pxdvgd0MsADjBS5jNkFsbqDX3XRuM9aVBTjUlWuc8-cadGVPA=s88-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "content": {
+            "runs": [
+              {
+                "text": "Crazy how this video was made before I was born"
+              }
+            ]
+          },
+          "published_time": "1 hour ago",
+          "like_count": "13",
+          "reply_count_a11y": "0 replies",
+          "reply_level": 0,
+          "is_pinned": false,
+          "is_hearted": false,
+          "is_member": false,
+          "author_is_channel_owner": false
+        },
+        "has_replies": false,
+        "comment_replies_data": null
+      },
+      {
+        "comment": {
+          "comment_id": "UgwCnpzONyMNBTJLRCd4AaABAg",
+          "author": {
+            "id": "UCdRzDH-7M_nq05SqsDndUVw",
+            "name": "@eduardo87273",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/ytc/AIdro_m2gSlRZ8pnKJyCcGdJLGFQ9gRQp0EvqSYZSulf8MYqwOgLgQf6khYraMqkL0JYWSFS6w=s88-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "content": {
+            "runs": [
+              {
+                "text": "Randomly got recommended on October 1st 2026"
+              }
+            ]
+          },
+          "published_time": "18 hours ago",
+          "like_count": "14",
+          "reply_count_a11y": "0 replies",
+          "reply_level": 0,
+          "is_pinned": false,
+          "is_hearted": false,
+          "is_member": false,
+          "author_is_channel_owner": false
+        },
+        "has_replies": false,
+        "comment_replies_data": null
+      }
+    ],
+    "has_continuation": false
+  }
+}

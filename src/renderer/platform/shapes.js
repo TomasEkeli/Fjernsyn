@@ -332,6 +332,16 @@
  *   `getCommentReplies` for it returns.
  * - A deleted comment is kept, since it may have replies, with its text and
  *   author empty.
+ * - YouTube's (both backends) add what the comment component shows and
+ *   PeerTube does not have, so the fields are optional: `authorId`, the
+ *   author's channel ref, since a YouTube commenter is a channel the comment
+ *   links to, unlike PeerTube's account; `likes`; the flags `isPinned`,
+ *   `isHearted`, `isOwner`, `isMember` with `memberIconUrl`, and
+ *   `hasOwnerReplied` (Local only, Invidious does not say); and
+ *   `repliesCursor`, what `getCommentReplies` starts from (Local's thread
+ *   instance, Invidious' reply token, `null` without replies), because
+ *   neither backend can reach the replies from `id` alone. A cursor like any
+ *   other: held as it is, never stored or cloned.
  *
  * @typedef {object} Comment
  * @property {number | string} id
@@ -346,6 +356,15 @@
  * @property {number} createdAt ms since the epoch
  * @property {boolean} isDeleted
  * @property {number} replyCount
+ * @property {string} [authorId] YouTube: the author's channel ref
+ * @property {number} [likes] YouTube
+ * @property {boolean} [isPinned] YouTube
+ * @property {boolean} [isHearted] YouTube: hearted by the video's channel
+ * @property {boolean} [isOwner] YouTube: written by the video's channel
+ * @property {boolean} [isMember] YouTube: a member of the video's channel
+ * @property {string} [memberIconUrl] YouTube: the member badge, `''` when none
+ * @property {boolean} [hasOwnerReplied] YouTube, Local only
+ * @property {unknown} [repliesCursor] YouTube: `null` when there are no replies
  */
 
 /**
@@ -357,10 +376,15 @@
  * empty a page, and the adapter follows such a page with only a few more
  * requests before handing back what it has. Ask again with the cursor.
  *
+ * `commentsEnabled: false` is on a first page of comments only, when the
+ * platform answered that the video's comments are off rather than that there
+ * are none (YouTube; spec, "Phase 2 decisions", Q7). Absent otherwise.
+ *
  * @template T
  * @typedef {object} Page
  * @property {T[]} items
  * @property {unknown} cursor
+ * @property {boolean} [commentsEnabled]
  */
 
 export {}

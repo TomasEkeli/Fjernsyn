@@ -326,12 +326,15 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   }
 
   /**
-   * A page of a video's comment threads, newest first, read only (see
-   * `./peertube/comments.js`). A video whose details say comments are off
-   * (`commentsEnabled: false`) is an empty page, without a request.
+   * A page of a video's comment threads, read only. PeerTube: newest first
+   * (see `./peertube/comments.js`); a video whose details say comments are off
+   * (`commentsEnabled: false`) is an empty page, without a request. YouTube
+   * (see `./youtube/comments.js`): `sort` `top` (the default) or `newest`,
+   * ignored by PeerTube; a video whose backend says its comments are off is
+   * `{ items: [], cursor: null, commentsEnabled: false }`.
    *
    * @param {import('./shapes').VideoRef} ref
-   * @param {{ cursor?: unknown }} [options]
+   * @param {{ sort?: 'top' | 'newest', cursor?: unknown }} [options]
    * @returns {Promise<import('./shapes').Page<import('./shapes').Comment>>}
    */
   function getComments(ref, options) {
@@ -340,7 +343,8 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
 
   /**
    * A page of a comment's direct replies, each with its own `replyCount`, so
-   * that deeper replies load on demand in the same way.
+   * that deeper replies load on demand in the same way. A YouTube comment's
+   * replies start from its `repliesCursor` and stay on that backend.
    *
    * @param {import('./shapes').VideoRef} ref
    * @param {import('./shapes').Comment} comment as `getComments` or this returned it

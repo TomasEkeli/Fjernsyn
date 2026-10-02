@@ -1,0 +1,135 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "thread.getReplies()",
+  "notes": "The first thread of local--comments.json once its replies are loaded: a YTNodes.CommentThread, its replies nested threads; a test adds getContinuation.",
+  "answer": {
+    "comment": {
+      "comment_id": "UgzuC3zzpRZkjc5Qzsd4AaABAg",
+      "author": {
+        "id": "UCC5NfQ6Mf0dq_eEwv4P_hWA",
+        "name": "@SanDiegoZoo",
+        "best_thumbnail": {
+          "url": "https://yt3.ggpht.com/i8RqA9tYqbbnOi4mlnYEY7IR3kXAoDqQbM_5Sfzw7OjTubiGsOaTdlrIZmj-I0q0Vup68eqs=s88-c-k-c0x00ffffff-no-rj"
+        }
+      },
+      "content": {
+        "runs": [
+          {
+            "text": "We're so honored that the first ever YouTube video was filmed here!"
+          }
+        ]
+      },
+      "published_time": "6 years ago",
+      "like_count": "4.8M",
+      "reply_count_a11y": "985 replies",
+      "reply_level": 0,
+      "is_pinned": true,
+      "is_hearted": true,
+      "is_member": false,
+      "author_is_channel_owner": false
+    },
+    "has_replies": true,
+    "comment_replies_data": {
+      "has_channel_owner_replied": false
+    },
+    "replies": [
+      {
+        "comment": {
+          "comment_id": "UgzuC3zzpRZkjc5Qzsd4AaABAg.958xaQsh63D95AEkVnh_di",
+          "author": {
+            "id": "UCS2FiwDUXi_VJwC7HGJl4sw",
+            "name": "@tacticals.1811",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/ytc/AIdro_lZw3hXocTpPkrBaokhimMsY2HuQIO5H_MCtLbKHZbjIe8=s88-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "content": {
+            "runs": [
+              {
+                "text": "How did I randomly go to this video and see this comment 11 hours after it was posted? That's amazing"
+              }
+            ]
+          },
+          "published_time": "6 years ago",
+          "like_count": "56K",
+          "reply_count_a11y": "0 replies",
+          "reply_level": 1,
+          "is_pinned": false,
+          "is_hearted": false,
+          "is_member": false,
+          "author_is_channel_owner": false
+        },
+        "has_replies": false,
+        "comment_replies_data": null
+      },
+      {
+        "comment": {
+          "comment_id": "UgzuC3zzpRZkjc5Qzsd4AaABAg.958xaQsh63D958yN1-HDaK",
+          "author": {
+            "id": "UC8h3BHk1Pk1_-VH9PRIxtgg",
+            "name": "@TheGreekPianist",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/_1g5ojtlLhI7DNw4LVNHLdcKlc3epv6-liZsICtcWvLg0CiJvI2LGm-qSIJiJsaX-qCR0ycQ=s88-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "content": {
+            "runs": [
+              {
+                "text": "San Diego Zoo That’s so awesome! I’m so glad the first YouTube video featured cute animals in it! "
+              },
+              {
+                "text": "😊"
+              },
+              {
+                "text": "🐘"
+              }
+            ]
+          },
+          "published_time": "6 years ago (edited)",
+          "like_count": "205K",
+          "reply_count_a11y": "8 replies",
+          "reply_level": 1,
+          "is_pinned": false,
+          "is_hearted": false,
+          "is_member": false,
+          "author_is_channel_owner": false
+        },
+        "has_replies": true,
+        "comment_replies_data": {
+          "has_channel_owner_replied": false
+        }
+      },
+      {
+        "comment": {
+          "comment_id": "UgzuC3zzpRZkjc5Qzsd4AaABAg.958xaQsh63D95CIDNdb5jS",
+          "author": {
+            "id": "UCOTcbDNDFV59ApaTo1J90wg",
+            "name": "@nytro8027",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/ytc/AIdro_lJsEDe3-ak1QLi-xX6WijtX5pCgiblD4ls3NkudixZvPI=s88-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "content": {
+            "runs": [
+              {
+                "text": "yoo here before thousands of likes"
+              }
+            ]
+          },
+          "published_time": "6 years ago",
+          "like_count": "18K",
+          "reply_count_a11y": "0 replies",
+          "reply_level": 1,
+          "is_pinned": false,
+          "is_hearted": false,
+          "is_member": false,
+          "author_is_channel_owner": false
+        },
+        "has_replies": false,
+        "comment_replies_data": null
+      }
+    ],
+    "has_continuation": true
+  }
+}
