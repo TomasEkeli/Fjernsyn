@@ -46,6 +46,7 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
         useTheatreMode: { type: Boolean, default: false },
         autoplayPossible: { type: Boolean, default: false },
         autoplayEnabled: { type: Boolean, default: false },
+        watchingPlaylist: { type: Boolean, default: false },
         startInFullscreen: { type: Boolean, default: false },
         startInFullwindow: { type: Boolean, default: false },
         startInPip: { type: Boolean, default: false },
@@ -59,7 +60,7 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
       },
       // Emitted by the tests, through `vm.$emit`
       // eslint-disable-next-line vue/no-unused-emit-declarations
-      emits: ['error', 'loaded', 'ended', 'timeupdate', 'toggle-theatre-mode', 'toggle-autoplay', 'skip-to-next', 'playback-rate-updated', 'sabr-refresh-requested', 'player-reload-requested'],
+      emits: ['error', 'loaded', 'ended', 'timeupdate', 'toggle-theatre-mode', 'toggle-autoplay', 'skip-to-next', 'skip-to-prev', 'playback-rate-updated', 'sabr-refresh-requested', 'player-reload-requested'],
       setup(_props, { expose }) {
         expose({
           get hasLoaded() { return player.hasLoaded },
@@ -133,6 +134,16 @@ const SETTINGS = vi.hoisted(() => ({
   getUnsubscriptionPopupStatus: false,
   getProfileList: [{ _id: 'allChannels', name: 'All Channels', bgColor: '#000000', textColor: '#FFFFFF', subscriptions: [] }],
   getActiveProfile: { _id: 'allChannels', name: 'All Channels', bgColor: '#000000', textColor: '#FFFFFF', subscriptions: [] },
+  // The playlist panel's
+  getAutoplayPlaylists: true,
+  getSaveVideoHistoryWithLastViewedPlaylist: true,
+  getPlaylist: () => undefined,
+  getPlaylistsReady: true,
+  getCachedPlaylist: null,
+  getUserPlaylistSortOrder: 'custom',
+  getBackendPreference: 'local',
+  getBackendFallback: false,
+  getCurrentInvidiousInstanceUrl: 'https://inv.example',
 }))
 
 vi.mock('../../store/index', async () => {
@@ -157,10 +168,16 @@ vi.mock('../../helpers/utils', async (importOriginal) => ({
 
 // Whether PeerTube is switched on is the store's, which the wiring reads; the
 // view is mounted without the wiring
-vi.mock('../../platform/vue', async (importOriginal) => ({
-  ...(await importOriginal()),
-  isPeerTubeEnabled: vi.fn(() => true),
-}))
+vi.mock('../../platform/vue', async (importOriginal) => {
+  const { describe } = await import('../../platform/describe')
+
+  return {
+    ...(await importOriginal()),
+    isPeerTubeEnabled: vi.fn(() => true),
+    // What the shared cards and the playlist panel ask of the layer, unprovided
+    getPlatformLayer: () => ({ describe: (entity, options) => describe(entity, {}, options) }),
+  }
+})
 
 const HOST = 'video.blender.org'
 const UUID = 'b29290cc-dc51-4a12-bcb2-2aa5fece7605'
@@ -324,6 +341,8 @@ async function openWatchPage(answer, path = WATCH_PATH) {
       plugins: [createTestI18n(), router, store],
       provide: { [PLATFORM_LAYER_KEY]: layer },
       directives: { 'observe-visibility': {} },
+      // The playlist panel's items, whose cards are tested with the panel
+      stubs: { FtListVideoNumbered: true },
     },
   })
   openPages.push(wrapper)
@@ -2017,5 +2036,298 @@ describe('autoplay at the end of a video', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe(`/watch/${NEXT_ID}`)
+  })
+})
+
+describe('a playlist', () => {
+  const SECOND_ID = 'pCJ9JGG0GQI'
+  const THIRD_ID = 'z-Xl9tGqH14'
+  const USER_ID = 'mine'
+  const REMOTE_ID = 'PLFgquLnL59alCl_2TQvOiD5Vgm1hCaGSI'
+
+  /** A stored playlist video */
+  function item(videoId, playlistItemId, overrides = {}) {
+    return { videoId, title: `Video ${videoId}`, author: 'Someone', authorId: 'UCsomeone', lengthSeconds: 60, playlistItemId, timeAdded: 1, ...overrides }
+  }
+
+  const peerTubeItem = (playlistItemId) => item(UUID, playlistItemId, { authorId: HANDLE, platform: 'peertube', host: HOST, thumbnail: THUMBNAIL })
+
+  /** A user playlist of the videos, by item id `u1`, `u2`... */
+  function useUserPlaylist(videos) {
+    store.setGetter('getPlaylist', id => (id === USER_ID ? { _id: USER_ID, playlistName: 'Mine', videos } : undefined))
+  }
+
+  /** A YouTube playlist, as the playlist page hands it to the watch page */
+  function useRemotePlaylist(videoIds) {
+    const items = videoIds.map(videoId => item(videoId, undefined))
+    store.setGetter('getCachedPlaylist', {
+      id: REMOTE_ID, title: 'Remote', channelName: 'Someone', channelId: 'UCsomeone', totalVideoCount: items.length, videoCount: items.length, items, continuationData: null,
+    })
+  }
+
+  /** Answers the video each route names, of either platform */
+  const anyVideo = ref => (typeof ref === 'string' ? youtubeVideo({ videoId: ref, title: `Video ${ref}` }) : playableVideo())
+
+  const KINDS = {
+    // Three YouTube videos, the route on the first
+    user: {
+      setUp: () => useUserPlaylist([item(YT_ID, 'u1'), item(SECOND_ID, 'u2'), item(THIRD_ID, 'u3')]),
+      path: (videoId, index) => `/watch/${videoId}?playlistId=${USER_ID}&playlistType=user&playlistItemId=u${index + 1}`,
+      query: index => ({ playlistId: USER_ID, playlistType: 'user', playlistItemId: `u${index + 1}` }),
+    },
+    youtube: {
+      setUp: () => useRemotePlaylist([YT_ID, SECOND_ID, THIRD_ID]),
+      path: videoId => `/watch/${videoId}?playlistId=${REMOTE_ID}&playlistType=`,
+      query: () => ({ playlistId: REMOTE_ID }),
+    },
+  }
+  const IDS = [YT_ID, SECOND_ID, THIRD_ID]
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  async function open(kind, index = 0) {
+    KINDS[kind].setUp()
+    return openWatchPage(anyVideo, KINDS[kind].path(IDS[index], index))
+  }
+
+  function panel(wrapper) {
+    return wrapper.findComponent({ name: 'WatchVideoPlaylist' })
+  }
+
+  async function endVideo(wrapper) {
+    player.paused = true
+    findPlayer(wrapper).vm.$emit('ended')
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(5000)
+    await flushPromises()
+  }
+
+  async function fromPlayer(wrapper, event) {
+    findPlayer(wrapper).vm.$emit(event)
+    await flushPromises()
+  }
+
+  async function toggle(wrapper, label) {
+    await wrapper.find(`[aria-label="${label}"]`).trigger('click')
+  }
+
+  /** @param {import('vue-router').Router} router */
+  function expectOn(router, kind, index) {
+    expect(router.currentRoute.value.path).toBe(`/watch/${IDS[index]}`)
+    expect(router.currentRoute.value.query).toMatchObject(KINDS[kind].query(index))
+    expect(layer.getVideo).toHaveBeenLastCalledWith(IDS[index])
+  }
+
+  describe.each(['user', 'youtube'])('a %s playlist', (kind) => {
+    it('is listed beside the video, with the player\'s skip buttons', async () => {
+      const { wrapper } = await open(kind)
+
+      expect(panel(wrapper).props()).toMatchObject({ videoId: YT_ID, crossPlatform: true })
+      expect(panel(wrapper).isVisible()).toBe(true)
+      expect(findPlayer(wrapper).props('watchingPlaylist')).toBe(true)
+    })
+
+    it('skips to the next video and back from the player', async () => {
+      const { wrapper, router } = await open(kind)
+
+      await fromPlayer(wrapper, 'skip-to-next')
+      expectOn(router, kind, 1)
+
+      await fromPlayer(wrapper, 'skip-to-prev')
+      expectOn(router, kind, 0)
+    })
+
+    it('autoplays the next video after the countdown, with the playlist\'s own toggle', async () => {
+      store.setGetter('getPlayNextVideo', false)
+      const { wrapper, router } = await open(kind)
+
+      expect(findPlayer(wrapper).props()).toMatchObject({ autoplayPossible: true, autoplayEnabled: true })
+
+      await endVideo(wrapper)
+      expectOn(router, kind, 1)
+
+      await fromPlayer(wrapper, 'toggle-autoplay')
+      expect(findPlayer(wrapper).props('autoplayEnabled')).toBe(false)
+      await endVideo(wrapper)
+      expectOn(router, kind, 1)
+    })
+
+    it('ends at the last video, and loops to the first once loop is on', async () => {
+      const { wrapper, router } = await open(kind, 2)
+
+      expect(findPlayer(wrapper).props('autoplayPossible')).toBe(false)
+      await endVideo(wrapper)
+      expect(showToast).toHaveBeenCalledWith('The playlist has ended.  Enable loop to continue playing')
+      expectOn(router, kind, 2)
+
+      await toggle(wrapper, 'Loop Playlist')
+      await endVideo(wrapper)
+      expectOn(router, kind, 0)
+    })
+
+    it('shuffles, playing the next of the shuffled order', async () => {
+      // Over [second, third] a random number of 0 swaps them
+      vi.spyOn(Math, 'random').mockReturnValue(0)
+      const { wrapper, router } = await open(kind)
+
+      await toggle(wrapper, 'Shuffle Playlist')
+      await fromPlayer(wrapper, 'skip-to-next')
+
+      expectOn(router, kind, 2)
+      vi.mocked(Math.random).mockRestore()
+    })
+
+    it('reverses, playing the video before as the next', async () => {
+      const { wrapper, router } = await open(kind, 1)
+
+      await toggle(wrapper, 'Reverse Playlist')
+      await flushPromises()
+      await fromPlayer(wrapper, 'skip-to-next')
+
+      expectOn(router, kind, 0)
+    })
+
+    it('keeps loop, shuffle and reverse from one video to the next', async () => {
+      const { wrapper, router } = await open(kind, 1)
+
+      await toggle(wrapper, 'Loop Playlist')
+      await fromPlayer(wrapper, 'skip-to-next')
+      expectOn(router, kind, 2)
+
+      await endVideo(wrapper)
+      expectOn(router, kind, 0)
+    })
+
+    it('keeps the playlist in the history entry, after the entry', async () => {
+      const { wrapper } = await open(kind)
+
+      findPlayer(wrapper).vm.$emit('loaded')
+      await flushPromises()
+
+      const types = store.dispatched.map(action => action.type)
+      expect(types.indexOf('updateLastViewedPlaylist')).toBeGreaterThan(types.indexOf('updateHistory'))
+      expect(dispatched('updateLastViewedPlaylist')).toEqual([{
+        videoId: YT_ID,
+        lastViewedPlaylistId: KINDS[kind].query(0).playlistId,
+        lastViewedPlaylistType: kind === 'user' ? 'user' : '',
+        lastViewedPlaylistItemId: kind === 'user' ? 'u1' : null,
+      }])
+    })
+
+    it('keeps no playlist in the history entry while the setting is off', async () => {
+      store.setGetter('getSaveVideoHistoryWithLastViewedPlaylist', false)
+      const { wrapper } = await open(kind)
+
+      findPlayer(wrapper).vm.$emit('loaded')
+      await flushPromises()
+
+      expect(dispatched('updateLastViewedPlaylist')).toEqual([])
+    })
+  })
+
+  it('updates a user playlist\'s last played time when its video loads, and no YouTube playlist\'s', async () => {
+    const { wrapper } = await open('user')
+    findPlayer(wrapper).vm.$emit('loaded')
+    await flushPromises()
+
+    expect(dispatched('updatePlaylistLastPlayedAt')).toEqual([{ _id: USER_ID }])
+
+    store.dispatched.length = 0
+    const remote = await open('youtube')
+    findPlayer(remote.wrapper).vm.$emit('loaded')
+    await flushPromises()
+
+    expect(dispatched('updatePlaylistLastPlayedAt')).toEqual([])
+  })
+
+  it('is not there for a user playlist that no longer holds the video, and the history says none', async () => {
+    useUserPlaylist([item(SECOND_ID, 'u2')])
+    const { wrapper } = await openWatchPage(anyVideo, KINDS.user.path(YT_ID, 0))
+
+    findPlayer(wrapper).vm.$emit('loaded')
+    await flushPromises()
+
+    expect(panel(wrapper).exists()).toBe(false)
+    expect(findPlayer(wrapper).props('watchingPlaylist')).toBe(false)
+    expect(dispatched('updateLastViewedPlaylist')).toEqual([{ videoId: YT_ID, lastViewedPlaylistId: '', lastViewedPlaylistType: '', lastViewedPlaylistItemId: null }])
+  })
+
+  describe('holding both platforms', () => {
+    const PEERTUBE_PATH = `/peertube/watch/${HOST}/${UUID}`
+
+    beforeEach(() => {
+      useUserPlaylist([item(YT_ID, 'u1'), peerTubeItem('u2'), item(SECOND_ID, 'u3')])
+    })
+
+    const query = index => ({ playlistId: USER_ID, playlistType: 'user', playlistItemId: `u${index + 1}` })
+
+    function expectOnPeerTube(router) {
+      expect(router.currentRoute.value.path).toBe(PEERTUBE_PATH)
+      expect(router.currentRoute.value.query).toMatchObject(query(1))
+      expect(layer.getVideo).toHaveBeenLastCalledWith({ platform: 'peertube', host: HOST, videoId: UUID })
+    }
+
+    function expectOnYouTube(router, videoId, index) {
+      expect(router.currentRoute.value.path).toBe(`/watch/${videoId}`)
+      expect(router.currentRoute.value.query).toMatchObject(query(index))
+      expect(layer.getVideo).toHaveBeenLastCalledWith(videoId)
+    }
+
+    it('steps from a YouTube video to the PeerTube one on its own route, and back', async () => {
+      const { wrapper, router } = await openWatchPage(anyVideo, KINDS.user.path(YT_ID, 0))
+
+      await fromPlayer(wrapper, 'skip-to-next')
+      expectOnPeerTube(router)
+      expect(panel(wrapper).props('videoId')).toBe(UUID)
+
+      await fromPlayer(wrapper, 'skip-to-prev')
+      expectOnYouTube(router, YT_ID, 0)
+    })
+
+    it('is read on the PeerTube route too', async () => {
+      const { wrapper, router } = await openWatchPage(anyVideo, `${PEERTUBE_PATH}?playlistId=${USER_ID}&playlistType=user&playlistItemId=u2`)
+
+      expect(panel(wrapper).exists()).toBe(true)
+
+      await fromPlayer(wrapper, 'skip-to-next')
+      expectOnYouTube(router, SECOND_ID, 2)
+    })
+
+    it('autoplays across the platforms, the panel and its loop kept throughout', async () => {
+      const { wrapper, router } = await openWatchPage(anyVideo, KINDS.user.path(YT_ID, 0))
+      await toggle(wrapper, 'Loop Playlist')
+
+      await endVideo(wrapper)
+      expectOnPeerTube(router)
+
+      // The PeerTube video's history entry, then its playlist
+      findPlayer(wrapper).vm.$emit('loaded')
+      await flushPromises()
+      expect(dispatched('updateLastViewedPlaylist').at(-1)).toEqual({ videoId: UUID, lastViewedPlaylistId: USER_ID, lastViewedPlaylistType: 'user', lastViewedPlaylistItemId: 'u2' })
+
+      await endVideo(wrapper)
+      expectOnYouTube(router, SECOND_ID, 2)
+
+      await endVideo(wrapper)
+      expectOnYouTube(router, YT_ID, 0)
+    })
+
+    it('saves the position of the video left on crossing, and destroys its player', async () => {
+      player.hasLoaded = true
+      player.currentTime = 42
+      const { wrapper, router } = await openWatchPage(anyVideo, KINDS.user.path(YT_ID, 0))
+
+      await fromPlayer(wrapper, 'skip-to-next')
+
+      expectOnPeerTube(router)
+      expect(dispatched('updateWatchProgress')).toEqual([{ videoId: YT_ID, watchProgress: 42 }])
+      expect(player.events).toContain('destroyed')
+    })
   })
 })

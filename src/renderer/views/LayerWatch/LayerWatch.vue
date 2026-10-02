@@ -4,7 +4,7 @@
     :class="{
       isLoading,
       useTheatreMode: useTheatreMode && !isLoading,
-      noSidebar: !theatrePossible
+      noSidebar: !sidebarShown
     }"
   >
     <FtLoader
@@ -47,6 +47,7 @@
             :use-theatre-mode="useTheatreMode"
             :autoplay-possible="autoplayPossible"
             :autoplay-enabled="autoplayEnabled"
+            :watching-playlist="playlist !== null"
             :start-in-fullscreen="startInFullscreen"
             :start-in-fullwindow="startInFullwindow"
             :start-in-pip="startInPip"
@@ -59,6 +60,7 @@
             @toggle-theatre-mode="useTheatreMode = !useTheatreMode"
             @toggle-autoplay="toggleAutoplay"
             @skip-to-next="handleSkipToNext"
+            @skip-to-prev="handleSkipToPrev"
             @playback-rate-updated="currentPlaybackRate = $event"
             @sabr-refresh-requested="onSabrRefreshRequested"
             @player-reload-requested="onPlayerReloadRequested"
@@ -164,10 +166,27 @@
           class="watchVideo"
         />
       </div>
-      <div
-        v-if="theatrePossible"
-        class="sidebarArea"
-      >
+    </template>
+    <!-- Kept through the loads of the playlist's videos, as Watch.vue keeps the
+    playlist panel, so that loop, shuffle and reverse carry on to the next -->
+    <div
+      v-if="theatrePossible || playlist !== null"
+      v-show="sidebarShown"
+      class="sidebarArea"
+    >
+      <WatchVideoPlaylist
+        v-if="playlist !== null"
+        ref="playlistPanel"
+        :watch-view-loading="isLoading"
+        :playlist-id="playlist.id"
+        :playlist-type="playlist.type"
+        :video-id="routeVideoId"
+        :playlist-item-id="playlist.itemId"
+        cross-platform
+        class="watchVideoSidebar watchVideoPlaylist"
+        @pause-player="pausePlayer"
+      />
+      <template v-if="!isLoading && !hiddenAsNotFamilyFriendly">
         <WatchVideoChapters
           v-if="chaptersShown"
           :chapters="chapters"
@@ -182,8 +201,8 @@
           class="watchVideoSidebar"
           @pause-player="pausePlayer"
         />
-      </div>
-    </template>
+      </template>
+    </div>
   </div>
 </template>
 
@@ -195,16 +214,20 @@
 // in what is written beside the player, chosen by `platformOf(video)`: the
 // history entry's extra fields, the subscription details refresh and the
 // download button. The recommendations, and the autoplay into them, are the
-// details' `related`, which only YouTube answers. Upstream's Watch view (views/Watch) is the model for
+// details' `related`, which only YouTube answers. A playlist is the route's
+// query, as upstream's, and its panel is upstream's `WatchVideoPlaylist`,
+// which fetches a YouTube playlist itself; here it plays a user playlist
+// through both platforms, each video on its own route, with the router
+// keeping this view between the two. Upstream's Watch view (views/Watch) is the model for
 // everything a viewer sees and for when history and progress are written; it
 // is not edited. A `sabr` source's regulator is hosted by `useSabrHosting`,
 // beside this view (ADR-0006, ADR-0016).
 
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import shaka from 'shaka-player'
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import FtAgeRestricted from '../../components/FtAgeRestricted/FtAgeRestricted.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
@@ -218,6 +241,7 @@ import LayerSubscribeButton from '../../components/LayerSubscribeButton/LayerSub
 import LayerVideoDescription from '../../components/LayerVideoDescription/LayerVideoDescription.vue'
 import LayerVideoInfo from '../../components/LayerVideoInfo/LayerVideoInfo.vue'
 import WatchVideoChapters from '../../components/WatchVideoChapters/WatchVideoChapters.vue'
+import WatchVideoPlaylist from '../../components/WatchVideoPlaylist/WatchVideoPlaylist.vue'
 import WatchVideoRecommendations from '../../components/WatchVideoRecommendations/WatchVideoRecommendations.vue'
 import { toStoredPlainText } from '../../components/LayerMarkdown/plainText'
 
@@ -245,6 +269,9 @@ const router = useRouter()
 const { t } = useI18n()
 
 const player = useTemplateRef('player')
+const playlistPanel = useTemplateRef('playlistPanel')
+/** This view, which the router keeps between its two watch routes */
+const thisView = getCurrentInstance().type
 
 const rememberHistory = computed(() => store.getters.getRememberHistory)
 const watchedProgressSavingEnabled = computed(() => store.getters.getWatchedProgressSavingMode !== 'never')
@@ -253,6 +280,7 @@ const hideChapters = computed(() => store.getters.getHideChapters)
 const hideVideoDescription = computed(() => store.getters.getHideVideoDescription)
 const showFamilyFriendlyOnly = computed(() => store.getters.getShowFamilyFriendlyOnly)
 const hideRecommendedVideos = computed(() => store.getters.getHideRecommendedVideos)
+const saveVideoHistoryWithLastViewedPlaylist = computed(() => store.getters.getSaveVideoHistoryWithLastViewedPlaylist)
 
 const isLoading = ref(true)
 /** @type {import('vue').ShallowRef<import('../../platform/shapes').VideoDetails | null>} */
@@ -289,6 +317,7 @@ const recommendedVideos = shallowRef([])
 // For as long as the viewer stays on watch pages, whatever the setting says
 // meanwhile, as Watch.js keeps it
 const autoplayNextRecommendedVideo = ref(store.getters.getPlayNextVideo)
+const autoplayNextPlaylistVideo = ref(store.getters.getAutoplayPlaylists)
 
 const useTheatreMode = ref(false)
 const startInFullscreen = ref(false)
@@ -404,6 +433,51 @@ const videoRef = computed(() => {
   return isYouTube.value ? video.value.videoId : peerTubeVideoRef(video.value.host, video.value.videoId)
 })
 
+/**
+ * The video's id as the route names it, before the layer answers: a YouTube
+ * id, or a PeerTube uuid as the stored records keep it, in lower case
+ */
+const routeVideoId = computed(() => {
+  if (route.params.id !== undefined) {
+    return String(route.params.id)
+  }
+
+  return typeof route.params.uuid === 'string' ? route.params.uuid.toLowerCase() : ''
+})
+
+/**
+ * The playlist the video is played in, as Watch.js's `checkIfPlaylist` reads
+ * the route's query: a YouTube playlist by its id; a user playlist only while
+ * it exists and holds the video (until the user playlists are ready, none).
+ * `null` for none.
+ *
+ * @type {import('vue').ComputedRef<{ id: string, type: string, itemId: string | null, userPlaylistId: string | null } | null>}
+ */
+const playlist = computed(() => {
+  const { playlistId, playlistType, playlistItemId } = route.query
+
+  if (typeof playlistId !== 'string' || playlistId === '') {
+    return null
+  }
+
+  if (playlistType !== 'user') {
+    return { id: playlistId, type: typeof playlistType === 'string' ? playlistType : '', itemId: null, userPlaylistId: null }
+  }
+
+  const userPlaylist = store.getters.getPlaylist(playlistId)
+
+  if (userPlaylist == null || !userPlaylist.videos.some(item => item.videoId === routeVideoId.value)) {
+    return null
+  }
+
+  return {
+    id: playlistId,
+    type: 'user',
+    itemId: typeof playlistItemId === 'string' ? playlistItemId : null,
+    userPlaylistId: userPlaylist._id,
+  }
+})
+
 const chapters = computed(() => source.value?.chapters ?? [])
 // Hidden chapters are hidden from the player's progress bar too, as Watch.js
 // does by not reading them at all
@@ -419,6 +493,11 @@ const recommendationsShown = computed(() => !hideRecommendedVideos.value && Arra
 // there is nothing for theatre mode to move out of the way
 const theatrePossible = computed(() => {
   return !isLoading.value && (chaptersShown.value || recommendationsShown.value) && !hiddenAsNotFamilyFriendly.value
+})
+
+/** The sidebar is shown with a side panel in it: the playlist, the chapters or the recommendations */
+const sidebarShown = computed(() => {
+  return theatrePossible.value || (playlist.value !== null && !isLoading.value && !hiddenAsNotFamilyFriendly.value)
 })
 
 /**
@@ -446,10 +525,17 @@ const nextRecommendedVideo = computed(() => {
 
 /**
  * Whether the end of the video plays the next one, and the player's toggle
- * says so. Ticket 47's playlist brings its own, `autoplayPlaylists`.
+ * says so: in a playlist, the playlist's own (`autoplayPlaylists`), and
+ * possible until the playlist ends, as Watch.js has it
  */
-const autoplayEnabled = computed(() => autoplayNextRecommendedVideo.value)
-const autoplayPossible = computed(() => nextRecommendedVideo.value !== null)
+const autoplayEnabled = computed(() => playlist.value !== null ? autoplayNextPlaylistVideo.value : autoplayNextRecommendedVideo.value)
+const autoplayPossible = computed(() => {
+  if (playlist.value !== null) {
+    return playlistPanel.value != null && !playlistPanel.value.shouldStopDueToPlaylistEnd
+  }
+
+  return nextRecommendedVideo.value !== null
+})
 
 // A SABR source's adaptive and audio are one manifest, the one held for the
 // session: the source's, or a rebuild's since
@@ -1032,7 +1118,11 @@ function historyRecord(watchProgress) {
   return record
 }
 
-/** As Watch.js's `handleVideoLoaded`: once per video, not for an upcoming one */
+/**
+ * As Watch.js's `handleVideoLoaded`: once per video, not for an upcoming one,
+ * the history entry, then the playlist it was watched in; and a user
+ * playlist's last played time, history or not
+ */
 function handleVideoLoaded() {
   if (historyWritten || video.value === null || video.value.isUpcoming) {
     return
@@ -1040,19 +1130,41 @@ function handleVideoLoaded() {
 
   historyWritten = true
 
-  if (!rememberHistory.value) {
+  if (rememberHistory.value) {
+    const entry = historyEntry()
+
+    if (timestamp) {
+      store.dispatch('updateHistory', historyRecord(timestamp))
+    } else if (entry !== undefined) {
+      store.dispatch('updateHistory', historyRecord(entry.watchProgress))
+    } else {
+      store.dispatch('updateHistory', historyRecord(0))
+    }
+
+    // After the entry, which it is written into
+    persistLastViewedPlaylist()
+  }
+
+  if (playlist.value?.userPlaylistId) {
+    store.dispatch('updatePlaylistLastPlayedAt', { _id: playlist.value.userPlaylistId })
+  }
+}
+
+/**
+ * As Watch.js's `handlePlaylistPersisting`: the playlist the video was last
+ * watched in, kept in its history entry, or none, for every video but a live
+ */
+function persistLastViewedPlaylist() {
+  if (!saveVideoHistoryWithLastViewedPlaylist.value || isLive.value) {
     return
   }
 
-  const entry = historyEntry()
-
-  if (timestamp) {
-    store.dispatch('updateHistory', historyRecord(timestamp))
-  } else if (entry !== undefined) {
-    store.dispatch('updateHistory', historyRecord(entry.watchProgress))
-  } else {
-    store.dispatch('updateHistory', historyRecord(0))
-  }
+  store.dispatch('updateLastViewedPlaylist', {
+    videoId: video.value.videoId,
+    lastViewedPlaylistId: playlist.value?.id ?? '',
+    lastViewedPlaylistType: playlist.value?.type ?? '',
+    lastViewedPlaylistItemId: playlist.value?.itemId ?? null,
+  })
 }
 
 /**
@@ -1145,12 +1257,19 @@ function sortWatchedVideosLast(videos) {
 }
 
 /**
- * What the end of this video moves on to, or `null` for nothing: the next
- * recommendation. Ticket 47 puts the playlist's next video ahead of it.
+ * What the end of this video moves on to, or `null` for nothing: in a
+ * playlist, the playlist's next video, of either platform, else the next
+ * recommendation
  *
  * @returns {{ play: () => void } | null}
  */
 function nextToPlay() {
+  if (playlist.value !== null) {
+    const panel = playlistPanel.value
+
+    return panel ? { play: () => panel.playNextVideo() } : null
+  }
+
   const next = nextRecommendedVideo.value
 
   if (next === null) {
@@ -1184,6 +1303,12 @@ function handleVideoEnded() {
     const hours = store.getters.getDefaultAutoplayInterruptionIntervalHours
     showToast(t('Autoplay Interruption Timer', { autoplayInterruptionIntervalHours: hours }), 3_600_000)
     resetAutoplayInterruptionTimeout()
+    return
+  }
+
+  // As Watch.js: at the playlist's end the panel says so (or loops), with no countdown
+  if (playlist.value !== null && playlistPanel.value?.shouldStopDueToPlaylistEnd) {
+    playlistPanel.value.playNextVideo()
     return
   }
 
@@ -1224,11 +1349,16 @@ function handleVideoEnded() {
 }
 
 /**
- * As Watch.js's `handleSkipToNext` from the player: the next recommendation
- * at once. Ticket 47 puts the playlist's next video ahead of it.
+ * As Watch.js's `handleSkipToNext` from the player: the playlist's next
+ * video, or the next recommendation, at once
  */
 function handleSkipToNext() {
   nextToPlay()?.play()
+}
+
+/** As Watch.js's `handleSkipToPrev` from the player: the playlist's previous video */
+function handleSkipToPrev() {
+  playlistPanel.value?.playPreviousVideo()
 }
 
 /**
@@ -1250,13 +1380,20 @@ function abortAutoplayCountdown(quietly = false) {
   }
 }
 
-/** As Watch.js's `toggleAutoplay`: switching it off stops a countdown */
+/**
+ * As Watch.js's `toggleAutoplay`: switching it off stops a countdown; in a
+ * playlist the playlist's is switched
+ */
 function toggleAutoplay() {
   if (autoplayEnabled.value && playNextTimeout !== null) {
     abortAutoplayCountdown()
   }
 
-  autoplayNextRecommendedVideo.value = !autoplayNextRecommendedVideo.value
+  if (playlist.value !== null) {
+    autoplayNextPlaylistVideo.value = !autoplayNextPlaylistVideo.value
+  } else {
+    autoplayNextRecommendedVideo.value = !autoplayNextRecommendedVideo.value
+  }
 }
 
 /**
@@ -1307,7 +1444,44 @@ function destroyPlayer() {
   return destruction
 }
 
-onBeforeRouteLeave(async () => {
+/**
+ * Whether this view renders the route: either watch route, between which the
+ * router keeps it, as a playlist crosses from one platform to the other
+ *
+ * @param {import('vue-router').RouteLocationNormalized} location
+ */
+function rendersThisView(location) {
+  return location.matched.at(-1)?.components?.default === thisView
+}
+
+/** Whether a navigation from one of this view's routes to another stays on the video, the playlist item included */
+function sameVideo(to, from) {
+  return to.params.id === from.params.id && to.params.host === from.params.host && to.params.uuid === from.params.uuid &&
+    to.query.timestamp === from.query.timestamp && to.query.playlistItemId === from.query.playlistItemId
+}
+
+// A guard on the router rather than on the route record: the record's guards
+// stay with the record this view was first mounted on, and the router keeps
+// the view when a playlist crosses to the other watch route. For another
+// video, the one left is saved and its player destroyed before the watcher
+// below loads the next; leaving the view, the same and the listeners removed
+const removeRouteGuard = router.beforeEach(async (to, from) => {
+  if (!rendersThisView(from)) {
+    return
+  }
+
+  if (rendersThisView(to)) {
+    if (sameVideo(to, from)) {
+      return
+    }
+
+    // As Watch.js's `handleRouteChange`: the countdown is for the video left
+    abortAutoplayCountdown(true)
+    handleWatchProgressAutoSave()
+    await destroyPlayer()
+    return
+  }
+
   abortAutoplayCountdown(true)
   handleWatchProgressAutoSave()
   savedOnLeave = true
@@ -1316,27 +1490,13 @@ onBeforeRouteLeave(async () => {
   await destroyPlayer()
 })
 
-// The router reuses this view for another video, so the one left is saved
-// and its player destroyed before the watcher below loads the next
-onBeforeRouteUpdate(async (to, from) => {
-  if (to.params.id === from.params.id && to.params.host === from.params.host && to.params.uuid === from.params.uuid &&
-    to.query.timestamp === from.query.timestamp) {
-    return
-  }
-
-  // As Watch.js's `handleRouteChange`: the countdown is for the video left
-  abortAutoplayCountdown(true)
-  handleWatchProgressAutoSave()
-  await destroyPlayer()
-})
-
 watch(
-  () => [route.matched.at(-1)?.path, route.params.id, route.params.host, route.params.uuid, route.query.timestamp],
-  ([pattern], [previousPattern]) => {
-    // The watcher can fire for the navigation away, before this view unmounts.
-    // Told apart by the route's pattern rather than its name: upstream's
-    // `/watch/:id` and the routes it leads to have none
-    if (pattern === previousPattern) {
+  () => [route.matched.at(-1)?.path, route.params.id, route.params.host, route.params.uuid, route.query.timestamp, route.query.playlistItemId],
+  () => {
+    // The watcher can fire for the navigation away, before this view
+    // unmounts. Told apart by the view the route renders rather than its
+    // name: upstream's `/watch/:id` and the routes it leads to have none
+    if (rendersThisView(route)) {
       load()
     }
   }
@@ -1351,6 +1511,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  removeRouteGuard()
   window.removeEventListener('beforeunload', handleWatchProgressAutoSave)
   abortAutoplayCountdown(true)
   stopAutoplayInterruptionTimer()
