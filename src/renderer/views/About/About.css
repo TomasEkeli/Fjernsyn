@@ -1,7 +1,7 @@
+/* The whole width, as every page on the wall has, less the router view's margins */
 .card {
   margin-block: 0 60px;
-  margin-inline: auto;
-  inline-size: 85%;
+  margin-inline: 0;
 }
 
 .brand {
@@ -42,12 +42,11 @@
   margin-block-end: 1em;
 }
 
+/* As many columns as the width holds, so that a wide window gets more of them rather than wider ones */
 .about-chunks {
   display: grid;
   gap: 16px;
-  grid-template-columns: 1fr 1fr;
-  margin-inline: auto;
-  max-inline-size: 860px;
+  grid-template-columns: repeat(auto-fill, minmax(min(380px, 100%), 1fr));
 }
 
 .chunk {
@@ -78,8 +77,6 @@
 
 .upstream {
   margin-block-start: 40px;
-  margin-inline: auto;
-  max-inline-size: 860px;
 }
 
 .upstreamHeading {
@@ -96,18 +93,6 @@
 
 .headingIcon {
   color: var(--primary-color);
-}
-
-@media only screen and (width <=650px) {
-  .about-chunks {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media only screen and (width <=680px) {
-  .card {
-    inline-size: 90%;
-  }
 }
 
 .buildStamp {

@@ -32,8 +32,13 @@
  * 610px column, rounded up. Too little and every row that scrolls into view
  * pushes the ones below it down.
  *
- * The last two are the description snippet: at most three lines of it, 6px
+ * The next two are the description snippet: at most three lines of it, 6px
  * below the line above.
+ *
+ * The last is the room everything that is not the grid keeps from the
+ * window's frame on a full bleed page: headings, searches, control rows,
+ * messages. One number, so that every page's header lines up with every
+ * other's.
  */
 body {
   --ft-grid-min-column: 610px;
@@ -41,6 +46,7 @@ body {
   --ft-grid-item-min-block-size: 344px;
   --ft-card-description-lines: 3;
   --ft-card-description-gap: 6px;
+  --ft-wall-edge: 24px;
 }
 
 /*
@@ -134,23 +140,33 @@ body {
 }
 
 /*
- * The layer's search page is full bleed from the start, not only once a grid
- * of cards is there, so that starting a search does not narrow it and widen it
- * again. Its controls keep a little room from the edge.
+ * Pages that are full bleed from the start, not only once a grid of cards is
+ * there, so that loading them does not show them narrow and then widen them:
+ * the layer's search page, and the two streams under a control row,
+ * subscriptions and explore.
  */
-:root body .routerView:has(.layerSearchPage) {
+:root body .routerView:has(.layerSearchPage, .controlRow) {
   margin-inline: 0;
 }
 
-:root body .layerSearchPage .ft-card {
+:root body .layerSearchPage .ft-card,
+:root body .ft-card:has(> .controlRow) {
+  inline-size: 100%;
+  margin-inline: 0;
   padding-inline: 0;
 }
 
-:root body .layerSearchPage .headingRow,
-:root body .layerSearchPage .sourceRow,
-:root body .layerSearchPage .chips,
-:root body .layerSearchPage .sectionHeaderRow {
-  padding-inline: 8px;
+/*
+ * The control row over the stream stretches its background to the card's
+ * edges with negative margins that mirror the card's 16px inline padding.
+ * With that padding gone the mirror image is 16px of overhang past a card
+ * that is already the full viewport, which is a horizontal scrollbar and a
+ * sliver of grid cut off at the edge — so the margins go with the padding
+ * they mirrored, and the row's own padding keeps the wall's edge instead.
+ */
+:root body .ft-card:has(> .controlRow) > .controlRow {
+  margin-inline: 0;
+  padding-inline: var(--ft-wall-edge);
 }
 
 /*
@@ -163,7 +179,7 @@ body {
  * The descendant :has() on the router view matches both of its layers, the
  * outer flex box and the route's own root, which is what takes away both
  * margins; the page's cards are the direct children of the inner one. The
- * padding inside those cards is at the end of this file, after the grid rules
+ * room inside those cards is at the end of this file, after the grid rules
  * it has to follow.
  */
 :root body .routerView:has(.channelHeader, .channelDetails) {
@@ -196,32 +212,47 @@ body {
   padding-inline: 0;
 }
 
-/*
- * The control row over the stream stretches its background to the card's
- * edges with negative margins that mirror the card's 16px inline padding.
- * With that padding gone the mirror image is 16px of overhang past a card
- * that is already the full viewport, which is a horizontal scrollbar and a
- * sliver of grid cut off at the edge — so the margins go with the padding
- * they mirrored.
- */
-:root body .ft-card:has(.ft-list-item.grid) .controlRow {
-  margin-inline: 0;
-}
-
 /* The channel home tab caps its shelves at 85vw on top of the card's 85%. */
 :root body .shelfContainer:has(.ft-list-item.grid) {
   max-inline-size: none;
 }
 
 /*
- * The banner runs edge to edge, so what is under it takes the room from the
- * window's frame as padding, inside the card, whose background still reaches
- * the edge: the avatar, name and tabs, the sort and View All over a grid, and
- * every card of text below (the about tab, the posts, a description). A grid
- * itself stays edge to edge, as everywhere on the wall.
+ * The edge. A full bleed card has no padding, so what is in it besides the
+ * grid takes the wall's edge as a margin of its own: a page's heading, its
+ * search box and options, its messages, the button that fetches more. Not
+ * what holds the grid, which runs edge to edge; not the control row, which
+ * has a background to carry to the edge and takes the edge as padding above;
+ * not the upcoming shelf, a tinted box that holds a grid when it is open and
+ * would change width as it opened; not a channel's sort row and not the
+ * layer search page's sections, which are given the edge below.
+ */
+:root body :is(.ft-card:has(.ft-list-item.grid), .ft-card:has(> .controlRow), .layerSearchPage .ft-card) > :not(:has(.ft-list-item.grid), .controlRow, .upcomingShelf, .select-container, .sections) {
+  margin-inline: var(--ft-wall-edge);
+}
+
+/*
+ * Two of those children fill the card as inline-size: 100%, the bar that
+ * fetches more and the loader, and 100% plus the margin is a horizontal
+ * scrollbar. Auto fills the same room, less the margin.
+ */
+:root body :is(.ft-card:has(.ft-list-item.grid), .ft-card:has(> .controlRow), .layerSearchPage .ft-card) > :is(.getNextPage, .container) {
+  inline-size: auto;
+}
+
+:root body .layerSearchPage .sectionHeaderRow {
+  padding-inline: var(--ft-wall-edge);
+}
+
+/*
+ * The banner runs edge to edge, so what is under it takes the edge as
+ * padding, inside the card, whose background still reaches the frame: the
+ * avatar, name and tabs, the sort and View All over a grid, and every card of
+ * text below (the about tab, the posts, a description). A grid itself stays
+ * edge to edge, as everywhere on the wall.
  */
 :root body .routerView:has(.channelHeader, .channelDetails) > :is(.channelHeader, .channelDetails) .infoContainer,
 :root body .routerView:has(.channelHeader, .channelDetails) > .ft-card:has(.ft-list-item.grid) .select-container,
 :root body .routerView:has(.channelHeader, .channelDetails) > .ft-card:not(.channelHeader, .channelDetails, :has(.ft-list-item.grid)) {
-  padding-inline: 24px;
+  padding-inline: var(--ft-wall-edge);
 }
