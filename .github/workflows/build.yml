@@ -1,11 +1,20 @@
-# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+# Builds Fjernsyn for every platform, and releases every push to main.
+#
+# The version is major.minor from package.json and the run number as the
+# patch: 0.1.214, 0.1.215, ... The run number only ever rises, so every
+# release is newer than the last, and skipped numbers (a run that failed, or
+# one of another branch) are fine. A minor or major step is made by hand, in
+# package.json; its patch there is ignored. Nothing is committed back: the
+# patch lives only in the release's tag.
+#
+# A build of another branch, run by hand (Run workflow), is named for its
+# branch and released nowhere.
 
 name: Build
 
 on:
   push:
-    branches: [ main, development ]
+    branches: [ main ]
     paths-ignore:
       - 'README.md'
       - '.github/**/*.md'
@@ -27,8 +36,46 @@ cache-mode: none
 permissions: {}
 
 jobs:
+  version:
+    name: Version
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release_tag: ${{ steps.version.outputs.release_tag }}
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+      with:
+        persist-credentials: false
+
+    - name: Set version number
+      id: version
+      shell: bash
+      run: |
+        major_minor="$(jq -r '.version' package.json | cut -d. -f1,2)"
+        version="${major_minor}.${GITHUB_RUN_NUMBER}"
+        release_tag=''
+
+        if [[ "$GITHUB_EVENT_NAME" == 'push' && "$GITHUB_REF" == 'refs/heads/main' ]]; then
+          release_tag="v${version}"
+        else
+          # Slashes become dashes, as they cannot go in a file name
+          branch="$(echo -E "$GITHUB_REF_NAME" | tr '/' '-' | tr -cd '[:alnum:]._-')"
+          version="${version}-${branch}"
+        fi
+
+        echo "version=${version}" >> "$GITHUB_OUTPUT"
+        echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
+
   build:
     name: Build
+
+    needs: version
 
     cache-mode: write
 
@@ -109,35 +156,25 @@ jobs:
       shell: bash
     - run: pnpm run lint
       shell: bash
+    # Once is enough: the tests do not depend on the platform built for
+    - run: pnpm test
+      if: matrix.runtime == 'linux-x64'
+      shell: bash
     - name: Set version number
       id: versionNumber
       shell: bash
+      env:
+        VERSION: ${{ needs.version.outputs.version }}
+        RELEASE_TAG: ${{ needs.version.outputs.release_tag }}
       run: |
-        original_version="$(jq -r '.version' package.json)"
-        version="$original_version"
-
-        lower_case_ref="$(echo -E "$GITHUB_REF" | tr '[:upper:]' '[:lower:]')"
-
-        if [[ "$lower_case_ref" == *development* ]]; then
-          version="${original_version}-nightly-${GITHUB_RUN_NUMBER}"
-        elif [[ "$lower_case_ref" == *rc* ]]; then
-          version="${original_version}-RC-${GITHUB_RUN_NUMBER}"
-        else
-          # Every build of main was otherwise named for the version alone, so
-          # each one overwrote the last as far as a filename could tell and
-          # there was no way to know which artefact was which. The run number
-          # orders them and links back to the run; the commit says which code.
-          # A branch built by hand (Run workflow) is named for its branch, so
-          # a test build cannot pass for one of main; slashes become dashes,
-          # as they cannot go in a file name.
-          branch="$(echo -E "$GITHUB_REF_NAME" | tr '/' '-' | tr -cd '[:alnum:]._-')"
-          version="${original_version}-${branch}-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::9}"
-        fi
-
-        package_json="$(jq --arg version "$version" '.version = $version' package.json)"
+        package_json="$(jq --arg version "$VERSION" '.version = $version' package.json)"
 
         echo -E "$package_json" > package.json
-        echo "version=${version}" >> "$GITHUB_OUTPUT"
+        echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+        # Baked into the app, which links its version to the release page
+        # when there is one
+        echo "FJERNSYN_RELEASE_TAG=${RELEASE_TAG}" >> "$GITHUB_ENV"
 
     - name: Install libarchive-tools
       if: startsWith(matrix.os, 'ubuntu')
@@ -373,3 +410,74 @@ jobs:
       with:
         key: ${{ steps.restore_cache.outputs.cache-primary-key }}
         path: ${{ steps.cache_dir.outputs.cache_dir }}
+
+  # Only once every platform has built, so a release is never missing one
+  release:
+    name: Release
+
+    needs: [version, build]
+    if: needs.version.outputs.release_tag != ''
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+    # All history and tags, for the notes to find the previous release
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+
+    - name: Download the builds
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+      with:
+        path: artifacts
+
+    # Each artefact is a folder holding one file, under the name the file
+    # should have in the release; the file itself has electron-builder's name,
+    # which for the Windows installers is the same on x64 and arm64
+    - name: Name the files for the release
+      shell: bash
+      run: |
+        mkdir release
+        for folder in artifacts/*/; do
+          name="$(basename "$folder")"
+          files=("$folder"*)
+          if [[ "${#files[@]}" -ne 1 ]]; then
+            echo "Expected one file in $folder, found ${#files[@]}" >&2
+            exit 1
+          fi
+          mv "${files[0]}" "release/$name"
+        done
+        ls -l release
+
+    - name: Write the release notes
+      shell: bash
+      env:
+        RELEASE_TAG: ${{ needs.version.outputs.release_tag }}
+      run: |
+        # The newest release reachable from this commit; upstream's tags
+        # (v0.23.4-beta and the like) are never on the fork, and the pattern
+        # would not take them anyway
+        previous_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' --exclude '*-*' HEAD 2> /dev/null || true)"
+        node _scripts/releaseNotes.mjs "$previous_tag" "$RELEASE_TAG" "$GITHUB_SHA" > notes.md
+        cat notes.md
+
+    # A rerun finds the release already made, and replaces its files
+    - name: Publish the release
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RELEASE_TAG: ${{ needs.version.outputs.release_tag }}
+      run: |
+        if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+          gh release upload "$RELEASE_TAG" release/* --repo "$GITHUB_REPOSITORY" --clobber
+        else
+          gh release create "$RELEASE_TAG" release/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Fjernsyn $RELEASE_TAG" \
+            --notes-file notes.md
+        fi
