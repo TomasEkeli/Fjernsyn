@@ -4,19 +4,15 @@
     <button
       v-if="previousProfile"
       type="button"
-      class="zapButton"
+      class="zapButton previous"
+      :style="zapStyle"
       :title="previousProfileTitle"
       :aria-label="previousProfileTitle"
       @click="zapTo(previousProfile)"
-    >
-      <FontAwesomeIcon
-        class="zapIcon"
-        :icon="['fas', 'caret-left']"
-      />
-    </button>
+    />
     <div
       ref="iconButton"
-      class="colorOption activeProfile"
+      class="colorOption"
       :title="$t('Profile.Toggle Profile List')"
       :style="activeProfileBubble.style"
       tabindex="0"
@@ -38,16 +34,12 @@
     <button
       v-if="nextProfile"
       type="button"
-      class="zapButton"
+      class="zapButton next"
+      :style="zapStyle"
       :title="nextProfileTitle"
       :aria-label="nextProfileTitle"
       @click="zapTo(nextProfile)"
-    >
-      <FontAwesomeIcon
-        class="zapIcon"
-        :icon="['fas', 'caret-right']"
-      />
-    </button>
+    />
     <FtCard
       v-show="profileListShown"
       :id="id + 'list'"
@@ -111,7 +103,6 @@
 </template>
 
 <script setup>
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { computed, nextTick, ref, useId, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -198,6 +189,9 @@ const activeProfileBubble = computed(() => {
 // being one stop among them. Undefined when there is only the one profile.
 const previousProfile = computed(() => neighbourProfile(profileList.value, activeProfile.value?._id, -1))
 const nextProfile = computed(() => neighbourProfile(profileList.value, activeProfile.value?._id, 1))
+
+// The triangles take the active profile's colour, as its square has
+const zapStyle = computed(() => ({ '--zap-color': activeProfile.value?.bgColor }))
 
 const previousProfileTitle = computed(() => previousProfile.value
   ? t('Profile.Previous Profile: {profile}', { profile: translateProfileName(previousProfile.value) })
