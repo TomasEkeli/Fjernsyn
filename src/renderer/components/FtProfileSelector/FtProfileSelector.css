@@ -12,16 +12,49 @@
   box-shadow: 0 0 0 2px var(--side-nav-hover-color);
 }
 
-/* Fjernsyn: the zapping triangles either side of the bubble. The carets are
-narrow, so the icon is made square to keep the hover circle round. */
-.zapButton :deep(.icon) {
-  inline-size: 1em;
+/* Fjernsyn: the active profile in the top bar is a rounded square, the
+triangles either side of it being what makes it a channel to zap */
+.activeProfile {
+  border-radius: 8px;
+}
+
+/* Fjernsyn: the zapping triangles, bare: no circle behind them, only the
+triangle brightening under the pointer */
+.zapButton {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary-text-color);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s ease-out;
+}
+
+.zapButton:hover,
+.zapButton:focus-visible {
+  opacity: 1;
+}
+
+.zapButton:active .zapIcon {
+  transform: scale(0.85);
+}
+
+.topNavBarColor .zapButton {
+  color: var(--text-with-main-color);
 }
 
 /* Previous sits at the inline start, so in right-to-left it is on the right
 and should point that way */
-.zapButton:dir(rtl) :deep(.icon) {
+.zapButton:dir(rtl) .zapIcon {
   transform: scaleX(-1);
+}
+
+.zapButton:dir(rtl):active .zapIcon {
+  transform: scaleX(-0.85) scaleY(0.85);
 }
 
 .initial {

@@ -1,20 +1,22 @@
 <template>
   <div>
     <!-- Fjernsyn: zap to the previous profile, wrapping around -->
-    <FtIconButton
+    <button
       v-if="previousProfile"
+      type="button"
       class="zapButton"
-      :icon="['fas', 'caret-left']"
-      :title="$t('Profile.Previous Profile: {profile}', { profile: translateProfileName(previousProfile) })"
-      :theme="null"
-      :size="16"
-      :padding="6"
-      :use-shadow="false"
+      :title="previousProfileTitle"
+      :aria-label="previousProfileTitle"
       @click="zapTo(previousProfile)"
-    />
+    >
+      <FontAwesomeIcon
+        class="zapIcon"
+        :icon="['fas', 'caret-left']"
+      />
+    </button>
     <div
       ref="iconButton"
-      class="colorOption"
+      class="colorOption activeProfile"
       :title="$t('Profile.Toggle Profile List')"
       :style="activeProfileBubble.style"
       tabindex="0"
@@ -33,17 +35,19 @@
       </div>
     </div>
     <!-- Fjernsyn: zap to the next profile, wrapping around -->
-    <FtIconButton
+    <button
       v-if="nextProfile"
+      type="button"
       class="zapButton"
-      :icon="['fas', 'caret-right']"
-      :title="$t('Profile.Next Profile: {profile}', { profile: translateProfileName(nextProfile) })"
-      :theme="null"
-      :size="16"
-      :padding="6"
-      :use-shadow="false"
+      :title="nextProfileTitle"
+      :aria-label="nextProfileTitle"
       @click="zapTo(nextProfile)"
-    />
+    >
+      <FontAwesomeIcon
+        class="zapIcon"
+        :icon="['fas', 'caret-right']"
+      />
+    </button>
     <FtCard
       v-show="profileListShown"
       :id="id + 'list'"
@@ -107,6 +111,7 @@
 </template>
 
 <script setup>
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { computed, nextTick, ref, useId, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -193,6 +198,13 @@ const activeProfileBubble = computed(() => {
 // being one stop among them. Undefined when there is only the one profile.
 const previousProfile = computed(() => neighbourProfile(profileList.value, activeProfile.value?._id, -1))
 const nextProfile = computed(() => neighbourProfile(profileList.value, activeProfile.value?._id, 1))
+
+const previousProfileTitle = computed(() => previousProfile.value
+  ? t('Profile.Previous Profile: {profile}', { profile: translateProfileName(previousProfile.value) })
+  : '')
+const nextProfileTitle = computed(() => nextProfile.value
+  ? t('Profile.Next Profile: {profile}', { profile: translateProfileName(nextProfile.value) })
+  : '')
 
 /** @type {AbortController | null} */
 let zapToastController = null
