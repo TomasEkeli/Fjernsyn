@@ -4,17 +4,6 @@
     :class="{ topNavBarColor: barColor }"
   >
     <div class="side">
-      <button
-        class="menuButton navButton"
-        :aria-label="expandCollapseSideBarLabel"
-        :title="expandCollapseSideBarLabel"
-        @click="toggleSideNav"
-      >
-        <FontAwesomeIcon
-          class="navIcon"
-          :icon="['fas', 'bars']"
-        />
-      </button>
       <FtIconButton
         class="navIconButton"
         :disabled="isArrowBackwardDisabled"
@@ -280,16 +269,13 @@ const enableSearchSuggestions = computed(() => store.getters.getEnableSearchSugg
 const barColor = computed(() => store.getters.getBarColor)
 
 /**
- * The hamburger's only remaining job: the navigation itself lives in this bar,
- * so there is nothing left to expand, and the flag now says whether each icon
- * carries its name underneath it.
+ * The navigation itself lives in this bar, so there is nothing left to
+ * expand: the flag says whether each icon carries its name underneath it. The
+ * hamburger that toggled it is gone; the expand side bar by default setting
+ * still sets it at startup.
  * @type {import('vue').ComputedRef<boolean>}
  */
 const showLabels = computed(() => store.getters.getIsSideNavOpen)
-
-const expandCollapseSideBarLabel = computed(() => {
-  return showLabels.value ? t('Compact side navigation') : t('Expand side navigation')
-})
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const exploreVisible = computed(() => {

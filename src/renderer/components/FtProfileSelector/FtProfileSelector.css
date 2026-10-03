@@ -14,13 +14,14 @@
   box-shadow: 0 0 0 2px var(--side-nav-hover-color);
 }
 
-/* Fjernsyn: the zapping triangles, as tall as the square and in its colour.
+/* Fjernsyn: the zapping triangles in the square's colour, a few pixels short
+of its 40 so that their sharp points look as tall as its rounded corners.
 The triangle is the button's ::before, cut out by a clip path. The hover
 outline is a drop shadow filter rather than a box shadow, so it follows the
 triangle's edges as the square's ring follows its own. */
 .zapButton {
-  inline-size: 22px;
-  block-size: 40px;
+  inline-size: 19px;
+  block-size: 34px;
   flex-shrink: 0;
   padding: 0;
   border: 0;
