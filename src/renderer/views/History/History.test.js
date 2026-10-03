@@ -37,7 +37,6 @@ vi.mock('../../store/index', async () => {
       getters: {
         getHistoryCacheSorted: [],
         getUserHistorySortBy: 'latest_played_first',
-        getListDensity: 'standard',
       },
     }),
   }
@@ -65,7 +64,7 @@ async function mountHistory(path = '/history') {
   const wrapper = mountWithApp(History, {
     store,
     router,
-    stubs: { FtElementList: true, FtDensitySwitch: true, FtSelect: true, FtToggleSwitch: true, FtAutoLoadNextPageWrapper: true },
+    stubs: { FtElementList: true, FtSelect: true, FtToggleSwitch: true, FtAutoLoadNextPageWrapper: true },
   })
   await flushPromises()
 

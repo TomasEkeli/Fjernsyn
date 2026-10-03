@@ -1,5 +1,5 @@
-/* The reserve an unrendered card gets follows the density mode; see
-   density.css. Too little and every row that scrolls into view pushes the
+/* The reserve an unrendered card gets is the wall's; see wall.css. Too
+   little and every row that scrolls into view pushes the
    ones below it down. */
 .grid {
   min-block-size: var(--ft-grid-item-min-block-size);

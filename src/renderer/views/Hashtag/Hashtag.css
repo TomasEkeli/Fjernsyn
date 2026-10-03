@@ -20,16 +20,6 @@
   inline-size: 85%;
 }
 
-/* The heading carries the density switch, because this page has no row of
-   controls and no page grows one to hold it; see FtDensitySwitch.vue. */
-.headingRow {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 16px;
-  justify-content: space-between;
-}
-
 .headingIcon {
   color: var(--primary-color);
 }

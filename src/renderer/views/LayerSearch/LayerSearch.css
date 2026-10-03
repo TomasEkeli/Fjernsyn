@@ -4,7 +4,6 @@
   margin-inline: auto;
 }
 
-/* As on upstream's search page: the heading carries the density switch */
 .headingRow {
   align-items: center;
   display: flex;

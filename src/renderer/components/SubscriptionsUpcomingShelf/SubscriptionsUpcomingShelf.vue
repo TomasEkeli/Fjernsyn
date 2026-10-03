@@ -10,12 +10,12 @@
   next thing to happen, whereas the stream below runs newest first because that
   is the latest thing that did.
 
-  The same cards, the same grid, the same density as the stream below — the
-  shelf follows the reader's layout choices exactly as every other surface
-  does, rather than imposing a layout of its own. What sets it apart is the
+  The same cards and the same grid as the stream below — the shelf follows the
+  reader's layout choice exactly as every other surface does, rather than
+  imposing a layout of its own. What sets it apart is the
   frame: the tint, the header, and the count, not a different shape of card.
   (It briefly forced a full-width list on the theory that a schedule is a
-  column; on screen that read as the shelf ignoring the density switch.)
+  column; on screen that read as the shelf ignoring the layout setting.)
 
   Folded away it is one line with a count on it, which is the whole shelf for a
   reader who does not care — and the count is still there, so caring again costs

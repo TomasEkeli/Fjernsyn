@@ -39,7 +39,6 @@ vi.mock('../../store/index', async () => {
         getShowFamilyFriendlyOnly: false,
         getRememberSearchHistory: false,
         getSubscribedChannelIdSet: new Set(),
-        getListDensity: 'standard',
         getGeneralAutoLoadMorePaginatedItemsEnabled: false,
       },
     }),

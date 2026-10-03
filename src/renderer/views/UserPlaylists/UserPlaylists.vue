@@ -43,7 +43,6 @@
             :default-value="doSearchPlaylistsWithMatchingVideos"
             @change="doSearchPlaylistsWithMatchingVideos = !doSearchPlaylistsWithMatchingVideos"
           />
-          <FtDensitySwitch />
           <FtSelect
             class="sortSelect"
             :value="sortBy"
@@ -103,7 +102,6 @@ import { isNavigationFailure, NavigationFailureType, useRoute, useRouter } from 
 import FtAutoLoadNextPageWrapper from '../../components/FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
 import FtCard from '../../components/ft-card/ft-card.vue'
-import FtDensitySwitch from '../../components/FtDensitySwitch/FtDensitySwitch.vue'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
 import FtFlexBox from '../../components/ft-flex-box/ft-flex-box.vue'
 import FtIconButton from '../../components/FtIconButton/FtIconButton.vue'

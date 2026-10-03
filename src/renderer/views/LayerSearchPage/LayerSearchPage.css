@@ -1,7 +1,7 @@
 /*
- * Always the full width, whatever the density and whether or not cards have
- * come yet: the width does not jump when a search starts. Wall's full bleed
- * for this page, before any card is there, is in density.css.
+ * Always the full width, whether or not cards have come yet: the width does
+ * not jump when a search starts. The wall's full bleed for this page, before
+ * any card is there, is in wall.css.
  */
 .card {
   box-sizing: border-box;
@@ -10,7 +10,7 @@
   margin-inline: 0;
 }
 
-/* The scope tabs and the density switch share the page's first row */
+/* The scope tabs head the page */
 .headingRow {
   align-items: center;
   display: flex;
@@ -18,10 +18,6 @@
   gap: 0 16px;
   justify-content: space-between;
   margin-block-end: 10px;
-}
-
-.densitySwitch {
-  margin-inline-start: auto;
 }
 
 .tabs {

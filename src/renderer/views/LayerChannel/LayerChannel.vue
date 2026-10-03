@@ -199,16 +199,9 @@
           />
           <template v-else>
             <div
-              v-if="showDensitySwitch || viewAllRoute || currentSortedList"
+              v-if="viewAllRoute || currentSortedList"
               class="select-container"
             >
-              <!-- The old view's rule: not on a tab without a card grid (the
-                   about tab, the posts, and PeerTube's playlists, a list of
-                   their own), where the switch would visibly do nothing -->
-              <FtDensitySwitch
-                v-if="showDensitySwitch"
-                class="channelDensity"
-              />
               <FtButton
                 v-if="viewAllRoute"
                 class="viewAllButton"
@@ -303,7 +296,6 @@ import FtAgeRestricted from '../../components/FtAgeRestricted/FtAgeRestricted.vu
 import FtAutoLoadNextPageWrapper from '../../components/FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
 import FtCard from '../../components/ft-card/ft-card.vue'
-import FtDensitySwitch from '../../components/FtDensitySwitch/FtDensitySwitch.vue'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
 import FtIconButton from '../../components/FtIconButton/FtIconButton.vue'
 import FtInput from '../../components/FtInput/FtInput.vue'
@@ -416,7 +408,7 @@ const showSearchBar = computed(() => isYouTube.value && channel.value?.hasSearch
  * a channel whose `tabs` names it has; `hidden` is the user's setting
  * against it; `empty` what its list says when the channel has nothing in it;
  * `playlists` a tab listing playlists; `posts` the posts tab, a list layout
- * whatever the density setting; `about` YouTube's about tab, which every
+ * whatever the view type setting; `about` YouTube's about tab, which every
  * YouTube channel has, as in the old view, and which lists nothing; `search`
  * the results of a search within the channel, which has no tab of its own in
  * the tab row, as in the old view, and is shown while the route holds one.
@@ -681,16 +673,6 @@ const currentSortedList = computed(() => {
   }
 
   return sortedLists[currentTab.value] ?? null
-})
-
-/**
- * Whether the tab lists cards in the density setting's layout, so that the
- * density switch shows: not the about tab, not the posts (always a list), not
- * a PeerTube channel's playlists (a list of their own)
- */
-const showDensitySwitch = computed(() => {
-  const tab = currentTabInfo.value
-  return !tab.about && !tab.posts && !(tab.playlists && !isYouTube.value)
 })
 
 /**

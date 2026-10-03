@@ -88,7 +88,6 @@ const SETTINGS = vi.hoisted(() => ({
   // The header's actions and the tab row's
   getUseSponsorBlock: false,
   getSponsorBlockExcludedChannels: '[]',
-  getListDensity: 'standard',
   // The about tab's tag links, as the search box runs a search, and its featured channels
   getHideSearchBar: false,
   getHideFeaturedChannels: false,
@@ -345,7 +344,7 @@ describe('the videos tab', () => {
     expect(wrapper.findComponent({ name: 'FtElementList' }).props()).toEqual({
       data: [video(1), video(2)],
       useChannelsHiddenPreference: false,
-      // The density setting's layout, which only the posts tab overrides
+      // The view type setting's layout, which only the posts tab overrides
       display: '',
     })
   })
@@ -731,18 +730,6 @@ describe('a PeerTube channel\'s actions', () => {
     expect(wrapper.find('.viewAllButton').exists()).toBe(false)
     expect(wrapper.find('#aboutTab').exists()).toBe(false)
     expect(wrapper.find('.layerMarkdown em').text()).toBe('official')
-  })
-
-  it('has the density switch over its videos, which writes the setting, and none over its playlists, a list of their own', async () => {
-    const { wrapper, router } = await openChannelPage()
-
-    await wrapper.find('.densitySwitch input[value="wall"]').setValue(true)
-    expect(dispatched('updateListDensity')).toEqual(['wall'])
-
-    await router.replace(`${CHANNEL_PATH}/playlists`)
-    await flushPromises()
-
-    expect(wrapper.find('.densitySwitch').exists()).toBe(false)
   })
 })
 
@@ -1277,7 +1264,7 @@ describe('a YouTube channel', () => {
       expect(fetchMore(wrapper).exists()).toBe(false)
     })
 
-    it('lays the posts out as a list whatever the density, and the other tabs as the setting says', async () => {
+    it('lays the posts out as a list whatever the view type, and the other tabs as the setting says', async () => {
       layer.listChannelPosts.mockResolvedValue({ items: [youTubePost(1)], cursor: null })
       const { wrapper, router } = await openChannelPage(`${YT_PATH}/community`)
 
@@ -1477,28 +1464,6 @@ describe('a YouTube channel', () => {
       const { wrapper } = await openChannelPage(YT_PATH)
 
       expect(wrapper.find('button[title="Never skip SponsorBlock segments on this channel"]').exists()).toBe(false)
-    })
-
-    it('has the density switch on the tab row of the card tabs, and none on the about or posts tabs', async () => {
-      layer.listChannelPosts.mockResolvedValue({ items: [], cursor: null })
-      const { wrapper, router } = await openChannelPage(YT_PATH)
-
-      expect(wrapper.find('#videosPanel .select-container .densitySwitch').exists()).toBe(true)
-
-      await wrapper.find('.densitySwitch input[value="tight"]').setValue(true)
-      expect(dispatched('updateListDensity')).toEqual(['tight'])
-
-      for (const tab of ['shorts', 'playlists']) {
-        await router.replace(`${YT_PATH}/${tab}`)
-        await flushPromises()
-        expect(wrapper.find('.densitySwitch').exists()).toBe(true)
-      }
-
-      for (const tab of ['community', 'about']) {
-        await router.replace(`${YT_PATH}/${tab}`)
-        await flushPromises()
-        expect(wrapper.find('.densitySwitch').exists()).toBe(false)
-      }
     })
   })
 

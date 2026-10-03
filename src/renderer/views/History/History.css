@@ -4,20 +4,20 @@
   margin-inline: auto;
 }
 
-/*
- * The row the page already had, now holding a third control: the density
- * switch joins the search options rather than starting a row of its own.
- *
- * Flex instead of the two column grid it was, because a fixed column count
- * would have put the third control on a second line whatever the width.
- * Wrapping does what the 800px breakpoint used to do, and does it at the width
- * the controls actually stop fitting rather than at a guessed one.
- */
 .optionsRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: 1fr;
   align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
+}
+
+@media only screen and (width <= 800px) {
+  .optionsRow {
+    /* Switch to 2 rows from 2 columns */
+    grid-template-columns: auto;
+    grid-template-rows: auto auto;
+    align-items: stretch;
+  }
 }
 
 .sortSelect {

@@ -16,7 +16,6 @@ import FtListVideo from './FtListVideo.vue'
 const SETTINGS = vi.hoisted(() => ({
   getHistoryCacheById: {},
   getListType: 'grid',
-  getListDensity: 'tight',
   getThumbnailPreference: '',
   getBlurThumbnails: false,
   getBackendPreference: 'local',
@@ -188,7 +187,7 @@ describe('FtListVideo, a PeerTube video', () => {
 
   it('takes the same thumbnail whatever the frame preference or card size', async () => {
     store.setGetter('getThumbnailPreference', 'middle')
-    store.setGetter('getListDensity', 'spacious')
+    store.setGetter('getListType', 'list')
     const { wrapper } = await mountCard(PEERTUBE_VIDEO)
 
     expect(wrapper.find('img.thumbnailImage').attributes('src')).toBe(THUMBNAIL)
@@ -254,10 +253,17 @@ describe('FtListVideo, a PeerTube video', () => {
 })
 
 describe('FtListVideo, a YouTube video (today\'s behaviour, pinned)', () => {
-  it('links to the YouTube watch page, with the ytimg thumbnail', async () => {
+  it('links to the YouTube watch page, with the large ytimg thumbnail on a grid', async () => {
     const { wrapper } = await mountCard(YOUTUBE_VIDEO)
 
     expect(wrapper.find('a.thumbnailLink').attributes('href')).toBe(`/watch/${YOUTUBE_ID}`)
+    expect(wrapper.find('img.thumbnailImage').attributes('src')).toBe(`https://i.ytimg.com/vi/${YOUTUBE_ID}/hq720.jpg`)
+  })
+
+  it('takes the small ytimg thumbnail as a list card', async () => {
+    store.setGetter('getListType', 'list')
+    const { wrapper } = await mountCard(YOUTUBE_VIDEO)
+
     expect(wrapper.find('img.thumbnailImage').attributes('src')).toBe(`https://i.ytimg.com/vi/${YOUTUBE_ID}/mqdefault.jpg`)
     // describe reproduces the same rule
     expect(wrapper.find('img.thumbnailImage').attributes('src'))

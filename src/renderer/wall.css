@@ -1,0 +1,191 @@
+/*
+ * The wall: every grid in the app a seamless wall of thumbnails. No gap, no
+ * page margins, and each card's text laid over the bottom of its thumbnail
+ * instead of below it.
+ *
+ * It reaches the grids through custom properties where it can, and through
+ * rules on the card's structure where it must: moving a card's text on top of
+ * its thumbnail is nothing a variable can express. Both stay in this
+ * fork-owned file, so a sync branch finds nothing here to fight over; the risk
+ * accepted instead is upstream renaming a class this points at, which a sync
+ * build would show immediately.
+ *
+ * Every rule below the variables opens with `:root body`. The `:root` is
+ * weight, not structure: it lifts each rule one class above the card's own
+ * styles, and the watched fade's hover rules in particular, which would
+ * otherwise put dark text back on the scrim in a light theme. It is also two
+ * compounds on every selector, which is why the compound limit is off for the
+ * whole file.
+ */
+
+/* stylelint-disable selector-max-compound-selectors */
+
+/*
+ * The column is a minimum, not a width. FtAutoGrid asks for
+ * repeat(auto-fill, minmax(min(column, 100%), 1fr)), so it decides only how
+ * many columns fit, and the columns then stretch to fill the row. Under about
+ * 1220px of grid that is one column of the full width.
+ *
+ * The third value is the room a grid item is given before it has rendered
+ * itself. The card is only as tall as its image here, the info block being
+ * lifted out of the flow, so the reserve is just the thumbnail: 9/16 of the
+ * 610px column, rounded up. Too little and every row that scrolls into view
+ * pushes the ones below it down.
+ *
+ * The last two are the description snippet: at most three lines of it, 6px
+ * below the line above.
+ */
+body {
+  --ft-grid-min-column: 610px;
+  --ft-grid-gap: 0;
+  --ft-grid-item-min-block-size: 344px;
+  --ft-card-description-lines: 3;
+  --ft-card-description-gap: 6px;
+}
+
+/*
+ * The overlay. The card becomes the positioning context, sheds the paddings
+ * that kept cards apart, and the info block pins to its bottom edge under a
+ * half-transparent scrim, dark enough to carry white text over a bright
+ * thumbnail and subtle enough to leave the image legible through it.
+ *
+ * block-size auto, against the shared layout's 100%: a grid row is as tall as
+ * its tallest cell, and a post card in the row is taller than 16:9. A card
+ * that filled that cell would carry its bottom-pinned scrim down with it, off
+ * the thumbnail and into the blank space below — so the card hugs its image
+ * instead, and a mixed row shows background under the shorter tiles.
+ */
+:root body .ft-list-item.grid {
+  block-size: auto;
+  min-block-size: 0;
+  padding: 0;
+  position: relative;
+}
+
+/*
+ * A community post with a picture is the same tile as a video — its card
+ * cover-crops the image to 16:9 — so it joins the overlay below, and only a
+ * post with no picture keeps its flowing text layout. That one has nothing to
+ * overlay onto, so what the shared rule above takes from it — it is
+ * .ft-list-item.grid too — this gives back, and its text does not press
+ * against the tiles around it. The values are the ordinary card's own: 6px
+ * around, 20px below.
+ */
+:root body .ft-list-post.grid.noThumbnail {
+  padding-block: 6px 20px;
+  padding-inline: 6px;
+}
+
+:root body .ft-list-item.grid .videoThumbnail {
+  padding-block-end: 0;
+}
+
+/* A post's text block is .postInfo, but it is the same overlay. */
+:root body .ft-list-item.grid .info,
+:root body .ft-list-post.grid:not(.noThumbnail) .postInfo {
+  background-color: rgb(0 0 0 / 50%);
+  inset-block-end: 0;
+  inset-inline: 0;
+  padding-block: 6px 8px;
+  padding-inline: 10px;
+  position: absolute;
+  z-index: 1;
+}
+
+/*
+ * The scrim is the same dark in every theme, so the text stops following the
+ * theme and is simply light. This also outranks the watched fade, which would
+ * otherwise drop the text to a grey no scrim can carry; the watched state
+ * still shows through the dimmed thumbnail.
+ *
+ * The selectors carry the specificity that beats the watched-state rules,
+ * which are four compounds themselves.
+ */
+:root body .ft-list-item.grid .info .title,
+:root body .ft-list-post.grid:not(.noThumbnail) .postSnippet {
+  color: #fff;
+}
+
+:root body .ft-list-item.grid .info .infoLine,
+:root body .ft-list-item.grid .info .infoLine .channelName,
+:root body .ft-list-item.grid .info .description,
+:root body .ft-list-post.grid:not(.noThumbnail) .postHeader,
+:root body .ft-list-post.grid:not(.noThumbnail) .counts {
+  color: rgb(255 255 255 / 88%);
+}
+
+/*
+ * The shared card style reserves the snippet's slot whether there is a snippet
+ * or not, so that a late-arriving description cannot push the cards below it
+ * down the page. Here the info block is out of the flow, nothing below it can
+ * move, and an empty reserve would just be three lines of scrim over nothing —
+ * so the slot hugs its content, still clamped to the line count.
+ */
+:root body .ft-list-item.grid .info .description {
+  block-size: auto;
+}
+
+/*
+ * The duration badge stays where the thumbnail put it, painted above the
+ * scrim rather than tinted by it.
+ */
+:root body .ft-list-item.grid .videoThumbnail .videoDuration {
+  z-index: 2;
+}
+
+/*
+ * The layer's search page is full bleed from the start, not only once a grid
+ * of cards is there, so that starting a search does not narrow it and widen it
+ * again. Its controls keep a little room from the edge.
+ */
+:root body .routerView:has(.layerSearchPage) {
+  margin-inline: 0;
+}
+
+:root body .layerSearchPage .ft-card {
+  padding-inline: 0;
+}
+
+:root body .layerSearchPage .headingRow,
+:root body .layerSearchPage .sourceRow,
+:root body .layerSearchPage .chips,
+:root body .layerSearchPage .sectionHeaderRow {
+  padding-inline: 8px;
+}
+
+/*
+ * Full bleed. Three layers of chrome stand between the viewport edge and a
+ * grid — the router view's margins, the page card's own margin and padding,
+ * and each page's scoped rule centring that card at 85% — and the wall
+ * flattens all three, but only on surfaces that actually show a grid of
+ * cards: :has(.ft-list-item.grid) keeps the watch page, settings and every
+ * list-mode surface exactly as they were. The bare-class selectors lose to
+ * these on specificity even where a page's rule is scoped, since the scope
+ * attribute adds less than the `:root body` prefix does.
+ */
+:root body .routerView:has(.ft-list-item.grid) {
+  margin-inline: 0;
+}
+
+:root body .ft-card:has(.ft-list-item.grid) {
+  inline-size: 100%;
+  margin-inline: 0;
+  padding-inline: 0;
+}
+
+/*
+ * The control row over the stream stretches its background to the card's
+ * edges with negative margins that mirror the card's 16px inline padding.
+ * With that padding gone the mirror image is 16px of overhang past a card
+ * that is already the full viewport, which is a horizontal scrollbar and a
+ * sliver of grid cut off at the edge — so the margins go with the padding
+ * they mirrored.
+ */
+:root body .ft-card:has(.ft-list-item.grid) .controlRow {
+  margin-inline: 0;
+}
+
+/* The channel home tab caps its shelves at 85vw on top of the card's 85%. */
+:root body .shelfContainer:has(.ft-list-item.grid) {
+  max-inline-size: none;
+}

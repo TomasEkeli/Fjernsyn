@@ -21,10 +21,10 @@ import { createStore } from 'vuex'
  *
  * vi.mock('../../store/index', async () => {
  *   const { createFakeStore } = await import('../../testing/store')
- *   return { default: createFakeStore({ getters: { getListDensity: 'standard' } }) }
+ *   return { default: createFakeStore({ getters: { getListType: 'grid' } }) }
  * })
  *
- * // later: store.dispatched, store.setGetter('getListDensity', 'wall')
+ * // later: store.dispatched, store.setGetter('getListType', 'list')
  *
  * The path in `vi.mock` is relative to the test file and must name the same
  * module the component imports. Pass the fake to `mountWithApp` (or as a

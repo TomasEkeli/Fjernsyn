@@ -9,7 +9,6 @@
           />
           {{ t('PeerTube.Search.Results for', { query, host: sourceHost }) }}
         </h2>
-        <FtDensitySwitch />
       </div>
       <nav
         class="tabs"
@@ -106,7 +105,6 @@ import { useRoute } from 'vue-router'
 import FtAutoLoadNextPageWrapper from '../../components/FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
 import FtCard from '../../components/ft-card/ft-card.vue'
-import FtDensitySwitch from '../../components/FtDensitySwitch/FtDensitySwitch.vue'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
 

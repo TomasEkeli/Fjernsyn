@@ -61,13 +61,6 @@ Global:
   # "in 6 days" is not something anyone can write in a calendar, and it stops
   # being true the moment it is read.
   Scheduled Time: '{absolute} ({relative})'
-  # How much room a card gets on a grid of them.
-  Density:
-    Label: Card density
-    Tight: Tight
-    Standard: Standard
-    Spacious: Spacious
-    Wall: Wall
   Counts:
     Video Count: 1 video | {count} videos
     Channel Count: 1 channel | {count} channels

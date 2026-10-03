@@ -532,7 +532,7 @@ const descriptionSnippet = computed(() => {
  * card keeps the slot either way, empty when it has nothing: the description
  * arrives minutes after the card is on screen, and a card that grew at that
  * moment would push every card below it down the page. How tall the empty slot
- * is, and whether the density mode has one at all, is decided in CSS.
+ * is, and how it sits over the thumbnail, is decided in wall.css.
  *
  * The appearance keeps the slot away from the watch page's sidebar cards,
  * which is where the list rule has always kept the snippet too.
@@ -547,9 +547,6 @@ const showsDescriptionSlot = computed(() => {
 
 /** @type {import('vue').ComputedRef<'' | 'start' | 'middle' | 'end' | 'hidden' | 'blur'>} */
 const thumbnailPreference = computed(() => store.getters.getThumbnailPreference)
-
-/** @type {import('vue').ComputedRef<'tight' | 'standard' | 'spacious' | 'wall'>} */
-const listDensity = computed(() => store.getters.getListDensity)
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const blurThumbnails = computed(() => store.getters.getBlurThumbnails)
@@ -859,19 +856,14 @@ function handleOptionsClick(option) {
 /**
  * Whether this card is big enough to be worth the large thumbnail.
  *
- * A grid column stretches, so a card is not its mode's minimum: a standard one
- * runs from 400 to 816px wide, a spacious one from 610 to 1240, and a wall one
- * wider still with the page chrome gone, and a 320px image spread over any of
- * those is the soft, blocky thing it looks like.
- * Tight tops out at 530px and is the mode that puts the most cards on screen at
- * once, so it is the one that can least afford eight times the bytes, and a
- * list card's thumbnail is 336px whatever the mode.
+ * A grid column stretches, so a card is not the wall's 610px minimum but
+ * anything up to twice that and more, the page chrome gone, and a 320px image
+ * spread over it is the soft, blocky thing it looks like. A list card's
+ * thumbnail is 336px, which the small one fits.
  *
  * @type {import('vue').ComputedRef<boolean>}
  */
-const wantsLargeThumbnail = computed(() => {
-  return !effectiveListTypeIsList.value && listDensity.value !== 'tight'
-})
+const wantsLargeThumbnail = computed(() => !effectiveListTypeIsList.value)
 
 /**
  * Set when the large thumbnail did not arrive, so that the card can ask for

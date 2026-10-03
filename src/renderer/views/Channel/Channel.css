@@ -13,30 +13,11 @@
 
 .select-container {
   display: flex;
-  flex-flow: row wrap;
+  flex-direction: row;
   justify-content: flex-end;
   align-items: baseline;
   gap: 10px;
   margin-block-end: 10px;
-}
-
-/*
- * The density switch takes the free end of the row the sorts already occupy,
- * so the channel gains no row of controls. The auto margin, not a first
- * position in a flex-end row, because flex-end would have huddled it against
- * the sorts and left the space on the wrong side.
- *
- * The row has no spacing of its own: every control in it brings the room
- * above itself (FtSelect brings 30px for its floating label), and on home the
- * switch is the only control there, so it brings its own. A little more than
- * the select's 30, because the switch is a shorter box and reads more cramped
- * at the same distance, and a little below for the same reason. On the tabs
- * with a sort the select still sets the row's line, so none of this moves
- * anything there.
- */
-.channelDensity {
-  margin-block: 36px 8px;
-  margin-inline-end: auto;
 }
 
 .elementListLoading {

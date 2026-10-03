@@ -35,7 +35,6 @@ vi.mock('../../store/index', async () => {
   return {
     default: createFakeStore({
       getters: {
-        getListDensity: 'standard',
         getGeneralAutoLoadMorePaginatedItemsEnabled: false,
         getEnablePeerTube: true,
         getDefaultSearchScope: 'youtube',
@@ -148,10 +147,9 @@ describe('the search page', () => {
     expect(layer.searchQuery).toHaveBeenCalledTimes(1)
     expect(layer.searchQuery).toHaveBeenCalledWith({ ...defaults('youtube'), text: 'blender' }, { cursor: null })
     expect(cards(wrapper)).toEqual(['YouTube 1', 'YouTube 2'])
-    // The search box shows the text; the page heads with its scope and density
+    // The search box shows the text; the page heads with its scope
     expect(wrapper.find('h2').exists()).toBe(false)
     expect(wrapper.find('.headingRow .tabs').exists()).toBe(true)
-    expect(wrapper.find('.headingRow .densitySwitch').exists()).toBe(true)
   })
 
   it('titles the window and keeps the text in the search history', async () => {

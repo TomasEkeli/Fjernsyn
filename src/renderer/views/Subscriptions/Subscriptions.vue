@@ -29,9 +29,6 @@
           @click="refresh"
           @stop-activity="stopActivity"
         />
-        <div class="pageControls">
-          <FtDensitySwitch />
-        </div>
       </div>
       <SubscriptionsUpcomingShelf
         v-if="anyFeedEnabled && !isLoading"
@@ -59,7 +56,6 @@
 import { computed, onBeforeUnmount, onMounted } from 'vue'
 
 import FtCard from '../../components/ft-card/ft-card.vue'
-import FtDensitySwitch from '../../components/FtDensitySwitch/FtDensitySwitch.vue'
 import FtRefreshWidget from '../../components/FtRefreshWidget/FtRefreshWidget.vue'
 import FtToggleChip from '../../components/FtToggleChip/FtToggleChip.vue'
 import SubscriptionsTabUi from '../../components/SubscriptionsTabUi/SubscriptionsTabUi.vue'
@@ -96,9 +92,9 @@ import { KeyboardShortcuts } from '../../../constants'
  * something as current as the rest of the stream, out of the cache, without a
  * request and without a spinner.
  *
- * The row is the page's one control row: the chips at one end and the density
- * switch at the other, since a second row of controls over a single stream is
- * the sort of thing this page was rebuilt to be rid of.
+ * The row is the page's one control row, the chips and how fresh they are,
+ * since a second row of controls over a single stream is the sort of thing
+ * this page was rebuilt to be rid of.
  *
  * Between that row and the stream sits the shelf of what has not happened yet,
  * which is the other half of making one list readable: a premiere is dated by

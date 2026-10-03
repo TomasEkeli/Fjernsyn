@@ -3,7 +3,7 @@
  *
  * Here rather than on either page that uses it: the subscriptions stream and
  * the explore stream are the same shape — one list, a row of chips saying what
- * is in it, and the density switch at the far end — and two copies of that
+ * is in it, and how fresh it is — and two copies of that
  * would drift apart the first time one of them was adjusted.
  *
  * Loaded as a scoped stylesheet by each page, so the classes only reach that
@@ -12,15 +12,16 @@
 
 /*
  * The page's one control row, and now the page's first line: which kinds are
- * shown at one end, how much room each of them gets at the other, and how fresh
- * this all is in the middle.
+ * shown at one end, how fresh this all is beside them, and on explore the
+ * region at the far end.
  *
  * A grid rather than a flex row, for where the refresh button lands. Its
  * column is sized to its content and follows the chips' column across a fixed
  * gap, so the button stands at the same place on the row however the age
  * beside it is worded — a centred column, or one after a column that stretched,
  * moved the button every time the clock ticked from "Fresh" to "2 minutes ago".
- * The last column takes the slack and holds the density switch at the far end.
+ * The last column takes the slack and holds the page's own controls, where it
+ * has any, at the far end.
  * Each of the three wraps within itself as the window narrows, and below the
  * mobile threshold they stack instead.
  *
