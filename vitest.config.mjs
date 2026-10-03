@@ -10,7 +10,8 @@ import { defineConfig } from 'vitest/config'
 // Tests sit beside the module they test, as `*.test.js`, in two projects run
 // by the one `pnpm test`:
 //
-// - `main`: the main-process modules under `src/main/`, in plain Node.
+// - `main`: the main-process modules under `src/main/`, in plain Node, and
+//   the build scripts' own tests under `_scripts/` (`*.test.mjs`).
 // - `renderer`: renderer code under `src/renderer/`, including mounted Vue
 //   components, in a simulated DOM (jsdom). It mirrors what
 //   `_scripts/webpack.renderer.config.js` gives the renderer: the single file
@@ -53,6 +54,7 @@ const RENDERER_CONSTANTS = {
   FT_SUBS_BUDGET: '',
   FT_SABR_WALL: '',
   BUILD_STAMP: 'test',
+  RELEASE_TAG: '',
 }
 
 const CONSTANT_PATTERN = new RegExp(`\\bprocess\\.env\\.(${Object.keys(RENDERER_CONSTANTS).join('|')})\\b`, 'g')
@@ -80,7 +82,7 @@ export default defineConfig({
       {
         test: {
           name: 'main',
-          include: ['src/main/**/*.test.js'],
+          include: ['src/main/**/*.test.js', '_scripts/**/*.test.mjs'],
           environment: 'node',
         },
       },

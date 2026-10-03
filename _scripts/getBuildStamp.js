@@ -86,8 +86,10 @@ function getBuildStamp(version) {
   if (!commit) { return '' }
 
   // Untracked files are ignored on purpose: notes and scratch files are not
-  // part of what was built
-  const dirty = git(['status', '--porcelain', '--untracked-files=no'])
+  // part of what was built. So is package.json, which the build workflow
+  // rewrites with the release's version before every build, and which would
+  // otherwise mark every release dirty.
+  const dirty = git(['status', '--porcelain', '--untracked-files=no', '--', '.', ':!package.json'])
   const revision = dirty ? `${commit}-dirty` : commit
 
   const count = commitsSinceVersion(version)

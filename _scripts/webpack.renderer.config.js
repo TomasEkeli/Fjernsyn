@@ -198,7 +198,10 @@ const config = {
       // ladder can be exercised without waiting for the real thing
       'process.env.FT_SABR_WALL': JSON.stringify(process.env.FT_SABR_WALL ?? ''),
       // Which build this is. Baked in because it can only be known here.
-      'process.env.BUILD_STAMP': JSON.stringify(buildStamp)
+      'process.env.BUILD_STAMP': JSON.stringify(buildStamp),
+      // The release this build is, as its tag (v0.1.214), set by the build
+      // workflow on main; empty for any other build, which has no release page
+      'process.env.RELEASE_TAG': JSON.stringify(process.env.FJERNSYN_RELEASE_TAG ?? '')
     }),
     new HtmlWebpackPlugin({
       filename: 'index.html',

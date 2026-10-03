@@ -10,7 +10,7 @@ Fjernsyn is Norwegian (and Danish) for television, literally "far-sight", tele-v
 
 ## Download
 
-Every push to `main` builds Fjernsyn for Windows, macOS and Linux. There are no releases. Pick the newest [build workflow run](https://github.com/TomasEkeli/Fjernsyn/actions/workflows/build.yml) and download the artefact for your platform. You need a GitHub account to download it. The builds are unsigned, so Windows and macOS warn you the first time you open them.
+Every push to `main` is a release, built for Windows, macOS and Linux. Download the file for your platform from the [latest release](https://github.com/TomasEkeli/Fjernsyn/releases/latest): an installer or a portable build for Windows, a disk image for macOS, and an AppImage, a portable archive or a package (deb, rpm, pacman) for Linux. The builds are unsigned, so Windows and macOS warn you the first time you open them.
 
 ## Where it comes from
 
