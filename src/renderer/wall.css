@@ -1,0 +1,258 @@
+/*
+ * The wall: every grid in the app a seamless wall of thumbnails. No gap, no
+ * page margins, and each card's text laid over the bottom of its thumbnail
+ * instead of below it.
+ *
+ * It reaches the grids through custom properties where it can, and through
+ * rules on the card's structure where it must: moving a card's text on top of
+ * its thumbnail is nothing a variable can express. Both stay in this
+ * fork-owned file, so a sync branch finds nothing here to fight over; the risk
+ * accepted instead is upstream renaming a class this points at, which a sync
+ * build would show immediately.
+ *
+ * Every rule below the variables opens with `:root body`. The `:root` is
+ * weight, not structure: it lifts each rule one class above the card's own
+ * styles, and the watched fade's hover rules in particular, which would
+ * otherwise put dark text back on the scrim in a light theme. It is also two
+ * compounds on every selector, which is why the compound limit is off for the
+ * whole file.
+ */
+
+/* stylelint-disable selector-max-compound-selectors */
+
+/*
+ * The column is a minimum, not a width. FtAutoGrid asks for
+ * repeat(auto-fill, minmax(min(column, 100%), 1fr)), so it decides only how
+ * many columns fit, and the columns then stretch to fill the row. Under about
+ * 1220px of grid that is one column of the full width.
+ *
+ * The third value is the room a grid item is given before it has rendered
+ * itself. The card is only as tall as its image here, the info block being
+ * lifted out of the flow, so the reserve is just the thumbnail: 9/16 of the
+ * 610px column, rounded up. Too little and every row that scrolls into view
+ * pushes the ones below it down.
+ *
+ * The next two are the description snippet: at most three lines of it, 6px
+ * below the line above.
+ *
+ * The last is the room everything that is not the grid keeps from the
+ * window's frame on a full bleed page: headings, searches, control rows,
+ * messages. One number, so that every page's header lines up with every
+ * other's.
+ */
+body {
+  --ft-grid-min-column: 610px;
+  --ft-grid-gap: 0;
+  --ft-grid-item-min-block-size: 344px;
+  --ft-card-description-lines: 3;
+  --ft-card-description-gap: 6px;
+  --ft-wall-edge: 24px;
+}
+
+/*
+ * The overlay. The card becomes the positioning context, sheds the paddings
+ * that kept cards apart, and the info block pins to its bottom edge under a
+ * half-transparent scrim, dark enough to carry white text over a bright
+ * thumbnail and subtle enough to leave the image legible through it.
+ *
+ * block-size auto, against the shared layout's 100%: a grid row is as tall as
+ * its tallest cell, and a post card in the row is taller than 16:9. A card
+ * that filled that cell would carry its bottom-pinned scrim down with it, off
+ * the thumbnail and into the blank space below — so the card hugs its image
+ * instead, and a mixed row shows background under the shorter tiles.
+ */
+:root body .ft-list-item.grid {
+  block-size: auto;
+  min-block-size: 0;
+  padding: 0;
+  position: relative;
+}
+
+/*
+ * A community post with a picture is the same tile as a video — its card
+ * cover-crops the image to 16:9 — so it joins the overlay below, and only a
+ * post with no picture keeps its flowing text layout. That one has nothing to
+ * overlay onto, so what the shared rule above takes from it — it is
+ * .ft-list-item.grid too — this gives back, and its text does not press
+ * against the tiles around it. The values are the ordinary card's own: 6px
+ * around, 20px below.
+ */
+:root body .ft-list-post.grid.noThumbnail {
+  padding-block: 6px 20px;
+  padding-inline: 6px;
+}
+
+:root body .ft-list-item.grid .videoThumbnail {
+  padding-block-end: 0;
+}
+
+/* A post's text block is .postInfo, but it is the same overlay. */
+:root body .ft-list-item.grid .info,
+:root body .ft-list-post.grid:not(.noThumbnail) .postInfo {
+  background-color: rgb(0 0 0 / 50%);
+  inset-block-end: 0;
+  inset-inline: 0;
+  padding-block: 6px 8px;
+  padding-inline: 10px;
+  position: absolute;
+  z-index: 1;
+}
+
+/*
+ * The scrim is the same dark in every theme, so the text stops following the
+ * theme and is simply light. This also outranks the watched fade, which would
+ * otherwise drop the text to a grey no scrim can carry; the watched state
+ * still shows through the dimmed thumbnail.
+ *
+ * The selectors carry the specificity that beats the watched-state rules,
+ * which are four compounds themselves.
+ */
+:root body .ft-list-item.grid .info .title,
+:root body .ft-list-post.grid:not(.noThumbnail) .postSnippet {
+  color: #fff;
+}
+
+:root body .ft-list-item.grid .info .infoLine,
+:root body .ft-list-item.grid .info .infoLine .channelName,
+:root body .ft-list-item.grid .info .description,
+:root body .ft-list-post.grid:not(.noThumbnail) .postHeader,
+:root body .ft-list-post.grid:not(.noThumbnail) .counts {
+  color: rgb(255 255 255 / 88%);
+}
+
+/*
+ * The shared card style reserves the snippet's slot whether there is a snippet
+ * or not, so that a late-arriving description cannot push the cards below it
+ * down the page. Here the info block is out of the flow, nothing below it can
+ * move, and an empty reserve would just be three lines of scrim over nothing —
+ * so the slot hugs its content, still clamped to the line count.
+ */
+:root body .ft-list-item.grid .info .description {
+  block-size: auto;
+}
+
+/*
+ * The duration badge stays where the thumbnail put it, painted above the
+ * scrim rather than tinted by it.
+ */
+:root body .ft-list-item.grid .videoThumbnail .videoDuration {
+  z-index: 2;
+}
+
+/*
+ * Pages that are full bleed from the start, not only once a grid of cards is
+ * there, so that loading them does not show them narrow and then widen them:
+ * the layer's search page, and the two streams under a control row,
+ * subscriptions and explore.
+ */
+:root body .routerView:has(.layerSearchPage, .controlRow) {
+  margin-inline: 0;
+}
+
+:root body .layerSearchPage .ft-card,
+:root body .ft-card:has(> .controlRow) {
+  inline-size: 100%;
+  margin-inline: 0;
+  padding-inline: 0;
+}
+
+/*
+ * The control row over the stream stretches its background to the card's
+ * edges with negative margins that mirror the card's 16px inline padding.
+ * With that padding gone the mirror image is 16px of overhang past a card
+ * that is already the full viewport, which is a horizontal scrollbar and a
+ * sliver of grid cut off at the edge — so the margins go with the padding
+ * they mirrored, and the row's own padding keeps the wall's edge instead.
+ */
+:root body .ft-card:has(> .controlRow) > .controlRow {
+  margin-inline: 0;
+  padding-inline: var(--ft-wall-edge);
+}
+
+/*
+ * The channel page is full bleed on every tab, not only on those with a grid:
+ * a header that spanned the window over the videos and shrank back to 85% on
+ * the about tab read as the page jumping. Both channel views are caught, the
+ * layer's (.channelHeader) and upstream's (.channelDetails), and only on the
+ * page that has one, so no other page changes.
+ *
+ * The descendant :has() on the router view matches both of its layers, the
+ * outer flex box and the route's own root, which is what takes away both
+ * margins; the page's cards are the direct children of the inner one. The
+ * room inside those cards is at the end of this file, after the grid rules
+ * it has to follow.
+ */
+:root body .routerView:has(.channelHeader, .channelDetails) {
+  margin-inline: 0;
+}
+
+:root body .routerView:has(.channelHeader, .channelDetails) > .ft-card {
+  inline-size: 100%;
+  max-inline-size: none;
+  margin-inline: 0;
+}
+
+/*
+ * Full bleed. Three layers of chrome stand between the viewport edge and a
+ * grid — the router view's margins, the page card's own margin and padding,
+ * and each page's scoped rule centring that card at 85% — and the wall
+ * flattens all three, but only on surfaces that actually show a grid of
+ * cards: :has(.ft-list-item.grid) keeps the watch page, settings and every
+ * list-mode surface exactly as they were. The bare-class selectors lose to
+ * these on specificity even where a page's rule is scoped, since the scope
+ * attribute adds less than the `:root body` prefix does.
+ */
+:root body .routerView:has(.ft-list-item.grid) {
+  margin-inline: 0;
+}
+
+:root body .ft-card:has(.ft-list-item.grid) {
+  inline-size: 100%;
+  margin-inline: 0;
+  padding-inline: 0;
+}
+
+/* The channel home tab caps its shelves at 85vw on top of the card's 85%. */
+:root body .shelfContainer:has(.ft-list-item.grid) {
+  max-inline-size: none;
+}
+
+/*
+ * The edge. A full bleed card has no padding, so what is in it besides the
+ * grid takes the wall's edge as a margin of its own: a page's heading, its
+ * search box and options, its messages, the button that fetches more. Not
+ * what holds the grid, which runs edge to edge; not the control row, which
+ * has a background to carry to the edge and takes the edge as padding above;
+ * not the upcoming shelf, a tinted box that holds a grid when it is open and
+ * would change width as it opened; not a channel's sort row and not the
+ * layer search page's sections, which are given the edge below.
+ */
+:root body :is(.ft-card:has(.ft-list-item.grid), .ft-card:has(> .controlRow), .layerSearchPage .ft-card) > :not(:has(.ft-list-item.grid), .controlRow, .upcomingShelf, .select-container, .sections) {
+  margin-inline: var(--ft-wall-edge);
+}
+
+/*
+ * Two of those children fill the card as inline-size: 100%, the bar that
+ * fetches more and the loader, and 100% plus the margin is a horizontal
+ * scrollbar. Auto fills the same room, less the margin.
+ */
+:root body :is(.ft-card:has(.ft-list-item.grid), .ft-card:has(> .controlRow), .layerSearchPage .ft-card) > :is(.getNextPage, .container) {
+  inline-size: auto;
+}
+
+:root body .layerSearchPage .sectionHeaderRow {
+  padding-inline: var(--ft-wall-edge);
+}
+
+/*
+ * The banner runs edge to edge, so what is under it takes the edge as
+ * padding, inside the card, whose background still reaches the frame: the
+ * avatar, name and tabs, the sort and View All over a grid, and every card of
+ * text below (the about tab, the posts, a description). A grid itself stays
+ * edge to edge, as everywhere on the wall.
+ */
+:root body .routerView:has(.channelHeader, .channelDetails) > :is(.channelHeader, .channelDetails) .infoContainer,
+:root body .routerView:has(.channelHeader, .channelDetails) > .ft-card:has(.ft-list-item.grid) .select-container,
+:root body .routerView:has(.channelHeader, .channelDetails) > .ft-card:not(.channelHeader, .channelDetails, :has(.ft-list-item.grid)) {
+  padding-inline: var(--ft-wall-edge);
+}

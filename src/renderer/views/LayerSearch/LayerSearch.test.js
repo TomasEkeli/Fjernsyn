@@ -33,7 +33,6 @@ vi.mock('../../store/index', async () => {
   return {
     default: createFakeStore({
       getters: {
-        getListDensity: 'standard',
         getGeneralAutoLoadMorePaginatedItemsEnabled: false,
       },
     }),

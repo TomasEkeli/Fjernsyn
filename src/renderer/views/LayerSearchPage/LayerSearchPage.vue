@@ -1,7 +1,7 @@
 <template>
   <div class="layerSearchPage">
     <FtCard class="card">
-      <!-- The search box already shows the text, so the scope tabs head the page, beside the density -->
+      <!-- The search box already shows the text, so the scope tabs head the page -->
       <div class="headingRow">
         <nav
           v-if="peertubeEnabled"
@@ -23,7 +23,6 @@
             {{ scopeLabel(t, scope) }}
           </button>
         </nav>
-        <FtDensitySwitch class="densitySwitch" />
       </div>
       <div
         v-if="query.scope === 'peertube'"
@@ -239,7 +238,6 @@ import { useRoute, useRouter } from 'vue-router'
 import FtAutoLoadNextPageWrapper from '../../components/FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
 import FtCard from '../../components/ft-card/ft-card.vue'
-import FtDensitySwitch from '../../components/FtDensitySwitch/FtDensitySwitch.vue'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
 import LayerSearchChips from '../../components/LayerSearchChips/LayerSearchChips.vue'

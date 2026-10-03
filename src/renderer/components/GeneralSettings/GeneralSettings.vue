@@ -87,14 +87,6 @@
         @change="updateListType"
       />
       <FtSelect
-        :placeholder="t('Global.Density.Label')"
-        :value="listDensity"
-        :select-names="densityNames"
-        :select-values="DENSITY_MODES"
-        :icon="['fas', 'expand']"
-        @change="updateListDensity"
-      />
-      <FtSelect
         :placeholder="t('Settings.General Settings.Thumbnail Preference.Thumbnail Preference')"
         :value="thumbnailPreference"
         :select-names="thumbnailTypeNames"
@@ -197,8 +189,6 @@ import FtFlexBox from '../ft-flex-box/ft-flex-box.vue'
 import FtButton from '../FtButton/FtButton.vue'
 
 import store from '../../store/index'
-
-import { DENSITY_MODES, useDensityModeNames } from '../../composables/useDensityModes'
 
 import allLocales from '../../../../static/locales/activeLocales.json'
 import { randomArrayItem, showToast } from '../../helpers/utils'
@@ -395,22 +385,6 @@ const listType = computed(() => store.getters.getListType)
  */
 function updateListType(value) {
   store.dispatch('updateListType', value)
-}
-
-// Names in the modes' own order, so this dropdown and the switch on the
-// subscriptions page always offer the same things in the same sequence.
-const densityModeNames = useDensityModeNames()
-
-const densityNames = computed(() => DENSITY_MODES.map((mode) => densityModeNames.value[mode]))
-
-/** @type {import('vue').ComputedRef<'tight' | 'standard' | 'spacious' | 'wall'>} */
-const listDensity = computed(() => store.getters.getListDensity)
-
-/**
- * @param {'tight' | 'standard' | 'spacious' | 'wall'} value
- */
-function updateListDensity(value) {
-  store.dispatch('updateListDensity', value)
 }
 
 const THUMBNAIL_TYPE_VALUES = ['', 'start', 'middle', 'end', 'hidden', 'blur']

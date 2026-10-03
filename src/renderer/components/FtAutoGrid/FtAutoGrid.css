@@ -1,4 +1,4 @@
-/* The two custom properties are the density mode; see density.css. */
+/* The two custom properties are the wall's; see wall.css. */
 .grid {
   display: grid;
   gap: var(--ft-grid-gap);

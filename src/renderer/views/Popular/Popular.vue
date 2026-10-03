@@ -13,7 +13,6 @@
           {{ $t("Most Popular") }}
         </h2>
         <div class="pageControls">
-          <FtDensitySwitch />
           <ft-refresh-widget
             :disable-refresh="isLoading"
             :last-refresh-at="lastPopularRefreshAt"
@@ -34,7 +33,6 @@ import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
 import FtCard from '../../components/ft-card/ft-card.vue'
-import FtDensitySwitch from '../../components/FtDensitySwitch/FtDensitySwitch.vue'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
 import FtRefreshWidget from '../../components/FtRefreshWidget/FtRefreshWidget.vue'
 import store from '../../store/index'

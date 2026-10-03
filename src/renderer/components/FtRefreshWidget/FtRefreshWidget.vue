@@ -8,8 +8,8 @@
   ago" — and the sentence it used to be survives as the button group's tooltip,
   where a reader who wants to know which feed is meant can still find out.
 
-  It goes in a row the page already has, the same rule the density switch
-  follows: no page grows a band of chrome to hold a control this small. The
+  It goes in a row the page already has: no page grows a band of chrome to
+  hold a control this small. The
   button leads and the age follows it, so that the button sits at a fixed
   distance from whatever is before it in the row — with the age first, every
   tick of the clock that changed its width moved the button.

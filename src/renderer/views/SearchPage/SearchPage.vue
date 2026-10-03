@@ -23,7 +23,6 @@
         >
           {{ t('PeerTube.Search.Search PeerTube') }}
         </RouterLink>
-        <FtDensitySwitch />
       </div>
       <FtElementList
         :data="shownResults"
@@ -54,7 +53,6 @@ import { useRoute } from 'vue-router'
 
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
 import FtCard from '../../components/ft-card/ft-card.vue'
-import FtDensitySwitch from '../../components/FtDensitySwitch/FtDensitySwitch.vue'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
 import FtAutoLoadNextPageWrapper from '../../components/FtAutoLoadNextPageWrapper.vue'
 

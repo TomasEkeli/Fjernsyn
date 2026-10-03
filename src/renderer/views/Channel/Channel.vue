@@ -39,22 +39,6 @@
         :related-channels="relatedChannels"
       />
       <div class="select-container">
-        <!--
-          One switch for the whole channel, not one per tab: the tabs share a
-          header and a card, the setting they write is global anyway, and a
-          control that reappeared in a slightly different place on every tab
-          would read as a different control each time.
-
-          Not on the about tab, which has no card grid at all and which is also
-          the one tab this row renders below rather than above. And not on the
-          community tab, whose posts are forced to a list layout: a switch that
-          visibly does nothing is a broken control to the person clicking it,
-          however sound the reason it does nothing.
-        -->
-        <FtDensitySwitch
-          v-if="currentTab !== 'about' && currentTab !== 'community'"
-          class="channelDensity"
-        />
         <FtButton
           v-if="showViewAllButton"
           style="margin-top: 33px;"
@@ -297,7 +281,6 @@ import ChannelHome from '../../components/ChannelHome/ChannelHome.vue'
 import FtAgeRestricted from '../../components/FtAgeRestricted/FtAgeRestricted.vue'
 import FtAutoLoadNextPageWrapper from '../../components/FtAutoLoadNextPageWrapper.vue'
 import FtCard from '../../components/ft-card/ft-card.vue'
-import FtDensitySwitch from '../../components/FtDensitySwitch/FtDensitySwitch.vue'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
 import FtFlexBox from '../../components/ft-flex-box/ft-flex-box.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'

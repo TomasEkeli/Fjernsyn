@@ -62,7 +62,7 @@ export function isOnScrollbar(target, event) {
  * A video card marks its thumbnail, its buttons and its text draggable only
  * so that it can cancel their drags (all but its link's, see FtListVideo's
  * onDragStart), so those are passed over. Where every card is edge to edge,
- * as in the wall density, they would otherwise leave nothing to move the
+ * as on the wall, they would otherwise leave nothing to move the
  * window by. A list that reorders its cards makes the item around the card
  * draggable, which still counts.
  * @param {Element} target
