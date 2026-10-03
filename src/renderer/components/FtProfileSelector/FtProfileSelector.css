@@ -14,11 +14,10 @@
   box-shadow: 0 0 0 2px var(--side-nav-hover-color);
 }
 
-/* Fjernsyn: the zapping triangles in the square's colour, a few pixels short
-of its 40 so that their sharp points look as tall as its rounded corners.
-The triangle is the button's ::before, cut out by a clip path. The hover
-outline is a drop shadow filter rather than a box shadow, so it follows the
-triangle's edges as the square's ring follows its own. */
+/* Fjernsyn: the zapping triangles in the bar's text colour, faded until the
+pointer or focus is on them, a few pixels short of the square's 40 so that
+their sharp points look as tall as its rounded corners. The triangle is the
+button's ::before, cut out by a clip path. */
 .zapButton {
   inline-size: 19px;
   block-size: 34px;
@@ -27,7 +26,13 @@ triangle's edges as the square's ring follows its own. */
   border: 0;
   cursor: pointer;
   background: transparent;
-  transition: filter 0.15s ease-out;
+  color: var(--primary-text-color);
+  opacity: 0.55;
+  transition: opacity 0.15s ease-out;
+}
+
+.topNavBarColor .zapButton {
+  color: var(--text-with-main-color);
 }
 
 .zapButton::before {
@@ -35,7 +40,7 @@ triangle's edges as the square's ring follows its own. */
   display: block;
   inline-size: 100%;
   block-size: 100%;
-  background-color: var(--zap-color);
+  background-color: currentcolor;
 }
 
 .zapButton.previous::before {
@@ -54,7 +59,7 @@ and should point that way */
 
 .zapButton:hover,
 .zapButton:focus-visible {
-  filter: drop-shadow(0 0 1px var(--side-nav-hover-color)) drop-shadow(0 0 1px var(--side-nav-hover-color));
+  opacity: 1;
 }
 
 .zapButton:active::before {
