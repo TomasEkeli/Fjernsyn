@@ -154,6 +154,29 @@ body {
 }
 
 /*
+ * The channel page is full bleed on every tab, not only on those with a grid:
+ * a header that spanned the window over the videos and shrank back to 85% on
+ * the about tab read as the page jumping. Both channel views are caught, the
+ * layer's (.channelHeader) and upstream's (.channelDetails), and only on the
+ * page that has one, so no other page changes.
+ *
+ * The descendant :has() on the router view matches both of its layers, the
+ * outer flex box and the route's own root, which is what takes away both
+ * margins; the page's cards are the direct children of the inner one. The
+ * padding inside those cards is at the end of this file, after the grid rules
+ * it has to follow.
+ */
+:root body .routerView:has(.channelHeader, .channelDetails) {
+  margin-inline: 0;
+}
+
+:root body .routerView:has(.channelHeader, .channelDetails) > .ft-card {
+  inline-size: 100%;
+  max-inline-size: none;
+  margin-inline: 0;
+}
+
+/*
  * Full bleed. Three layers of chrome stand between the viewport edge and a
  * grid — the router view's margins, the page card's own margin and padding,
  * and each page's scoped rule centring that card at 85% — and the wall
@@ -188,4 +211,17 @@ body {
 /* The channel home tab caps its shelves at 85vw on top of the card's 85%. */
 :root body .shelfContainer:has(.ft-list-item.grid) {
   max-inline-size: none;
+}
+
+/*
+ * The banner runs edge to edge, so what is under it takes the room from the
+ * window's frame as padding, inside the card, whose background still reaches
+ * the edge: the avatar, name and tabs, the sort and View All over a grid, and
+ * every card of text below (the about tab, the posts, a description). A grid
+ * itself stays edge to edge, as everywhere on the wall.
+ */
+:root body .routerView:has(.channelHeader, .channelDetails) > :is(.channelHeader, .channelDetails) .infoContainer,
+:root body .routerView:has(.channelHeader, .channelDetails) > .ft-card:has(.ft-list-item.grid) .select-container,
+:root body .routerView:has(.channelHeader, .channelDetails) > .ft-card:not(.channelHeader, .channelDetails, :has(.ft-list-item.grid)) {
+  padding-inline: 24px;
 }
