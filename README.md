@@ -66,7 +66,7 @@ If one service reports a channel as terminated, Fjernsyn checks an independent e
 
 Scheduled premieres and live streams are in a shelf over the other videos, collapsed by default, and "Hide Upcoming Premieres" does what it says.
 
-![The subscription feed in tight density, with videos, shorts, live streams and posts mixed, the four filters on and the Upcoming shelf collapsed](_screenshots/subscriptions.webp)
+![The subscription feed, with videos, shorts, live streams and posts mixed, the four filters on and the Upcoming shelf collapsed](_screenshots/subscriptions.webp)
 
 ### Channels and profiles
 
@@ -131,11 +131,11 @@ Navigation is in the top bar, which gives the page the full width of the window.
 
 The window has no title bar. To move it, hold the mouse button still for a moment anywhere that does not already drag, then move the mouse. The borders still resize it, and the system's own shortcuts (Win+arrows, F11, Alt+F4) work as before. Switch Frameless Window off in the theme settings to get the title bar back, after a restart. On Linux under Wayland an app cannot move its own window, so there the title bar stays.
 
-Cards come in tight, standard, spacious and wall density. Wall packs spacious-sized thumbnails edge to edge with the text over them. I use wall with full window as the default viewing mode, so the app mostly gets out of the way.
+Every grid of cards is a wall: large thumbnails packed edge to edge across the whole window, with the text laid over the bottom of each. I use it with full window as the default viewing mode, so the app mostly gets out of the way.
 
 Hover over a video card to show a tick beside the playlist buttons. Click it to mark the video as watched, or remove it from history if it is already there. I removed the external player button from the cards because I never used it.
 
-![The subscription feed in wall density with posts filtered out, and the watched tick showing on the hovered first card](_screenshots/wall.webp)
+![The subscription feed with posts filtered out, and the watched tick showing on the hovered first card](_screenshots/wall.webp)
 
 ### Comments
 
