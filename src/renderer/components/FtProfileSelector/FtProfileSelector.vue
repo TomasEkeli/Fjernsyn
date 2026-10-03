@@ -1,5 +1,14 @@
 <template>
   <div>
+    <!-- Fjernsyn: zap to the previous profile, wrapping around -->
+    <button
+      v-if="previousProfile"
+      type="button"
+      class="zapButton previous"
+      :title="previousProfileTitle"
+      :aria-label="previousProfileTitle"
+      @click="zapTo(previousProfile)"
+    />
     <div
       ref="iconButton"
       class="colorOption"
@@ -20,6 +29,15 @@
         {{ activeProfileBubble.text }}
       </div>
     </div>
+    <!-- Fjernsyn: zap to the next profile, wrapping around -->
+    <button
+      v-if="nextProfile"
+      type="button"
+      class="zapButton next"
+      :title="nextProfileTitle"
+      :aria-label="nextProfileTitle"
+      @click="zapTo(nextProfile)"
+    />
     <FtCard
       v-show="profileListShown"
       :id="id + 'list'"
@@ -96,6 +114,7 @@ import { showToast } from '../../helpers/utils'
 import { MAIN_PROFILE_ID } from '../../../constants'
 import { getFirstCharacter } from '../../helpers/strings'
 import { profileBubble, readProfilePicture } from '../../helpers/profilePictures'
+import { neighbourProfile } from '../../helpers/profileZapping'
 
 /**
  * @typedef {object} Profile
@@ -163,6 +182,39 @@ const activeProfileBubble = computed(() => {
     initial: activeProfileInitial.value
   })
 })
+
+// Fjernsyn: zapping through the profiles in the user's order, All Channels
+// being one stop among them. Undefined when there is only the one profile.
+const previousProfile = computed(() => neighbourProfile(profileList.value, activeProfile.value?._id, -1))
+const nextProfile = computed(() => neighbourProfile(profileList.value, activeProfile.value?._id, 1))
+
+const previousProfileTitle = computed(() => previousProfile.value
+  ? t('Profile.Previous Profile: {profile}', { profile: translateProfileName(previousProfile.value) })
+  : '')
+const nextProfileTitle = computed(() => nextProfile.value
+  ? t('Profile.Next Profile: {profile}', { profile: translateProfileName(nextProfile.value) })
+  : '')
+
+/** @type {AbortController | null} */
+let zapToastController = null
+
+/**
+ * Switches profile and names it in a toast that replaces the previous zap's
+ * rather than stacking under it.
+ * @param {Profile} profile
+ */
+function zapTo(profile) {
+  store.commit('setActiveProfile', profile._id)
+
+  zapToastController?.abort()
+  zapToastController = new AbortController()
+  showToast(
+    t('Profile.{profile} is now the active profile', { profile: translateProfileName(profile) }),
+    null,
+    null,
+    zapToastController.signal
+  )
+}
 
 /**
  * @param {Profile} profile

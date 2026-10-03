@@ -963,6 +963,8 @@ About:
 Profile:
   Profile Settings: Profile
   Toggle Profile List: Toggle Profile List
+  'Previous Profile: {profile}': 'Previous profile: {profile}'
+  'Next Profile: {profile}': 'Next profile: {profile}'
   Profile Select: Profile Select
   Profile Filter: Profile Filter
   All Channels: All Channels
