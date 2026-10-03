@@ -43,11 +43,11 @@
       />
       <FtToggleSwitch
         tooltip-position="top"
-        :label="$t('Layer Search.Settings.Enable layer search')"
+        :label="$t('Layer Surfaces.Settings.Enable layer surfaces')"
         compact
-        :default-value="enableLayerSearch"
-        :tooltip="$t('Layer Search.Settings.Enable layer search Tooltip')"
-        @change="handleEnableLayerSearch"
+        :default-value="enableLayerSurfaces"
+        :tooltip="$t('Layer Surfaces.Settings.Enable layer surfaces Tooltip')"
+        @change="handleEnableLayerSurfaces"
       />
     </FtFlexBox>
     <FtPrompt
@@ -107,13 +107,13 @@ function handleEnablePeerTube(value) {
 }
 
 /** @type {import('vue').ComputedRef<boolean>} */
-const enableLayerSearch = computed(() => store.getters.getEnableLayerSearch)
+const enableLayerSurfaces = computed(() => store.getters.getEnableLayerSurfaces)
 
 /**
  * @param {boolean} value
  */
-function handleEnableLayerSearch(value) {
-  store.dispatch('updateEnableLayerSearch', value)
+function handleEnableLayerSurfaces(value) {
+  store.dispatch('updateEnableLayerSurfaces', value)
 }
 
 onMounted(async () => {

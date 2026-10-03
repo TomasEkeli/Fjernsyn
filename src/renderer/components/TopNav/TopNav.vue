@@ -221,21 +221,8 @@
           @clear="clearLastSuggestionQuery"
           @remove="removeSearchHistoryEntryInDbAndCache"
         />
-        <!-- Fjernsyn: the remembered filters, while the layer's search page is on -->
-        <LayerSearchPill v-if="layerSearchEnabled" />
-        <button
-          v-else
-          class="navFilterButton navButton"
-          :class="{ filterChanged: searchFilterValueChanged }"
-          :aria-label="t('Search Filters.Search Filters')"
-          :title="t('Search Filters.Search Filters')"
-          @click="showSearchFilters"
-        >
-          <FontAwesomeIcon
-            class="navIcon"
-            :icon="['fas', 'filter']"
-          />
-        </button>
+        <!-- Fjernsyn: the remembered filters of the layer's search page, in place of the filters button -->
+        <LayerSearchPill />
       </div>
     </div>
     <FtProfileSelector class="side profiles" />
@@ -435,8 +422,8 @@ const latestMatchingSearchHistoryNames = computed(() => {
 /** @type {import('vue').ComputedRef<string[]>} */
 const latestSearchHistoryNames = computed(() => store.getters.getLatestSearchHistoryNames)
 
-// Fjernsyn: an operator's values, once its key and colon are typed, on the layer's search page
-const operatorDataList = computed(() => layerSearchEnabled.value ? operatorSuggestions(lastSuggestionQuery.value) : [])
+// Fjernsyn: an operator's values, once its key and colon are typed
+const operatorDataList = computed(() => operatorSuggestions(lastSuggestionQuery.value))
 
 const activeDataList = computed(() => {
   // show latest search history when the search bar is empty
@@ -540,21 +527,8 @@ function toggleSideNav() {
   store.commit('toggleSideNav')
 }
 
-/** @type {import('vue').ComputedRef<boolean>} */
-const searchFilterValueChanged = computed(() => store.getters.getSearchFilterValueChanged)
-
-function showSearchFilters() {
-  store.dispatch('showSearchFilters')
-}
-
 const searchContainer = useTemplateRef('searchContainer')
 const searchInput = useTemplateRef('searchInput')
-
-/** @type {import('vue').ComputedRef<any>} */
-const searchSettings = computed(() => store.getters.getSearchSettings)
-
-/** @type {import('vue').ComputedRef<boolean>} Fjernsyn: the layer's search page */
-const layerSearchEnabled = computed(() => store.getters.getEnableLayerSearch === true)
 
 /**
  * @param {string} queryText
@@ -690,27 +664,10 @@ async function goToSearch(queryText, { event }) {
       case 'invalid_url':
       default: {
         // Fjernsyn: the layer's search page takes its filters from the pill and the text
-        if (layerSearchEnabled.value) {
-          const layerRoute = layerSearchRoute(store, queryText, event)
-          if (layerRoute) {
-            openInternalPath({ path: layerRoute.path, query: layerRoute.query, doCreateNewWindow, searchQueryText: queryText })
-          }
-          break
+        const layerRoute = layerSearchRoute(store, queryText, event)
+        if (layerRoute) {
+          openInternalPath({ path: layerRoute.path, query: layerRoute.query, doCreateNewWindow, searchQueryText: queryText })
         }
-
-        openInternalPath({
-          path: `/search/${encodeURIComponent(queryText)}`,
-          query: {
-            prioritize: searchSettings.value.prioritize,
-            time: searchSettings.value.time,
-            type: searchSettings.value.type,
-            duration: searchSettings.value.duration,
-            // Array proxy cannot be cloned during IPC call
-            features: [...searchSettings.value.features],
-          },
-          doCreateNewWindow,
-          searchQueryText: queryText,
-        })
       }
     }
 

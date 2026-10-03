@@ -27,7 +27,8 @@ wiring. The terms are defined under "Platforms" in the project's glossary
   rebuilds it when a setting it reads changes. `cards.js` and `entryPoints.js`
   are hooks for upstream's components and also reach the app; `records.js`,
   `routes.js` and `subscriptionExchange.js` are pure helpers for upstream's
-  code.
+  code; `subscriptionCache.js` is one for the channel view, the subscription
+  cache's entries from the layer's list items.
 
 ## The YouTube adapters
 
@@ -48,8 +49,19 @@ of them.
   captions, chapters, storyboard and proxying, on either backend.
 - `sabr.js`: the Local `sabr` source (see below).
 - `channels.js`: `getChannel`, `listChannelVideos` (`kind` `videos`, `shorts`
-  or `live`) and `listChannelPlaylists`. Keeps the last 5 Local `YT.Channel`
-  instances per layer, so a first page does not fetch the channel again.
+  or `live`), `listChannelPlaylists` (`kind` `playlists`, sorted `newest`
+  or `last`, or `releases`, `podcasts` or `courses`, unsorted) and
+  `listChannelPosts` (the community tab, as the post component reads
+  posts; PeerTube answers none) and `searchChannel` (its videos and
+  playlists matching a query, where `hasSearch`; PeerTube is `invalid`). Keeps the last 5 Local `YT.Channel`
+  instances per layer, so a first page does not fetch the channel again. A
+  page says the sort it applied (`Page.sort`); an age-gated channel is
+  `refused`/`ageRestricted`, carrying the name and avatar YouTube still shows
+  as the error's `channel`.
+- `channelUrls.js`: `resolveChannel(url)`, a channel link by name (`/c/`,
+  `/user/`, `@handle`) to its `UC` ref, as the old view resolves a route's
+  `?url=`. Both modules answer `null` for any failure, which is `notFound`,
+  so the policy asks the other backend before it is believed (ADR-0012).
 - `comments.js`: `getComments` (sort `top` or `newest`) and
   `getCommentReplies`. Says when a video's comments are off.
 - `search.js`: YouTube search, from the layer's search query.
@@ -61,13 +73,18 @@ the existing feed descriptors, as before.
 
 ## Backend policy
 
-ADR-0015, in `youtube/policy.js`:
+ADR-0015 and ADR-0019, in `youtube/policy.js`:
 
-- A first page goes to the preferred backend. When fallback is on, a failure
-  of kind `notFound`, `unavailable` or `rateLimited` is tried once on the
-  other backend.
-- `refused` and `invalid` are final. A refusal is YouTube's own answer, which
-  the other backend would repeat.
+- A first page goes to the preferred backend. When fallback is on and the
+  build has both backends, a failure of kind `notFound`, `unavailable` or
+  `rateLimited` is tried once on the other backend, in either direction.
+- So is a `refused` whose reason is `ipBlock` or `unexplained`, or which has
+  no reason. Such a refusal may be about the address asking, and Local asks
+  YouTube from the user's address while an Invidious instance asks from its
+  own.
+- `private`, `membersOnly`, `ageRestricted` and `drm` are final: those are
+  about the video, and the other backend would repeat them. `invalid` is
+  final too.
 - A cursor names the backend that made it, and a later page goes there. A
   failure on a later page is an error. The policy never falls back mid-list
   and never restarts a list.

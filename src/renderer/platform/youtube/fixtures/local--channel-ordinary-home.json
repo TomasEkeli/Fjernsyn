@@ -1,0 +1,55 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "parseChannelHomeTab(await getLocalChannel('UCSMOQeBJ2RAnuFungnQOxLg'))",
+  "answer": [
+    {
+      "title": "Made with Blender",
+      "content": [
+        {
+          "type": "video",
+          "videoId": "gqfLYIJMv7I",
+          "title": "Blender 5.2 LTS - Showcase Reel",
+          "author": "Blender",
+          "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+          "viewCount": 564000,
+          "published": 1785796845615,
+          "lengthSeconds": 110,
+          "liveNow": false,
+          "isUpcoming": false,
+          "isStation": false,
+          "isPremiere": false
+        }
+      ],
+      "playlistId": "PLa1F2ddGya__fTBj6FlL39NEBPZLB50ey",
+      "isCommunity": false
+    },
+    {
+      "title": "Official Blender Channels",
+      "content": [
+        {
+          "type": "channel",
+          "dataSource": "local",
+          "thumbnail": "https://yt3.googleusercontent.com/ytc/AIdro_lO340DTyuuZSOS3CSpHLZ_wpecW-KXzceZkQ7q69gRrA=s176-c-k-c0x00ffffff-no-rj-mo",
+          "name": "Blender Developers",
+          "id": "UCAsj9iReHzLEYv9QawGzIOg",
+          "subscribers": 87400,
+          "videos": 144,
+          "handle": null
+        },
+        {
+          "type": "channel",
+          "dataSource": "local",
+          "thumbnail": "https://yt3.googleusercontent.com/YbwH7a-sj1obL4iayp8McKsoU7xSWmcI5T-V6UMAokamhlm0WOtWsSVnlaC6uv5l0BCWzZbodA=s176-c-k-c0x00ffffff-no-rj-mo",
+          "name": "Blender Studio",
+          "id": "UCz75RVbH8q2jdBJ4SnwuZZQ",
+          "subscribers": 577000,
+          "videos": 284,
+          "handle": null
+        }
+      ],
+      "isCommunity": false
+    }
+  ],
+  "notes": "The shelves holding channels, as the module parsed them, after one other shelf cut to its first item (has_home true, tabs [\"Home\",\"Videos\",\"Shorts\",\"Live\",\"Podcasts\",\"Playlists\",\"Posts\"])."
+}

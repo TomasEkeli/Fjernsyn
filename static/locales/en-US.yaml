@@ -1471,13 +1471,9 @@ PeerTube:
     Could not search: The search could not be completed.
 
 # The fork's own, for the same reason as above: the search page on the
-# platform layer, behind its switch in Experimental settings
+# platform layer
 Layer Search:
   Settings:
-    Enable layer search: New search page (experimental)
-    Enable layer search Tooltip: Search results with the filters on the page, one click each, and with YouTube and
-      PeerTube side by side while PeerTube is on. The last filters you used are remembered, and a button beside the
-      search box applies them to your next search.
     Default scope: Search by default on
   Scope:
     Scope: Search on
@@ -1579,6 +1575,15 @@ Layer Search:
     Lit: 'Next search uses: {filters}. Click to search without them'
     Unlit: 'Next search is without filters. Click to use: {filters}'
     Edit: Change the remembered filters
+
+# The fork's own, for the same reason as above: the surface switch, which
+# moves YouTube pages onto the platform layer's views
+Layer Surfaces:
+  Settings:
+    Enable layer surfaces: New YouTube pages (experimental)
+    Enable layer surfaces Tooltip: Shows the new versions of the YouTube pages that have moved to Fjernsyn's platform
+      layer, in place of the old ones. So far those are the channel page and the watch page. Pages that have not moved
+      yet are unchanged. Switch it off to go back to the old pages.
 
 Mini Player: Mini Player
 Comments:

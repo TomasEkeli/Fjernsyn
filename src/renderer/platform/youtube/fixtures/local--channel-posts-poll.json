@@ -1,0 +1,81 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "parseLocalCommunityPosts((await (await getLocalChannel('UCXuqSBlHAE6Xw-yeJA0Tunw')).getCommunity()).posts)",
+  "answer": [
+    {
+      "postText": "Which one is your favorite totally not transparent screwdriver-related color? 😉",
+      "postId": "UgkxGqx8LCNCrg1SzBMXMUdff-4pAe1xyJC5",
+      "authorThumbnails": [
+        {
+          "url": "https://yt3.googleusercontent.com/gnvYLhXy8FAlPXZ2RTrkrgj-5kyt0vdE2FUGVOiKGdEZIa-wN5A-7nwZBlWJLzUMmoh1NWAU=s76-c-k-c0x00ffffff-no-rj-mo",
+          "width": 76,
+          "height": 76
+        },
+        {
+          "url": "https://yt3.googleusercontent.com/gnvYLhXy8FAlPXZ2RTrkrgj-5kyt0vdE2FUGVOiKGdEZIa-wN5A-7nwZBlWJLzUMmoh1NWAU=s48-c-k-c0x00ffffff-no-rj-mo",
+          "width": 48,
+          "height": 48
+        },
+        {
+          "url": "https://yt3.googleusercontent.com/gnvYLhXy8FAlPXZ2RTrkrgj-5kyt0vdE2FUGVOiKGdEZIa-wN5A-7nwZBlWJLzUMmoh1NWAU=s32-c-k-c0x00ffffff-no-rj-mo",
+          "width": 32,
+          "height": 32
+        }
+      ],
+      "publishedTime": 1759419257087,
+      "voteCount": 3600,
+      "postContent": {
+        "type": "poll",
+        "totalVotes": 223000,
+        "content": [
+          {
+            "text": "Concord Purple",
+            "image": [
+              {
+                "url": "https://yt3.ggpht.com/ljwsZDZ9IH4inR1FCSK42nCoofcv4xIKuEJtuOa2T2DmoV2btG5349Pb0ks9gyFoPhqIAOzIVlhE=s288-c-fcrop64=1,00000000ffffffff-nd-v1",
+                "width": 288,
+                "height": 288
+              }
+            ]
+          },
+          {
+            "text": "Frostbite Blue",
+            "image": [
+              {
+                "url": "https://yt3.ggpht.com/wjZEa5XyP7SYrxjhcjkNm1N-533NMEXEeinW6jr0ju7jAKZzRETUrldQzaANyBzUrdk6lYRCosWb=s288-c-fcrop64=1,00000000ffffffff-nd-v1",
+                "width": 288,
+                "height": 288
+              }
+            ]
+          },
+          {
+            "text": "Molten Orange",
+            "image": [
+              {
+                "url": "https://yt3.ggpht.com/VmzRfG0fJ0no3P1iGPFhdVFIVjDOeOVAXQdakggHKzotxW_7zfOLywEQa0YZW5HuPJgjSm5Gj3cxMYc=s288-c-fcrop64=1,00000000ffffffff-nd-v1",
+                "width": 288,
+                "height": 288
+              }
+            ]
+          },
+          {
+            "text": "Atomic Green",
+            "image": [
+              {
+                "url": "https://yt3.ggpht.com/7r4gP_fogM3qXSjBbT3BrKhpbFohmCFIB68pP17F9h7EH6mp3M44ihYDDuHGGHuySrQqzxgAe4SF5x8=s288-c-fcrop64=1,00000000ffffffff-nd-v1",
+                "width": 288,
+                "height": 288
+              }
+            ]
+          }
+        ]
+      },
+      "commentCount": 516,
+      "authorId": "UCXuqSBlHAE6Xw-yeJA0Tunw",
+      "author": "Linus Tech Tips",
+      "type": "community"
+    }
+  ],
+  "notes": "The first poll of the channel's posts tab (on its fourth page at recording), as the module parsed it."
+}

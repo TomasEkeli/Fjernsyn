@@ -203,7 +203,7 @@ import {
 } from '../../helpers/api/local'
 import { invidiousGetPlaylistInfo, fetchAllInvidiousPlaylistVideos } from '../../helpers/api/invidious'
 import { getSortedPlaylistItems, SORT_BY_VALUES } from '../../helpers/playlists'
-import { coverThumbnail } from '../../platform/cards'
+import { coverThumbnail, describeCard } from '../../platform/cards'
 import { isYouTubeRecord } from '../../platform/records'
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
 
@@ -227,6 +227,11 @@ const props = defineProps({
   watchViewLoading: {
     type: Boolean,
     required: true,
+  },
+  // Fjernsyn: whether next, previous and shuffle take in an item of another platform (PeerTube), opening it on its own watch route with the playlist query, as the layer's watch page does; off, they step over it, as the YouTube watch page does
+  crossPlatform: {
+    type: Boolean,
+    default: false,
   },
 })
 
@@ -291,8 +296,9 @@ const currentVideo = computed(() => playlistItems.value[currentVideoIndexZeroBas
 
 const playlistVideoCount = computed(() => playlistItems.value.length)
 
-// Fjernsyn: the items this (YouTube) watch page plays through, in place of `playlistItems` wherever it navigates; an item of another platform (PeerTube) is listed and opens on its own
-const playableItems = computed(() => playlistItems.value.filter(isYouTubeRecord))
+// Fjernsyn: the items this watch page plays through, in place of `playlistItems` wherever it navigates; on the YouTube watch page an item of another platform (PeerTube) is listed and opens on its own
+const isPlayable = (item) => props.crossPlatform || isYouTubeRecord(item)
+const playableItems = computed(() => playlistItems.value.filter(isPlayable))
 
 const playlistUnavailableVideoCount = computed(() => playlistTotalVideoCount.value - playlistVideoCount.value)
 
@@ -566,7 +572,7 @@ function playNextVideo() {
   const targetPlaylistItem = targetList[targetVideoIndex]
 
   const routerPushPayload = {
-    path: `/watch/${targetPlaylistItem.videoId}`,
+    path: watchPath(targetPlaylistItem),
     query: {
       playlistId: props.playlistId,
       playlistType: props.playlistType,
@@ -632,7 +638,7 @@ function playPreviousVideo() {
 
   router.push(
     {
-      path: `/watch/${targetPlaylistItem.videoId}`,
+      path: watchPath(targetPlaylistItem),
       query: {
         playlistId: props.playlistId,
         playlistType: props.playlistType,
@@ -640,6 +646,15 @@ function playPreviousVideo() {
       }
     }
   )
+}
+
+/**
+ * Fjernsyn: an item's own watch route, the PeerTube one for a PeerTube item (only ever played with `crossPlatform`)
+ *
+ * @param {any} item
+ */
+function watchPath(item) {
+  return describeCard(item)?.route?.path ?? `/watch/${item.videoId}`
 }
 
 /**
@@ -763,8 +778,8 @@ function parseUserPlaylist(playlist) {
     // grab 2nd video if the 1st one is current & deleted
     // or the prior video in the list before the current video's deletion
     const targetVideoIndex = currentVideoIndexZeroBased.value - 1
-    // Fjernsyn: the nearest item at or before it that this page plays (a YouTube one), or "previous" would not find it and wrap to the end
-    prevVideoBeforeDeletion = targetVideoIndex >= 0 ? (playlistItems.value.slice(0, targetVideoIndex + 1).findLast(isYouTubeRecord) ?? null) : null
+    // Fjernsyn: the nearest item at or before it that this page plays (on the YouTube watch page, a YouTube one), or "previous" would not find it and wrap to the end
+    prevVideoBeforeDeletion = targetVideoIndex >= 0 ? (playlistItems.value.slice(0, targetVideoIndex + 1).findLast(isPlayable) ?? null) : null
   }
 
   playlistItems.value = getSortedPlaylistItems(playlist.videos, sortOrder.value, locale.value, reversePlaylist.value)

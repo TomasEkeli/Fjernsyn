@@ -6,7 +6,8 @@ import { RouterView } from 'vue-router'
 import { showToast } from '../helpers/utils'
 import store from '../store/index'
 import { createTestRouter } from '../testing/router'
-import { peerTubeRouteGuard, peerTubeRoutes, searchSurface } from './routes.js'
+import { routeView } from '../components/LayerSurfaceSwitch/surfaceSwitch'
+import { WatchSurface, layerSurface, peerTubeRouteGuard, peerTubeRoutes } from './routes.js'
 import { installPlatformLayer } from './vue.js'
 
 vi.mock('./index.js', () => ({ createPlatformLayer: () => ({}) }))
@@ -20,12 +21,14 @@ vi.mock('../helpers/utils', () => ({
 vi.mock('../views/LayerWatch/LayerWatch.vue', () => ({ default: { name: 'LayerWatch', render: () => null } }))
 vi.mock('../views/LayerChannel/LayerChannel.vue', () => ({ default: { name: 'LayerChannel', render: () => null } }))
 vi.mock('../views/LayerSearch/LayerSearch.vue', () => ({ default: { name: 'LayerSearch', render: () => null } }))
-vi.mock('../views/LayerSearchPage/LayerSearchPage.vue', () => ({ default: { name: 'LayerSearchPage', render: () => h('p', { class: 'layerSearchPage' }) } }))
+// Upstream's views on the surface switch (tested through the router in router/index.test.js)
+vi.mock('../views/Channel/Channel.vue', () => ({ default: { name: 'Channel', render: () => null } }))
+vi.mock('../views/Watch/Watch.vue', () => ({ default: { name: 'Watch', render: () => null } }))
 
 // The surface switch reads the store module; the guards read the store installed
 vi.mock('../store/index', async () => {
   const { createFakeStore } = await import('../testing/store')
-  return { default: createFakeStore({ getters: { getEnablePeerTube: false, getEnableLayerSearch: false } }) }
+  return { default: createFakeStore({ getters: { getEnablePeerTube: false, getEnableLayerSurfaces: false } }) }
 })
 
 vi.mock('../i18n/index', async () => {
@@ -38,7 +41,7 @@ const SWITCHED_OFF = 'PeerTube is switched off. Switch it on in Experimental set
 beforeEach(() => {
   showToast.mockClear()
   store.setGetter('getEnablePeerTube', false)
-  store.setGetter('getEnableLayerSearch', false)
+  store.setGetter('getEnableLayerSurfaces', false)
   installPlatformLayer(createApp({ render: () => null }), store)
 })
 
@@ -78,7 +81,22 @@ describe('the PeerTube routes', () => {
     expect(params).toEqual({ host: 'video.blender.org', uuid: 'b29290cc-dc51-4a12-bcb2-2aa5fece7605' })
     expect(query).toEqual({ timestamp: '12' })
     expect(matched[0].meta.title).toBe('Watch')
-    expect(matched[0].components.default.name).toBe('LayerWatch')
+    // The switch `/watch/:id` renders, so that the router keeps the view between the two
+    expect(matched[0].components.default).toBe(WatchSurface)
+  })
+
+  it.each([false, true])('render the layer\'s watch view on the watch page whatever the surface switch (on: %s)', async (on) => {
+    store.setGetter('getEnablePeerTube', true)
+    store.setGetter('getEnableLayerSurfaces', on)
+    const router = createTestRouter(peerTubeRoutes)
+    await router.push('/peertube/watch/video.blender.org/b29290cc-dc51-4a12-bcb2-2aa5fece7605')
+
+    const wrapper = mount({ render: () => h(RouterView) }, { global: { plugins: [router] } })
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: 'LayerWatch' }).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'Watch' }).exists()).toBe(false)
+    expect(routeView(router.currentRoute.value).name).toBe('LayerWatch')
   })
 
   it('include the channel page, carrying the handle, on its videos unless a tab is named', async () => {
@@ -98,18 +116,11 @@ describe('the PeerTube routes', () => {
     expect(router.currentRoute.value.params).toEqual({ handle: 'blender@video.blender.org', currentTab: 'playlists' })
   })
 
-  it('include the search page, carrying the query, and the type in the route query', async () => {
-    store.setGetter('getEnablePeerTube', true)
-    const router = createTestRouter(peerTubeRoutes)
+  it('include the PeerTube search, which hands every search on to the search page (below)', () => {
+    const route = peerTubeRoutes.find(({ name }) => name === 'peertubeSearch')
 
-    await router.push('/peertube/search/blender%20tutorials?type=channel')
-
-    const { name, params, query, matched } = router.currentRoute.value
-    expect(name).toBe('peertubeSearch')
-    expect(params).toEqual({ query: 'blender tutorials' })
-    expect(query).toEqual({ type: 'channel' })
-    expect(matched[0].meta.title).toBe('Search Results')
-    expect(matched[0].components.default.name).toBe('LayerSearch')
+    expect(route.path).toBe('/peertube/search/:query')
+    expect(route.meta.title).toBe('Search Results')
   })
 
   // Each later ticket's route is covered here too
@@ -128,41 +139,191 @@ describe('the PeerTube routes', () => {
   })
 })
 
-describe('the search surface switch', () => {
-  const OldSearchPage = { name: 'SearchPage', render: () => h('p', { class: 'oldSearchPage' }) }
+describe('a route on the surface switch', () => {
+  const OldView = { name: 'OldView', render: () => h('p', { class: 'oldView' }) }
+  const LayerView = { name: 'LayerView', render: () => h('p', { class: 'layerView' }) }
 
-  async function openSearch() {
-    const router = createTestRouter([{ path: '/search/:query', component: searchSurface(OldSearchPage) }])
-    await router.push('/search/blender')
+  async function openSurface() {
+    const router = createTestRouter([{ path: '/surface/:id', component: layerSurface('TestSurface', OldView, LayerView) }])
+    await router.push('/surface/x')
     const wrapper = mount({ render: () => h(RouterView) }, { global: { plugins: [router] } })
     await flushPromises()
     return wrapper
   }
 
-  it('renders upstream\'s search page while it is off', async () => {
-    const wrapper = await openSearch()
+  it('renders the old view while the switch is off', async () => {
+    const wrapper = await openSurface()
 
-    expect(wrapper.find('.oldSearchPage').exists()).toBe(true)
-    expect(wrapper.find('.layerSearchPage').exists()).toBe(false)
+    expect(wrapper.find('.oldView').exists()).toBe(true)
+    expect(wrapper.find('.layerView').exists()).toBe(false)
   })
 
-  it('renders the layer\'s search page while it is on, and swaps in place when it changes', async () => {
-    store.setGetter('getEnableLayerSearch', true)
-    const wrapper = await openSearch()
+  it('renders the layer\'s view while the switch is on, and swaps in place when it changes', async () => {
+    store.setGetter('getEnableLayerSurfaces', true)
+    const wrapper = await openSurface()
 
-    expect(wrapper.find('.layerSearchPage').exists()).toBe(true)
+    expect(wrapper.find('.layerView').exists()).toBe(true)
+    expect(wrapper.find('.oldView').exists()).toBe(false)
 
-    store.setGetter('getEnableLayerSearch', false)
+    store.setGetter('getEnableLayerSurfaces', false)
     await flushPromises()
 
-    expect(wrapper.find('.oldSearchPage').exists()).toBe(true)
+    expect(wrapper.find('.oldView').exists()).toBe(true)
+    expect(wrapper.find('.layerView').exists()).toBe(false)
+
+    store.setGetter('getEnableLayerSurfaces', true)
+    await flushPromises()
+
+    expect(wrapper.find('.layerView').exists()).toBe(true)
+  })
+
+  it('says which view a route renders: the one its switch picks, or its own component', async () => {
+    const Elsewhere = { name: 'Elsewhere', render: () => null }
+    const router = createTestRouter([
+      { path: '/surface/:id', component: layerSurface('TestSurface', OldView, LayerView) },
+      { path: '/elsewhere', component: Elsewhere },
+    ])
+
+    expect(routeView(router.resolve('/surface/x'))).toBe(OldView)
+    store.setGetter('getEnableLayerSurfaces', true)
+    expect(routeView(router.resolve('/surface/x'))).toBe(LayerView)
+    expect(routeView(router.resolve('/elsewhere'))).toBe(Elsewhere)
+  })
+
+  describe('shared with a route only the layer serves', () => {
+    async function openShared(path) {
+      const surface = layerSurface('TestSurface', OldView, LayerView, { layerOnly: ({ name }) => name === 'layerOnly' })
+      const router = createTestRouter([
+        { path: '/surface/:id', component: surface },
+        { path: '/layer/:id', name: 'layerOnly', component: surface },
+      ])
+      await router.push(path)
+      const wrapper = mount({ render: () => h(RouterView) }, { global: { plugins: [router] } })
+      await flushPromises()
+      return { wrapper, router }
+    }
+
+    it('renders the layer\'s view there whatever the switch, and the old view on the switched route while it is off', async () => {
+      const { wrapper, router } = await openShared('/layer/x')
+
+      expect(wrapper.find('.layerView').exists()).toBe(true)
+      expect(routeView(router.currentRoute.value)).toBe(LayerView)
+
+      await router.push('/surface/x')
+      await flushPromises()
+
+      expect(wrapper.find('.oldView').exists()).toBe(true)
+      expect(wrapper.find('.layerView').exists()).toBe(false)
+    })
+
+    it('keeps its view on the way out, as the app\'s out-in transition holds it, rather than picking for the route it gives way to', async () => {
+      const surface = layerSurface('TestSurface', OldView, LayerView, { layerOnly: ({ name }) => name === 'layerOnly' })
+      const router = createTestRouter([
+        { path: '/layer/:id', name: 'layerOnly', component: surface },
+        { path: '/elsewhere' },
+      ])
+      await router.push('/layer/x')
+      // The switch alone, as the transition keeps it once the router view has moved on
+      const wrapper = mount(surface, { global: { plugins: [router] } })
+      await flushPromises()
+
+      await router.push('/elsewhere')
+      await flushPromises()
+
+      expect(wrapper.find('.layerView').exists()).toBe(true)
+      expect(wrapper.find('.oldView').exists()).toBe(false)
+    })
+
+    it('keeps the one layer view across the two routes while the switch is on', async () => {
+      store.setGetter('getEnableLayerSurfaces', true)
+      const { wrapper, router } = await openShared('/surface/x')
+      const view = wrapper.findComponent(LayerView).vm.$
+
+      await router.push('/layer/y')
+      await flushPromises()
+
+      expect(wrapper.findComponent(LayerView).vm.$).toBe(view)
+
+      await router.push('/surface/z')
+      await flushPromises()
+
+      expect(wrapper.findComponent(LayerView).vm.$).toBe(view)
+    })
+  })
+
+  describe('passing the view\'s own route guards on', () => {
+    const calls = []
+
+    // As upstream's watch view: a `beforeRouteLeave` that calls `next`, with the view as `this`
+    const GuardedView = {
+      name: 'GuardedView',
+      data: () => ({ label: 'guarded' }),
+      beforeRouteLeave(to, from, next) {
+        calls.push(['leave', this.label, from.path, to.path])
+        next(to.query.refuse === undefined)
+      },
+      beforeRouteUpdate(to, from) {
+        calls.push(['update', this.label, from.path, to.path])
+        return to.query.refuse === undefined
+      },
+      render: () => h('p', { class: 'guardedView' }),
+    }
+
+    async function openGuarded() {
+      calls.length = 0
+      const router = createTestRouter([
+        { path: '/surface/:id', component: layerSurface('TestSurface', GuardedView, LayerView) },
+        { path: '/elsewhere' },
+      ])
+      await router.push('/surface/x')
+      const wrapper = mount({ render: () => h(RouterView) }, { global: { plugins: [router] } })
+      await flushPromises()
+      return { wrapper, router }
+    }
+
+    it('runs the view\'s beforeRouteLeave as the route is left, and lets it refuse', async () => {
+      const { router } = await openGuarded()
+
+      await router.push('/elsewhere?refuse')
+      expect(router.currentRoute.value.path).toBe('/surface/x')
+
+      await router.push('/elsewhere')
+      expect(router.currentRoute.value.path).toBe('/elsewhere')
+      expect(calls).toEqual([
+        ['leave', 'guarded', '/surface/x', '/elsewhere'],
+        ['leave', 'guarded', '/surface/x', '/elsewhere'],
+      ])
+    })
+
+    it('runs the view\'s beforeRouteUpdate as the route changes its params, and lets it refuse', async () => {
+      const { router } = await openGuarded()
+
+      await router.push('/surface/y?refuse')
+      expect(router.currentRoute.value.path).toBe('/surface/x')
+
+      await router.push('/surface/y')
+      expect(router.currentRoute.value.path).toBe('/surface/y')
+      expect(calls).toEqual([
+        ['update', 'guarded', '/surface/x', '/surface/y'],
+        ['update', 'guarded', '/surface/x', '/surface/y'],
+      ])
+    })
+
+    it('lets the navigation through where the view rendered has no guards', async () => {
+      store.setGetter('getEnableLayerSurfaces', true)
+      const { router } = await openGuarded()
+
+      await router.push('/elsewhere')
+
+      expect(router.currentRoute.value.path).toBe('/elsewhere')
+      expect(calls).toEqual([])
+    })
   })
 })
 
-describe('the PeerTube search route, while the search surface switch is on', () => {
+describe('the PeerTube search route', () => {
   it('redirects to the search page in scope PeerTube, carrying the query and its type', async () => {
     store.setGetter('getEnablePeerTube', true)
-    store.setGetter('getEnableLayerSearch', true)
     const router = createTestRouter([{ path: '/search/:query', name: 'search' }, ...peerTubeRoutes])
 
     await router.push('/peertube/search/blender%20tutorials?type=channel')
@@ -173,17 +334,18 @@ describe('the PeerTube search route, while the search surface switch is on', () 
     expect(query).toEqual({ scope: 'peertube', type: 'channel' })
   })
 
-  it('does not redirect while the switch is off', async () => {
+  it('redirects a video search to the search page in scope PeerTube, with no type', async () => {
     store.setGetter('getEnablePeerTube', true)
     const router = createTestRouter([{ path: '/search/:query', name: 'search' }, ...peerTubeRoutes])
 
     await router.push('/peertube/search/blender')
 
-    expect(router.currentRoute.value.name).toBe('peertubeSearch')
+    const { path, query } = router.currentRoute.value
+    expect(path).toBe('/search/blender')
+    expect(query).toEqual({ scope: 'peertube' })
   })
 
-  it('is refused while PeerTube is off, switch or no switch', async () => {
-    store.setGetter('getEnableLayerSearch', true)
+  it('is refused while PeerTube is off', async () => {
     const router = createTestRouter([{ path: '/subscriptions', name: 'subscriptions' }, ...peerTubeRoutes])
     await router.push('/subscriptions')
 

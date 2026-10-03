@@ -1,0 +1,7 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "getLocalChannelId('https://www.youtube.com/user/BlenderFoundation')",
+  "answer": "UCSMOQeBJ2RAnuFungnQOxLg",
+  "notes": "getLocalChannelId's loop re-run with youtubei.js directly. resolveURL hops: https://www.youtube.com/user/BlenderFoundation: WEB_PAGE_TYPE_CHANNEL, browseId UCSMOQeBJ2RAnuFungnQOxLg."
+}

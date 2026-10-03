@@ -1,0 +1,153 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "recorded",
+  "call": "parseChannelHomeTab(await getLocalChannel('UCXuqSBlHAE6Xw-yeJA0Tunw'))",
+  "answer": [
+    {
+      "title": "Videos",
+      "content": [
+        {
+          "type": "video",
+          "videoId": "1H20xp8Brnc",
+          "title": "I Have Strong Feelings About Air Conditioning in the Tech House",
+          "authorId": "UCXuqSBlHAE6Xw-yeJA0Tunw",
+          "viewCount": 1300000,
+          "published": 1790894446069,
+          "lengthSeconds": 1264,
+          "liveNow": false,
+          "isUpcoming": false,
+          "isStation": false,
+          "isPremiere": false
+        }
+      ],
+      "isCommunity": false
+    },
+    {
+      "title": "Featured Channels",
+      "content": [
+        {
+          "type": "channel",
+          "dataSource": "local",
+          "thumbnail": "https://yt3.googleusercontent.com/ytc/AIdro_mDZiWSYXmBc_fiS3QG-Uh5mJRdww9Z-2qUDeXtMZhGTQ=s176-c-k-c0x00ffffff-no-rj-mo",
+          "name": "ShortCircuit",
+          "id": "UCdBK94H6oZT2Q7l0-b0xmMg",
+          "subscribers": 2550000,
+          "videos": 1350,
+          "handle": null
+        },
+        {
+          "type": "channel",
+          "dataSource": "local",
+          "thumbnail": "https://yt3.googleusercontent.com/qbmTjtDFUcc76O6RxBX-uIsLfJL1v3_KwwySH8QiunsvyGeJTvOE1R938iDAQ6eAdNycDVIg3A=s176-c-k-c0x00ffffff-no-rj-mo",
+          "name": "Techquickie",
+          "id": "UC0vBXGSyV14uvJ4hECDOl0Q",
+          "subscribers": 4300000,
+          "videos": 1301,
+          "handle": null
+        },
+        {
+          "type": "channel",
+          "dataSource": "local",
+          "thumbnail": "https://yt3.googleusercontent.com/_7NuLsyaCWL63spCS74vy7RGd8s5cwx0FATJTvEeew3OH5d7TuD9hGcxbrhoYcMFT4mBxaJm=s176-c-k-c0x00ffffff-no-rj-mo",
+          "name": "TechLinked",
+          "id": "UCeeFfhMcJa1kjtfZAGskOCA",
+          "subscribers": 1980000,
+          "videos": 1367,
+          "handle": null
+        },
+        {
+          "type": "channel",
+          "dataSource": "local",
+          "thumbnail": "https://yt3.googleusercontent.com/vm9YrWAWODmsweaAiS6wRQW8uvLiayC201sDJ7n_eAu4j_wKHhpc_Phi29Rohgxw_nHM5MyNxW8=s176-c-k-c0x00ffffff-no-rj-mo",
+          "name": "GameLinked",
+          "id": "UCHDxYLv8iovIbhrfl16CNyg",
+          "subscribers": 472000,
+          "videos": 193,
+          "handle": null
+        },
+        {
+          "type": "channel",
+          "dataSource": "local",
+          "thumbnail": "https://yt3.googleusercontent.com/ytc/AIdro_n-Dhp4eRszM-UdiMHuFFlOUr_y97cOruSf-MZHtmYlJQ=s176-c-k-c0x00ffffff-no-rj-mo",
+          "name": "Mac Address",
+          "id": "UC0KfjyvabuE2J-RBC6ko2Lw",
+          "subscribers": 588000,
+          "videos": 122,
+          "handle": null
+        },
+        {
+          "type": "channel",
+          "dataSource": "local",
+          "thumbnail": "https://yt3.googleusercontent.com/NO9_Ek-oyWF-AkGrZVS3kCdWJo7PCjCsY5WUlM-7G-1mPu_8gWDcTfX1asa4tQnWQTI62rZf=s176-c-k-c0x00ffffff-no-rj-mo",
+          "name": "LMGClips",
+          "id": "UCFLFc8Lpbwt4jPtY1_Ai5yA",
+          "subscribers": 666000,
+          "videos": 2715,
+          "handle": null
+        },
+        {
+          "type": "channel",
+          "dataSource": "local",
+          "thumbnail": "https://yt3.googleusercontent.com/ytc/AIdro_m6TLMKv40rd7-ahdKE3nsO0BxaJu4yrBxDB4tegl_DqTQ=s176-c-k-c0x00ffffff-no-rj-mo",
+          "name": "Channel Super Fun",
+          "id": "UCBZiUUYeLfS5rIj4TQvgSvA",
+          "subscribers": 1230000,
+          "videos": 195,
+          "handle": null
+        },
+        {
+          "type": "channel",
+          "dataSource": "local",
+          "thumbnail": "https://yt3.googleusercontent.com/i72kMSVrhv-3B15-4BdqiVLkXOYIarMoHFu-MnMCuEAbZphG3pRTess1nCd6twyZJbc1w9-WojU=s176-c-k-c0x00ffffff-no-rj-mo",
+          "name": "They're Just Movies",
+          "id": "UCt-oJR5teQIjOAxCmIQvcgA",
+          "subscribers": 135000,
+          "videos": 161,
+          "handle": null
+        },
+        {
+          "type": "channel",
+          "dataSource": "local",
+          "thumbnail": "https://yt3.googleusercontent.com/ytc/AIdro_lLLC6w4vYwPscfJEYx7rO4hiLHAZN6pjenyqe0Gt5Foewq1wsvoK6y6RPIFdiJIGSwog=s176-c-k-c0x00ffffff-no-rj-mo",
+          "name": "exLinusPortuguês",
+          "id": "UC7kB7lMNF_0drgmcCc6z3Uw",
+          "subscribers": 3300,
+          "videos": null,
+          "handle": null
+        },
+        {
+          "type": "channel",
+          "dataSource": "local",
+          "thumbnail": "https://yt3.googleusercontent.com/ytc/AIdro_lNT6zFLM6lRjkTQzMW5wpq3MJSfVBScD4twmsjisFnrSMsdeYivqQHoujpGOGgNFTu2Q=s176-c-k-c0x00ffffff-no-rj-mo",
+          "name": "exLinusFr",
+          "id": "UC-Rue3okSONOLMdCwRsglig",
+          "subscribers": 385,
+          "videos": null,
+          "handle": null
+        },
+        {
+          "type": "channel",
+          "dataSource": "local",
+          "thumbnail": "https://yt3.googleusercontent.com/ytc/AIdro_mSjOlOdqF-55icmLzX2CqdBTE1iLswKZt8FwAL9n5EHDNGql4WQQZD30uJuvK4MyIISA=s176-c-k-c0x00ffffff-no-rj-mo",
+          "name": "exlinusEspañol",
+          "id": "UCYjOBtLXNluAL4kvtvXclTQ",
+          "subscribers": 5630,
+          "videos": null,
+          "handle": null
+        },
+        {
+          "type": "channel",
+          "dataSource": "local",
+          "thumbnail": "https://yt3.googleusercontent.com/ytc/AIdro_lXthx7ZWZqaCpA1q7g91tK3cojP1DqTaJx5qcJxdX12uApJVCOfwt4rNtVA7z5HK0zEg=s176-c-k-c0x00ffffff-no-rj-mo",
+          "name": "exLinusDeutsch",
+          "id": "UCVLymBFEnhkLzG9vcJIDNAA",
+          "subscribers": 386,
+          "videos": null,
+          "handle": null
+        }
+      ],
+      "isCommunity": false
+    }
+  ],
+  "notes": "The shelves holding channels, as the module parsed them, after one other shelf cut to its first item."
+}

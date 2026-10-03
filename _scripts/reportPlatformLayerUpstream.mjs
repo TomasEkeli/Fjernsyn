@@ -3,7 +3,9 @@
  * shadowed or touched (ADR-0014), so an upstream sync can see which fixes land
  * in code the new path no longer runs, and where to expect conflicts.
  *
- * The files are listed in `_scripts/platformLayerRegistry.json`. For each one
+ * The files are listed in `_scripts/platformLayerRegistry.json`, the shadowed
+ * ones in groups: by the surface switch that shadows them, or, for a surface
+ * that has left its switch, by a name of its own (ADR-0018). For each one
  * this prints upstream's commits and a diffstat over a range, by default from
  * the merge base of `HEAD` and `upstream/development` to `upstream/development`.
  *
@@ -53,7 +55,7 @@ function pathProblem(path) {
 
 /**
  * Checks the registry's shape and returns it normalised as
- * `{ touched: [{ path, reason }], shadowed: [{ setting, files: [{ path, reason }] }] }`,
+ * `{ touched: [{ path, reason }], shadowed: [{ group, files: [{ path, reason }] }] }`,
  * or throws an InputError listing every problem found.
  */
 export function validateRegistry(registry) {
@@ -111,19 +113,19 @@ export function validateRegistry(registry) {
 
   const shadowed = []
   if (isPlainObject(registry.shadowed)) {
-    for (const [setting, list] of Object.entries(registry.shadowed)) {
-      if (!isNonEmptyString(setting)) {
-        problems.push('shadowed: a surface switch setting name must be non-empty')
+    for (const [group, list] of Object.entries(registry.shadowed)) {
+      if (!isNonEmptyString(group)) {
+        problems.push('shadowed: a group name must be non-empty')
         continue
       }
-      const files = readEntries(list, `shadowed.${setting}`)
+      const files = readEntries(list, `shadowed.${group}`)
       if (Array.isArray(list) && list.length === 0) {
-        problems.push(`shadowed.${setting}: lists no files; list at least one or remove the switch`)
+        problems.push(`shadowed.${group}: lists no files; list at least one or remove the group`)
       }
-      shadowed.push({ setting, files })
+      shadowed.push({ group, files })
     }
   } else {
-    problems.push('shadowed: must be an object mapping a surface switch setting name to a list of { "path", "reason" }')
+    problems.push('shadowed: must be an object mapping a group name (a surface switch setting, or a surface that has left its switch) to a list of { "path", "reason" }')
   }
 
   if (problems.length > 0) {
@@ -254,7 +256,7 @@ export function collectChanges(registry, range, git) {
 
   return {
     range,
-    shadowed: registry.shadowed.map(({ setting, files }) => ({ setting, files: files.map(describe) })),
+    shadowed: registry.shadowed.map(({ group, files }) => ({ group, files: files.map(describe) })),
     touched: registry.touched.map(describe),
   }
 }
@@ -294,8 +296,8 @@ export function formatReport(data) {
   if (data.shadowed.length === 0) {
     lines.push('  no shadowed files registered')
   } else {
-    for (const { setting, files } of data.shadowed) {
-      lines.push(`  switch ${setting}`)
+    for (const { group, files } of data.shadowed) {
+      lines.push(`  ${group}`)
       lines.push(...formatFiles(files, '    '))
     }
   }

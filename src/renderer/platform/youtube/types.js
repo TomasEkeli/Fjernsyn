@@ -2,7 +2,7 @@
 // in ../shapes.js, field by field. Written in phase 1 as the sketch the
 // shapes were checked against (ticket 17), and now implemented: details in
 // `./videos.js` and `./videoDetails.js`, playback sources in `./playback.js`
-// and `./sabr.js`, channels, their lists and playlists in `./channels.js`,
+// and `./sabr.js`, channels, their lists, playlists and posts in `./channels.js`,
 // comments in `./comments.js`, search in `./search.js`. Which backend answers
 // is `./policy.js`, how its failures read is `./errors.js` (ADR-0015). Kept as
 // the reference table the modules point to; where a module and this file
@@ -73,11 +73,14 @@
  * @property {'local'} backend
  * @property {any} continuation the youtubei.js instance to continue; see
  *   YouTubeCursorTable
- * @property {'tab' | 'playlist'} [from] channel lists: a channel tab, or an
- *   artist topic channel's uploads playlist standing in for it
- * @property {'videos' | 'shorts' | 'live' | 'playlists'} [kind] channel lists
- * @property {{ id: string, name: string } | null} [owner] channel tabs: whose
- *   items the page holds, named after the channel where the page leaves them
+ * @property {'tab' | 'playlist' | 'topicReleases' | 'search'} [from] channel lists: a
+ *   channel tab, an artist topic channel's uploads playlist standing in for
+ *   its videos tab, the releases read off its page, or a search within it
+ * @property {'videos' | 'shorts' | 'live' | 'playlists' | 'releases' | 'podcasts' | 'courses' | 'community' | 'search'} [kind] channel lists
+ * @property {any} [channel] an artist topic channel's releases: the
+ *   `YT.Channel`, whose session alone can call the continuation node
+ * @property {{ id: string, name: string } | null} [owner] channel tabs and
+ *   searches: whose items the page holds, named after the channel where the page leaves them
  *   unnamed; `null` for a channel showing other channels' items, whose items
  *   are left unattributed
  */
@@ -87,17 +90,20 @@
  * @property {'invidious'} backend
  * @property {string} continuation Invidious' `continuation`, passed back as the
  *   `continuation` query parameter
- * @property {string} [sort] the sort the token was issued under, which
+ * @property {string | null} [sort] the sort the token was issued under, which
  *   Invidious needs repeated (`sort_by`) on every page: `newest`, `popular`
- *   or `oldest` for channel lists, `top` or `newest` for comments; absent for
- *   replies
- * @property {'videos' | 'shorts' | 'live' | 'playlists'} [kind] channel lists
+ *   or `oldest` for channel video lists, `newest` or `last` for a channel's
+ *   own playlists, `null` for its releases, podcasts, courses and posts, `top` or
+ *   `newest` for comments; absent for replies
+ * @property {'videos' | 'shorts' | 'live' | 'playlists' | 'releases' | 'podcasts' | 'courses' | 'community'} [kind] channel lists
  */
 
 /**
  * @typedef {object} YouTubeInvidiousPageCursor
  * @property {'invidious'} backend
  * @property {number} page 1-based, the next page to ask for
+ * @property {string} [query] a search within a channel: the query, asked again on every page
+ * @property {'search'} [kind] a search within a channel
  */
 
 /** @typedef {YouTubeLocalCursor | YouTubeInvidiousTokenCursor | YouTubeInvidiousPageCursor} YouTubeCursor */
@@ -127,14 +133,41 @@
  *   - A channel without the tab is an empty page: L reads the channel's
  *     `has_*` flags, I the `tabs` `getChannel` cached on this layer, and
  *     otherwise asks the tab.
- * - `listChannelPlaylists`: the channel's own playlists, newest first, no
- *   sort option. Releases, podcasts and courses are not lists of the layer.
+ * - `listChannelPlaylists` (`kind` `playlists`, `releases`, `podcasts` or
+ *   `courses`): the channel's own playlists `newest` first or by the `last`
+ *   video added; the other kinds in YouTube's one order, no sort.
  *   - L: the tab instance from `getPlaylists()`, narrowed to "Created
- *     playlists" (`view=1`) where YouTube offers other categories. `{ backend,
- *     continuation, from: 'tab', kind: 'playlists', owner }`. End:
- *     `!has_continuation`.
- *   - I: `continuation` string from `getInvidiousChannelPlaylists`, with
- *     `sort: 'newest'`.
+ *     playlists" (`view=1`) where YouTube offers other categories, then
+ *     `applySort(sort_filters[1])` for `last` where the tab has two sorts and
+ *     more than one playlist (the old view's rule; else newest, said so);
+ *     `getReleases()`, `getPodcasts()`, `getCourses()`. `{ backend,
+ *     continuation, from: 'tab', kind, owner }`. End: `!has_continuation`.
+ *     An artist topic channel's releases: `getLocalArtistTopicChannelReleases
+ *     (channel)`, continued by `getLocalArtistTopicChannelReleasesContinuation
+ *     (channel, continuation)`. `{ backend, continuation, from:
+ *     'topicReleases', kind, channel }`. End: no `continuationData`.
+ *   - I: `continuation` string from `getInvidiousChannelPlaylists` with the
+ *     sort repeated, or from `getInvidiousChannelReleases`, `…Podcasts`,
+ *     `…Courses`, which take none. `{ backend, continuation, sort, kind }`,
+ *     `sort` `null` for the unsorted kinds.
+ *   - A channel without the tab is an empty page, as for the video lists.
+ * - `listChannelPosts` (the list `kind` `community`), YouTube's one order
+ *   - L: the tab instance from `getCommunity()`, its `posts` read by
+ *     `parseLocalCommunityPosts`. `{ backend, continuation, from: 'tab',
+ *     kind, owner }`. End: `!has_continuation`. Every page, first or later,
+ *     follows up to 3 empty pages, as the old view does (without its bound).
+ *   - I: `continuation` string from `invidiousGetCommunityPosts(id,
+ *     continuation)`. `{ backend, continuation, sort: null, kind }`.
+ *   - A channel without the tab is an empty page, as for the video lists.
+ * - `searchChannel`, a search within a channel
+ *   - L: the `YT.Channel` `channel.search(query)` answers, on the channel
+ *     `getChannel` cached (else fetched), where `has_search`; later pages
+ *     from `getContinuation()`. `{ backend, continuation, from: 'search',
+ *     kind: 'search', owner }`. End: `!has_continuation`. A channel without
+ *     `has_search` is `invalid`.
+ *   - I: a page number of `searchInvidiousChannel(id, query, page)`, the
+ *     first page 1. `{ backend, page, query, kind: 'search' }`. End: an
+ *     empty answer, as for `search`.
  * - `search`
  *   - L: the `YT.Search` instance `getLocalSearchResults` answers as
  *     `continuationData`, continued by `getLocalSearchContinuation`.
@@ -173,7 +206,8 @@
 
 /**
  * A YouTube video in a list. Implemented in `./channels.js` for a channel's
- * videos, shorts and lives; `./search.js` hands the modules' items on as they
+ * videos, shorts and lives, and the videos of a search within it;
+ * `./search.js` hands the modules' items on as they
  * are (see the search section). The Local list parsers already produce the
  * common field names (they are what the cards read), so on Local the summary
  * is `parseLocalListVideo`'s answer as it is. Invidious' video objects also
@@ -265,18 +299,19 @@
  * | isUnlisted       | `basic_info.is_unlisted`                               | `isListed === false`                 |
  * | related          | `watch_next_feed` (`CompactVideo`, `CompactMovie`, and `LockupView` of a video or station) through `parseLocalWatchNextVideo` | `recommendedVideos` as `type: 'video'`, their ISO `published` made ms |
  * | chaptersKind     | `'keyMoments'` when the chapters are the engagement panel's auto chapters, else `'chapters'` (`./playback.js`) | `'chapters'` |
+ * | liveChat         | `info.getLiveChat()`, a `YT.LiveChat` not yet started, for a live or upcoming video with `info.livechat`; else `null` | `null`: no chat |
  *
- * Not carried, and the old view's still: `isLiveContent` (L only), the live
- * chat (L `info.getLiveChat()`, a library instance), and the channel's
- * formatted subscriber count, which the view can format from
- * `channel.subscriberCount`. So are hiding likes and chapters, the
- * `showFamilyFriendlyOnly` gate and putting watched recommendations last.
+ * Not carried, and the old view's still: `isLiveContent` (L only) and the
+ * channel's formatted subscriber count, which the view can format from
+ * `channel.subscriberCount`. So are hiding likes, chapters and the live chat,
+ * the `showFamilyFriendlyOnly` gate and putting watched recommendations last.
  *
  * Refusals and other failures are classified in `./errors.js`: Local's from
  * the playability status (`classifyLocalPlayability`, a removed video
  * `notFound`), Invidious' from the error message, into `PlatformError` kinds
  * and YouTube's `RefusalReason`s (`private`, `membersOnly`, `ageRestricted`,
- * `drm`, `ipBlock`, `unexplained`). A refusal is final (ADR-0015).
+ * `drm`, `ipBlock`, `unexplained`). A refusal about the video is final; an
+ * `ipBlock`, `unexplained` or reasonless one falls back (ADR-0015, ADR-0019).
  *
  * @typedef {never} YouTubeVideoDetailsTable
  */
@@ -327,7 +362,8 @@
  * `storyboard`: L builds a WebVTT data URI from the largest
  * `storyboards.boards` entry (`buildVTTFileLocally`); the old view takes the
  * largest at most 90px high below 500px of window width, which the layer
- * cannot see and stays the view's. I is a URL,
+ * cannot see: L answers that board too, as `narrowStoryboard`, and the view
+ * chooses. I is a URL,
  * `{instance}/api/v1/storyboards/{id}?height=90`, answering WebVTT, not a
  * data URI. None for lives on either.
  *
@@ -436,12 +472,16 @@
 
 /**
  * A YouTube channel, the common `ChannelDetails` (../shapes.js, which took
- * `tabs`, `tags`, `isFamilyFriendly` and `isArtistTopicChannel`). Implemented
+ * `tabs`, `tags`, `isFamilyFriendly` and `isArtistTopicChannel`, later
+ * `hasSearch` and the about tab's details). Implemented
  * in `./channels.js`. Local: `getLocalChannel(id)` (a `YT.Channel`, or
  * `{ alert }` for a terminated channel, which is `notFound`; an age gate is
  * `refused`, `ageRestricted`), read through `parseLocalChannelHeader`; the
  * description needs a second request, `channel.getAbout()`. Invidious:
- * `invidiousGetChannelInfo(id)`.
+ * `invidiousGetChannelInfo(id)`. The about page answers the joined date,
+ * counts and location too, and the featured channels are the channels on the
+ * home tab, which the `YT.Channel` already holds (`parseChannelHomeTab`, no
+ * request).
  *
  * | common               | L                                                  | I                                            |
  * | -------------------- | -------------------------------------------------- | -------------------------------------------- |
@@ -461,6 +501,12 @@
  * | tags                 | header tags and `metadata.tags`, without repeats   | `tags`, without repeats                      |
  * | isFamilyFriendly     | `metadata.is_family_safe === true`                 | `isFamilyFriendly === true`                  |
  * | isArtistTopicChannel | a name ending `- Topic` with `metadata.music_artist_name`, which changes where its videos come from | absent |
+ * | hasSearch            | `has_search === true`                              | `true` (not reported; the old view offers search always) |
+ * | joined               | the about page's `joined_date.text` less `Joined`, by `Date.parse` (local midnight); absent when unreadable or without | `joined` × 1000; absent when 0 (unknown) |
+ * | viewCount            | `extractNumberFromString` of the about page's `view_count` (`.text` on the full metadata); absent without digits | `totalViews`; absent when 0 (unknown) |
+ * | videoCount           | the same of `video_count`; absent on the full metadata, which has none | absent (not reported) |
+ * | location             | the about page's `country` (`.text` on the full metadata); absent when blank | absent (not reported) |
+ * | featuredChannels     | the `type: 'channel'` items of `parseChannelHomeTab(channel)`, once each, as `{ id, name, thumbnail }`; absent without a home tab (`has_home`, or `tabs[0]` not `Videos`, the old view's test) or when it throws | `relatedChannels` as `{ id: authorId, name: author, thumbnail }`, the last `authorThumbnails` via `youtubeImageUrlToInvidious` |
  *
  * `tabs` uses the old view's names in its order (`videos`, `shorts`, `live`,
  * `releases`, `podcasts`, `courses`, `playlists`, `community`), without home
@@ -481,7 +527,8 @@
 
 /**
  * A YouTube playlist in a list, implemented in `./channels.js` for a
- * channel's own playlists. L: `parseLocalListPlaylist` answers the card's
+ * channel's own playlists, releases, podcasts and courses, and the
+ * playlists of a search within it. L: `parseLocalListPlaylist` answers the card's
  * Local field names already, with `dataSource: 'local'`. I:
  * `InvidiousPlaylistObject` renamed into them.
  *
@@ -501,6 +548,34 @@
  * 'local'`, and otherwise reads `playlistThumbnail` and fails.
  *
  * @typedef {import('../shapes').PlaylistSummary & { dataSource: 'local' }} YouTubePlaylistSummary
+ */
+
+// ---------------------------------------------------------------------------
+// Posts
+// ---------------------------------------------------------------------------
+
+/**
+ * A YouTube channel's post, the common `Post` (../shapes.js), implemented in
+ * `./channels.js`. Not mapped: both modules' parsers answer the post
+ * component's field names already, which is what `Post` is, and the adapter
+ * hands their answer on, with `postContent` `null` where a parser left an
+ * attachment it does not know `undefined`. L: `parseLocalCommunityPosts` on a
+ * page of `getCommunity()`'s `posts` (`YTNodes.BackstagePost`, `Post`,
+ * `SharedPost`), which drops a shared post and the post it repeats. I:
+ * `invidiousGetCommunityPosts(id, continuation)`'s `posts`.
+ *
+ * | common           | L (`BackstagePost`)                                   | I (`/api/v1/channels/{id}/community` entry)        |
+ * | ---------------- | ----------------------------------------------------- | -------------------------------------------------- |
+ * | postId           | `id`                                                  | `commentId`                                        |
+ * | postText         | `parseLocalTextRuns(content.runs)`, autolinked; `''` when empty | `contentHtml`, `href="/` made `href="#/`  |
+ * | author, authorId | `author.name`, `author.id`                            | `author`, `authorId`                               |
+ * | authorThumbnails | `author.thumbnails`, `//` made `https:`               | `authorThumbnails` via `youtubeImageUrlToInvidious` |
+ * | publishedTime    | `calculatePublishedDate(published.text)`              | `calculatePublishedDate(publishedText)`            |
+ * | voteCount        | from `vote_count.text`, 0 when YouTube hides it       | `likeCount`                                        |
+ * | commentCount     | from `action_buttons.reply_button.text`, `null` without one | `replyCount`, else 0                         |
+ * | postContent      | from `attachment`: `BackstageImage` → `image`, `PostMultiImage` → `multiImage`, `Poll` → `poll`, `Quiz` → `quiz`, `Video` → `video` (`parseLocalListVideo`, `null` for an unavailable one), `Playlist` → `playlist` (`parseLocalListPlaylist`) | from `attachment`: `image`, `multiImage`, `poll`, `quiz` with images on the instance, `video` and `playlist` as the API gives them, `error` for a gone video |
+ *
+ * @typedef {import('../shapes').Post} YouTubePost
  */
 
 // ---------------------------------------------------------------------------

@@ -6,7 +6,8 @@
 //
 // - Local: `getLocalVideoInfo(id)`. A video YouTube will not play is not a
 //   thrown error there but a playability status, classified by
-//   `classifyLocalPlayability` (`./errors.js`); a refusal is final. A removed
+//   `classifyLocalPlayability` (`./errors.js`), and the policy decides by
+//   its reason whether Invidious is asked too (ADR-0019). A removed
 //   video is the exception: youtubei.js throws for its `ERROR` status before
 //   `getLocalVideoInfo` can answer, with the status on the error's `info`,
 //   which is read the same way, as `notFound`, and tried once on Invidious

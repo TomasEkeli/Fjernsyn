@@ -1,0 +1,99 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "invidiousGetCommunityPosts('UCSMOQeBJ2RAnuFungnQOxLg', null)",
+  "answer": {
+    "posts": [
+      {
+        "postText": "👋 Blender Today...Blender Thursday! Same time, same place, just two days later.",
+        "postId": "UgkxTCPUkgLnqdzLXkgPYDT8mWvXCLVNFSA7",
+        "authorThumbnails": [
+          { "url": "https://invidious.example/ggpht/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s32-c-k-c0x00ffffff-no-rj-mo", "width": 32, "height": 32 },
+          { "url": "https://invidious.example/ggpht/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s76-c-k-c0x00ffffff-no-rj-mo", "width": 76, "height": 76 }
+        ],
+        "publishedTime": 1785792207289,
+        "voteCount": 462,
+        "postContent": null,
+        "commentCount": 20,
+        "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+        "author": "Blender",
+        "type": "community"
+      },
+      {
+        "postText": "Read the announcement: <a href=\"https://studio.blender.org/blog/overgrown-open-doors-week/\">studio.blender.org/blog/overgrown-open-doors-week</a> <a href=\"#/hashtag/b3d\">#b3d</a>",
+        "postId": "UgkxAOck4GIqXg8TLZuEKUt__RYcP36NGB_j",
+        "authorThumbnails": [
+          { "url": "https://invidious.example/ggpht/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s76-c-k-c0x00ffffff-no-rj-mo", "width": 76, "height": 76 }
+        ],
+        "publishedTime": 1788384207277,
+        "voteCount": 1100,
+        "postContent": {
+          "type": "image",
+          "content": [
+            { "url": "https://invidious.example/ggpht/-axbs9xLL8j8zyAWXLMq6q7ad9F8qf-lZZT3xLJTBSuIkwmo3kFoe__Xu11e-8d-k_K2cwcyUYUmdw=s640-c-fcrop64=1,00000000ffffffff-nd-v1", "width": 640, "height": 640 },
+            { "url": "https://invidious.example/ggpht/-axbs9xLL8j8zyAWXLMq6q7ad9F8qf-lZZT3xLJTBSuIkwmo3kFoe__Xu11e-8d-k_K2cwcyUYUmdw=s288-c-fcrop64=1,00000000ffffffff-nd-v1", "width": 288, "height": 288 }
+          ]
+        },
+        "commentCount": 20,
+        "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+        "author": "Blender",
+        "type": "community"
+      },
+      {
+        "postText": "Francesco is here to talk about Blender content-driven development.",
+        "postId": "UgkxPELlMnbhedGXNaBBY5hyL6k68meKH4Y9",
+        "authorThumbnails": [
+          { "url": "https://invidious.example/ggpht/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s76-c-k-c0x00ffffff-no-rj-mo", "width": 76, "height": 76 }
+        ],
+        "publishedTime": 1789766607270,
+        "voteCount": 64,
+        "postContent": {
+          "type": "video",
+          "content": {
+            "type": "video",
+            "videoId": "685eur9lMGc",
+            "title": "OVERGROWN Project: What will you get?",
+            "videoThumbnails": [
+              { "quality": "medium", "url": "https://invidious.example/vi/685eur9lMGc/mqdefault.jpg", "width": 320, "height": 180 }
+            ],
+            "lengthText": "4:42",
+            "lengthSeconds": 282,
+            "viewCountText": "57K views",
+            "publishedText": "2 weeks ago",
+            "author": "Blender Studio",
+            "authorId": "UCz75RVbH8q2jdBJ4SnwuZZQ",
+            "authorUrl": "/channel/UCz75RVbH8q2jdBJ4SnwuZZQ"
+          }
+        },
+        "commentCount": 0,
+        "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+        "author": "Blender",
+        "type": "community"
+      },
+      {
+        "postText": "Which feature should the next Blender Today look at?",
+        "postId": "UgkxBlenderPollBlenderPollBlenderPoll0",
+        "authorThumbnails": [
+          { "url": "https://invidious.example/ggpht/ytc/AIdro_nqhez5E1j4YzrCvzTAAB6z_KDFFZznqWv0x-vfY2gsXdY=s76-c-k-c0x00ffffff-no-rj-mo", "width": 76, "height": 76 }
+        ],
+        "publishedTime": 1759419257087,
+        "voteCount": 3600,
+        "postContent": {
+          "type": "poll",
+          "totalVotes": 22300,
+          "content": [
+            { "text": "Geometry Nodes" },
+            { "text": "Grease Pencil" },
+            { "text": "Cycles" }
+          ]
+        },
+        "commentCount": 516,
+        "authorId": "UCSMOQeBJ2RAnuFungnQOxLg",
+        "author": "Blender",
+        "type": "community"
+      }
+    ],
+    "continuation": "posts-token-2"
+  },
+  "notes": "Written from the module's own parse (parseInvidiousCommunityData and parseInvidiousCommunityAttachments in helpers/api/invidious.js) of the /api/v1/channels/{id}/community shape: postText is contentHtml with href=\"/ made href=\"#/\", images moved onto the instance by the module, commentCount from replyCount (0 when absent), a video attachment as the API's own object. The text, image and video posts are the Local recording's of the same posts; the poll, choices without images, is invented, since Blender had none."
+}

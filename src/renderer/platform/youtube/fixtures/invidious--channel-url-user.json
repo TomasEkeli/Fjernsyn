@@ -1,0 +1,7 @@
+{
+  "recordedAt": "2026-10-02",
+  "source": "synthesised",
+  "call": "invidiousGetChannelId('https://www.youtube.com/user/BlenderFoundation')",
+  "answer": "UCSMOQeBJ2RAnuFungnQOxLg",
+  "notes": "Written from the module: invidiousGetChannelId asks the instance /api/v1/resolveurl?url=..., which answers { ucid, pageType, ... }, and answers its ucid for pageType WEB_PAGE_TYPE_CHANNEL. The ucid is what Local resolved the same URL to (local--channel-url-user.json)."
+}

@@ -5,9 +5,12 @@
 // (src/renderer/views/Channel/Channel.vue), re-implemented here.
 //
 // - Details. Local: `getLocalChannel(id)`, a `YT.Channel` read through
-//   `parseLocalChannelHeader`, and for the description `channel.getAbout()`,
-//   a second request. A terminated channel is not thrown but answered as
-//   `{ alert }`, which is `notFound`. Invidious: `invidiousGetChannelInfo(id)`,
+//   `parseLocalChannelHeader`, and for the description, the joined date, the
+//   view and video counts and the location `channel.getAbout()`, a second
+//   request, as in the old view; the featured channels are on the home tab,
+//   which the `YT.Channel` is already (`parseChannelHomeTab`). A terminated
+//   channel is not thrown but answered as `{ alert }`, which is `notFound`.
+//   Invidious: `invidiousGetChannelInfo(id)`, all of it in one answer,
 //   where "does not exist" is `notFound` by the error tables (`./errors.js`).
 //   A `notFound` on the preferred backend is tried once on the other, as the
 //   policy does for every first page.
@@ -20,10 +23,36 @@
 // - Shorts and live are a `kind` of video list, the same machinery on other
 //   tabs (`getShorts()`, `getLiveStreams()`; `getInvidiousChannelShorts`,
 //   `getInvidiousChannelLive`). Playlists are the channel's own ("Created
-//   playlists"), newest first, the old view's default, from `getPlaylists()`
-//   and `getInvidiousChannelPlaylists`. Each list's backend calls and item
-//   shapes are a row of `LISTS`; a cursor names its list, so a later page
-//   never needs the caller to repeat it.
+//   playlists"), newest first, the old view's default, or by the last video
+//   added, from `getPlaylists()` (then `applySort`) and
+//   `getInvidiousChannelPlaylists`. Releases, podcasts and courses are a
+//   `kind` of playlist list, in the one order YouTube gives them, from
+//   `getReleases()`, `getPodcasts()` and `getCourses()`, and
+//   `getInvidiousChannelReleases`, `…Podcasts` and `…Courses`; an artist
+//   topic channel's releases are its albums and singles, which Local reads
+//   off the channel page (`getLocalArtistTopicChannelReleases`), as the old
+//   view does. Posts (YouTube's community tab, `listChannelPosts`) are a list
+//   in one order too, from `getCommunity()` read by
+//   `parseLocalCommunityPosts`, and `invidiousGetCommunityPosts`; YouTube
+//   sends some posts tabs as pages holding only a continuation, which are
+//   followed on every page, as the old view does. Each list's backend calls
+//   and item shapes are a row of `LISTS`; a cursor names its list, so a later
+//   page never needs the caller to repeat it.
+// - Search within the channel (`searchChannel`), the videos and playlists
+//   matching a query, in YouTube's order. Local: `channel.search(query)` on
+//   the `YT.Channel`, where the channel has search (`has_search`, which the
+//   details say as `hasSearch`), its item sections read as the old view reads
+//   them, continued with `getContinuation()`. Invidious:
+//   `searchInvidiousChannel(id, query, page)`, by page number, which never
+//   says it is the last: an empty answer is the end. Not a row of `LISTS`:
+//   it is asked with a query, has no tab to open and no sort.
+// - A page of a sorted list says which sort it is in (`Page.sort`), so that
+//   the view can tell when the sort asked was not applied: Local's first page
+//   of a tab without that filter (for playlists: without the sort, or of one
+//   playlist) answers `newest`, and an uploads playlist the sort asked;
+//   Invidious every page the sort asked, which it always applies. A later
+//   Local page, an empty page for a missing tab, and every page of an
+//   unsorted list (releases, podcasts, courses, posts) say none.
 // - A channel without a tab answers an empty page, without opening it: Local
 //   reads the channel's `has_*` flags; Invidious, which reports no such
 //   thing per tab, the channel's `tabs` when `getChannel` read them on this
@@ -66,12 +95,22 @@ const TABS = Object.freeze([
 /** The kinds of video list `listChannelVideos` takes, YouTube's tabs */
 export const CHANNEL_VIDEO_KINDS = Object.freeze(['videos', 'shorts', 'live'])
 
+/** The kinds of playlist list `listChannelPlaylists` takes: the channel's own, and YouTube's tabs of others */
+export const CHANNEL_PLAYLIST_KINDS = Object.freeze(['playlists', 'releases', 'podcasts', 'courses'])
+
+/** The sorts of the channel's own playlists, in the order of YouTube's sort menu (date added, last video added) */
+export const CHANNEL_PLAYLIST_SORTS = Object.freeze(['newest', 'last'])
+
+/** The list `listChannelPosts` reads, by the old view's name for the tab */
+const CHANNEL_POST_KINDS = Object.freeze(['community'])
+
 /**
- * How many empty pages a first page is followed past. YouTube sends some live
- * tabs as a run of pages holding only a continuation (the old view's
- * workaround, for https://www.youtube.com/@TWLIVES/streams); a few more
- * requests find the first broadcasts, and past that the empty page is
- * answered with its cursor.
+ * How many empty pages a page is followed past. YouTube sends some live and
+ * posts tabs as a run of pages holding only a continuation (the old view's
+ * workaround, for https://www.youtube.com/@TWLIVES/streams and
+ * https://www.youtube.com/@TheLinuxEXP/community); a few more requests find
+ * the next items, and past that the empty page is answered with its cursor.
+ * The old view follows without a bound.
  */
 const EMPTY_PAGES_FOLLOWED = 3
 
@@ -98,7 +137,26 @@ function forCard(item) {
  * @param {any} item
  */
 function asShort(item) {
-  return { ...forCard(item), type: 'shortVideo', lengthSeconds: item.lengthSeconds || '' }
+  return {
+    ...forCard(item),
+    type: 'shortVideo',
+    lengthSeconds: item.lengthSeconds || '',
+    // Local's shorts parser says neither, and a short is never live
+    liveNow: item.liveNow === true,
+    isUpcoming: item.isUpcoming === true,
+  }
+}
+
+/**
+ * A post as the module parsed it, which is the common shape already (the
+ * post component's field names), with `null` for no attachment where a
+ * module leaves one it does not know `undefined`.
+ *
+ * @param {any} post
+ * @returns {import('../shapes').Post}
+ */
+function asPost(post) {
+  return { ...post, postContent: post.postContent ?? null }
 }
 
 /**
@@ -172,27 +230,78 @@ async function openCreatedPlaylists(channel) {
 }
 
 /**
+ * A video tab in a sort other than newest, through YouTube's filter chip for
+ * it; `null` where the tab has no such chip, which lists newest first.
+ *
+ * @param {any} tab
+ * @param {string} sort
+ */
+async function sortByChip(tab, sort) {
+  const filter = sort === 'newest' ? undefined : tab.filters?.[CHANNEL_VIDEO_SORTS.indexOf(sort)]
+  return filter ? tab.applyFilter(filter) : null
+}
+
+/**
+ * The playlists tab by the last video added, through its sort menu; `null`
+ * where it lists newest first: newest asked, no sort menu, or (the old
+ * view's rule, since YouTube offers the menu there too) one playlist or none.
+ *
+ * @param {any} tab
+ * @param {string} sort
+ */
+async function sortPlaylists(tab, sort) {
+  const filters = Array.isArray(tab.sort_filters) ? tab.sort_filters : []
+  const filter = sort === 'newest' ? undefined : filters[CHANNEL_PLAYLIST_SORTS.indexOf(sort)]
+
+  if (!filter || filters.length < 2 || !((tab.playlists?.length ?? 0) > 1)) {
+    return null
+  }
+
+  return tab.applySort(filter)
+}
+
+/**
+ * The Local parse of a tab of playlists, attributed to the channel where an
+ * item names none.
+ *
+ * @param {import('./deps').YouTubeDeps} youtube
+ * @param {any[]} nodes
+ * @param {{ id: string, name: string } | null} owner
+ */
+function parseLocalPlaylists(youtube, nodes, owner) {
+  return nodes.map(node => youtube.parseLocalListPlaylist(node, owner?.id, owner?.name))
+}
+
+/**
  * Where each list of a channel comes from on each backend, and its items' shape:
  *
  * - `flag`: the `YT.Channel` flag saying Local has the tab; `tab`: the
  *   name in Invidious' `tabs` (as the module maps them).
+ * - `sorts`: the sorts the list takes, the first its default; `null` for a
+ *   list in one order, whose pages say no sort. `sortTab`: the Local tab in
+ *   the sort asked, `null` where it stays newest first.
  * - `openTab`, `localItems`, `parseLocal`: the Local tab, the nodes on one
  *   of its pages, and the parser call.
  * - `othersContent`: a channel that shows other channels' items (an artist
  *   topic channel, a topic header) leaves them unattributed, as the old view
  *   does for shorts, rather than naming the channel page as their author.
  * - `followEmpty`: follow a first page that came back empty (see
- *   `EMPTY_PAGES_FOLLOWED`).
+ *   `EMPTY_PAGES_FOLLOWED`); `followEmptyLater`: a later one too.
  * - `topicPlaylist`: the uploads playlist type standing in for the tab on an
  *   artist topic channel (`getChannelPlaylistId`), which has no videos tab.
+ *   `topicReleases`: on an artist topic channel the list is the albums and
+ *   singles of its page (`getLocalArtistTopicChannelReleases`).
  * - `invidious`, `invidiousItems`: the Invidious module function and where
- *   its answer keeps the items.
+ *   its answer keeps the items. A sorted list's function takes `(id, sort,
+ *   continuation)`, an unsorted one's `(id, continuation)`.
  * - `localItem`, `invidiousItem`: one item, in the common shape.
  */
 const LISTS = Object.freeze({
   videos: Object.freeze({
     flag: 'has_videos',
     tab: 'videos',
+    sorts: CHANNEL_VIDEO_SORTS,
+    sortTab: sortByChip,
     openTab: channel => channel.getVideos(),
     localItems: page => page.videos,
     parseLocal: (youtube, nodes, owner) => youtube.parseLocalChannelVideos(nodes, owner?.id, owner?.name),
@@ -205,6 +314,8 @@ const LISTS = Object.freeze({
   shorts: Object.freeze({
     flag: 'has_shorts',
     tab: 'shorts',
+    sorts: CHANNEL_VIDEO_SORTS,
+    sortTab: sortByChip,
     openTab: channel => channel.getShorts(),
     localItems: page => page.videos,
     parseLocal: (youtube, nodes, owner) => youtube.parseLocalChannelShorts(nodes, owner?.id, owner?.name),
@@ -217,6 +328,8 @@ const LISTS = Object.freeze({
   live: Object.freeze({
     flag: 'has_live_streams',
     tab: 'live',
+    sorts: CHANNEL_VIDEO_SORTS,
+    sortTab: sortByChip,
     openTab: channel => channel.getLiveStreams(),
     localItems: page => page.videos,
     parseLocal: (youtube, nodes, owner) => youtube.parseLocalChannelVideos(nodes, owner?.id, owner?.name),
@@ -229,13 +342,68 @@ const LISTS = Object.freeze({
   playlists: Object.freeze({
     flag: 'has_playlists',
     tab: 'playlists',
+    sorts: CHANNEL_PLAYLIST_SORTS,
+    sortTab: sortPlaylists,
     openTab: openCreatedPlaylists,
     localItems: page => page.playlists,
-    parseLocal: (youtube, nodes, owner) => nodes.map(node => youtube.parseLocalListPlaylist(node, owner?.id, owner?.name)),
+    parseLocal: parseLocalPlaylists,
     invidious: 'getInvidiousChannelPlaylists',
     invidiousItems: 'playlists',
     localItem: localPlaylist,
     invidiousItem: invidiousPlaylist,
+  }),
+  releases: Object.freeze({
+    flag: 'has_releases',
+    tab: 'releases',
+    sorts: null,
+    openTab: channel => channel.getReleases(),
+    localItems: page => page.playlists,
+    parseLocal: parseLocalPlaylists,
+    topicReleases: true,
+    invidious: 'getInvidiousChannelReleases',
+    invidiousItems: 'playlists',
+    localItem: localPlaylist,
+    invidiousItem: invidiousPlaylist,
+  }),
+  podcasts: Object.freeze({
+    flag: 'has_podcasts',
+    tab: 'podcasts',
+    sorts: null,
+    openTab: channel => channel.getPodcasts(),
+    localItems: page => page.playlists,
+    parseLocal: parseLocalPlaylists,
+    invidious: 'getInvidiousChannelPodcasts',
+    invidiousItems: 'playlists',
+    localItem: localPlaylist,
+    invidiousItem: invidiousPlaylist,
+  }),
+  courses: Object.freeze({
+    flag: 'has_courses',
+    tab: 'courses',
+    sorts: null,
+    openTab: channel => channel.getCourses(),
+    localItems: page => page.playlists,
+    parseLocal: parseLocalPlaylists,
+    invidious: 'getInvidiousChannelCourses',
+    invidiousItems: 'playlists',
+    localItem: localPlaylist,
+    invidiousItem: invidiousPlaylist,
+  }),
+  community: Object.freeze({
+    flag: 'has_community',
+    tab: 'community',
+    sorts: null,
+    openTab: channel => channel.getCommunity(),
+    localItems: page => page.posts,
+    // The module's parser reads a whole page at once: it drops the posts a
+    // shared post repeats, which it does not show
+    parseLocal: (youtube, nodes) => youtube.parseLocalCommunityPosts(nodes),
+    followEmpty: true,
+    followEmptyLater: true,
+    invidious: 'invidiousGetCommunityPosts',
+    invidiousItems: 'posts',
+    localItem: asPost,
+    invidiousItem: asPost,
   }),
 })
 
@@ -289,6 +457,37 @@ function httpsUrl(url) {
   return url.startsWith('//') ? `https:${url}` : url
 }
 
+/**
+ * The fields a backend said, without those it did not: an unknown is absent,
+ * never 0 or `null`.
+ *
+ * @template {Record<string, unknown>} T
+ * @param {T} fields
+ * @returns {Partial<T>}
+ */
+function known(fields) {
+  return /** @type {Partial<T>} */ (Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined)))
+}
+
+/** @param {unknown} value */
+function positive(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+}
+
+/**
+ * Featured channels, once each and only those with an id, in the backend's order.
+ *
+ * @param {{ id: unknown, name: unknown, thumbnail: string }[]} channels
+ * @returns {import('../shapes').ChannelSummary[]}
+ */
+function featured(channels) {
+  const seen = new Set()
+
+  return channels
+    .filter(({ id }) => typeof id === 'string' && id !== '' && !seen.has(id) && seen.add(id))
+    .map(({ id, name, thumbnail }) => ({ id: /** @type {string} */ (id), name: typeof name === 'string' ? name : '', thumbnail }))
+}
+
 /** @param {string} id */
 function channelUrl(id) {
   return `https://www.youtube.com/channel/${id}`
@@ -333,9 +532,19 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       throw new PlatformError('notFound', `YouTube (Local): ${channel.alert}`)
     }
 
-    // The old view's age gate: YouTube shows the name and avatar only
+    // The old view's age gate: YouTube shows the name and avatar only, which
+    // the refusal carries for the page to show
     if (channel?.memo?.has?.('ChannelAgeGate')) {
-      throw new PlatformError('refused', 'This channel is age restricted', { reason: 'ageRestricted' })
+      const ageGate = channel.memo.get('ChannelAgeGate')?.[0]
+
+      throw new PlatformError('refused', 'This channel is age restricted', {
+        reason: 'ageRestricted',
+        channel: {
+          id,
+          name: typeof ageGate?.channel_title === 'string' ? ageGate.channel_title : '',
+          thumbnail: httpsUrl(ageGate?.avatar?.[0]?.url),
+        },
+      })
     }
 
     localChannels.set(id, channel)
@@ -357,19 +566,81 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
     return name.endsWith('- Topic') && !!channel.metadata?.music_artist_name
   }
 
-  /** @param {any} channel */
-  async function localDescription(channel) {
+  /**
+   * A count as the about page words it ("1,588 videos"), absent where it
+   * gives none or one without digits.
+   *
+   * @param {unknown} text
+   */
+  function localCount(text) {
+    const count = typeof text === 'string' ? youtube.extractNumberFromString(text) : NaN
+    return Number.isFinite(count) ? count : undefined
+  }
+
+  /**
+   * The about page's description and what the old view's details table shows
+   * of it: the joined date, the view and video counts and the location, each
+   * absent where the page does not say. The page comes from the request the
+   * description always took, so the rest costs nothing more. The date is
+   * read as the old view reads it, in English ("Joined May 29, 2008", local
+   * midnight); in a language `Date.parse` cannot read it is absent, where
+   * the old view hid it.
+   *
+   * @param {any} channel
+   * @returns {Promise<{ description: string, joined?: number, viewCount?: number, videoCount?: number, location?: string }>}
+   */
+  async function localAbout(channel) {
     if (!channel.has_about) {
-      return ''
+      return { description: '' }
     }
 
     const about = await channel.getAbout()
+    // The older full metadata gives no video count
+    const full = about?.type === 'ChannelAboutFullMetadata'
+    const metadata = full ? about : about?.metadata
+    const joinedText = metadata?.joined_date?.text
+    const joined = typeof joinedText === 'string' ? Date.parse(joinedText.replace('Joined', '').trim()) : NaN
+    const location = full ? metadata?.country?.text : metadata?.country
 
-    if (about?.type === 'ChannelAboutFullMetadata') {
-      return about.description?.text ?? ''
+    return {
+      description: (full ? about.description?.text : metadata?.description) ?? '',
+      ...known({
+        joined: Number.isFinite(joined) ? joined : undefined,
+        viewCount: localCount(full ? metadata?.view_count?.text : metadata?.view_count),
+        videoCount: full ? undefined : localCount(metadata?.video_count),
+        location: typeof location === 'string' && location.trim() !== '' ? location : undefined,
+      }),
+    }
+  }
+
+  /**
+   * The channels the home tab features, as the old view finds them: every
+   * channel on the home tab's shelves, once each. `YT.Channel` is the home
+   * tab already, so this is no request. Absent for a channel without a home
+   * tab (the old view's test: none, and videos the first tab), and where the
+   * home tab cannot be read, which the old view reported and passed over:
+   * the featured channels are not worth the channel page.
+   *
+   * @param {any} channel
+   * @returns {import('../shapes').ChannelSummary[] | undefined}
+   */
+  function localFeaturedChannels(channel) {
+    if (!(channel.has_home === true || (Array.isArray(channel.tabs) && channel.tabs[0] !== 'Videos'))) {
+      return undefined
     }
 
-    return about?.metadata?.description ?? ''
+    let shelves
+
+    try {
+      shelves = youtube.parseChannelHomeTab(channel)
+    } catch {
+      return undefined
+    }
+
+    return featured((Array.isArray(shelves) ? shelves : [])
+      .flatMap(shelf => Array.isArray(shelf?.content) ? shelf.content : [])
+      .filter(item => item?.type === 'channel')
+      .map(item => ({ id: item.id, name: item.name, thumbnail: httpsUrl(item.thumbnail) })))
   }
 
   /**
@@ -384,6 +655,7 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
     const thumbnail = httpsUrl(header.thumbnailUrl)
     const subscriberCount = header.subscriberText ? youtube.parseLocalSubscriberCount(header.subscriberText) : null
     const isArtistTopicChannel = isArtistTopic(channel, name)
+    const { description, ...about } = await localAbout(channel)
 
     return {
       id: channelId,
@@ -395,8 +667,10 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       // The header has one avatar, which is the large one too
       avatarLarge: thumbnail,
       banner: httpsUrl(header.bannerUrl) || null,
-      description: await localDescription(channel),
+      description,
       descriptionKind: 'plain',
+      ...about,
+      ...known({ featuredChannels: localFeaturedChannels(channel) }),
       // The topic channel's uploads and albums are lists of their own
       tabs: TABS
         .filter(([tab, flag]) => channel[flag] || (isArtistTopicChannel && (tab === 'videos' || tab === 'releases')))
@@ -404,6 +678,7 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       tags: [...new Set([...(header.tags ?? []), ...(channel.metadata?.tags ?? [])])],
       isFamilyFriendly: channel.metadata?.is_family_safe === true,
       isArtistTopicChannel,
+      hasSearch: channel.has_search === true,
     }
   }
 
@@ -426,6 +701,27 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       (header?.type === 'PageHeader' && !!header.content?.animated_image)
 
     return LISTS[kind].othersContent && showsOthers ? null : { id, name }
+  }
+
+  /**
+   * The tab page, or the first after it with items, following at most
+   * `EMPTY_PAGES_FOLLOWED` pages that hold only a continuation.
+   *
+   * @param {any} tab a `YT.Channel` tab or its continuation
+   * @param {ListKind} kind
+   */
+  async function pastEmptyPages(tab, kind) {
+    const list = LISTS[kind]
+
+    for (let followed = 0; followed < EMPTY_PAGES_FOLLOWED; followed++) {
+      if ((list.localItems(tab)?.length ?? 0) > 0 || !tab.has_continuation) {
+        break
+      }
+
+      tab = await tab.getContinuation()
+    }
+
+    return tab
   }
 
   /**
@@ -479,7 +775,27 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       throw error
     }
 
-    return localPlaylistPage(playlist, kind)
+    return { ...localPlaylistPage(playlist, kind), sort }
+  }
+
+  /**
+   * A page of an artist topic channel's releases, as the module reads them
+   * off the channel page. The continuation is a node that only the channel's
+   * session can call, so the cursor holds the channel too.
+   *
+   * @param {{ releases?: any[], continuationData?: any }} answer
+   * @param {any} channel the `YT.Channel`
+   * @param {ListKind} kind
+   */
+  function localTopicReleasesPage(answer, channel, kind) {
+    const releases = Array.isArray(answer?.releases) ? answer.releases : []
+
+    return {
+      items: releases.filter(item => item != null).map(LISTS[kind].localItem),
+      cursor: answer?.continuationData
+        ? { backend: 'local', continuation: answer.continuationData, from: 'topicReleases', kind, channel }
+        : null,
+    }
   }
 
   /**
@@ -491,8 +807,10 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
     const list = LISTS[kind]
     const channel = localChannels.get(id) ?? await fetchLocalChannel(id)
 
-    if (list.topicPlaylist && isArtistTopic(channel, localName(channel))) {
-      return firstLocalPlaylistPage(id, sort, kind)
+    if ((list.topicPlaylist || list.topicReleases) && isArtistTopic(channel, localName(channel))) {
+      return list.topicPlaylist
+        ? firstLocalPlaylistPage(id, sort, kind)
+        : localTopicReleasesPage(await youtube.getLocalArtistTopicChannelReleases(channel), channel, kind)
     }
 
     if (!channel[list.flag]) {
@@ -502,22 +820,20 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
     let tab = await list.openTab(channel)
 
     // A tab offering no such sort lists newest first, as the old view does
-    // when it hides the sort for want of filters
-    const filter = sort === 'newest' ? undefined : tab.filters?.[CHANNEL_VIDEO_SORTS.indexOf(sort)]
+    // when it hides the sort for want of filters, and the page says so
+    const sorted = list.sortTab ? await list.sortTab(tab, sort) : null
 
-    if (filter) {
-      tab = await tab.applyFilter(filter)
+    if (sorted) {
+      tab = sorted
     }
 
-    for (let followed = 0; list.followEmpty && followed < EMPTY_PAGES_FOLLOWED; followed++) {
-      if ((list.localItems(tab)?.length ?? 0) > 0 || !tab.has_continuation) {
-        break
-      }
-
-      tab = await tab.getContinuation()
+    if (list.followEmpty) {
+      tab = await pastEmptyPages(tab, kind)
     }
 
-    return localTabPage(tab, ownerOf(channel, id, kind), kind)
+    const page = localTabPage(tab, ownerOf(channel, id, kind), kind)
+
+    return list.sorts ? { ...page, sort: sorted ? sort : 'newest' } : page
   }
 
   /**
@@ -526,6 +842,18 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
    */
   async function laterLocalPage(cursor, kind) {
     const { continuation, from } = cursor
+
+    if (from === 'topicReleases') {
+      if (continuation == null || typeof continuation !== 'object' || cursor.channel == null) {
+        throw new PlatformError('invalid', 'Not a YouTube channel list cursor')
+      }
+
+      return localTopicReleasesPage(
+        await youtube.getLocalArtistTopicChannelReleasesContinuation(cursor.channel, continuation),
+        cursor.channel,
+        kind
+      )
+    }
 
     if (typeof continuation?.getContinuation !== 'function') {
       throw new PlatformError('invalid', 'Not a YouTube channel list cursor')
@@ -537,7 +865,71 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       return next ? localPlaylistPage(next, kind) : { items: [], cursor: null }
     }
 
-    return localTabPage(await continuation.getContinuation(), cursor.owner ?? null, kind)
+    const next = await continuation.getContinuation()
+
+    return localTabPage(LISTS[kind].followEmptyLater ? await pastEmptyPages(next, kind) : next, cursor.owner ?? null, kind)
+  }
+
+  /**
+   * A page of a channel's search results, as the old view reads them: the
+   * videos and playlists of its item sections, a playlist without a channel
+   * named after the one searched.
+   *
+   * @param {any} result the `YT.Channel` `search()` answered, or a continuation of it
+   * @param {any} contents its sections
+   * @param {{ id: string, name: string }} owner
+   */
+  function localSearchPage(result, contents, owner) {
+    const items = (Array.isArray(contents) ? contents : [])
+      .filter(node => node?.type === 'ItemSection')
+      .flatMap(section => Array.isArray(section.contents) ? section.contents : [])
+      .map((item) => {
+        if (item?.type === 'Video') {
+          const video = youtube.parseLocalListVideo(item)
+          return video ? forCard(video) : null
+        }
+
+        if (item?.type === 'Playlist') {
+          const playlist = youtube.parseLocalListPlaylist(item, owner.id, owner.name)
+          return playlist ? localPlaylist(playlist) : null
+        }
+
+        return null
+      })
+      .filter(item => item != null)
+
+    return {
+      items,
+      cursor: result?.has_continuation ? { backend: 'local', continuation: result, from: 'search', kind: 'search', owner } : null,
+    }
+  }
+
+  /**
+   * @param {string} id
+   * @param {string} query
+   */
+  async function firstLocalSearchPage(id, query) {
+    const channel = localChannels.get(id) ?? await fetchLocalChannel(id)
+
+    // The old view hides its search box for such a channel
+    if (!channel.has_search) {
+      throw new PlatformError('invalid', 'This channel cannot be searched')
+    }
+
+    const result = await channel.search(query)
+
+    return localSearchPage(result, result?.current_tab?.content?.contents, { id, name: localName(channel) })
+  }
+
+  /** @param {any} cursor */
+  async function laterLocalSearchPage(cursor) {
+    if (typeof cursor.continuation?.getContinuation !== 'function' || cursor.owner == null) {
+      throw new PlatformError('invalid', 'Not a YouTube channel search cursor')
+    }
+
+    const next = await cursor.continuation.getContinuation()
+
+    return localSearchPage(next, next?.contents?.contents, cursor.owner)
   }
 
   // -------------------------------------------------------------------------
@@ -553,6 +945,26 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
   function onInstance(url) {
     const absolute = httpsUrl(url)
     return absolute ? youtube.youtubeImageUrlToInvidious(absolute, config.currentInvidiousInstanceUrl || null) : ''
+  }
+
+  /**
+   * The channels Invidious says the channel features, each avatar the
+   * largest, moved onto the instance as the page's own avatar is, since it
+   * is shown as it is.
+   *
+   * @param {unknown} relatedChannels
+   * @returns {import('../shapes').ChannelSummary[] | undefined}
+   */
+  function invidiousFeaturedChannels(relatedChannels) {
+    if (!Array.isArray(relatedChannels)) {
+      return undefined
+    }
+
+    return featured(relatedChannels.map(related => ({
+      id: related?.authorId,
+      name: related?.author,
+      thumbnail: onInstance(Array.isArray(related?.authorThumbnails) ? related.authorThumbnails.at(-1)?.url : undefined),
+    })))
   }
 
   /**
@@ -583,6 +995,15 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       tabs: TABS.map(([tab]) => tab).filter(tab => tabs.includes(tab)),
       tags: Array.isArray(channel?.tags) ? [...new Set(channel.tags)] : [],
       isFamilyFriendly: channel?.isFamilyFriendly === true,
+      // Invidious does not say; the old view offers the search box there always
+      hasSearch: true,
+      // Invidious answers 0 for a joined date or a view count it could not
+      // read off YouTube's page, and has no video count or location
+      ...known({
+        joined: positive(channel?.joined) ? channel.joined * 1000 : undefined,
+        viewCount: positive(channel?.totalViews) ? channel.totalViews : undefined,
+        featuredChannels: invidiousFeaturedChannels(channel?.relatedChannels),
+      }),
     }
   }
 
@@ -592,7 +1013,7 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
    * request.
    *
    * @param {string} id
-   * @param {string} sort
+   * @param {string | null} sort `null` for a list in one order
    * @param {string | null} continuation
    * @param {ListKind} kind
    */
@@ -603,13 +1024,47 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       return { items: [], cursor: null }
     }
 
-    const answer = await youtube[list.invidious](id, sort, continuation)
+    const answer = list.sorts
+      ? await youtube[list.invidious](id, sort, continuation)
+      : await youtube[list.invidious](id, continuation)
     const items = Array.isArray(answer?.[list.invidiousItems]) ? answer[list.invidiousItems] : []
-
-    return {
+    const page = {
       items: items.map(item => list.invidiousItem(item, config)),
       cursor: answer?.continuation ? { backend: 'invidious', continuation: answer.continuation, sort, kind } : null,
     }
+
+    // Invidious applies the sort it is asked, on every page
+    return list.sorts ? { ...page, sort } : page
+  }
+
+  /**
+   * A page of a channel's search results from Invidious, by its number. An
+   * empty answer is the end, which Invidious never says otherwise; the cursor
+   * repeats the query, which every page is asked with.
+   *
+   * @param {string} id
+   * @param {string} query
+   * @param {number} page 1-based
+   */
+  async function invidiousSearchPage(id, query, page) {
+    const answer = await youtube.searchInvidiousChannel(id, query, page)
+    const results = Array.isArray(answer) ? answer : []
+
+    if (results.length === 0) {
+      return { items: [], cursor: null }
+    }
+
+    const items = results
+      .map((item) => {
+        if (item?.type === 'video' || item?.type === 'shortVideo') {
+          return forCard(item)
+        }
+
+        return item?.type === 'playlist' ? invidiousPlaylist(item, config) : null
+      })
+      .filter(item => item != null)
+
+    return { items, cursor: { backend: 'invidious', page: page + 1, query, kind: 'search' } }
   }
 
   /**
@@ -642,8 +1097,10 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
       }, classifyYouTubeError)
     }
 
+    const listSort = LISTS[kind].sorts ? sort : null
+
     return policy.first(
-      backend => backend === 'local' ? firstLocalPage(id, sort, kind) : invidiousPage(id, sort, null, kind),
+      backend => backend === 'local' ? firstLocalPage(id, sort, kind) : invidiousPage(id, listSort, null, kind),
       classifyYouTubeError
     )
   }
@@ -682,15 +1139,82 @@ export function createYouTubeChannelReader({ youtube, config, policy }) {
   }
 
   /**
-   * A page of the channel's own playlists, newest first.
+   * A page of the channel's own playlists, newest first or by the last video
+   * added, or of its releases, podcasts or courses, which have one order and
+   * take no sort. A channel without the tab answers an empty page. A later
+   * page keeps the first's kind and sort, whatever the options say.
+   *
+   * @param {string} id a YouTube channel ref
+   * @param {{ kind?: string, sort?: string, cursor?: unknown }} [options]
+   * @returns {Promise<import('../shapes').Page<import('./types').YouTubePlaylistSummary>>}
+   */
+  async function listChannelPlaylists(id, { kind = 'playlists', sort = 'newest', cursor = null } = {}) {
+    if (cursor == null && !CHANNEL_PLAYLIST_KINDS.includes(kind)) {
+      throw new PlatformError('invalid', `Not a kind of a channel's playlists: ${kind}`)
+    }
+
+    if (cursor == null && !(LISTS[kind].sorts ?? ['newest']).includes(sort)) {
+      throw new PlatformError('invalid', `Not a sort of a channel's ${kind}: ${sort}`)
+    }
+
+    return listPage(id, /** @type {ListKind} */ (kind), sort, cursor, CHANNEL_PLAYLIST_KINDS)
+  }
+
+  /**
+   * A page of the channel's posts, newest first, YouTube's one order. A
+   * channel without the tab answers an empty page.
    *
    * @param {string} id a YouTube channel ref
    * @param {{ cursor?: unknown }} [options]
-   * @returns {Promise<import('../shapes').Page<import('./types').YouTubePlaylistSummary>>}
+   * @returns {Promise<import('../shapes').Page<import('../shapes').Post>>}
    */
-  async function listChannelPlaylists(id, { cursor = null } = {}) {
-    return listPage(id, 'playlists', 'newest', cursor, ['playlists'])
+  async function listChannelPosts(id, { cursor = null } = {}) {
+    return listPage(id, 'community', 'newest', cursor, CHANNEL_POST_KINDS)
   }
 
-  return Object.freeze({ getChannel, listChannelVideos, listChannelPlaylists })
+  /**
+   * A page of the channel's videos and playlists matching a query, in
+   * YouTube's order. A blank query is an empty page, without a request; a
+   * Local channel without search (`hasSearch` false) is `invalid`. A later
+   * page keeps the first's query, whatever the arguments say.
+   *
+   * @param {string} id a YouTube channel ref
+   * @param {string} query
+   * @param {{ cursor?: unknown }} [options]
+   * @returns {Promise<import('../shapes').Page<import('./types').YouTubeVideoSummary | import('./types').YouTubePlaylistSummary>>}
+   */
+  async function searchChannel(id, query, { cursor = null } = {}) {
+    if (cursor != null) {
+      return policy.later(cursor, (backend, laterCursor) => {
+        if (laterCursor.kind !== 'search') {
+          throw new PlatformError('invalid', 'Not a cursor of this list')
+        }
+
+        if (backend === 'local') {
+          return laterLocalSearchPage(laterCursor)
+        }
+
+        if (!Number.isInteger(laterCursor.page) || laterCursor.page < 2 || typeof laterCursor.query !== 'string') {
+          throw new PlatformError('invalid', 'Not a YouTube channel search cursor')
+        }
+
+        return invidiousSearchPage(id, laterCursor.query, laterCursor.page)
+      }, classifyYouTubeError)
+    }
+
+    if (typeof query !== 'string') {
+      throw new PlatformError('invalid', 'A channel search needs a query')
+    }
+
+    if (query.trim() === '') {
+      return { items: [], cursor: null }
+    }
+
+    return policy.first(
+      backend => backend === 'local' ? firstLocalSearchPage(id, query) : invidiousSearchPage(id, query, 1),
+      classifyYouTubeError
+    )
+  }
+
+  return Object.freeze({ getChannel, listChannelVideos, listChannelPlaylists, listChannelPosts, searchChannel })
 }

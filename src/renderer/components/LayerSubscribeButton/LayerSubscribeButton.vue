@@ -5,6 +5,7 @@
     :channel-name="channel.name ?? ''"
     :channel-thumbnail="thumbnail"
     :channel-platform-fields="platformFields"
+    @subscribed="emit('subscribed')"
   />
 </template>
 
@@ -31,6 +32,9 @@ const props = defineProps({
     required: true
   },
 })
+
+// Passed on from the button: the channel was just subscribed to (not on unsubscribing)
+const emit = defineEmits(['subscribed'])
 
 const hideUnsubscribeButton = computed(() => store.getters.getHideUnsubscribeButton)
 
