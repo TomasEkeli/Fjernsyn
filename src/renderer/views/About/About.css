@@ -42,11 +42,17 @@
   margin-block-end: 1em;
 }
 
-/* As many columns as the width holds, so that a wide window gets more of them rather than wider ones */
+/*
+ * The card spans the window; what is in it stays a centred column, two chunks
+ * wide, which is how the page reads. The upstream section keeps the same
+ * column so the two sets of chunks line up.
+ */
 .about-chunks {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(min(380px, 100%), 1fr));
+  grid-template-columns: 1fr 1fr;
+  margin-inline: auto;
+  max-inline-size: 860px;
 }
 
 .chunk {
@@ -77,6 +83,8 @@
 
 .upstream {
   margin-block-start: 40px;
+  margin-inline: auto;
+  max-inline-size: 860px;
 }
 
 .upstreamHeading {
@@ -93,6 +101,12 @@
 
 .headingIcon {
   color: var(--primary-color);
+}
+
+@media only screen and (width <=650px) {
+  .about-chunks {
+    grid-template-columns: 1fr;
+  }
 }
 
 .buildStamp {
