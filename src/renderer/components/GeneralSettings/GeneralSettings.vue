@@ -71,14 +71,6 @@
         @change="updateBackendPreference"
       />
       <FtSelect
-        :placeholder="t('Settings.General Settings.Default Landing Page')"
-        :value="landingPage"
-        :select-names="defaultPageNames"
-        :select-values="defaultPageValues"
-        :icon="['fas', 'location-dot']"
-        @change="updateLandingPage"
-      />
-      <FtSelect
         :placeholder="t('Settings.General Settings.Video View Type.Video View Type')"
         :value="listType"
         :select-names="viewTypeNames"
@@ -179,7 +171,6 @@
 <script setup>
 import { computed, onMounted, onBeforeUnmount, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 
 import FtSettingsSection from '../FtSettingsSection/FtSettingsSection.vue'
 import FtSelect from '../FtSelect/FtSelect.vue'
@@ -192,7 +183,6 @@ import store from '../../store/index'
 
 import allLocales from '../../../../static/locales/activeLocales.json'
 import { randomArrayItem, showToast } from '../../helpers/utils'
-import { translateWindowTitle } from '../../helpers/strings'
 
 const currentInvidiousInstanceInputRef = useTemplateRef('currentInvidiousInstanceInput')
 
@@ -201,7 +191,6 @@ const SUPPORTS_LOCAL_API = !!process.env.SUPPORTS_LOCAL_API
 const IS_MAC = process.platform === 'darwin'
 
 const { t } = useI18n()
-const router = useRouter()
 
 // The 'minimize' event doesn't fire on wayland
 // https://github.com/electron/electron/issues/51766
@@ -311,63 +300,6 @@ const backendPreference = computed(() => store.getters.getBackendPreference)
  */
 function updateBackendPreference(value) {
   store.dispatch('updateBackendPreference', value)
-}
-
-/** @type {import('vue').ComputedRef<boolean>} */
-const hidePlaylists = computed(() => store.getters.getHidePlaylists)
-
-/** @type {import('vue').ComputedRef<boolean>} */
-const hidePopularVideos = computed(() => store.getters.getHidePopularVideos)
-
-/** @type {import('vue').ComputedRef<boolean>} */
-const hideExplore = computed(() => store.getters.getHideExplore)
-
-const INCLUDED_DEFAULT_PAGE_NAMES = [
-  'subscriptions',
-  'subscribedChannels',
-  'popular',
-  'userPlaylists',
-  'history',
-  'settings',
-  ...(process.env.SUPPORTS_LOCAL_API ? ['explore'] : [])
-]
-
-const defaultPages = computed(() => {
-  let includedPageNames = INCLUDED_DEFAULT_PAGE_NAMES
-
-  if (hideExplore.value || !backendFallback.value || backendPreference.value !== 'local') {
-    includedPageNames = includedPageNames.filter((pageName) => pageName !== 'explore')
-  }
-
-  if (hidePlaylists.value) {
-    includedPageNames = includedPageNames.filter((pageName) => pageName !== 'userPlaylists')
-  }
-
-  if (!(!hidePopularVideos.value && (backendFallback.value || backendPreference.value === 'invidious'))) {
-    includedPageNames = includedPageNames.filter((pageName) => pageName !== 'popular')
-  }
-
-  // An alias comes back from the router as a second record under the same name
-  // — /trending alongside /explore — and would offer the same page twice under
-  // the same label.
-  return router.getRoutes().filter((route) => includedPageNames.includes(route.name) && route.aliasOf == null)
-})
-
-const defaultPageNames = computed(() => defaultPages.value.map((route) => translateWindowTitle(route.meta.title)))
-
-const defaultPageValues = computed(() => {
-  // avoid Vue parsing issues by excluding '/' from path values
-  return defaultPages.value.map((route) => route.path.slice(1))
-})
-
-/** @type {import('vue').ComputedRef<'subscriptions' | 'subscribedChannels' | 'popular' | 'userPlaylists' | 'history' | 'settings' | 'explore'>} */
-const landingPage = computed(() => store.getters.getLandingPage)
-
-/**
- * @param {'subscriptions' | 'subscribedChannels' | 'popular' | 'userPlaylists' | 'history' | 'settings' | 'explore'} value
- */
-function updateLandingPage(value) {
-  store.dispatch('updateLandingPage', value)
 }
 
 const VIEW_TYPE_VALUES = ['grid', 'list']

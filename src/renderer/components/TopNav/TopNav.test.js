@@ -19,7 +19,6 @@ vi.mock('../../store/index', async () => {
   return {
     default: createFakeStore({
       getters: {
-        getLandingPage: 'subscriptions',
         getLatestMatchingSearchHistoryNames: () => [],
         getLatestSearchHistoryNames: [],
         getEnablePeerTube: false,
@@ -71,7 +70,11 @@ const STUBS = {
 }
 
 async function mountTopNav() {
-  const router = createTestRouter([{ path: '/subscriptions', meta: { title: 'Subscriptions' } }])
+  const router = createTestRouter([
+    { path: '/subscriptions', meta: { title: 'Subscriptions' } },
+    // Where the logo leads, which its tooltip names
+    { path: '/about', meta: { title: 'About' } },
+  ])
   await router.push('/subscriptions')
 
   const wrapper = mountWithApp(TopNav, { store, router, stubs: STUBS })

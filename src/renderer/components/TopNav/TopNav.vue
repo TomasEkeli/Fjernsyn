@@ -71,7 +71,7 @@
         class="logo"
         dir="ltr"
         :title="headerLogoTitle"
-        :to="landingPage"
+        :to="HOME_PAGE"
       >
         <div
           class="logoIcon"
@@ -247,6 +247,7 @@ import store from '../../store/index'
 import { KeyboardShortcuts, MOBILE_WIDTH_THRESHOLD, SEARCH_RESULTS_DISPLAY_LIMIT } from '../../../constants'
 import { debounce, localizeAndAddKeyboardShortcutToActionTitle, openInternalPath } from '../../helpers/utils'
 import { translateWindowTitle } from '../../helpers/strings'
+import { HOME_PAGE } from '../../helpers/lastPage'
 import { clearLocalSearchSuggestionsSession, getLocalClip, getLocalSearchSuggestions } from '../../helpers/api/local'
 import { getClipInvidious, getInvidiousSearchSuggestions } from '../../helpers/api/invidious'
 import packageDetails from '../../../../package.json'
@@ -321,13 +322,11 @@ const settingsTitle = computed(() => {
   )
 })
 
-const landingPage = computed(() => '/' + store.getters.getLandingPage)
-
 const headerLogoTitle = computed(() => {
   return t('Go to page', {
     page: translateWindowTitle(
       router.getRoutes()
-        .find((route) => route.path === landingPage.value)
+        .find((route) => route.path === HOME_PAGE)
         .meta.title)
   })
 })
@@ -407,7 +406,7 @@ const newWindowText = computed(() => {
 
 function createNewWindow() {
   const url = new URL(window.location.href)
-  url.hash = landingPage.value
+  url.hash = HOME_PAGE
 
   window.open(url.toString(), '_blank', 'noreferrer')
 }
