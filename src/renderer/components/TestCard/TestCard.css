@@ -29,6 +29,11 @@
   inline-size: 100%;
 }
 
+/* The hidden link behind the foot's red square: no pointer to give it away */
+.patternLink {
+  cursor: default;
+}
+
 .link:focus-visible {
   outline: 3px solid #fff;
   outline-offset: -3px;

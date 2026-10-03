@@ -27,10 +27,23 @@ describe('TestCard', () => {
       props: { name: 'Fjernsyn', version: 'v0.0.1', nameUrl: 'https://example.com/repo' },
     })
 
-    const links = wrapper.findAll('a')
-    expect(links).toHaveLength(1)
-    expect(links[0].attributes('href')).toBe('https://example.com/repo')
-    expect(links[0].attributes('aria-label')).toBe('Fjernsyn')
+    const link = wrapper.find('a.nameLink')
+    expect(link.attributes('href')).toBe('https://example.com/repo')
+    expect(link.attributes('aria-label')).toBe('Fjernsyn')
+    expect(wrapper.find('a.versionLink').exists()).toBe(false)
+  })
+
+  it('hides a link to the pattern behind the red square at the foot, with nothing to give it away', () => {
+    const wrapper = mountWithApp(TestCard, {
+      props: { name: 'Fjernsyn', version: 'v0.0.1' },
+    })
+
+    const link = wrapper.find('a.patternLink')
+    expect(link.attributes('href')).toBe('https://en.wikipedia.org/wiki/Philips_circle_pattern')
+    expect(link.attributes('tabindex')).toBe('-1')
+    expect(link.attributes('aria-hidden')).toBe('true')
+    expect(link.attributes('title')).toBeUndefined()
+    expect(link.text()).toBe('')
   })
 
   it('links the version to its release once it has one', () => {

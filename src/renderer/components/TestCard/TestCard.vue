@@ -336,6 +336,26 @@
         :title="buildStamp || null"
       />
     </foreignObject>
+    <!--
+      The red square at the foot leads to the pattern's own page. On purpose,
+      nothing gives it away: no pointer, no tooltip, no place in the tab order,
+      nothing for a screen reader. It is there for whoever knows or happens on it.
+      Having no content or label is the point, hence the lint exception.
+    -->
+    <foreignObject
+      x="321.5"
+      y="462"
+      width="37"
+      height="46"
+    >
+      <!-- eslint-disable-next-line vuejs-accessibility/anchor-has-content -->
+      <a
+        class="link patternLink"
+        :href="PATTERN_URL"
+        tabindex="-1"
+        aria-hidden="true"
+      />
+    </foreignObject>
   </svg>
 </template>
 
@@ -391,6 +411,8 @@ defineProps({
 const gridId = useId()
 const discId = useId()
 const gratingId = useId()
+
+const PATTERN_URL = 'https://en.wikipedia.org/wiki/Philips_circle_pattern'
 
 /**
  * Down each side: a tall block above and below the centre, a short one at each
