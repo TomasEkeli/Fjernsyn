@@ -270,7 +270,6 @@ const state = {
   hideLabelsSideBar: false,
   hideChapters: false,
   showDistractionFreeTitles: false,
-  landingPage: 'subscriptions',
   listType: 'grid',
   maxVideoPlaybackRate: 3,
   // The volume slider's ceiling, as a percentage. Anything above 100% is

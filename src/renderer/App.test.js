@@ -17,7 +17,6 @@ vi.mock('./store/index', async () => {
   return {
     default: createFakeStore({
       getters: {
-        getLandingPage: 'subscriptions',
         getDefaultInvidiousInstance: 'https://inv.example',
       },
     }),

@@ -1,116 +1,16 @@
-/* The whole width, as every page on the wall has, less the router view's margins */
-.card {
-  margin-block: 0 60px;
-  margin-inline: 0;
-}
-
-.brand {
-  text-align: center;
-}
-
 /*
- * The icon, then the name. The container is what every size here is measured
- * against, so the whole mark shrinks together on a narrow window.
+ * The test card fills the frame: the whole width (the router view's margins
+ * are taken away in wall.css) and the window's height below the 60px top bar,
+ * so the card is never cut off at the bottom.
  */
-.logo {
-  align-items: center;
-  container-type: inline-size;
-  display: inline-flex;
-  inline-size: 500px;
-  justify-content: center;
-  max-inline-size: 100%;
+.aboutPage {
+  block-size: calc(100dvh - 60px);
+  inline-size: 100%;
 }
 
-.logoIcon {
-  block-size: 26cqi;
-  inline-size: 26cqi;
-
-  /* Not a gap on the container: that would be measured against its parent */
-  margin-inline-end: 4cqi;
-}
-
-.logoName {
-  font-size: 13cqi;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1;
-}
-
-.version {
-  text-align: center;
-  font-size: 2em;
-  margin-block-end: 1em;
-}
-
-/*
- * The card spans the window; what is in it stays a centred column, two chunks
- * wide, which is how the page reads. The upstream section keeps the same
- * column so the two sets of chunks line up.
- */
-.about-chunks {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: 1fr 1fr;
-  margin-inline: auto;
-  max-inline-size: 860px;
-}
-
-.chunk {
-  align-items: start;
-  background-color: var(--bg-color);
-  border-radius: 8px;
-  box-shadow: 0 1px 4px -1px rgb(0 0 0 / 50%);
-  display: grid;
-  gap: 6px 14px;
-  grid-template: 'icon title' auto 'icon content' 1fr / auto 1fr;
-  justify-content: start;
-  margin: 0;
-  padding: 18px;
-  overflow-wrap: break-word;
-  overflow-wrap: anywhere;
-}
-
-.icon {
-  font-size: 24px;
-  grid-area: icon;
-}
-
-.title {
-  grid-area: title;
-  font-size: 1.17em;
-  margin: 0;
-}
-
-.upstream {
-  margin-block-start: 40px;
-  margin-inline: auto;
-  max-inline-size: 860px;
-}
-
-.upstreamHeading {
-  margin-block: 0 8px;
-}
-
-.upstreamNote {
-  margin-block: 0 16px;
-}
-
-.content {
-  grid-area: content;
-}
-
-.headingIcon {
-  color: var(--primary-color);
-}
-
-@media only screen and (width <=650px) {
-  .about-chunks {
-    grid-template-columns: 1fr;
+/* Below this width the top bar is fixed, and the router view keeps 68px clear of it */
+@media only screen and (width <= 680px) {
+  .aboutPage {
+    block-size: calc(100dvh - 68px);
   }
-}
-
-.buildStamp {
-  color: var(--tertiary-text-color);
-  font-size: 13px;
-  margin-block-start: 4px;
 }

@@ -79,6 +79,7 @@ import packageDetails from '../../package.json'
 import { openExternalLink, openInternalPath, showToast } from './helpers/utils'
 import { translateWindowTitle } from './helpers/strings'
 import { isWatchPath } from './helpers/watchRoute'
+import { pageToRestore, rememberPage } from './helpers/lastPage'
 import { loadLocale } from './i18n/index'
 import { getLocalClip } from './helpers/api/local.js'
 import { getClipInvidious } from './helpers/api/invidious.js'
@@ -113,8 +114,6 @@ const showCreatePlaylistPrompt = computed(() => store.getters.getShowCreatePlayl
 /** @type {import('vue').ComputedRef<boolean>} */
 const showProgressBar = computed(() => store.getters.getShowProgressBar)
 
-const landingPage = computed(() => '/' + store.getters.getLandingPage)
-
 /** @type {import('vue').ComputedRef<string>} */
 const defaultInvidiousInstance = computed(() => store.getters.getDefaultInvidiousInstance)
 
@@ -132,6 +131,9 @@ if (process.env.IS_ELECTRON) {
     }
   })
 }
+
+// Where the reader is, for the next start to open on
+watch(() => route.fullPath, (fullPath) => rememberPage(fullPath))
 
 // macOS keeps its traffic lights in a frameless window, over the top bar
 if (process.env.IS_ELECTRON && process.platform === 'darwin') {
@@ -174,8 +176,10 @@ onMounted(async () => {
     dataReady.value = true
   })
 
+  // A window opened at the bare start path, as the first one is, opens where
+  // the reader left off; one opened at a page of its own stays on it
   if (route.path === '/') {
-    router.replace({ path: landingPage.value })
+    router.replace(pageToRestore(router))
   }
 
   setWindowTitle()
