@@ -12,6 +12,18 @@
   box-shadow: 0 0 0 2px var(--side-nav-hover-color);
 }
 
+/* Fjernsyn: the zapping triangles either side of the bubble. The carets are
+narrow, so the icon is made square to keep the hover circle round. */
+.zapButton :deep(.icon) {
+  inline-size: 1em;
+}
+
+/* Previous sits at the inline start, so in right-to-left it is on the right
+and should point that way */
+.zapButton:dir(rtl) :deep(.icon) {
+  transform: scaleX(-1);
+}
+
 .initial {
   font-size: 20px;
   line-height: 1em;
