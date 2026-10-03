@@ -51,13 +51,13 @@ describe('TestCard', () => {
     expect(wrapper.find('.versionBox title').text()).toBe('abc1234 2026-10-03')
   })
 
-  it('shows the time as HHmmss on the right and the date as ddMMyy on the left', () => {
+  it('shows the time as HH:mm:ss on the right and the date as dd-MM-yy on the left', () => {
     const wrapper = mountWithApp(TestCard, {
       props: { name: 'Fjernsyn', version: 'v0.0.1' },
     })
 
-    expect(wrapper.find('.clock').text()).toBe('090705')
-    expect(wrapper.find('.date').text()).toBe('031026')
+    expect(wrapper.find('.clock').text()).toBe('09:07:05')
+    expect(wrapper.find('.date').text()).toBe('03-10-26')
   })
 
   it('keeps time, rolling the date over at midnight', async () => {
@@ -67,11 +67,11 @@ describe('TestCard', () => {
     })
 
     await vi.advanceTimersByTimeAsync(600)
-    expect(wrapper.find('.clock').text()).toBe('235959')
+    expect(wrapper.find('.clock').text()).toBe('23:59:59')
 
     await vi.advanceTimersByTimeAsync(1000)
-    expect(wrapper.find('.clock').text()).toBe('000000')
-    expect(wrapper.find('.date').text()).toBe('041026')
+    expect(wrapper.find('.clock').text()).toBe('00:00:00')
+    expect(wrapper.find('.date').text()).toBe('04-10-26')
   })
 
   it('stops the clock when it leaves the page', () => {

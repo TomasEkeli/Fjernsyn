@@ -183,12 +183,12 @@
         class="digits date"
         x="200"
         y="289"
-      ><tspan>{{ date[0] }}</tspan><tspan dx="3">{{ date[1] }}</tspan><tspan dx="3">{{ date[2] }}</tspan></text>
+      >{{ date }}</text>
       <text
         class="digits clock"
         x="480"
         y="289"
-      ><tspan>{{ time[0] }}</tspan><tspan dx="3">{{ time[1] }}</tspan><tspan dx="3">{{ time[2] }}</tspan></text>
+      >{{ time }}</text>
 
       <!-- Grey steps -->
       <rect
@@ -408,18 +408,18 @@ function twoDigits(value) {
 
 /**
  * @param {Date} now
- * @returns {[string, string, string]} ddMMyy, in pairs
+ * @returns {string} dd-MM-yy
  */
 function formatDate(now) {
-  return [twoDigits(now.getDate()), twoDigits(now.getMonth() + 1), twoDigits(now.getFullYear() % 100)]
+  return [twoDigits(now.getDate()), twoDigits(now.getMonth() + 1), twoDigits(now.getFullYear() % 100)].join('-')
 }
 
 /**
  * @param {Date} now
- * @returns {[string, string, string]} HHmmss, in pairs
+ * @returns {string} HH:mm:ss
  */
 function formatTime(now) {
-  return [twoDigits(now.getHours()), twoDigits(now.getMinutes()), twoDigits(now.getSeconds())]
+  return [twoDigits(now.getHours()), twoDigits(now.getMinutes()), twoDigits(now.getSeconds())].join(':')
 }
 
 const date = ref(formatDate(new Date()))
