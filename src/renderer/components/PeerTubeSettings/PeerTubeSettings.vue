@@ -43,6 +43,7 @@
         class="defaultSearchScope"
         :placeholder="t('Layer Search.Settings.Default scope')"
         :value="defaultSearchScope"
+        :icon="['fas', 'search']"
         :select-names="scopeNames"
         :select-values="SCOPES"
         @change="handleDefaultSearchScope"
