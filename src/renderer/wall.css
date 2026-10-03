@@ -143,10 +143,15 @@ body {
  * Pages that are full bleed from the start, not only once a grid of cards is
  * there, so that loading them does not show them narrow and then widen them:
  * the layer's search page, and the two streams under a control row,
- * subscriptions and explore.
+ * subscriptions and explore. The about page is full bleed with no grid at all,
+ * its test card filling the frame, to the bottom of the window as well.
  */
-:root body .routerView:has(.layerSearchPage, .controlRow) {
+:root body .routerView:has(.layerSearchPage, .controlRow, .aboutPage) {
   margin-inline: 0;
+}
+
+:root body .routerView:has(.aboutPage) {
+  margin-block-end: 0;
 }
 
 :root body .layerSearchPage .ft-card,

@@ -1,0 +1,35 @@
+/* Fills the box it is given; the picture inside keeps its proportions */
+.testCard {
+  block-size: 100%;
+  display: block;
+  inline-size: 100%;
+}
+
+.label,
+.digits {
+  fill: #f4f4f4;
+  font-family: Helvetica, Arial, sans-serif;
+}
+
+.label {
+  font-size: 30px;
+  text-anchor: middle;
+}
+
+.digits {
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+  text-anchor: middle;
+}
+
+/* Each link fills the foreignObject laid over its box */
+.link {
+  block-size: 100%;
+  display: block;
+  inline-size: 100%;
+}
+
+.link:focus-visible {
+  outline: 3px solid #f4f4f4;
+  outline-offset: -3px;
+}
