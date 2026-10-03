@@ -19,10 +19,31 @@
         <path
           d="M0 0H40M0 40H40M0 0V40M40 0V40"
           stroke="#fff"
-          stroke-width="4"
+          stroke-width="3"
           fill="none"
         />
       </pattern>
+      <!-- Each grating is a ramp from black to white and back, over and over -->
+      <linearGradient
+        v-for="(grating, index) in GRATINGS"
+        :id="`${gratingId}-${index}`"
+        :key="index"
+        gradientUnits="userSpaceOnUse"
+        :x1="grating.x"
+        y1="0"
+        :x2="grating.x + grating.halfPeriod"
+        y2="0"
+        spreadMethod="reflect"
+      >
+        <stop
+          offset="0"
+          stop-color="#000"
+        />
+        <stop
+          offset="1"
+          stop-color="#fff"
+        />
+      </linearGradient>
       <clipPath :id="discId">
         <circle
           cx="340"
@@ -57,7 +78,7 @@
       :key="index"
       :x="block.x"
       :y="block.y"
-      width="40"
+      :width="block.width"
       :height="block.height"
       :fill="block.fill"
     />
@@ -85,6 +106,13 @@
         height="33"
         fill="#000"
       />
+      <rect
+        x="245"
+        y="114"
+        width="4"
+        height="33"
+        fill="#000"
+      />
 
       <!-- A square wave of grey on black -->
       <rect
@@ -99,7 +127,7 @@
         :key="x"
         :x="x"
         y="147"
-        width="24"
+        width="25"
         height="35"
         fill="#bebec1"
       />
@@ -128,41 +156,41 @@
         fill="#000"
       />
       <rect
-        v-for="(line, index) in GRATINGS"
+        v-for="(grating, index) in GRATINGS"
         :key="index"
-        :x="line.x"
+        :x="grating.x"
         y="306"
-        :width="line.width"
+        :width="grating.width"
         height="72"
-        fill="#fff"
+        :fill="`url(#${gratingId}-${index})`"
       />
       <rect
-        x="324"
+        x="321.5"
         y="230"
-        width="32"
+        width="37"
         height="106"
         fill="#000"
       />
       <rect
         v-for="x in GRID_LINES"
         :key="x"
-        :x="x - 2"
+        :x="x - 1.5"
         y="260"
-        width="4"
+        width="3"
         height="46"
         fill="#fff"
       />
       <rect
         x="112"
-        y="278"
+        y="278.5"
         width="456"
-        height="4"
+        height="3"
         fill="#fff"
       />
       <rect
-        x="338"
+        x="338.5"
         y="230"
-        width="4"
+        width="3"
         height="106"
         fill="#fff"
       />
@@ -220,9 +248,9 @@
         fill="#bfbf00"
       />
       <rect
-        x="324"
+        x="321.5"
         y="462"
-        width="32"
+        width="37"
         height="46"
         fill="#bf0000"
       />
@@ -251,6 +279,13 @@
         width="226"
         height="38"
         fill="#000"
+      />
+      <rect
+        x="247"
+        y="424"
+        width="4"
+        height="38"
+        fill="#fff"
       />
       <text
         class="label version"
@@ -355,20 +390,27 @@ defineProps({
 
 const gridId = useId()
 const discId = useId()
+const gratingId = useId()
 
-/** Down each side: a tall block above and below the centre, a short one at each end on the inside */
+/**
+ * Down each side: a tall block above and below the centre, a short one at each
+ * end on the inside. As on the PM5544 they sit between the grid lines rather
+ * than on them: each starts where a line ends and stops where the next begins,
+ * the inner block covering the line it shares with the outer one.
+ */
 const SIDE_BLOCKS = [
-  { x: 40, y: 60, height: 220, fill: '#369d7a' },
-  { x: 40, y: 280, height: 220, fill: '#be587a' },
-  { x: 80, y: 60, height: 80, fill: '#507ae9' },
-  { x: 80, y: 420, height: 80, fill: '#a47a0c' },
-  { x: 560, y: 60, height: 80, fill: '#507ae9' },
-  { x: 560, y: 420, height: 80, fill: '#a47a0c' },
-  { x: 600, y: 60, height: 220, fill: '#7a9201' },
-  { x: 600, y: 280, height: 220, fill: '#7a63f3' },
+  { x: 41.5, y: 61.5, width: 37, height: 218.5, fill: '#369d7a' },
+  { x: 41.5, y: 280, width: 37, height: 218.5, fill: '#be587a' },
+  { x: 78.5, y: 61.5, width: 40, height: 77, fill: '#507ae9' },
+  { x: 78.5, y: 421.5, width: 40, height: 77, fill: '#a47a0c' },
+  { x: 561.5, y: 61.5, width: 40, height: 77, fill: '#507ae9' },
+  { x: 561.5, y: 421.5, width: 40, height: 77, fill: '#a47a0c' },
+  { x: 601.5, y: 61.5, width: 37, height: 218.5, fill: '#7a9201' },
+  { x: 601.5, y: 280, width: 37, height: 218.5, fill: '#7a63f3' },
 ]
 
-const SQUARE_WAVE = [-3, -2, -1, 0, 1, 2, 3].map((step) => 328 + step * 52)
+/** Grey bars 25 wide every 56, one of them ending on the centre line */
+const SQUARE_WAVE = [-3, -2, -1, 0, 1, 2, 3, 4].map((step) => 315 + step * 56)
 
 const COLOUR_BARS = [
   { x: 112, width: 68, fill: '#bfbf00' },
@@ -382,15 +424,19 @@ const COLOUR_BARS = [
 /** The grid's own vertical lines, where they cross the disc */
 const GRID_LINES = Array.from({ length: 12 }, (_, index) => 120 + index * 40)
 
-/** Five gratings, each finer than the last, across the middle of the black band */
-const GRATINGS = [16, 10, 7, 5, 3].flatMap((period, group) => {
-  const start = 180 + group * 64
-  const lines = []
-  for (let x = start; x + period / 2 <= start + 64; x += period) {
-    lines.push({ x, width: period / 2 })
-  }
-  return lines
-})
+/**
+ * Five gratings, each finer than the last, across the middle of the black
+ * band. Each ramps from black to white over half a period and back again, so
+ * the coarse ones read as soft stripes and the finest as near grey. Widths and
+ * periods are the PM5544's, scaled to this disc.
+ */
+const GRATINGS = [
+  { x: 145, width: 91, halfPeriod: 8.9 },
+  { x: 236, width: 69, halfPeriod: 3.5 },
+  { x: 305, width: 80, halfPeriod: 2.6 },
+  { x: 385, width: 83, halfPeriod: 1.75 },
+  { x: 468, width: 59, halfPeriod: 0.9 },
+]
 
 /** Black to white in five even steps */
 const GREY_STEPS = [
