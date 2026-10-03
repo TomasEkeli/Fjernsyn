@@ -36,8 +36,8 @@
       "port": 9223,
       "webRoot": "http://localhost:9080",
       "sourceMapPathOverrides": {
-        "webpack://freetube/./~/*": "${workspaceFolder}/node_modules/*",
-        "webpack://freetube/./*": "${workspaceFolder}/*"
+        "webpack://fjernsyn/./~/*": "${workspaceFolder}/node_modules/*",
+        "webpack://fjernsyn/./*": "${workspaceFolder}/*"
       }
     }
   ]

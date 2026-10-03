@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "FreeTube: run (dev)",
+      "label": "Fjernsyn: run (dev)",
       "type": "shell",
       "command": "pnpm dev",
       "options": {
@@ -19,7 +19,7 @@
       }
     },
     {
-      "label": "FreeTube: run (dev, log to /tmp/freetube-dev.log)",
+      "label": "Fjernsyn: run (dev, log to /tmp/freetube-dev.log)",
       "detail": "Renderer console forwarded to the terminal and captured to a file another session can tail",
       "type": "shell",
       "command": "pnpm dev 2>&1 | tee /tmp/freetube-dev.log",
@@ -38,7 +38,7 @@
       }
     },
     {
-      "label": "FreeTube: run (dev, ordinary use, appending daily log)",
+      "label": "Fjernsyn: run (dev, ordinary use, appending daily log)",
       "detail": "For collecting what the recovery ladder actually does in real viewing. Appends to thoughts/logs/ordinary-use/<date>.log so an evening across several launches is one file. Never set FT_SABR_WALL for these runs: the point is what YouTube does unprovoked.",
       "type": "shell",
       "command": "mkdir -p thoughts/logs/ordinary-use && unset FT_SABR_WALL && pnpm dev 2>&1 | tee -a \"thoughts/logs/ordinary-use/$(date +%Y-%m-%d).log\"",
