@@ -28,6 +28,13 @@
           @click="refresh"
         />
         <div class="pageControls">
+          <FtToggleChip
+            :label="$t('Watched Chip.Watched')"
+            :icon="['fas', 'history']"
+            :pressed="watchedShown"
+            :title="$t('Watched Chip.Hint')"
+            @toggle="toggleWatched"
+          />
           <div
             v-if="regionNames.length > 0"
             class="regionPicker"
@@ -73,6 +80,12 @@
       <FtLoader
         v-if="isLoading"
       />
+      <p
+        v-else-if="shownCategories.length > 0 && stream.length === 0 && !watchedShown"
+        class="message"
+      >
+        {{ $t("Watched Chip.All Watched") }}
+      </p>
       <FtElementList
         v-else-if="shownCategories.length > 0"
         :data="activeStream"
@@ -126,6 +139,7 @@ import {
   noteExploreRegionUsed,
   toggleExploreRegionPinned
 } from '../../helpers/exploreRegions'
+import { setWatchedShown, watchedIsShown, withWatchedPreference } from '../../helpers/watchedShown'
 import { copyToClipboard, showToast } from '../../helpers/utils'
 import { KeyboardShortcuts } from '../../../constants'
 
@@ -244,8 +258,24 @@ const shownCategories = computed(() => {
 
 /** @type {import('vue').ComputedRef<any[]>} */
 const stream = computed(() => {
-  return mergeByRank(shownCategories.value.map(category => category.videos))
+  return withWatchedPreference(mergeByRank(shownCategories.value.map(category => category.videos)))
 })
+
+/**
+ * Whether what has been watched stays in the stream: the same setting, and the
+ * same chip, as on the subscriptions page. See `helpers/watchedShown.js`.
+ *
+ * Taken out after the merge rather than before it, so a watched video leaves a
+ * gap in the round-robin instead of pulling its category's next one forward
+ * into its slot ahead of the other categories.
+ *
+ * @type {import('vue').ComputedRef<boolean>}
+ */
+const watchedShown = computed(() => watchedIsShown())
+
+function toggleWatched() {
+  setWatchedShown(!watchedIsShown())
+}
 
 /*
  * The window onto the stream, the same machinery as the subscriptions page:

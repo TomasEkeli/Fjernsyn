@@ -33,6 +33,12 @@
         {{ $t("Subscriptions.Disabled Automatic Fetching") }}
       </p>
       <p
+        v-else-if="videoList.length > 0 && !watchedIsShown()"
+        class="message"
+      >
+        {{ $t("Watched Chip.All Watched") }}
+      </p>
+      <p
         v-else
         class="message"
       >
@@ -73,7 +79,7 @@ import FtLoader from '../FtLoader/FtLoader.vue'
 import store from '../../store/index'
 
 import { debounce } from '../../helpers/utils'
-import { entryVideoId } from '../../helpers/subscriptions'
+import { watchedIsShown, withWatchedPreference } from '../../helpers/watchedShown'
 
 /**
  * The subscriptions stream, as a list on a page.
@@ -139,14 +145,6 @@ const fetchSubscriptionsAutomatically = computed(() => {
   return store.getters.getFetchSubscriptionsAutomatically
 })
 
-const historyCacheById = computed(() => {
-  return store.getters.getHistoryCacheById
-})
-
-const hideWatchedSubs = computed(() => {
-  return store.getters.getHideWatchedSubs
-})
-
 const onlyShowLatestFromChannel = computed(() => {
   return store.getters.getOnlyShowLatestFromChannel
 })
@@ -156,15 +154,7 @@ const onlyShowLatestFromChannelNumber = computed(() => {
 })
 
 const filteredVideoList = computed(() => {
-  let videoList = props.videoList
-
-  if (hideWatchedSubs.value) {
-    // Keyed on what the entry leads to rather than on the entry, so that a post
-    // sharing a video goes when that video is watched. See `entryVideoId`.
-    videoList = videoList.filter((entry) => {
-      return historyCacheById.value[entryVideoId(entry)] === undefined
-    })
-  }
+  let videoList = withWatchedPreference(props.videoList)
 
   if (onlyShowLatestFromChannel.value) {
     const authors = new Map()

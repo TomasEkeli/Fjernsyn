@@ -29,6 +29,15 @@
           @click="refresh"
           @stop-activity="stopActivity"
         />
+        <div class="pageControls">
+          <FtToggleChip
+            :label="$t('Watched Chip.Watched')"
+            :icon="['fas', 'history']"
+            :pressed="watchedShown"
+            :title="$t('Watched Chip.Hint')"
+            @toggle="toggleWatched"
+          />
+        </div>
       </div>
       <SubscriptionsUpcomingShelf
         v-if="anyFeedEnabled && !isLoading"
@@ -73,6 +82,7 @@ import {
   setSubscriptionFeedShown,
   subscriptionFeedIsShown
 } from '../../helpers/subscriptionFeeds'
+import { setWatchedShown, watchedIsShown } from '../../helpers/watchedShown'
 
 import { KeyboardShortcuts } from '../../../constants'
 
@@ -201,6 +211,20 @@ const anyFeedEnabled = computed(() => enabledSubscriptionFeeds().length > 0)
  */
 function toggleFeed(feed) {
   setSubscriptionFeedShown(feed, !subscriptionFeedIsShown(feed))
+}
+
+/**
+ * Whether what has been watched stays in the stream. At the far end of the row
+ * rather than among the kinds, because it is not a kind: it cuts across all
+ * four. See `helpers/watchedShown.js` for why it is the settings switch and not
+ * a copy of it.
+ *
+ * @type {import('vue').ComputedRef<boolean>}
+ */
+const watchedShown = computed(() => watchedIsShown())
+
+function toggleWatched() {
+  setWatchedShown(!watchedIsShown())
 }
 </script>
 
