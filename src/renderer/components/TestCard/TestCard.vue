@@ -18,33 +18,9 @@
       >
         <path
           d="M0 0H40M0 40H40M0 0V40M40 0V40"
-          stroke="#ececec"
+          stroke="#fff"
           stroke-width="4"
           fill="none"
-        />
-      </pattern>
-      <pattern
-        :id="ditherId"
-        width="6"
-        height="6"
-        patternUnits="userSpaceOnUse"
-      >
-        <rect
-          width="6"
-          height="6"
-          fill="#f4f4f4"
-        />
-        <rect
-          width="3"
-          height="3"
-          fill="#3a3aa0"
-        />
-        <rect
-          x="3"
-          y="3"
-          width="3"
-          height="3"
-          fill="#3a3aa0"
         />
       </pattern>
       <clipPath :id="discId">
@@ -66,7 +42,7 @@
       y="-10000"
       width="20680"
       height="20560"
-      fill="#5a5a5a"
+      fill="#808080"
     />
     <rect
       x="-10000"
@@ -93,7 +69,7 @@
         y="52"
         width="456"
         height="95"
-        fill="#f4f4f4"
+        fill="#fff"
       />
       <rect
         x="112"
@@ -125,7 +101,7 @@
         y="147"
         width="24"
         height="35"
-        fill="#9c9c9c"
+        fill="#bebec1"
       />
 
       <!-- Colour bars -->
@@ -139,7 +115,11 @@
         :fill="bar.fill"
       />
 
-      <!-- The black band: date, centre line and clock, then the gratings -->
+      <!--
+        The black band: the grid carried through the disc with the centre
+        cross on it, then the gratings. The date and the clock sit on the grid
+        in black boxes of their own.
+      -->
       <rect
         x="112"
         y="260"
@@ -154,7 +134,7 @@
         y="306"
         :width="line.width"
         height="72"
-        fill="#f4f4f4"
+        fill="#fff"
       />
       <rect
         x="324"
@@ -164,30 +144,51 @@
         fill="#000"
       />
       <rect
-        x="272"
-        y="277"
-        width="136"
-        height="3"
-        fill="#f4f4f4"
+        v-for="x in GRID_LINES"
+        :key="x"
+        :x="x - 2"
+        y="260"
+        width="4"
+        height="46"
+        fill="#fff"
       />
       <rect
-        v-for="x in TICKS"
-        :key="x"
-        :x="x - 1.5"
-        y="266"
-        width="3"
-        height="30"
-        fill="#f4f4f4"
+        x="112"
+        y="278"
+        width="456"
+        height="4"
+        fill="#fff"
+      />
+      <rect
+        x="338"
+        y="230"
+        width="4"
+        height="106"
+        fill="#fff"
+      />
+      <rect
+        x="148"
+        y="260"
+        width="104"
+        height="46"
+        fill="#000"
       />
       <text
         class="digits date"
         x="200"
-        y="289"
+        y="291"
       >{{ date }}</text>
+      <rect
+        x="428"
+        y="260"
+        width="104"
+        height="46"
+        fill="#000"
+      />
       <text
         class="digits clock"
         x="480"
-        y="289"
+        y="291"
       >{{ time }}</text>
 
       <!-- Grey steps -->
@@ -198,7 +199,7 @@
         y="383"
         :width="step.width"
         height="39"
-        :fill="step.fill ?? `url(#${ditherId})`"
+        :fill="step.fill"
       />
 
       <!-- The version, in a black box on white -->
@@ -207,7 +208,7 @@
         y="422"
         width="456"
         height="40"
-        fill="#f4f4f4"
+        fill="#fff"
       />
 
       <!-- The foot of the disc -->
@@ -216,14 +217,14 @@
         y="462"
         width="456"
         height="46"
-        fill="#aaa200"
+        fill="#bfbf00"
       />
       <rect
         x="324"
         y="462"
         width="32"
         height="46"
-        fill="#f05a5a"
+        fill="#bf0000"
       />
     </g>
 
@@ -311,6 +312,9 @@
  * the box at the bottom where the years were, and the disc's black band carries
  * the date on the left and a running clock on the right. There is no tone.
  *
+ * The colours, and the grid carried through the black band, are taken from
+ * the PM5544 as drawn on Wikimedia Commons (File:Philips_PM5544.svg).
+ *
  * Drawn on a 40 unit grid, 17 cells by 14, with the disc centred at (340, 280);
  * the bands inside the disc share the colour bars' 80 unit steps.
  *
@@ -350,33 +354,33 @@ defineProps({
 })
 
 const gridId = useId()
-const ditherId = useId()
 const discId = useId()
 
 /** Down each side: a tall block above and below the centre, a short one at each end on the inside */
 const SIDE_BLOCKS = [
-  { x: 40, y: 60, height: 220, fill: '#0e9e0e' },
-  { x: 40, y: 280, height: 220, fill: '#b40000' },
-  { x: 80, y: 60, height: 80, fill: '#5555ff' },
-  { x: 80, y: 420, height: 80, fill: '#ffa552' },
-  { x: 560, y: 60, height: 80, fill: '#5555ff' },
-  { x: 560, y: 420, height: 80, fill: '#ffa552' },
-  { x: 600, y: 60, height: 220, fill: '#aaa200' },
-  { x: 600, y: 280, height: 220, fill: '#5555ff' },
+  { x: 40, y: 60, height: 220, fill: '#369d7a' },
+  { x: 40, y: 280, height: 220, fill: '#be587a' },
+  { x: 80, y: 60, height: 80, fill: '#507ae9' },
+  { x: 80, y: 420, height: 80, fill: '#a47a0c' },
+  { x: 560, y: 60, height: 80, fill: '#507ae9' },
+  { x: 560, y: 420, height: 80, fill: '#a47a0c' },
+  { x: 600, y: 60, height: 220, fill: '#7a9201' },
+  { x: 600, y: 280, height: 220, fill: '#7a63f3' },
 ]
 
 const SQUARE_WAVE = [-3, -2, -1, 0, 1, 2, 3].map((step) => 328 + step * 52)
 
 const COLOUR_BARS = [
-  { x: 112, width: 68, fill: '#f4f442' },
-  { x: 180, width: 80, fill: '#4ef0f0' },
-  { x: 260, width: 80, fill: '#52e852' },
-  { x: 340, width: 80, fill: '#f052f0' },
-  { x: 420, width: 80, fill: '#f05a5a' },
-  { x: 500, width: 68, fill: '#1a1ab4' },
+  { x: 112, width: 68, fill: '#bfbf00' },
+  { x: 180, width: 80, fill: '#00bfbf' },
+  { x: 260, width: 80, fill: '#00bf00' },
+  { x: 340, width: 80, fill: '#bf00bf' },
+  { x: 420, width: 80, fill: '#bf0000' },
+  { x: 500, width: 68, fill: '#0000bf' },
 ]
 
-const TICKS = [280, 300, 320, 340, 360, 380, 400]
+/** The grid's own vertical lines, where they cross the disc */
+const GRID_LINES = Array.from({ length: 12 }, (_, index) => 120 + index * 40)
 
 /** Five gratings, each finer than the last, across the middle of the black band */
 const GRATINGS = [16, 10, 7, 5, 3].flatMap((period, group) => {
@@ -388,14 +392,14 @@ const GRATINGS = [16, 10, 7, 5, 3].flatMap((period, group) => {
   return lines
 })
 
-/** Black to white; the fifth is a dither, which has no fill of its own */
+/** Black to white in five even steps */
 const GREY_STEPS = [
   { x: 112, width: 68, fill: '#000' },
-  { x: 180, width: 80, fill: '#575757' },
-  { x: 260, width: 80, fill: '#a3a3a3' },
-  { x: 340, width: 80, fill: '#d2d2d2' },
-  { x: 420, width: 80 },
-  { x: 500, width: 68, fill: '#f4f4f4' },
+  { x: 180, width: 80, fill: '#333' },
+  { x: 260, width: 80, fill: '#666' },
+  { x: 340, width: 80, fill: '#999' },
+  { x: 420, width: 80, fill: '#ccc' },
+  { x: 500, width: 68, fill: '#fff' },
 ]
 
 /**

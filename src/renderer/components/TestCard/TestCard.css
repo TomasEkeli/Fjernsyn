@@ -7,7 +7,7 @@
 
 .label,
 .digits {
-  fill: #f4f4f4;
+  fill: #fff;
   font-family: Helvetica, Arial, sans-serif;
 }
 
@@ -30,6 +30,6 @@
 }
 
 .link:focus-visible {
-  outline: 3px solid #f4f4f4;
+  outline: 3px solid #fff;
   outline-offset: -3px;
 }
