@@ -218,7 +218,7 @@
               <!-- Not where the layer answered another sort than the one asked: the tab offers no choice -->
               <FtSelect
                 v-if="currentSortedList?.isSortOffered.value"
-                v-show="shownItems.length > 1 || currentSortedList.cursor.value !== null || currentSortedList.sort.value !== 'newest'"
+                v-show="currentItems.length > 1 || currentSortedList.cursor.value !== null || currentSortedList.sort.value !== 'newest'"
                 :value="currentSortedList.sort.value"
                 :select-names="currentSortedList.sortNames.value"
                 :select-values="currentSortedList.sorts.value"
@@ -239,7 +239,7 @@
             />
             <FtElementList
               v-else
-              :data="shownItems"
+              :data="currentItems"
               :use-channels-hidden-preference="false"
               :display="currentTabInfo.posts ? 'list' : ''"
             />
@@ -338,9 +338,6 @@ const PLAYLIST_SORTS = ['newest', 'last']
 /** The tabs where the old view offers View All, each to the uploads playlist of its kind */
 const VIEW_ALL_TABS = ['videos', 'shorts', 'live']
 
-/** The tabs whose watched videos `hideWatchedSubs` hides, as in the old view */
-const WATCHED_FILTERED_TABS = ['videos', 'shorts', 'live']
-
 /**
  * The lists a YouTube channel's page writes into the subscription cache, as
  * the old view does, by the tab's name: the store action and its payload's key
@@ -403,7 +400,6 @@ const hideChannelPodcasts = computed(() => store.getters.getHideChannelPodcasts)
 const hideChannelCourses = computed(() => store.getters.getHideChannelCourses)
 const hideChannelCommunity = computed(() => store.getters.getHideChannelCommunity)
 const hideChannelPlaylists = computed(() => store.getters.getHideChannelPlaylists)
-const hideWatchedSubs = computed(() => store.getters.getHideWatchedSubs)
 
 /** The search within the channel the route holds (`?searchQueryText=`, the old view's), `''` for none */
 const searchQuery = computed(() => {
@@ -676,23 +672,6 @@ const currentItems = computed(() => {
 })
 
 /**
- * The current list's items as shown: a YouTube channel's videos, shorts and
- * live without the watched ones while `hideWatchedSubs` is on, as in the old
- * view. Whether the tab says it has none is still read off `currentItems`,
- * as the old view reads it off the unfiltered list.
- */
-const shownItems = computed(() => {
-  const items = currentItems.value
-
-  if (!hideWatchedSubs.value || !isYouTube.value || !WATCHED_FILTERED_TABS.includes(currentTab.value)) {
-    return items
-  }
-
-  const historyCache = store.getters.getHistoryCacheById
-  return items.filter(item => historyCache[item.videoId] === undefined)
-})
-
-/**
  * The current tab's list where it offers a sort, else `null`. A PeerTube
  * channel's playlists are in its own order: the playlist sort is YouTube's.
  */
@@ -730,7 +709,7 @@ const viewAllRoute = computed(() => {
   const list = sortedLists[tab]
   const sort = list.sort.value
 
-  if ((sort !== 'newest' && sort !== 'popular') || !(hasMore(list) || shownItems.value.length > 1)) {
+  if ((sort !== 'newest' && sort !== 'popular') || !(hasMore(list) || currentItems.value.length > 1)) {
     return null
   }
 

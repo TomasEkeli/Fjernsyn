@@ -1847,18 +1847,14 @@ describe('a YouTube channel', () => {
         }))
       })
 
-      it.each(['videos', 'shorts', 'live'])('are left out of the %s while hideWatchedSubs is on', async (tab) => {
+      // `hideWatchedSubs` is the subscriptions page's: the old channel view
+      // read it too, the layer's does not
+      it.each(['videos', 'shorts', 'live'])('are shown in the %s while hideWatchedSubs is on', async (tab) => {
         store.setGetter('getHideWatchedSubs', true)
         const { wrapper } = await openChannelPage(`${YT_PATH}/${tab}`)
 
-        expect(wrapper.findComponent({ name: 'FtElementList' }).props('data').map(item => item.videoId)).not.toContain(WATCHED)
-        expect(wrapper.findComponent({ name: 'FtElementList' }).props('data')).toHaveLength(1)
-      })
-
-      it.each(['videos', 'shorts', 'live'])('are shown in the %s while hideWatchedSubs is off', async (tab) => {
-        const { wrapper } = await openChannelPage(`${YT_PATH}/${tab}`)
-
         expect(wrapper.findComponent({ name: 'FtElementList' }).props('data').map(item => item.videoId)).toContain(WATCHED)
+        expect(wrapper.findComponent({ name: 'FtElementList' }).props('data')).toHaveLength(2)
       })
 
       it('are still written into the subscription cache', async () => {
@@ -1867,15 +1863,6 @@ describe('a YouTube channel', () => {
         await openChannelPage(YT_PATH)
 
         expect(dispatched('updateSubscriptionVideosCacheByChannel')[0].videos.map(video => video.videoId)).toContain(WATCHED)
-      })
-
-      it('leave no "has none" message when every video is watched', async () => {
-        store.setGetter('getHideWatchedSubs', true)
-        layer.listChannelVideos.mockResolvedValue({ items: [youTubeVideo(1)], cursor: null, sort: 'newest' })
-        const { wrapper } = await openChannelPage(YT_PATH)
-
-        expect(cardTitles(wrapper)).toEqual([])
-        expect(wrapper.text()).not.toContain('This channel does not currently have any videos')
       })
     })
   })
