@@ -9,6 +9,7 @@ import settings from './modules/settings'
 import searchHistory from './modules/search-history'
 import subscriptionCache from './modules/subscription-cache'
 import channels from './modules/channels'
+import aiVerdicts from './modules/aiVerdicts'
 import utils from './modules/utils'
 import player from './modules/player'
 
@@ -22,6 +23,7 @@ export default createStore({
     searchHistory,
     subscriptionCache,
     channels,
+    aiVerdicts,
     utils,
     player,
   },

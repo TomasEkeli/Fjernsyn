@@ -26,6 +26,7 @@
       :dragged-video="draggedVideo"
       :is-video-dragging="isVideoDragging"
       :video-dragging-possible="videoDraggingPossible"
+      :look-up-ai-label="lookUpAiLabel"
       @drag-video="dragVideo"
       @move-dragged-video="moveDraggedVideo"
       @drag-video-end="afterDrag"
@@ -126,6 +127,15 @@ const props = defineProps({
     default: false,
   },
   videoDraggingPossible: {
+    type: Boolean,
+    default: false,
+  },
+  /**
+   * Whether this wall's cards ask whether their videos were made with AI.
+   * Opted into by the walls a viewer finds things on, as a wall opts into
+   * the hidden channels: see FtListVideo.
+   */
+  lookUpAiLabel: {
     type: Boolean,
     default: false,
   },

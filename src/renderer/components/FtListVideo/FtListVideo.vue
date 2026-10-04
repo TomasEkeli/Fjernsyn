@@ -159,10 +159,22 @@
         would have it land in a new row instead of where they left it.
       -->
       <div class="heading">
-        <FtKindMarker
-          v-if="kind !== null"
-          :kind="kind"
-        />
+        <!-- The AI marker says how a video was made, not what kind it is, so
+             it stands beside the kind marker rather than taking its place -->
+        <div
+          v-if="kind !== null || aiMark !== null"
+          class="kindMarkers"
+        >
+          <FtKindMarker
+            v-if="kind !== null"
+            :kind="kind"
+          />
+          <FtKindMarker
+            v-if="aiMark !== null"
+            kind="ai"
+            :title="aiMarkTooltip"
+          />
+        </div>
         <RouterLink
           class="title"
           :to="watchVideoRouterLink"
@@ -315,7 +327,7 @@
 
 <script setup>
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
@@ -338,6 +350,8 @@ import {
   debounce
 } from '../../helpers/utils.js'
 import { deArrowData, deArrowThumbnail } from '../../helpers/sponsorblock.js'
+import { wantAiVerdict } from '../../helpers/aiMarker/index.js'
+import { aiMarkOf, isChannelMarkedAi, markChannelAi, unmarkChannelAi } from '../../helpers/aiShown.js'
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
 import { cardShareOptions, describeCard, platformRecordFields, runCardShareOption } from '../../platform/cards'
 
@@ -418,6 +432,17 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /**
+   * Whether this card asks whether its video was made with AI, when it is not
+   * known yet. Only the walls a viewer finds things on opt in (search,
+   * subscriptions, a channel's pages and the related videos), and a card
+   * mounts only once scrolled to, so only the cards on screen ask. Every
+   * other card still shows the marker for a video already known.
+   */
+  lookUpAiLabel: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits([
@@ -481,6 +506,34 @@ const kind = computed(() => {
   if (isShort.value) { return 'shorts' }
 
   return null
+})
+
+/**
+ * Why this card carries the AI marker, `declared` or `marked`, or `null` when
+ * its video is not known to be made with AI (see helpers/aiShown.js).
+ * Reactive to the verdicts, so the marker arrives when the lookup answers.
+ *
+ * @type {import('vue').ComputedRef<'declared' | 'marked' | null>}
+ */
+const aiMark = computed(() => aiMarkOf(props.data))
+
+const aiMarkTooltip = computed(() => {
+  return aiMark.value === 'marked'
+    ? t('AI Marker.Marked')
+    : t('AI Marker.Declared')
+})
+
+/** Called when the card goes, so a lookup nobody is waiting for is not made */
+let releaseAiVerdict = () => {}
+
+onMounted(() => {
+  if (props.lookUpAiLabel) {
+    releaseAiVerdict = wantAiVerdict(props.data)
+  }
+})
+
+onBeforeUnmount(() => {
+  releaseAiVerdict()
 })
 
 const historyEntry = computed(() => store.getters.getHistoryCacheById[id.value])
@@ -726,6 +779,26 @@ const dropdownOptions = computed(() => {
       )
     }
 
+    // Any YouTube channel, subscribed to or not: whether a channel's videos
+    // are made with AI is not a question of whether it is followed
+    if (!platformCard.value) {
+      options.push(
+        {
+          type: 'divider'
+        },
+
+        isChannelMarkedAi(channelId.value)
+          ? {
+              label: t('Video.Unmark Channel as AI'),
+              value: 'unmarkChannelAi'
+            }
+          : {
+              label: t('Video.Mark Channel as AI'),
+              value: 'markChannelAi'
+            }
+      )
+    }
+
     if (useSponsorBlock.value && !platformCard.value) {
       const isSponsorBlockChannelExcluded = sponsorBlockExcludedChannels.value.some(c => c.name === channelId.value)
 
@@ -843,6 +916,14 @@ function handleOptionsClick(option) {
       break
     case 'unhideChannel':
       unhideChannel(channelName.value, channelId.value)
+      break
+    case 'markChannelAi':
+      markChannelAi(channelId.value, channelName.value)
+      showToast(t('Channel Marked as AI', { channel: channelName.value }))
+      break
+    case 'unmarkChannelAi':
+      unmarkChannelAi(channelId.value)
+      showToast(t('Channel Unmarked as AI', { channel: channelName.value }))
       break
     case 'disableSponsorBlockOnChannel':
       disableSponsorBlockOnChannel(channelName.value, channelId.value)

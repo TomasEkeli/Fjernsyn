@@ -27,13 +27,13 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
-  /** @type {import('vue').PropType<'shorts' | 'live' | 'upcoming' | 'post' | 'poll' | 'quiz' | 'video' | 'playlist'>} */
+  /** @type {import('vue').PropType<'shorts' | 'live' | 'upcoming' | 'post' | 'poll' | 'quiz' | 'video' | 'playlist' | 'ai'>} */
   kind: {
     type: String,
     required: true,
     // Spelled out rather than read off the map below, because `defineProps` is
     // compiled away and may not reach for anything declared in this block.
-    validator: (value) => ['shorts', 'live', 'upcoming', 'post', 'poll', 'quiz', 'video', 'playlist'].includes(value)
+    validator: (value) => ['shorts', 'live', 'upcoming', 'post', 'poll', 'quiz', 'video', 'playlist', 'ai'].includes(value)
   },
   /**
    * Where the marker leads, if anywhere.
@@ -61,6 +61,9 @@ const { t } = useI18n()
  * The last four are what a post carries rather than what it is: they mark a
  * post card whose picture, or lack of one, would not otherwise say that opening
  * it leads to a poll, a quiz, a video or a playlist.
+ *
+ * `ai` is not a kind of video so much as how one was made, and so it is the
+ * one marker a card may carry beside another: a short can be made with AI.
  */
 const ICONS = {
   shorts: ['fas', 'clapperboard'],
@@ -70,7 +73,8 @@ const ICONS = {
   poll: ['fas', 'bars-progress'],
   quiz: ['fas', 'question-circle'],
   video: ['fas', 'circle-play'],
-  playlist: ['fas', 'list']
+  playlist: ['fas', 'list'],
+  ai: ['fas', 'robot']
 }
 
 const icon = computed(() => ICONS[props.kind])
@@ -95,6 +99,8 @@ const label = computed(() => {
       return t('Global.Kind Marker.Video')
     case 'playlist':
       return t('Global.Kind Marker.Playlist')
+    case 'ai':
+      return t('Global.Kind Marker.AI')
     default:
       return ''
   }

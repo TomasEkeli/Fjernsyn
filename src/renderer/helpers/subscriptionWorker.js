@@ -22,6 +22,11 @@ import { reactive, readonly } from 'vue'
  * something has already refused us; enrichment keeps a narrow width so it fills
  * the slack a refresh leaves rather than competing with it.
  *
+ * It has outgrown the name. Any background request to YouTube that the reader
+ * did not ask for one by one goes through the same budget, so that it adds up
+ * with the subscription work instead of on top of it: the AI label lookups for
+ * the tiles on a wall ride the enrichment lane (helpers/aiMarker, ADR-0020).
+ *
  * The queues hold closures, so they stay out of the store; only the progress the
  * interface needs is reactive. It all lives at module scope rather than in a
  * component so that switching tabs, or navigating away entirely, does not
@@ -107,6 +112,9 @@ export const LANE_DELAYS_MS = {
  *   and a budget that counted that as one request would be counting a
  *   twenty-five channel burst as politeness.
  * @property {() => Promise<void>} run
+ * @property {() => void} [dropped] called instead of `run` when the job is
+ *   cancelled before its turn, for a caller that keeps its own note of what
+ *   it has queued and would otherwise never hear that it will not run
  */
 
 /** @type {Record<string, WorkerJob[]>} */
@@ -313,6 +321,15 @@ export function enqueueSubscriptionJob(lane, job) {
         } finally {
           resolve()
         }
+      },
+      // Cancelled before its turn: it will not run, and waiting on it would
+      // be waiting forever
+      dropped: () => {
+        try {
+          job.dropped?.()
+        } finally {
+          resolve()
+        }
       }
     }])
 
@@ -358,13 +375,23 @@ export function promoteSubscriptionJobs(lane, keys) {
 export function cancelSubscriptionLane(lane) {
   cancelledLanes.add(lane)
 
-  for (const job of queues[lane]) {
+  const dropped = queues[lane]
+
+  for (const job of dropped) {
     claimed[lane].delete(job.key)
   }
 
   queues[lane] = []
   syncCounts()
   signal()
+
+  for (const job of dropped) {
+    try {
+      job.dropped?.()
+    } catch (error) {
+      console.error(error)
+    }
+  }
 }
 
 export function cancelAllSubscriptionWork() {

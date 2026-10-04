@@ -1267,6 +1267,35 @@ export async function getLocalChannelId(url, doLogError = false) {
 }
 
 /**
+ * A video's raw `/next` response, unparsed, for a caller that wants one thing
+ * out of it and not a whole watch page: the AI label lookup
+ * (helpers/aiMarker). One request on a plain session, generated locally, with
+ * no PO token and no player script; MWEB answers about half what WEB does.
+ *
+ * Throws what the request throws, and throws for an answer with no contents,
+ * which is a refusal rather than a video with nothing to say.
+ * @param {string} videoId
+ * @param {object} [options]
+ * @param {string} [options.client] the Innertube client to ask as, WEB when not given
+ * @returns {Promise<any>}
+ */
+export async function getLocalWatchNext(videoId, { client } = {}) {
+  const session = await createSession()
+  const response = await session.actions.execute('/next', {
+    videoId,
+    racyCheckOk: true,
+    contentCheckOk: true,
+    ...(client ? { client } : {})
+  })
+
+  if (response.data?.contents == null) {
+    throw new Error(`/next for ${videoId} answered no contents`)
+  }
+
+  return response.data
+}
+
+/**
  * What a video is, without what it takes to play it: its category and its
  * own tags, for learning what a channel makes. One `/player` request on a
  * plain session, with no PO token and no player script. YouTube calls such a

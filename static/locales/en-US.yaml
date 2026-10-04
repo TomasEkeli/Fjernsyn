@@ -56,6 +56,9 @@ Global:
     Quiz: Quiz
     Video: Video
     Playlist: Playlist
+    # A video made with AI: YouTube's "Made with AI" label, or a channel the
+    # user marked as AI. Beside the kind marker, not instead of it
+    AI: AI
   # When something is scheduled for, as the stated time with how far off it is
   # beside it: "09-12 12:00 (in 6 days)". The stated time is never dropped —
   # "in 6 days" is not something anyone can write in a calendar, and it stops
@@ -316,6 +319,18 @@ Watched Chip:
   Hint: Show videos you have already watched. The same as Hide Videos on Watch in the Distraction Free settings, the other way round.
   # Instead of the stream, when every video in it has been watched
   All Watched: You have watched everything here. Switch on Watched above to see it again.
+# The AI marker's tooltip, saying why a video carries it
+AI Marker:
+  Declared: The creator told YouTube this video was made with AI
+  Marked: From a channel you marked as AI
+# The pill on the walls saying whether videos made with AI are shown. It is
+# the "Hide Videos Made with AI" setting, the other way round: pressed means
+# they are shown
+AI Chip:
+  AI: AI
+  Hint: Show videos made with AI. Only those whose creator told YouTube so, and those from channels you marked as AI, are known; the rest are not caught. The same as Hide Videos Made with AI in the Distraction Free settings, the other way round.
+  # Instead of the list, when every video in it is hidden as made with AI
+  All Hidden: Everything here is made with AI, and those videos are hidden. Switch on AI to see them.
 Most Popular: Most Popular
 Feed:
   Feed Last Updated: '{feedName} feed last updated: {date}'
@@ -810,6 +825,8 @@ Settings:
     Hide Channels Invalid: Channel ID provided was invalid
     Hide Channels API Error: Error retrieving user with the ID provided. Please check again if the ID is correct.
     Hide Channels Already Exists: Channel ID already exists
+    Hide AI Videos: Hide Videos Made with AI
+    Channels Marked as AI: Channels Marked as AI
     Hide Featured Channels: Hide Featured Channels
     Hide Channel Playlists: Hide Channel "Playlists" Tab
     Hide Channel Posts: Hide Channel "Posts" Tab
@@ -1141,6 +1158,8 @@ Video:
   Copy Invidious Channel Link: Copy Invidious Channel Link
   Hide Channel: Hide Channel
   Unhide Channel: Show Channel
+  Mark Channel as AI: Mark Channel as AI
+  Unmark Channel as AI: Unmark Channel as AI
   Enable SponsorBlock on Channel: Enable SponsorBlock on Channel
   Disable SponsorBlock on Channel: Disable SponsorBlock on Channel
   Views: Views
@@ -1680,6 +1699,8 @@ Tooltips:
        The channel ID entered must be a complete match and is case sensitive.
     Hide Videos, Playlists and Channels Containing Text: Enter a word, word fragment, or phrase (case insensitive) to hide all videos, playlists and channels whose original titles contain it throughout all of Fjernsyn, excluding only History, Your Playlists, and videos inside of playlists.
     Hide Videos on Watch: 'Hides watched videos on the Subscriptions and Explore pages. The Watched chip on either page switches this too.'
+    Hide AI Videos: 'Hides videos made with AI from search, subscriptions, channel pages and the videos beside the one playing. Only videos whose creator told YouTube so, and videos from channels marked as AI, are known to be. The AI chip on each of those pages switches this too.'
+    Channels Marked as AI: 'Every video from a channel marked as AI carries the AI marker, and is hidden with the others. Mark a channel from the menu on any of its videos, or enter its ID here. Removing a channel here is the way to unmark one whose videos are hidden.'
   Subscription Settings:
     Fetch Feeds from RSS: When enabled, Fjernsyn will use RSS instead of its default
       method for grabbing your subscription feed. RSS is faster and prevents IP blocking,
@@ -1741,6 +1762,8 @@ Screenshot Error: Screenshot failed. {error}
 Screenshot Clipboard Error: Screenshot copy to clipboard failed
 Channel Hidden: '{channel} added to channel filter'
 Channel Unhidden: '{channel} removed from channel filter'
+Channel Marked as AI: '{channel} marked as AI'
+Channel Unmarked as AI: '{channel} no longer marked as AI'
 SponsorBlock Disabled on Channel: 'SponsorBlock disabled on {channel}'
 SponsorBlock Enabled on Channel: 'SponsorBlock enabled on {channel}'
 Trimmed input must be at least N characters long: Trimmed input must be at least 1 character long | Trimmed input must be at least {length} characters long

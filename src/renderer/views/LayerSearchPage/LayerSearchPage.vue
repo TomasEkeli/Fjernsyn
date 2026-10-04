@@ -154,7 +154,10 @@
               {{ t('Layer Search.Not applied here', { platform: platformName(t, platform), filters: unappliedWords(platform) }) }}
             </p>
           </header>
-          <FtElementList :data="sectionOf(platform).items" />
+          <FtElementList
+            :data="sectionOf(platform).items"
+            look-up-ai-label
+          />
           <p
             v-if="isFinishedAndEmpty(platform)"
             class="message"

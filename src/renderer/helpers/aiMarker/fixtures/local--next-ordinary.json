@@ -1,0 +1,89 @@
+{
+  "recordedAt": "2026-10-04",
+  "source": "recorded",
+  "call": "actions.execute('/next', { videoId: 'dQw4w9WgXcQ', racyCheckOk: true, contentCheckOk: true })",
+  "notes": "No \"How this was made\" section. Trimmed as local--next-made-with-ai.json.",
+  "answer": {
+    "responseContext": {},
+    "contents": {},
+    "currentVideoEndpoint": {},
+    "trackingParams": {},
+    "playerOverlays": {},
+    "onResponseReceivedEndpoints": {},
+    "engagementPanels": [
+      {
+        "engagementPanelSectionListRenderer": {
+          "panelIdentifier": "engagement-panel-comments-section",
+          "targetId": "engagement-panel-comments-section",
+          "content": {
+            "sectionListRenderer": {}
+          }
+        }
+      },
+      {
+        "engagementPanelSectionListRenderer": {
+          "targetId": "engagement-panel-ads",
+          "content": {
+            "adsEngagementPanelContentRenderer": {}
+          }
+        }
+      },
+      {
+        "engagementPanelSectionListRenderer": {
+          "content": {}
+        }
+      },
+      {
+        "engagementPanelSectionListRenderer": {
+          "targetId": "PAsearch_preview",
+          "content": {
+            "sectionListRenderer": {}
+          }
+        }
+      },
+      {
+        "engagementPanelSectionListRenderer": {
+          "panelIdentifier": "engagement-panel-structured-description",
+          "targetId": "engagement-panel-structured-description",
+          "content": {
+            "structuredDescriptionContentRenderer": {
+              "items": [
+                {
+                  "videoTitleHeaderViewModel": {}
+                },
+                {
+                  "videoDescriptionHeaderRenderer": {}
+                },
+                {
+                  "expandableVideoDescriptionBodyRenderer": {}
+                },
+                {
+                  "horizontalCardListRenderer": {}
+                },
+                {
+                  "videoDescriptionTranscriptSectionRenderer": {}
+                },
+                {
+                  "videoDescriptionInfocardsSectionRenderer": {}
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "engagementPanelSectionListRenderer": {
+          "panelIdentifier": "engagement-panel-searchable-transcript",
+          "targetId": "engagement-panel-searchable-transcript",
+          "content": {
+            "continuationItemRenderer": {}
+          }
+        }
+      }
+    ],
+    "topbar": {},
+    "pageVisualEffects": {},
+    "microformat": {},
+    "frameworkUpdates": {}
+  }
+}
