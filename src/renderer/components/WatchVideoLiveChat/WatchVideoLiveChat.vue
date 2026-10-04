@@ -169,6 +169,10 @@
                 dir="auto"
               >
                 {{ comment.author.name }}
+                <time
+                  class="chatTime"
+                  :datetime="chatTimeAttribute(comment.timestamp)"
+                >{{ formatTime(comment.timestamp) }}</time>
               </p>
               <p
                 class="donationAmount"
@@ -195,6 +199,10 @@
             <p
               class="chatContent"
             >
+              <time
+                class="chatTime"
+                :datetime="chatTimeAttribute(comment.timestamp)"
+              >{{ formatTime(comment.timestamp) }}</time>
               <bdi
                 class="channelName"
                 :class="{
@@ -256,9 +264,10 @@ import { vSaferHtml } from '../../directives/vSaferHtml.js'
 
 import store from '../../store/index'
 
-import { formatNumber } from '../../helpers/utils'
+import { formatNumber, getLocalesWithFallback } from '../../helpers/utils'
 import { getRandomColorClass } from '../../helpers/colors'
 import { getLocalVideoInfo, parseLocalTextRuns } from '../../helpers/api/local'
+import { chatAuthorName, chatTimeAttribute, formatChatTime } from '../../helpers/liveChat'
 
 const props = defineProps({
   liveChat: {
@@ -275,7 +284,18 @@ const props = defineProps({
   }
 })
 
-const { t } = useI18n()
+const { locale, t } = useI18n()
+
+const timeLocales = computed(() => getLocalesWithFallback(locale.value))
+
+/**
+ * When a message was written, as the clock reads it
+ *
+ * @param {number} timestamp
+ */
+function formatTime(timestamp) {
+  return formatChatTime(timestamp, timeLocales.value)
+}
 
 /** @type {import('youtubei.js').YT.LiveChat|null} */
 let liveChatInstance = null
@@ -475,6 +495,7 @@ function parseLiveChatComment(comment) {
   const parsedComment = {
     id: comment.id,
     message: autolinker.link(parseLocalTextRuns(comment.message.runs, 20)),
+    timestamp: comment.timestamp,
     author: {
       name: comment.author.name,
       thumbnailUrl: comment.author.thumbnails.at(-1).url,
@@ -501,8 +522,9 @@ function parseLiveChatSuperChat(superChat) {
   const parsedComment = {
     id: superChat.id,
     message: autolinker.link(parseLocalTextRuns(superChat.message.runs, 20)),
+    timestamp: superChat.timestamp,
     author: {
-      name: superChat.author.name.text,
+      name: chatAuthorName(superChat.author),
       thumbnailUrl: superChat.author.thumbnails[0].url
     },
     superChat: {
