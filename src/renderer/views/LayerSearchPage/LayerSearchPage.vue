@@ -23,7 +23,6 @@
             {{ scopeLabel(t, scope) }}
           </button>
         </nav>
-        <AiChip class="aiChip" />
       </div>
       <div
         v-if="query.scope === 'peertube'"
@@ -104,6 +103,10 @@
         @update="changeParameters"
       >
         <template #end>
+          <!-- Among the filters, where the eye already is when narrowing a
+               search, though it is a setting and not part of the query: Clear
+               leaves it as it is -->
+          <AiChip />
           <button
             v-if="!plain"
             type="button"

@@ -98,6 +98,14 @@ $grab-bar-padding: 1em;
   margin-block-end: 3px;
 }
 
+// Still the loudest marker there, in proportion
+.ft-list-item.recommendation .kindMarker.ai,
+.ft-list-item.watchPlaylistItem .kindMarker.ai {
+  font-size: 12px;
+  padding-block: 3px;
+  padding-inline: 6px;
+}
+
 .videoTagLine {
   margin-block-start: 3px;
 }
