@@ -43,6 +43,7 @@
             :video-url="videoUrl"
             :live-chat="liveChatShown ? video.liveChat : null"
             :loudness-db="source.loudnessDb ?? null"
+            :heatmap="source.heatmap ?? null"
             :delay-load-until-unix="source.delayLoadUntilMs ?? 0"
             :vr-projection="source.vrProjection ?? null"
             :theatre-possible="theatrePossible"

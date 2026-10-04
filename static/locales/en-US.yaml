@@ -685,6 +685,7 @@ Settings:
     Enter Fullscreen on Display Rotate: Enter Fullscreen on Display Rotate
     Fit Window to Video: Fit Window to Video in Full Window
     Normalize Loudness: Normalize Loudness
+    Show Most Replayed Heatmap: Show Most Replayed
     Next Video Interval: Autoplay Countdown Timer
     Autoplay Interruption Timer: Autoplay Interruption Timer
     Fast-Forward / Rewind Interval: Fast-Forward / Rewind Interval
@@ -1750,6 +1751,9 @@ Tooltips:
       quiet videos are boosted to match everything else. This works both ways, so videos
       that were mastered loudly will play quieter than they do now. Only available with
       the local API, as Invidious does not report how loud a video is.
+    Show Most Replayed Heatmap: While the player controls show, show a curve above the
+      seek bar of which parts of the video viewers replay the most, for videos YouTube
+      has one for.
   External Player Settings:
     External Player: Choosing an external player will display an icon, for opening the
       video (playlist if supported) in the external player, on the thumbnail. Warning, Invidious settings do not affect external players.

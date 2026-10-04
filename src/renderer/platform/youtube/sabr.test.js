@@ -40,7 +40,7 @@ describe('a YouTube Local video over SABR', () => {
 
     expect(dash.transport).toBe('manifest')
     expect(source).toMatchObject({ transport: 'sabr', manifestMimeType: SABR, audio: { manifestUrl: source.manifestUrl, mimeType: SABR } })
-    for (const field of ['legacyFormats', 'captions', 'chapters', 'chaptersSrc', 'storyboard', 'isLive', 'loudnessDb', 'delayLoadUntilMs', 'expiresAt', 'vrProjection', 'isPostLiveDvr']) {
+    for (const field of ['legacyFormats', 'captions', 'chapters', 'chaptersSrc', 'storyboard', 'isLive', 'loudnessDb', 'delayLoadUntilMs', 'expiresAt', 'vrProjection', 'isPostLiveDvr', 'heatmap']) {
       expect(source[field], field).toEqual(dash[field])
     }
     expect(Object.isFrozen(source)).toBe(true)

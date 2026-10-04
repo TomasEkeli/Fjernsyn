@@ -201,6 +201,20 @@
  * @property {boolean} [isPostLiveDvr] YouTube: a finished broadcast served as
  *   a seekable recording, which plays as a live does (no legacy formats) while
  *   not live now, which `isLive` alone cannot say
+ * @property {HeatmapPoint[] | null} [heatmap] YouTube Local only: how much
+ *   each stretch of the video is replayed ("most replayed"), for the heatmap
+ *   above the player's seek bar; `null` where YouTube sent none (too few
+ *   views, a live), absent where the backend never says (Invidious, PeerTube)
+ */
+
+/**
+ * One stretch of a video's most replayed heatmap.
+ *
+ * @typedef {object} HeatmapPoint
+ * @property {number} startSeconds
+ * @property {number} endSeconds
+ * @property {number} intensity how much the stretch is replayed against the
+ *   most replayed one, from 0 to 1
  */
 
 /**

@@ -93,6 +93,13 @@
           :tooltip="t('Tooltips.Player Settings.Normalize Loudness')"
           @change="updateNormalizeLoudness"
         />
+        <FtToggleSwitch
+          :label="t('Settings.Player Settings.Show Most Replayed Heatmap')"
+          :compact="true"
+          :default-value="showMostReplayedHeatmap"
+          :tooltip="t('Tooltips.Player Settings.Show Most Replayed Heatmap')"
+          @change="updateShowMostReplayedHeatmap"
+        />
       </div>
     </div>
     <FtFlexBox>
@@ -633,6 +640,16 @@ const normalizeLoudness = computed(() => store.getters.getNormalizeLoudness)
  */
 function updateNormalizeLoudness(value) {
   store.dispatch('updateNormalizeLoudness', value)
+}
+
+/** @type {import('vue').ComputedRef<boolean>} */
+const showMostReplayedHeatmap = computed(() => store.getters.getShowMostReplayedHeatmap)
+
+/**
+ * @param {boolean} value
+ */
+function updateShowMostReplayedHeatmap(value) {
+  store.dispatch('updateShowMostReplayedHeatmap', value)
 }
 
 /** @type {import('vue').ComputedRef<number>} */
