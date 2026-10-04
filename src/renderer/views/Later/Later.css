@@ -16,6 +16,54 @@
   color: var(--tertiary-text-color);
 }
 
+.armedItems {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.armedHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-block-end: 4px;
+}
+
+.armedTime {
+  font-weight: bold;
+}
+
+.armedState {
+  padding-block: 2px;
+  padding-inline: 8px;
+  border-radius: 10px;
+  font-size: 0.85em;
+  background-color: var(--secondary-card-bg-color);
+  color: var(--secondary-text-color);
+}
+
+.armedState.checking {
+  background-color: var(--accent-color);
+  color: var(--text-with-accent-color);
+}
+
+.armedState.didNotStart {
+  color: var(--tertiary-text-color);
+}
+
+.armedActions {
+  display: flex;
+  gap: 8px;
+  margin-inline-start: auto;
+}
+
+.armedAction {
+  margin: 0;
+  padding-block: 4px;
+  padding-inline: 10px;
+}
+
 .laterItems {
   display: flex;
   flex-direction: column;
