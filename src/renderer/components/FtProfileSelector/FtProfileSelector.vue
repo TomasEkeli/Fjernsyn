@@ -1,43 +1,54 @@
 <template>
   <div>
-    <!-- Fjernsyn: zap to the previous profile, wrapping around -->
-    <button
-      v-if="previousProfile"
-      type="button"
-      class="zapButton previous"
-      :title="previousProfileTitle"
-      :aria-label="previousProfileTitle"
-      @click="zapTo(previousProfile)"
-    />
-    <div
-      ref="iconButton"
-      class="colorOption"
-      :title="$t('Profile.Toggle Profile List')"
-      :style="activeProfileBubble.style"
-      tabindex="0"
-      role="button"
-      :aria-expanded="profileListShown"
-      :aria-controls="id + 'list'"
-      @click="toggleProfileList"
-      @mousedown="handleIconMouseDown"
-      @keydown.enter.space.prevent="toggleProfileList"
-    >
+    <!-- Fjernsyn: the triangles either side of the square, and the active
+    profile's name under all three -->
+    <div class="switcher">
+      <!-- Fjernsyn: zap to the previous profile, wrapping around -->
+      <button
+        v-if="previousProfile"
+        type="button"
+        class="zapButton previous"
+        :title="previousProfileTitle"
+        :aria-label="previousProfileTitle"
+        @click="zapTo(previousProfile)"
+      />
       <div
-        class="initial"
-        dir="auto"
+        ref="iconButton"
+        class="colorOption activeProfile"
+        :title="$t('Profile.Toggle Profile List')"
+        :style="activeProfileBubble.style"
+        tabindex="0"
+        role="button"
+        :aria-expanded="profileListShown"
+        :aria-controls="id + 'list'"
+        @click="toggleProfileList"
+        @mousedown="handleIconMouseDown"
+        @keydown.enter.space.prevent="toggleProfileList"
       >
-        {{ activeProfileBubble.text }}
+        <div
+          class="initial"
+          dir="auto"
+        >
+          {{ activeProfileBubble.text }}
+        </div>
       </div>
+      <!-- Fjernsyn: zap to the next profile, wrapping around -->
+      <button
+        v-if="nextProfile"
+        type="button"
+        class="zapButton next"
+        :title="nextProfileTitle"
+        :aria-label="nextProfileTitle"
+        @click="zapTo(nextProfile)"
+      />
+      <span
+        class="activeProfileName"
+        dir="auto"
+        :title="activeProfileName"
+      >
+        {{ activeProfileName }}
+      </span>
     </div>
-    <!-- Fjernsyn: zap to the next profile, wrapping around -->
-    <button
-      v-if="nextProfile"
-      type="button"
-      class="zapButton next"
-      :title="nextProfileTitle"
-      :aria-label="nextProfileTitle"
-      @click="zapTo(nextProfile)"
-    />
     <FtCard
       v-show="profileListShown"
       :id="id + 'list'"
@@ -195,25 +206,15 @@ const nextProfileTitle = computed(() => nextProfile.value
   ? t('Profile.Next Profile: {profile}', { profile: translateProfileName(nextProfile.value) })
   : '')
 
-/** @type {AbortController | null} */
-let zapToastController = null
+// Fjernsyn: shown under the square, so which profile is active can be read at
+// a glance, and zapping needs no toast to say where it landed
+const activeProfileName = computed(() => activeProfile.value ? translateProfileName(activeProfile.value) : '')
 
 /**
- * Switches profile and names it in a toast that replaces the previous zap's
- * rather than stacking under it.
  * @param {Profile} profile
  */
 function zapTo(profile) {
   store.commit('setActiveProfile', profile._id)
-
-  zapToastController?.abort()
-  zapToastController = new AbortController()
-  showToast(
-    t('Profile.{profile} is now the active profile', { profile: translateProfileName(profile) }),
-    null,
-    null,
-    zapToastController.signal
-  )
 }
 
 /**

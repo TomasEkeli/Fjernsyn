@@ -14,6 +14,52 @@
   box-shadow: 0 0 0 2px var(--side-nav-hover-color);
 }
 
+/* Fjernsyn: the triangles and the square in a row, with the active profile's
+name in a row of its own under all three. The bar's line height of 60px would
+otherwise make the name as tall as the bar. */
+.switcher {
+  display: grid;
+  grid-template-areas:
+    'previous square next'
+    'name name name';
+  place-items: center;
+  gap: 2px 3px;
+  line-height: 1.2;
+}
+
+.zapButton.previous {
+  grid-area: previous;
+}
+
+.activeProfile {
+  grid-area: square;
+}
+
+.zapButton.next {
+  grid-area: next;
+}
+
+/* As wide as the triangles and square together, but never wider: a zero size
+with a full minimum keeps a long name from widening the columns, and it is cut
+short instead, the whole name being in its title. Sized like the page icons'
+labels. */
+.activeProfileName {
+  grid-area: name;
+  inline-size: 0;
+  min-inline-size: 100%;
+  overflow: hidden;
+  font-size: 11px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--primary-text-color);
+  user-select: none;
+}
+
+.topNavBarColor .activeProfileName {
+  color: var(--text-with-main-color);
+}
+
 /* Fjernsyn: the zapping triangles in the bar's text colour, faded until the
 pointer or focus is on them, a few pixels short of the square's 40 so that
 their sharp points look as tall as its rounded corners. The triangle is the
