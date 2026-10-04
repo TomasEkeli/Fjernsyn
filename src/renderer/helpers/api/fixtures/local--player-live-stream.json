@@ -1,0 +1,61 @@
+{
+  "recordedAt": "2026-10-04",
+  "source": "recorded",
+  "call": "actions.execute('/player', { videoId: 'xDWQ3LkccY8', racyCheckOk: true, contentCheckOk: true })",
+  "notes": "Sky News, live around the clock. UNPLAYABLE, as every described video is to a request with no PO token, and still described as live. Trimmed to playabilityStatus, videoDetails and the microformat, without thumbnails, keywords or tracking.",
+  "answer": {
+    "playabilityStatus": {
+      "status": "UNPLAYABLE",
+      "reason": "Video unavailable",
+      "errorScreen": {
+        "playerErrorMessageRenderer": {
+          "reason": {
+            "runs": [
+              {
+                "text": "The page needs to be reloaded."
+              }
+            ]
+          },
+          "subreason": {
+            "simpleText": "The page needs to be reloaded."
+          }
+        }
+      }
+    },
+    "videoDetails": {
+      "videoId": "xDWQ3LkccY8",
+      "title": "Watch Sky News",
+      "lengthSeconds": "0",
+      "channelId": "UCoMdktPbSTixAyNGwb-UYkQ",
+      "shortDescription": "Watch Sky News live to find out the latest on what is happening around the world and what is coming up throughout the day ⬇️",
+      "isCrawlable": true,
+      "isLive": true,
+      "viewCount": "7922887",
+      "author": "Sky News",
+      "isLowLatencyLiveStream": false,
+      "isPrivate": false,
+      "isLiveContent": true,
+      "latencyClass": "MDE_STREAM_OPTIMIZATIONS_RENDERER_LATENCY_NORMAL"
+    },
+    "microformat": {
+      "playerMicroformatRenderer": {
+        "title": {
+          "simpleText": "Watch Sky News"
+        },
+        "description": {
+          "simpleText": "Watch Sky News live to find out the latest on what is happening around the world and what is coming up throughout the day ⬇️"
+        },
+        "externalChannelId": "UCoMdktPbSTixAyNGwb-UYkQ",
+        "ownerChannelName": "Sky News",
+        "category": "News & Politics",
+        "publishDate": "2026-08-26T22:24:39-07:00",
+        "uploadDate": "2026-08-26T22:24:39-07:00",
+        "liveBroadcastDetails": {
+          "isLiveNow": true,
+          "startTimestamp": "2026-08-27T05:26:32+00:00"
+        },
+        "isUnlisted": false
+      }
+    }
+  }
+}

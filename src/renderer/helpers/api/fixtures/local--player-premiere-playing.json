@@ -1,0 +1,61 @@
+{
+  "recordedAt": "2026-10-04",
+  "source": "recorded",
+  "call": "actions.execute('/player', { videoId: 'QR27z8z7EMc', racyCheckOk: true, contentCheckOk: true })",
+  "notes": "A premiere caught while playing, three quarters of an hour into it: isLive and isLiveNow, like a stream, with isLiveContent false and the length of the video already given. Trimmed to playabilityStatus, videoDetails and the microformat, without thumbnails, keywords or tracking.",
+  "answer": {
+    "playabilityStatus": {
+      "status": "UNPLAYABLE",
+      "reason": "Video unavailable",
+      "errorScreen": {
+        "playerErrorMessageRenderer": {
+          "reason": {
+            "runs": [
+              {
+                "text": "The page needs to be reloaded."
+              }
+            ]
+          },
+          "subreason": {
+            "simpleText": "The page needs to be reloaded."
+          }
+        }
+      }
+    },
+    "videoDetails": {
+      "videoId": "QR27z8z7EMc",
+      "title": "FlyDubai Horror, Radicalised Pilots & Future of Warfare | Lt Gen Dhillon & Air Marshal Kapoor |EP455",
+      "lengthSeconds": "5766",
+      "channelId": "UCtFQDgA8J8_iiwc5-KoAQlg",
+      "shortDescription": "Lieutenant General K.J.S. ‘Tiny’ Dhillon is the former Director General of the Defence Intelligence Agency and has commanded the strategically important 15 Corps in Kashmir. Air Marshal Sanjeev Kapoor",
+      "isCrawlable": true,
+      "isLive": true,
+      "viewCount": "1725",
+      "author": "ANI News",
+      "isLowLatencyLiveStream": false,
+      "isPrivate": false,
+      "isLiveContent": false,
+      "latencyClass": "MDE_STREAM_OPTIMIZATIONS_RENDERER_LATENCY_NORMAL"
+    },
+    "microformat": {
+      "playerMicroformatRenderer": {
+        "title": {
+          "simpleText": "FlyDubai Horror, Radicalised Pilots & Future of Warfare | Lt Gen Dhillon & Air Marshal Kapoor |EP455"
+        },
+        "description": {
+          "simpleText": "Lieutenant General K.J.S. ‘Tiny’ Dhillon is the former Director General of the Defence Intelligence Agency and has commanded the strategically important 15 Corps in Kashmir. Air Marshal Sanjeev Kapoor"
+        },
+        "externalChannelId": "UCtFQDgA8J8_iiwc5-KoAQlg",
+        "ownerChannelName": "ANI News",
+        "category": "News & Politics",
+        "publishDate": "2026-10-04T04:30:11-07:00",
+        "uploadDate": "2026-10-04T04:30:11-07:00",
+        "liveBroadcastDetails": {
+          "isLiveNow": true,
+          "startTimestamp": "2026-10-04T11:30:11+00:00"
+        },
+        "isUnlisted": false
+      }
+    }
+  }
+}

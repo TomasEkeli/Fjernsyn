@@ -1,0 +1,72 @@
+{
+  "recordedAt": "2026-10-04",
+  "source": "recorded",
+  "call": "actions.execute('/player', { videoId: 'VmNN0GSgUXo', racyCheckOk: true, contentCheckOk: true })",
+  "notes": "A live stream scheduled for 21:00 UTC the same day. Trimmed to playabilityStatus, videoDetails and the microformat, without thumbnails, keywords or tracking.",
+  "answer": {
+    "playabilityStatus": {
+      "status": "LIVE_STREAM_OFFLINE",
+      "reason": "This live event will begin in 8 hours.",
+      "playableInEmbed": true,
+      "liveStreamability": {
+        "liveStreamabilityRenderer": {
+          "videoId": "VmNN0GSgUXo",
+          "offlineSlate": {
+            "liveStreamOfflineSlateRenderer": {
+              "scheduledStartTime": "1791147600",
+              "mainText": {
+                "runs": [
+                  {
+                    "text": "Live in "
+                  },
+                  {
+                    "text": "8 hours"
+                  }
+                ]
+              },
+              "subtitleText": {
+                "simpleText": "October 4 at 9:00 PM"
+              }
+            }
+          },
+          "pollDelayMs": "15000"
+        }
+      }
+    },
+    "videoDetails": {
+      "videoId": "VmNN0GSgUXo",
+      "title": "Why NASA Always Extends Space Missions? [Q&A Livestream]",
+      "lengthSeconds": "0",
+      "channelId": "UCogrSQkBJn1KF0N9I4oM7eQ",
+      "shortDescription": "Join Fraser for a live questions and answer session about all things space and astronomy\r",
+      "isCrawlable": true,
+      "isUpcoming": true,
+      "viewCount": "0",
+      "author": "Fraser Cain",
+      "isLowLatencyLiveStream": false,
+      "isPrivate": false,
+      "isLiveContent": true,
+      "latencyClass": "MDE_STREAM_OPTIMIZATIONS_RENDERER_LATENCY_NORMAL"
+    },
+    "microformat": {
+      "playerMicroformatRenderer": {
+        "title": {
+          "simpleText": "Why NASA Always Extends Space Missions? [Q&A Livestream]"
+        },
+        "description": {
+          "simpleText": "Join Fraser for a live questions and answer session about all things space and astronomy\r"
+        },
+        "externalChannelId": "UCogrSQkBJn1KF0N9I4oM7eQ",
+        "ownerChannelName": "Fraser Cain",
+        "category": "Science & Technology",
+        "publishDate": "2026-09-28T04:52:10-07:00",
+        "uploadDate": "2026-09-28T04:52:10-07:00",
+        "liveBroadcastDetails": {
+          "isLiveNow": false,
+          "startTimestamp": "2026-10-04T21:00:00+00:00"
+        },
+        "isUnlisted": false
+      }
+    }
+  }
+}

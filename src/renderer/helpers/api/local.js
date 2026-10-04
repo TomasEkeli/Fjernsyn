@@ -4,6 +4,7 @@ import { parseLooseJSON } from 'bgutils-js/utils'
 
 import { SEARCH_CHAR_LIMIT } from '../../../constants'
 import { PlayerCache } from './PlayerCache'
+import { liveStateFromPlayerResponse } from './liveState'
 import { traceWatch } from '../watchTrace'
 import { readAiLabel } from '../aiMarker/label'
 import { rememberChannelTags } from '../channelTags'
@@ -1335,6 +1336,28 @@ export async function getLocalVideoMetadata(videoId) {
   }
 
   return { category: category ?? '', keywords: Array.isArray(keywords) ? keywords : [] }
+}
+
+/**
+ * Whether a video is upcoming (and when), live, over or unavailable. The same
+ * plain `/player` request as {@linkcode getLocalVideoMetadata}, read for its
+ * live state instead; see `liveState.js` for what is read.
+ *
+ * Throws what the request throws, and throws for a refusal (`LOGIN_REQUIRED`
+ * with nothing said about the video), so that a caller can tell being refused
+ * from an answer.
+ * @param {string} videoId
+ * @returns {Promise<import('./liveState').LiveState>}
+ */
+export async function getLocalLiveState(videoId) {
+  const session = await createSession()
+  const response = await session.actions.execute('/player', {
+    videoId,
+    racyCheckOk: true,
+    contentCheckOk: true
+  })
+
+  return liveStateFromPlayerResponse(response.data, videoId)
 }
 
 /**
