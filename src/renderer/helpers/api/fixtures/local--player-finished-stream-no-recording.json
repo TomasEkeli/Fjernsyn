@@ -1,0 +1,57 @@
+{
+  "recordedAt": "2026-10-04",
+  "source": "recorded",
+  "call": "actions.execute('/player', { videoId: 'jfKfPfyJRdk', racyCheckOk: true, contentCheckOk: true })",
+  "notes": "Lofi Girl's long running stream, ended in May with no recording kept. Still flagged isPostLiveDvr months later, so that flag says nothing about being live. Trimmed to playabilityStatus, videoDetails and the microformat, without thumbnails, keywords or tracking.",
+  "answer": {
+    "playabilityStatus": {
+      "status": "UNPLAYABLE",
+      "reason": "This live stream recording is not available.",
+      "playableInEmbed": true,
+      "errorScreen": {
+        "playerErrorMessageRenderer": {
+          "reason": {
+            "simpleText": "This live stream recording is not available."
+          }
+        }
+      }
+    },
+    "videoDetails": {
+      "videoId": "jfKfPfyJRdk",
+      "title": "lofi hip hop radio 📚 beats to relax/study to",
+      "lengthSeconds": "121601512",
+      "channelId": "UCSJ4gkVC6NrvII8umztf0Ow",
+      "shortDescription": "🎼 | Listen on Spotify, Apple music and more",
+      "isCrawlable": true,
+      "isPostLiveDvr": true,
+      "viewCount": "651847107",
+      "author": "Lofi Girl",
+      "isLowLatencyLiveStream": false,
+      "isPrivate": false,
+      "isLiveContent": true,
+      "latencyClass": "MDE_STREAM_OPTIMIZATIONS_RENDERER_LATENCY_NORMAL"
+    },
+    "microformat": {
+      "playerMicroformatRenderer": {
+        "title": {
+          "simpleText": "lofi hip hop radio 📚 beats to relax/study to"
+        },
+        "description": {
+          "simpleText": "🎼 | Listen on Spotify, Apple music and more"
+        },
+        "lengthSeconds": "121601512",
+        "externalChannelId": "UCSJ4gkVC6NrvII8umztf0Ow",
+        "ownerChannelName": "Lofi Girl",
+        "category": "Music",
+        "publishDate": "2022-07-12T05:12:29-07:00",
+        "uploadDate": "2022-07-12T05:12:29-07:00",
+        "liveBroadcastDetails": {
+          "isLiveNow": false,
+          "startTimestamp": "2022-07-12T15:59:30+00:00",
+          "endTimestamp": "2026-05-20T02:11:23+00:00"
+        },
+        "isUnlisted": false
+      }
+    }
+  }
+}

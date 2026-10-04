@@ -1,0 +1,72 @@
+{
+  "recordedAt": "2026-10-04",
+  "source": "recorded",
+  "call": "actions.execute('/player', { videoId: 'G0aJU3BLbWw', racyCheckOk: true, contentCheckOk: true })",
+  "notes": "A premiere eleven days ahead. Told from an upcoming stream only by isLiveContent false and the words of the reason. Trimmed to playabilityStatus, videoDetails and the microformat, without thumbnails, keywords or tracking.",
+  "answer": {
+    "playabilityStatus": {
+      "status": "LIVE_STREAM_OFFLINE",
+      "reason": "Premieres in 11 days",
+      "playableInEmbed": true,
+      "liveStreamability": {
+        "liveStreamabilityRenderer": {
+          "videoId": "G0aJU3BLbWw",
+          "offlineSlate": {
+            "liveStreamOfflineSlateRenderer": {
+              "scheduledStartTime": "1792081800",
+              "mainText": {
+                "runs": [
+                  {
+                    "text": "Premieres in "
+                  },
+                  {
+                    "text": "11 days"
+                  }
+                ]
+              },
+              "subtitleText": {
+                "simpleText": "October 15 at 4:30 PM"
+              }
+            }
+          },
+          "pollDelayMs": "15000"
+        }
+      }
+    },
+    "videoDetails": {
+      "videoId": "G0aJU3BLbWw",
+      "title": "Finding Our Way: Inside the Galileo Project (ESA documentary)",
+      "lengthSeconds": "0",
+      "channelId": "UCIBaDdAbGlFDeS33shmlD0A",
+      "shortDescription": "Finding Our Way: Inside the Galileo Project takes viewers inside one of Europe’s most ambitious technological endeavours: the creation and operation of Galileo, Europe’s global navigation satellite sy",
+      "isCrawlable": true,
+      "isUpcoming": true,
+      "viewCount": "0",
+      "author": "European Space Agency, ESA",
+      "isLowLatencyLiveStream": false,
+      "isPrivate": false,
+      "isLiveContent": false,
+      "latencyClass": "MDE_STREAM_OPTIMIZATIONS_RENDERER_LATENCY_NORMAL"
+    },
+    "microformat": {
+      "playerMicroformatRenderer": {
+        "title": {
+          "simpleText": "Finding Our Way: Inside the Galileo Project (ESA documentary)"
+        },
+        "description": {
+          "simpleText": "Finding Our Way: Inside the Galileo Project takes viewers inside one of Europe’s most ambitious technological endeavours: the creation and operation of Galileo, Europe’s global navigation satellite sy"
+        },
+        "externalChannelId": "UCIBaDdAbGlFDeS33shmlD0A",
+        "ownerChannelName": "European Space Agency, ESA",
+        "category": "Science & Technology",
+        "publishDate": "2026-09-29T02:13:35-07:00",
+        "uploadDate": "2026-09-29T02:13:35-07:00",
+        "liveBroadcastDetails": {
+          "isLiveNow": false,
+          "startTimestamp": "2026-10-15T16:30:00+00:00"
+        },
+        "isUnlisted": false
+      }
+    }
+  }
+}

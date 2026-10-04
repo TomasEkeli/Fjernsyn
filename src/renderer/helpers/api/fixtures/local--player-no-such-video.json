@@ -1,0 +1,19 @@
+{
+  "recordedAt": "2026-10-04",
+  "source": "recorded",
+  "call": "actions.execute('/player', { videoId: 'aaaaaaaaaaa', racyCheckOk: true, contentCheckOk: true })",
+  "notes": "An id that names no video, standing in for a deleted one: ERROR with nothing described. Trimmed to playabilityStatus, videoDetails and the microformat, without thumbnails, keywords or tracking.",
+  "answer": {
+    "playabilityStatus": {
+      "status": "ERROR",
+      "reason": "Video unavailable",
+      "errorScreen": {
+        "playerErrorMessageRenderer": {
+          "reason": {
+            "simpleText": "Video unavailable"
+          }
+        }
+      }
+    }
+  }
+}
