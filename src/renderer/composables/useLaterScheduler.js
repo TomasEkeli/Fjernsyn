@@ -13,6 +13,12 @@ const TICK_MS = 30 * 1000
 /** A check that failed is not tried again for this long, so a refusal is not answered with more */
 const RETRY_AFTER_FAILURE_MS = 60 * 1000
 
+/** How long the toast saying an armed event ended unseen stays */
+const ENDED_TOAST_MS = 30 * 1000
+
+/** How long a firing waits for the player of a watch page being opened */
+const WAIT_FOR_PLAYER_MS = 10 * 1000
+
 /** How long a toast saying an event went live while the window was hidden stays */
 const LIVE_TOAST_MS = 60 * 1000
 
@@ -126,7 +132,8 @@ export function useLaterScheduler(store, router, isMainWindow) {
       case 'over': {
         const title = store.getters.getLaterItem(id)?.title ?? ''
         await store.dispatch('disarm', id)
-        showToast(i18n.global.t('Later.Ended unseen', { title }))
+        // Long, as it often comes at launch, while the window is still coming up
+        showToast(i18n.global.t('Later.Ended unseen', { title }), ENDED_TOAST_MS)
         break
       }
     }
@@ -172,6 +179,14 @@ export function useLaterScheduler(store, router, isMainWindow) {
         ? await window.ftElectron.isWindowShown()
         : document.visibilityState === 'visible'
 
+      // Another video's watch page whose player is not up yet is most often
+      // one being opened, as when the item before was gone to: given a moment,
+      // it is watching, and the notice goes on its player rather than a
+      // countdown taking the viewer away from what they just chose
+      if (isOnOtherWatchPage(item.videoId) && !store.getters.getLaterPlayerMounted) {
+        await waitForPlayer(item.videoId)
+      }
+
       const route = router.currentRoute.value
       const watchingVideoId = watchedVideoId(route)
 
@@ -211,6 +226,47 @@ export function useLaterScheduler(store, router, isMainWindow) {
       firing.delete(id)
     }
   }
+
+  /** @param {string} videoId */
+  function isOnOtherWatchPage(videoId) {
+    const watching = watchedVideoId(router.currentRoute.value)
+    return watching !== null && watching !== videoId
+  }
+
+  /**
+   * Waits for a player to come up, the watch page to be left, or the time to
+   * run out, whichever is first
+   * @param {string} videoId the item's, whose own page is not waited on
+   */
+  function waitForPlayer(videoId) {
+    return new Promise((resolve) => {
+      let stop = null
+      const done = () => {
+        clearTimeout(timeout)
+        stop?.()
+        resolve()
+      }
+      const timeout = setTimeout(done, WAIT_FOR_PLAYER_MS)
+
+      stop = watch(
+        () => store.getters.getLaterPlayerMounted || !isOnOtherWatchPage(videoId),
+        (ready) => { if (ready) { done() } }
+      )
+    })
+  }
+
+  // A countdown running when a player comes up on another video, the viewer
+  // having started watching something, becomes a notice on that player: the
+  // countdown would otherwise take them away from it
+  watch(() => store.getters.getLaterPlayerMounted, (mounted) => {
+    const countdown = store.getters.getLaterCountdown
+
+    if (!mounted || countdown == null || !isOnOtherWatchPage(countdown.videoId)) { return }
+
+    console.info(`Later: ${countdown.videoId} moves from the countdown to the player`) // eslint-disable-line no-console
+    store.commit('addLaterNotice', countdown)
+    store.commit('setLaterCountdown', null)
+  })
 
   /**
    * The desktop notification, and the item disarmed to the top of the list,
