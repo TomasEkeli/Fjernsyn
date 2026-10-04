@@ -125,6 +125,18 @@ You can change region on the page, and the last four you looked at stay a click 
 
 ![Explore with all six categories on, the region set to Norway and the recent regions NO, GB and US beside it](_screenshots/explore.webp)
 
+### Videos made with AI
+
+Searching YouTube turns up a lot of videos made wholly by AI. Many are poor, and some are wrong in ways that are dangerous to act on. YouTube labels the ones whose creator declared it ("Made with AI" on the watch page), but no list says so: search results, channel pages and related videos look like any other.
+
+So Fjernsyn asks. On search results, subscriptions, a channel's pages and the videos beside the one playing, each video is checked the first time its card comes on screen, and the answer is kept for good. A labelled video gets a chartreuse AI marker on its card. Auto-dubbed videos are made by people, with machine-translated audio, and stay unmarked. Each check is one small request, sharing the subscription refresh's request budget, so the markers arrive a few seconds after the cards.
+
+Creators who never declare it are covered by hand. Mark Channel as AI, in a video's menu, puts the marker on every video from that channel without checking any of them.
+
+An AI switch at the top right of each of those pages hides the marked videos, on all of them at once. It is the same setting as Hide Videos Made with AI in the Distraction Free settings, which also lists the channels you have marked. Unmark a channel there once its videos are hidden.
+
+Videos nobody declared, from channels you have not marked, are not caught.
+
 ### Layout
 
 Navigation is in the top bar, which gives the page the full width of the window. The control row stays on screen while you scroll.
