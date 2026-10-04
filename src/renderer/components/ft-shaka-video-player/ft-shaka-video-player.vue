@@ -44,6 +44,8 @@
       :channel-id="channelId"
       :enabled="liveChatOverlayEnabled"
     />
+    <!-- Armed Later items gone live while this plays, above shaka's controls -->
+    <LaterLiveNotice />
     <div
       v-if="showStats"
       class="stats"
