@@ -928,6 +928,50 @@ Settings:
     Non-transferable setting key: 'Non-transferable setting key: {key}'
     How do I import my subscriptions?: How do I import my subscriptions?
     Manage Subscriptions: Manage Subscriptions
+    Backup:
+      Backup: Backup
+      Tooltip: Everything in one file, to carry on from another machine. A restore replaces each section the file holds and restarts Fjernsyn. Settings that belong to the machine, such as the proxy and the download folder, stay out.
+      Export backup: Export backup
+      Restore backup: Restore backup
+      Backup file: Fjernsyn backup
+      Exported: The backup has been written
+      Refused:
+        Not JSON: 'This file is not a backup: it is not JSON'
+        Not a backup: This file is not a Fjernsyn backup
+        Newer version: This backup was written by a newer version of Fjernsyn (backup format {version}), which this version cannot read
+        Section not a list: 'This backup cannot be read: its section "{section}" is not a list'
+        Nothing to restore: This backup holds nothing this version of Fjernsyn can restore
+      Confirm:
+        Title: Restore this backup?
+        This installation: Written by Fjernsyn {version} on this installation.
+        Other installation: Written by Fjernsyn {version} on another installation.
+        Unknown version: an unknown version
+        Replaces: Each section below replaces what is here now. Anything the backup does not hold is left as it is.
+        Section count: '{section}: {count}'
+        Left out:
+          Missing fields: '1 left out: required fields missing | {count} left out: required fields missing'
+          Invalid PeerTube: '1 left out: not a valid PeerTube entry | {count} left out: not valid PeerTube entries'
+          Duplicate: '1 left out: the same entry twice | {count} left out: the same entries twice'
+          Unknown setting: '1 left out: a setting this version does not know | {count} left out: settings this version does not know'
+          Machine-bound setting: '1 left out: a setting that belongs to the machine | {count} left out: settings that belong to the machine'
+          Playlist videos: '1 video in a playlist left out: required fields missing | {count} videos in playlists left out: required fields missing'
+        Unknown sections: 'Ignored, as this version does not know them: {sections}'
+        Safety copy: 'Your data as it is now is saved first, in {folder}. Restoring that file undoes this restore.'
+        Downloads: 'These downloads are running and stop when Fjernsyn restarts: {titles}'
+        Restarts: Fjernsyn restarts once the backup is restored.
+        Restore: Restore
+        Cancel: Cancel
+      Sections:
+        Profiles: Profiles and subscriptions
+        History: Watch history
+        Playlists: Playlists
+        Later: Later list
+        Search history: Search history
+        Settings: Settings
+        Channels: Channel tags and Probe samples
+        AI verdicts: AI labels already checked
+      Failed: 'The restore failed: {error}. Some sections may already be replaced. Your data from before the restore is in {path}; restore that file to go back.'
+      Failed before writing: 'The restore failed, and nothing was changed: {error}'
   Proxy Settings:
     Proxy Settings: Proxy
     Proxy Warning: Fjernsyn doesn't have a built-in proxy but can connect to an external proxy, such as one running on your machine like Tor or an external proxy such-as a SOCKS5 proxy provided by some VPNs. If enabled, make sure your proxy/Tor is configured properly, or Fjernsyn won't be able to fetch any data.

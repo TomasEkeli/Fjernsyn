@@ -1,0 +1,19 @@
+.backupBox {
+  justify-content: center;
+}
+
+.backupSummary {
+  max-inline-size: 60ch;
+  margin-inline: auto;
+  text-align: start;
+}
+
+.backupSections {
+  padding-inline-start: 1.5em;
+}
+
+.backupLeftOut {
+  padding-inline-start: 1.5em;
+  font-size: 0.9em;
+  opacity: 0.85;
+}
