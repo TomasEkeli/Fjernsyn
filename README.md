@@ -50,6 +50,8 @@ Optional loudness normalisation corrects each video for how loud it was mastered
 
 A small pin on the control bar keeps the player's controls from fading, and the choice sticks between videos.
 
+A curve above the seek bar shows which parts of the video people replay the most. YouTube calls it "most replayed" and only has it for videos with enough views, so new uploads show none. It comes and goes with the controls, in a darker shade of the seek bar's colour, and leaves the bar itself clear, so SponsorBlock segments and chapters stay visible. Switch it off with Show Most Replayed in the player settings.
+
 ![The player with the playback speed menu open, showing the slider and half-step presets, the volume bar and the pin on the control bar](_screenshots/player.webp)
 
 ### SponsorBlock
