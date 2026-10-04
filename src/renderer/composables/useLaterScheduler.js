@@ -47,6 +47,10 @@ export function useLaterScheduler(store, router, isMainWindow) {
   /** @type {string[]} found live, waiting their turn */
   const toFire = []
 
+  // Testing only: the first check held back (FT_LATER_FIRST_CHECK_S, baked in
+  // at build time), for an armed stream already live to fire while a video plays
+  const notBefore = Date.now() + (Number.parseInt(process.env.FT_LATER_FIRST_CHECK_S ?? '', 10) || 0) * 1000
+
   let checking = false
   let firingNext = false
   let fireAgain = false
@@ -60,7 +64,7 @@ export function useLaterScheduler(store, router, isMainWindow) {
   const alarmOf = id => store.getters.getLaterItem(id)?.alarm ?? null
 
   async function tick() {
-    if (checking || !active()) { return }
+    if (checking || !active() || Date.now() < notBefore) { return }
 
     checking = true
 
