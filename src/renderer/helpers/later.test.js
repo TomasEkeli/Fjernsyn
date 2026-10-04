@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   armedInOrder,
+  laterFromExport,
   laterItemFromVideo,
+  laterToExport,
   laterStateAt,
   moveTo,
   needsRenumbering,
@@ -175,5 +177,38 @@ describe('the Later list helpers', () => {
     it('reads a premiere timestamp in seconds', () => {
       expect(laterItemFromVideo({ videoId: 'x', premiereTimestamp: 10 }, 0).premiereDate).toBe(10000)
     })
+  })
+})
+
+describe('the Later list export', () => {
+  const items = [
+    item('q2', 5, { addedAt: 2 }),
+    item('q1', 1, { addedAt: 1 }),
+    item('armed', 0, { addedAt: 3, alarm: { at: 99, armedAt: 50 }, isUpcoming: true, premiereDate: 99 }),
+  ]
+
+  it('writes one item a line, armed first, then the queued in order', () => {
+    const lines = laterToExport(items).trim().split('\n').map(line => JSON.parse(line)._id)
+    expect(lines).toEqual(['armed', 'q1', 'q2'])
+  })
+
+  it('reads back the same list, order and alarms included', () => {
+    const read = laterFromExport(laterToExport(items))
+
+    expect(read.map(i => i._id)).toEqual(['armed', 'q1', 'q2'])
+    expect(read[0].alarm).toEqual({ at: 99, armedAt: 50 })
+    expect(read[0]).toMatchObject({ title: 'armed', isUpcoming: true, premiereDate: 99 })
+  })
+
+  it('skips the lines that are not items', () => {
+    const text = [
+      'not json',
+      JSON.stringify({ videoId: 'x' }),
+      JSON.stringify({ title: 'no id' }),
+      '',
+      JSON.stringify({ videoId: 'ok', title: 'Ok', alarm: { at: 'soon' } }),
+    ].join('\n')
+
+    expect(laterFromExport(text)).toEqual([expect.objectContaining({ _id: 'ok', alarm: null })])
   })
 })

@@ -210,3 +210,57 @@ function millisecondsOf(value) {
   }
   return null
 }
+
+/**
+ * The Later list as an export file: one item per line, in the page's order
+ * (the armed first, then the queued), alarms included, as the other exports
+ * are written (NDJSON, with a trailing line).
+ * @param {LaterItem[]} items
+ * @returns {string}
+ */
+export function laterToExport(items) {
+  return [...armedInOrder(items), ...queuedInOrder(items)]
+    .map(item => JSON.stringify(item))
+    .join('\n') + '\n'
+}
+
+/**
+ * The items of an export file, in its order: every line that parses into an
+ * object with a video id and a title. Their positions are not kept, as an
+ * import puts them above the list as a block; anything else of theirs is.
+ * @param {string} text
+ * @returns {LaterItem[]}
+ */
+export function laterFromExport(text) {
+  const items = []
+
+  for (const line of text.split('\n')) {
+    const trimmed = line.trim()
+    if (trimmed === '') { continue }
+
+    let parsed
+    try {
+      parsed = JSON.parse(trimmed)
+    } catch {
+      continue
+    }
+
+    if (parsed == null || typeof parsed !== 'object' || typeof parsed.videoId !== 'string' || parsed.videoId === '' || typeof parsed.title !== 'string') {
+      continue
+    }
+
+    const alarm = parsed.alarm != null && typeof parsed.alarm.at === 'number'
+      ? { at: parsed.alarm.at, armedAt: typeof parsed.alarm.armedAt === 'number' ? parsed.alarm.armedAt : parsed.alarm.at }
+      : null
+
+    items.push({
+      ...parsed,
+      _id: parsed.videoId,
+      addedAt: typeof parsed.addedAt === 'number' ? parsed.addedAt : 0,
+      position: 0,
+      alarm,
+    })
+  }
+
+  return items
+}
