@@ -33,6 +33,7 @@ const IpcChannels = {
   DB_SUBSCRIPTION_CACHE: 'db-subscription-cache',
   DB_CHANNELS: 'db-channels',
   DB_AI_VERDICTS: 'db-ai-verdicts',
+  DB_LATER: 'db-later',
 
   SYNC_SETTINGS: 'sync-settings',
   SYNC_HISTORY: 'sync-history',
@@ -41,6 +42,15 @@ const IpcChannels = {
   SYNC_PLAYLISTS: 'sync-playlists',
   SYNC_SUBSCRIPTION_CACHE: 'sync-subscription-cache',
   SYNC_CHANNELS: 'sync-channels',
+  SYNC_LATER: 'sync-later',
+
+  // The fork's Later list: which window is the main one, whether a window is
+  // shown, and the desktop notification of an armed event gone live
+  IS_MAIN_WINDOW: 'is-main-window',
+  MAIN_WINDOW_CHANGED: 'main-window-changed',
+  IS_WINDOW_SHOWN: 'is-window-shown',
+  SHOW_LIVE_NOTIFICATION: 'show-live-notification',
+  OPEN_LATER_ITEM: 'open-later-item',
 
   GET_REPLACE_HTTP_CACHE: 'get-replace-http-cache',
   TOGGLE_REPLACE_HTTP_CACHE: 'toggle-replace-http-cache',
@@ -133,6 +143,11 @@ const DBActions = {
     UPDATE_TAGS: 20,
     UPDATE_VIDEO_SAMPLES: 21,
   },
+
+  LATER: {
+    UPDATE_POSITION: 20,
+    UPDATE_ALARM: 21,
+  },
 }
 
 const SyncEvents = {
@@ -179,6 +194,11 @@ const SyncEvents = {
   CHANNELS: {
     UPDATE_TAGS: 20,
     UPDATE_VIDEO_SAMPLES: 21,
+  },
+
+  LATER: {
+    UPDATE_POSITION: 20,
+    UPDATE_ALARM: 21,
   },
 }
 

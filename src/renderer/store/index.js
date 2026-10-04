@@ -10,6 +10,7 @@ import searchHistory from './modules/search-history'
 import subscriptionCache from './modules/subscription-cache'
 import channels from './modules/channels'
 import aiVerdicts from './modules/aiVerdicts'
+import later from './modules/later'
 import utils from './modules/utils'
 import player from './modules/player'
 
@@ -24,6 +25,7 @@ export default createStore({
     subscriptionCache,
     channels,
     aiVerdicts,
+    later,
     utils,
     player,
   },

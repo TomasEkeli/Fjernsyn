@@ -444,6 +444,31 @@ User Playlists:
       There is already a playlist with this name. Please pick a different name.: There is already a playlist with this name. Please pick a different name.
       Playlist {playlistName} has been successfully created.: Playlist {playlistName} has been successfully created.
       There was an issue with creating the playlist.: There was an issue with creating the playlist.
+Later:
+  Later: Later
+  Scheduled: Scheduled
+  Watch later: Watch later
+  Add to Later: Watch later
+  Remove from Later: Remove from Later
+  Already in Later: Already on your Later list
+  Arm: Start when it goes live
+  Disarm: Don't start it
+  Remove: Remove
+  State:
+    Waiting: Waiting
+    Checking: Checking
+    Did not start: Did not start
+  No scheduled: Nothing scheduled. Arm an upcoming stream with its calendar button.
+  No queued: Nothing to watch later. Add videos with their clock button.
+  Live now: 'Live now: {channel}'
+  Watch now: Watch now
+  Dismiss: Dismiss
+  Cancel: Cancel
+  Switching: '{title} is live. Switching to it in {seconds} s'
+  Ended unseen: '{title} has ended. It is on your Later list.'
+  Export: Export Later list
+  Import: Import Later list
+  Imported: '{count} added to your Later list'
 History:
   # On History Page
   History: History

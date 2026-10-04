@@ -159,6 +159,8 @@ $watched-transition-duration: 0.5s;
     }
 
     .quickBookmarkVideoIcon,
+    .laterIcon,
+    .armIcon,
     .addToPlaylistIcon,
     .markWatchedIcon,
     .trashIcon,
@@ -445,6 +447,12 @@ $watched-transition-duration: 0.5s;
   @media (hover: hover) {
     &:hover .quickBookmarkVideoIcon:not(.alwaysVisible),
     .quickBookmarkVideoIcon.bookmarked:not(.alwaysVisible),
+    &:hover .laterIcon,
+    .laterIcon.inLater,
+    &:has(:focus-visible) .laterIcon,
+    &:hover .armIcon,
+    .armIcon.armed,
+    &:has(:focus-visible) .armIcon,
     &:hover .addToPlaylistIcon:not(.alwaysVisible),
     &:hover .markWatchedIcon,
     &:has(:focus-visible) .addToPlaylistIcon:not(.alwaysVisible),
@@ -461,6 +469,8 @@ $watched-transition-duration: 0.5s;
     }
 
     .quickBookmarkVideoIcon:not(.alwaysVisible),
+    .laterIcon,
+    .armIcon,
     .addToPlaylistIcon:not(.alwaysVisible),
     .markWatchedIcon,
     .optionsButton {

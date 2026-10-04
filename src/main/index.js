@@ -2463,6 +2463,53 @@ function runApp() {
   })
 
   // *********** //
+  // Later list
+  ipcMain.handle(IpcChannels.DB_LATER, async (event, { action, data }) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      return
+    }
+
+    try {
+      switch (action) {
+        case DBActions.GENERAL.FIND:
+          return await baseHandlers.later.find()
+
+        case DBActions.GENERAL.UPSERT:
+          await baseHandlers.later.upsert(data)
+          syncOtherWindows(IpcChannels.SYNC_LATER, event, { event: SyncEvents.GENERAL.UPSERT, data })
+          return null
+
+        case DBActions.LATER.UPDATE_POSITION:
+          await baseHandlers.later.updatePosition(data._id, data.position)
+          syncOtherWindows(IpcChannels.SYNC_LATER, event, { event: SyncEvents.LATER.UPDATE_POSITION, data })
+          return null
+
+        case DBActions.LATER.UPDATE_ALARM:
+          await baseHandlers.later.updateAlarm(data._id, data.alarm)
+          syncOtherWindows(IpcChannels.SYNC_LATER, event, { event: SyncEvents.LATER.UPDATE_ALARM, data })
+          return null
+
+        case DBActions.GENERAL.DELETE:
+          await baseHandlers.later.delete(data)
+          syncOtherWindows(IpcChannels.SYNC_LATER, event, { event: SyncEvents.GENERAL.DELETE, data })
+          return null
+
+        case DBActions.GENERAL.DELETE_ALL:
+          await baseHandlers.later.deleteAll()
+          syncOtherWindows(IpcChannels.SYNC_LATER, event, { event: SyncEvents.GENERAL.DELETE_ALL })
+          return null
+
+        default:
+          // eslint-disable-next-line no-throw-literal
+          throw 'invalid later db action'
+      }
+    } catch (err) {
+      if (typeof err === 'string') throw err
+      else throw err.toString()
+    }
+  })
+
+  // *********** //
 
   function syncOtherWindows(channel, event, payload) {
     const otherWindows = BrowserWindow.getAllWindows().filter((window) => {

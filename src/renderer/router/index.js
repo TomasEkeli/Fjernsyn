@@ -6,6 +6,7 @@ import Explore from '../views/Explore/Explore.vue'
 import Popular from '../views/Popular/Popular.vue'
 import UserPlaylists from '../views/UserPlaylists/UserPlaylists.vue'
 import History from '../views/History/History.vue'
+import Later from '../views/Later/Later.vue'
 import Settings from '../views/Settings/Settings.vue'
 import About from '../views/About/About.vue'
 import LayerSearchPage from '../views/LayerSearchPage/LayerSearchPage.vue'
@@ -71,6 +72,14 @@ const router = createRouter({
         title: 'Your Playlists'
       },
       component: UserPlaylists
+    },
+    {
+      path: '/later',
+      name: 'later',
+      meta: {
+        title: 'Later'
+      },
+      component: Later
     },
     {
       path: '/history',
