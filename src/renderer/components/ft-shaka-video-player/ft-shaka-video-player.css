@@ -202,7 +202,8 @@
  * shade of the bar's played colour. Mixed from `--primary-color` where it is
  * read, on the seek bar, so that a theme overriding the bar's colour there
  * (Hot Pink) gets its own darker shade. Inside the seek bar, so it shows and
- * fades with the controls.
+ * fades with the controls. Partly see-through, as it overlaps captions near
+ * the bottom of the video.
  */
 :deep(.seekBarHeatmap) {
   position: absolute;
@@ -211,6 +212,7 @@
   inline-size: 100%;
   block-size: 40px;
   fill: color-mix(in srgb, var(--primary-color) 80%, #000);
+  fill-opacity: 0.6;
   pointer-events: none;
 }
 
