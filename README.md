@@ -70,11 +70,9 @@ Scheduled premieres and live streams are in a shelf over the other videos, colla
 
 ### Later
 
-FreeTube's Watch Later is a playlist, and a playlist makes a poor queue. Things I meant to watch piled up in the order I found them, nothing left when I had watched it, and nothing could tell me that a stream I wanted to catch had started. Fjernsyn has a Later list in its place, behind the Later button in the top bar.
+A playlist makes a poor queue. Things I mean to watch pile up in the order I found them, nothing leaves when I have watched it, and nothing tells me that a stream I wanted to catch has started. The Later list, behind the Later button in the top bar, is a queue with an order of its own, and it starts streams when they go live.
 
 The clock on a video card, or on the watch page, puts the video at the top of the list, and a second click takes it off. Put the list in any order with the arrows on each row, or drag a row by its grip. A video leaves the list when you watch it to the end; stopping halfway, or only opening it, leaves it where it was.
-
-On the first start Fjernsyn moves whatever is in the Watch Later playlist into the Later list, in the same order, and deletes the playlist. New installs no longer get a Watch Later playlist. A playlist you name Watch Later yourself afterwards is an ordinary playlist and stays one.
 
 #### Streams and premieres
 
@@ -98,7 +96,7 @@ The checks are a single small request each, made only by the first window you op
 
 On Windows the desktop notification needs the installed build. I have not seen whether the portable one shows it.
 
-The Later list has its own export and import in Data settings, as it no longer travels with the playlists.
+The Later list has its own export and import in Data settings.
 
 ### Channels and profiles
 
