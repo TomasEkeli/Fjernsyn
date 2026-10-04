@@ -2,6 +2,7 @@
   <FtSettingsSection
     :title="$t('Settings.Data Settings.Data Settings')"
   >
+    <BackupSettings />
     <h4 class="groupTitle">
       {{ $t('Subscriptions.Subscriptions') }}
     </h4>
@@ -125,6 +126,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
+import BackupSettings from '../BackupSettings/BackupSettings.vue'
 import FtButton from '../FtButton/FtButton.vue'
 import FtFlexBox from '../ft-flex-box/ft-flex-box.vue'
 import FtPrompt from '../FtPrompt/FtPrompt.vue'

@@ -445,6 +445,24 @@ export default {
   },
 
   /**
+   * Where a restore writes its safety copy: `backups/` in the data folder
+   * @returns {Promise<string>}
+   */
+  getBackupFolder: () => {
+    return ipcRenderer.invoke(IpcChannels.BACKUP_FOLDER)
+  },
+
+  /**
+   * Writes the safety copy, replaces each section given, then relaunches.
+   * On success the app relaunches, so the answer that matters is a failure.
+   * @param {{ safetyCopy: string, sections: Record<string, object[]> }} request
+   * @returns {Promise<{ ok: true, safetyCopyPath: string } | { ok: false, error: string, safetyCopyPath: string | null }>}
+   */
+  restoreBackup: (request) => {
+    return ipcRenderer.invoke(IpcChannels.BACKUP_RESTORE, request)
+  },
+
+  /**
    * Whether this window is the main one, which checks the Later list
    * @returns {Promise<boolean>}
    */
