@@ -14,8 +14,10 @@ import { StatsButton } from './player-components/StatsButton'
 import { TheatreModeButton } from './player-components/TheatreModeButton'
 import { AutoplayToggle } from './player-components/AutoplayToggle'
 import { CopyLinkButton } from './player-components/CopyLinkButton'
+import { LiveChatOverlayButton } from './player-components/LiveChatOverlayButton'
 import { SkipButton } from './player-components/SkipButton'
 import { VolumeBar } from './player-components/VolumeBar'
+import LiveChatOverlay from '../LiveChatOverlay/LiveChatOverlay.vue'
 import {
   deduplicateAudioTracks,
   findMostSimilarAudioBandwidth,
@@ -109,6 +111,9 @@ const LOCALE_MAPPINGS = new Map(process.env.SHAKA_LOCALE_MAPPINGS)
 
 export default defineComponent({
   name: 'FtShakaVideoPlayer',
+  components: {
+    LiveChatOverlay,
+  },
   props: {
     format: {
       type: String,
@@ -249,6 +254,15 @@ export default defineComponent({
     videoUrl: {
       type: String,
       default: ''
+    },
+    /**
+     * A live's chat, as the watch page's side panel is handed it, which shows
+     * it, starts it and stops it. Given, the player has a button to show the
+     * chat over the video too; `null` for none.
+     */
+    liveChat: {
+      type: EventTarget,
+      default: null
     },
   },
   emits: [
@@ -426,6 +440,20 @@ export default defineComponent({
         container.value?.classList.add('no-cursor')
       }, PINNED_CURSOR_HIDE_DELAY_MS)
     }
+
+    /**
+     * Whether a live's chat is shown over the video, toggled from its button
+     * @type {import('vue').ComputedRef<boolean>}
+     */
+    const liveChatOverlayEnabled = computed(() => {
+      return store.getters.getLiveChatOverlay
+    })
+
+    watch(liveChatOverlayEnabled, (newValue) => {
+      events.dispatchEvent(new CustomEvent('liveChatOverlayChanged', {
+        detail: newValue
+      }))
+    })
 
     /** @type {import('vue').ComputedRef<number>} */
     const defaultSkipInterval = computed(() => {
@@ -1074,6 +1102,7 @@ export default defineComponent({
           props.format === 'legacy' ? 'ft_legacy_quality' : 'quality',
           'playback_rate',
           'captions',
+          'ft_live_chat_overlay',
           'ft_audio_tracks',
           'chapter',
           'loop',
@@ -1097,6 +1126,7 @@ export default defineComponent({
           'ft_screenshot',
           'ft_copy_link',
           'ft_autoplay_toggle',
+          'ft_live_chat_overlay',
           'overflow_menu',
           'picture_in_picture',
           'ft_theatre_mode',
@@ -1124,6 +1154,10 @@ export default defineComponent({
 
       if (!videoLink.value) {
         removeFromArrayIfExists(elementList, 'ft_copy_link')
+      }
+
+      if (!props.liveChat) {
+        removeFromArrayIfExists(elementList, 'ft_live_chat_overlay')
       }
 
       if (!props.theatrePossible) {
@@ -2718,6 +2752,24 @@ export default defineComponent({
       shakaOverflowMenu.registerElement('ft_copy_link', new CopyLinkButtonFactory())
     }
 
+    function registerLiveChatOverlayButton() {
+      events.addEventListener('setLiveChatOverlay', (/** @type {CustomEvent} */ event) => {
+        store.dispatch('updateLiveChatOverlay', event.detail)
+      })
+
+      /**
+       * @implements {shaka.extern.IUIElement.Factory}
+       */
+      class LiveChatOverlayButtonFactory {
+        create(rootElement, controls) {
+          return new LiveChatOverlayButton(liveChatOverlayEnabled.value, events, rootElement, controls)
+        }
+      }
+
+      shakaControls.registerElement('ft_live_chat_overlay', new LiveChatOverlayButtonFactory())
+      shakaOverflowMenu.registerElement('ft_live_chat_overlay', new LiveChatOverlayButtonFactory())
+    }
+
     function registerSkipButtons() {
       // skip to next video button
       events.addEventListener('nextVideo', () => {
@@ -2792,6 +2844,9 @@ export default defineComponent({
 
       shakaControls.registerElement('ft_copy_link', null)
       shakaOverflowMenu.registerElement('ft_copy_link', null)
+
+      shakaControls.registerElement('ft_live_chat_overlay', null)
+      shakaOverflowMenu.registerElement('ft_live_chat_overlay', null)
 
       shakaControls.registerElement('ft_next_previous', null)
       shakaOverflowMenu.registerElement('ft_next_previous', null)
@@ -3064,6 +3119,7 @@ export default defineComponent({
       'theatre-button',
       'screenshot-button',
       'copy-link-button',
+      'live-chat-overlay-button',
     ]
     function blurTooltipButtons() {
       const element = document.activeElement
@@ -3642,6 +3698,7 @@ export default defineComponent({
 
       registerScreenshotButton()
       registerCopyLinkButton()
+      registerLiveChatOverlayButton()
       registerAudioTrackSelection()
       registerAutoplayToggle()
 
@@ -4258,6 +4315,7 @@ export default defineComponent({
 
       autoplayVideos,
       sponsorBlockShowSkippedToast,
+      liveChatOverlayEnabled,
 
       skippedSponsorBlockSegments,
 

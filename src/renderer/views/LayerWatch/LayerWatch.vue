@@ -41,6 +41,7 @@
             :thumbnail="video.thumbnail"
             :platform="platformOf(video)"
             :video-url="videoUrl"
+            :live-chat="liveChatShown ? video.liveChat : null"
             :loudness-db="source.loudnessDb ?? null"
             :delay-load-until-unix="source.delayLoadUntilMs ?? 0"
             :vr-projection="source.vrProjection ?? null"
@@ -553,7 +554,8 @@ const recommendationsShown = computed(() => !hideRecommendedVideos.value && Arra
 /**
  * As Watch.vue under `hideLiveChat`, for a live or upcoming video whose
  * details hold a chat to open: YouTube's from Local. Invidious answers none,
- * and so no panel. The handle is the details', handed on as it is.
+ * and so no panel. The handle is the details', handed on as it is, to the
+ * panel, which starts it, and to the player, which can show it over the video.
  */
 const liveChatShown = computed(() => {
   return !hideLiveChat.value && video.value?.liveChat != null && (isLive.value || video.value.isUpcoming)

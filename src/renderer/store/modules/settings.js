@@ -271,6 +271,10 @@ const state = {
   hideChapters: false,
   showDistractionFreeTitles: false,
   listType: 'grid',
+  // Shows a live's chat over the video, on its right, in every viewing mode.
+  // Toggled from the chat button on the player only, as the pin is, and kept
+  // from one live to the next.
+  liveChatOverlay: false,
   maxVideoPlaybackRate: 3,
   // The volume slider's ceiling, as a percentage. Anything above 100% is
   // achieved with a Web Audio gain stage, as the video element itself stops at 100%.

@@ -57,6 +57,7 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
         vrProjection: { type: String, default: null },
         platform: { type: String, default: 'youtube' },
         videoUrl: { type: String, default: '' },
+        liveChat: { type: EventTarget, default: null },
         sabrData: { type: Object, default: null },
         sabrRegulator: { type: Object, default: null },
       },
@@ -2503,6 +2504,13 @@ describe('live chat', () => {
     expect(wrapper.find('.sidebarArea').isVisible()).toBe(true)
   })
 
+  it('is handed to the player too, to show over the video', async () => {
+    store.setGetter('getHideRecommendedVideos', true)
+    const { wrapper } = await openWatchPage({ ...youtubeLive(), liveChat: HANDLE }, YT_PATH)
+
+    expect(findPlayer(wrapper).props('liveChat')).toBe(HANDLE)
+  })
+
   it.each([
     ['without a handle, as Invidious answers', () => ({ ...youtubeLive(), liveChat: null }), () => {}],
     ['while live chat is hidden', () => ({ ...youtubeLive(), liveChat: HANDLE }), () => store.setGetter('getHideLiveChat', true)],
@@ -2515,6 +2523,7 @@ describe('live chat', () => {
 
     expect(findPlayer(wrapper).exists()).toBe(true)
     expect(findChat(wrapper).exists()).toBe(false)
+    expect(findPlayer(wrapper).props('liveChat')).toBeNull()
   })
 })
 

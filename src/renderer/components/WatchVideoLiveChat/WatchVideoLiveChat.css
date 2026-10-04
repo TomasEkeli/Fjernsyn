@@ -183,10 +183,25 @@
   overflow-y: auto;
 }
 
+/* a little larger than a comment's text (14px): the chat is what is read here */
 .chatContent {
-  margin-block: 5px 2px;
-  font-size: 12px;
+  margin-block: 3px 2px;
+  font-size: 15px;
+  line-height: 1.4;
   overflow-wrap: break-word;
+}
+
+.chatTime {
+  margin-inline-end: 6px;
+  font-size: 0.8em;
+  font-weight: normal;
+  font-variant-numeric: tabular-nums;
+  color: var(--tertiary-text-color);
+}
+
+.upperSuperChatMessage .chatTime {
+  margin-inline-start: 6px;
+  color: inherit;
 }
 
 .member {
@@ -204,7 +219,8 @@
 }
 
 .badgeImage {
-  inline-size: 14px;
+  inline-size: 1em;
+  vertical-align: middle;
 }
 
 .scrollToBottom {
