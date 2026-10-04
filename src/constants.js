@@ -35,6 +35,10 @@ const IpcChannels = {
   DB_AI_VERDICTS: 'db-ai-verdicts',
   DB_LATER: 'db-later',
 
+  // The fork's backup, see src/main/backup/: where the safety copies go, and the restore
+  BACKUP_FOLDER: 'backup-folder',
+  BACKUP_RESTORE: 'backup-restore',
+
   SYNC_SETTINGS: 'sync-settings',
   SYNC_HISTORY: 'sync-history',
   SYNC_SEARCH_HISTORY: 'sync-search-history',

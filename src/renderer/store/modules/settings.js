@@ -435,6 +435,10 @@ const state = {
   ytDlpExecutablePath: '',
   // A JSON array of strings, like the external player's
   ytDlpCustomArgs: '[]',
+  // A random id made once per data folder by main (src/main/backup/), which
+  // goes in every backup's header so a backup says which installation wrote
+  // it. Never written by the renderer, never in a backup as a setting.
+  installationId: '',
 
   // The settings below have side effects
   currentLocale: 'system',
@@ -586,6 +590,8 @@ export const NON_TRANSFERABLE_SETTINGS = new Set([
   'ytDlpDownloadFolder',
   'ytDlpExecutablePath',
   'ytDlpCustomArgs',
+  // Backup
+  'installationId',
 
   /* Depends on process.env.SUPPORTS_LOCAL_API */
   'backendFallback',

@@ -29,6 +29,7 @@ import { brotliDecompress } from 'zlib'
 import contextMenu from 'electron-context-menu'
 
 import packageDetails from '../../package.json'
+import { registerBackupHandlers } from './backup/ipc'
 import { handleOpenInExternalPlayer } from './externalPlayer'
 import { registerPeerTubeDownloadHandlers } from './peertubeDownloads/ipc'
 import { createPeerTubeRequestHeaders, peerTubeUserAgent } from './peertubeRequests'
@@ -1788,6 +1789,7 @@ function runApp() {
   ipcMain.on(IpcChannels.OPEN_IN_EXTERNAL_PLAYER, handleOpenInExternalPlayer)
 
   registerYtDlpHandlers({ chooseDefaultFolder })
+  registerBackupHandlers({ relaunch })
   registerPeerTubeDownloadHandlers({ userAgent: peerTubeUserAgent(packageDetails.version) })
 
   ipcMain.handle(IpcChannels.GET_REPLACE_HTTP_CACHE, (event) => {
