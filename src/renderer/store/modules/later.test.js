@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DBLaterHandlers } from '../../../datastores/handlers/index'
 import { showToast } from '../../helpers/utils'
 import later from './later'
+import { laterFromExport, laterToExport } from '../../helpers/later'
 
 // What the store reads and writes, answered and recorded instead
 vi.mock('../../../datastores/handlers/index', () => ({
@@ -235,5 +236,27 @@ describe('the Later store', () => {
       expect(armedIds(state)).toEqual([])
       expect(queuedIds(state)).toEqual(['a'])
     })
+  })
+
+  it('gives the same list after an export and an import into an empty list', async () => {
+    const source = freshState()
+    const sourceContext = contextFor(source)
+    await later.actions.addToLater(sourceContext, video('a'))
+    await later.actions.addToLater(sourceContext, video('b'))
+    await later.actions.addToLater(sourceContext, video('c'))
+    await later.actions.moveLaterItem(sourceContext, { id: 'c', toIndex: 2 })
+    await later.actions.arm(sourceContext, { video: video('x'), at: NOW + 5000 })
+    await later.actions.arm(sourceContext, { video: video('y'), at: NOW + 1000 })
+
+    const target = freshState()
+    const { added } = await later.actions.addManyToLater(contextFor(target), laterFromExport(laterToExport(Object.values(source.laterItems))))
+
+    expect(added).toBe(5)
+    expect(queuedIds(target)).toEqual(queuedIds(source))
+    expect(armedIds(target)).toEqual(['y', 'x'])
+    expect(target.laterItems.x.alarm).toEqual(source.laterItems.x.alarm)
+
+    // And again: everything is there already
+    expect((await later.actions.addManyToLater(contextFor(target), laterFromExport(laterToExport(Object.values(source.laterItems))))).added).toBe(0)
   })
 })

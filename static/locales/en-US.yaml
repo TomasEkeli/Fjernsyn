@@ -469,6 +469,7 @@ Later:
   Export: Export Later list
   Import: Import Later list
   Imported: '{count} added to your Later list'
+  Exported: Your Later list has been exported
 History:
   # On History Page
   History: History
