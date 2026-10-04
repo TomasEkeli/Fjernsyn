@@ -85,6 +85,8 @@ import { getLocalClip } from './helpers/api/local.js'
 import { getClipInvidious } from './helpers/api/invidious.js'
 import { openPeerTubeEntry } from './platform/entryPoints'
 import { useWindowMoveGesture } from './composables/useWindowMoveGesture'
+import { useMainWindow } from './composables/useMainWindow'
+import { useLaterTakeover } from './composables/useLaterTakeover'
 
 const route = useRoute()
 const router = useRouter()
@@ -118,6 +120,11 @@ const showProgressBar = computed(() => store.getters.getShowProgressBar)
 const defaultInvidiousInstance = computed(() => store.getters.getDefaultInvidiousInstance)
 
 const dataReady = ref(false)
+
+// The Later list: the main window, and only it, moves the old Watch Later
+// playlist into it once
+const isMainWindow = useMainWindow()
+useLaterTakeover(store, isMainWindow)
 
 // A frameless window has no title bar, so a long press and a drag moves it
 useWindowMoveGesture({ enabled: () => store.getters.getFramelessWindow })

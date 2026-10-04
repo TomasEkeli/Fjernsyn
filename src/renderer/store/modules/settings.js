@@ -414,6 +414,10 @@ const state = {
   // This makes the `favorites` playlist uses as quick bookmark target
   // If the playlist is removed quick bookmark is disabled
   quickBookmarkTargetPlaylistId: 'favorites',
+  // Set once the built-in Watch Later playlist has been moved into the Later
+  // list (composables/useLaterTakeover.js), so that a playlist named Watch
+  // Later made afterwards, which upstream gives the same id, stays a playlist
+  laterTakeoverDone: false,
   generalAutoLoadMorePaginatedItemsEnabled: false,
   commentAutoLoadEnabled: true,
   hideToTrayOnMinimize: false,
