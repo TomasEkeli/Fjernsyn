@@ -242,8 +242,8 @@ export default defineComponent({
       default: null
     },
     /**
-     * YouTube's most replayed heatmap, drawn above the seek bar while it is
-     * hovered. `null` when there is none.
+     * YouTube's most replayed heatmap, drawn above the seek bar whenever the
+     * controls show. `null` when there is none.
      * @type {import('vue').PropType<import('../../platform/shapes').HeatmapPoint[] | null>}
      */
     heatmap: {
@@ -3587,8 +3587,8 @@ export default defineComponent({
      * Draws the most replayed heatmap above the seek bar, in place of any drawn
      * before, so that it is safe to call on every load and UI rebuild. It sits
      * outside the marker container, above the bar rather than over it, so the
-     * SponsorBlock segments and chapter ticks on the bar stay uncovered. The CSS
-     * shows it only while the seek bar is hovered.
+     * SponsorBlock segments and chapter ticks on the bar stay uncovered. Being
+     * inside the seek bar, it shows and fades with the controls.
      */
     function createHeatmap() {
       const seekBarContainer = container.value?.querySelector('.shaka-seek-bar-container')

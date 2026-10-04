@@ -201,7 +201,8 @@
  * The most replayed heatmap: above the bar, never over it, in a slightly darker
  * shade of the bar's played colour. Mixed from `--primary-color` where it is
  * read, on the seek bar, so that a theme overriding the bar's colour there
- * (Hot Pink) gets its own darker shade.
+ * (Hot Pink) gets its own darker shade. Inside the seek bar, so it shows and
+ * fades with the controls.
  */
 :deep(.seekBarHeatmap) {
   position: absolute;
@@ -210,13 +211,7 @@
   inline-size: 100%;
   block-size: 40px;
   fill: color-mix(in srgb, var(--primary-color) 80%, #000);
-  opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-:deep(.shaka-seek-bar-container:hover .seekBarHeatmap) {
-  opacity: 1;
 }
 
 :deep(.playerFullscreenTitleOverlay) {

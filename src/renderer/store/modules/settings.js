@@ -328,8 +328,8 @@ const state = {
   watchedProgressSavingMode: 'auto',
   saveVideoHistoryWithLastViewedPlaylist: true,
   showFamilyFriendlyOnly: false,
-  // YouTube's "most replayed" curve above the player's seek bar, shown while the
-  // seek bar is hovered, for videos YouTube sends one for.
+  // YouTube's "most replayed" curve above the player's seek bar, shown with the
+  // controls, for videos YouTube sends one for.
   showMostReplayedHeatmap: true,
   // Which kinds the subscriptions stream shows, one per chip in the row above
   // it. A standing preference rather than a session's, which is why it is here
