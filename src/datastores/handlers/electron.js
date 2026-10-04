@@ -241,6 +241,16 @@ class Channels {
   }
 }
 
+class AiVerdicts {
+  static find() {
+    return window.ftElectron.dbAiVerdicts(DBActions.GENERAL.FIND)
+  }
+
+  static upsert(videoId, ai, checkedAt) {
+    return window.ftElectron.dbAiVerdicts(DBActions.GENERAL.UPSERT, { videoId, ai, checkedAt })
+  }
+}
+
 export {
   Settings as settings,
   History as history,
@@ -249,4 +259,5 @@ export {
   SearchHistory as searchHistory,
   SubscriptionCache as subscriptionCache,
   Channels as channels,
+  AiVerdicts as aiVerdicts,
 }

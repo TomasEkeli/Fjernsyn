@@ -1007,6 +1007,12 @@ async function load() {
     video.value = details
     recommendedVideos.value = sortWatchedVideosLast(details.related ?? [])
 
+    // YouTube's AI label, read from the /next the details came from: kept,
+    // so that this video's tile is never asked about (helpers/aiMarker)
+    if (details.aiVerdict === 'ai' || details.aiVerdict === 'not-ai') {
+      store.dispatch('recordAiVerdict', { videoId: details.videoId, verdict: details.aiVerdict })
+    }
+
     // As Watch.js: shown as age restricted, and moved on from as if it had
     // ended, without a title or the subscription's details
     if (hiddenAsNotFamilyFriendly.value) {

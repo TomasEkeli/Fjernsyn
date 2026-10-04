@@ -5,6 +5,7 @@ import { parseLooseJSON } from 'bgutils-js/utils'
 import { SEARCH_CHAR_LIMIT } from '../../../constants'
 import { PlayerCache } from './PlayerCache'
 import { traceWatch } from '../watchTrace'
+import { readAiLabel } from '../aiMarker/label'
 import { rememberChannelTags } from '../channelTags'
 import {
   CHANNEL_HANDLE_REGEX,
@@ -827,8 +828,10 @@ function buildSessionFromYtConfig(ytConfig, fetchFunc) {
  *     osName: string,
  *     osVersion: string
  *   },
- *   adEndTimeUnixMs: number
- * }>}
+ *   adEndTimeUnixMs: number,
+ *   aiVerdict: 'ai' | 'not-ai'
+ * }>} `aiVerdict` is YouTube's AI label, read from the `/next` response
+ * already in hand, so the watch page records it without a request of its own
  */
 export async function getLocalVideoInfo(id, { reloadPlaybackContext } = {}) {
   let responseTime
@@ -953,6 +956,8 @@ export async function getLocalVideoInfo(id, { reloadPlaybackContext } = {}) {
     })
   }
 
+  const aiVerdict = readAiLabel(nextResponse.data)
+
   traceWatch('video-response-shape', {
     videoId: id,
     playerKeys: Object.keys(playerResponse.data ?? {}),
@@ -1053,7 +1058,7 @@ export async function getLocalVideoInfo(id, { reloadPlaybackContext } = {}) {
 
   if ((info.playability_status.status === 'UNPLAYABLE' && (!hasTrailer || trailerIsAgeRestricted)) ||
     info.playability_status.status === 'LOGIN_REQUIRED') {
-    return { info, poToken: undefined, clientInfo }
+    return { info, poToken: undefined, clientInfo, aiVerdict }
   }
 
   if (hasTrailer && info.playability_status.status !== 'OK') {
@@ -1118,6 +1123,7 @@ export async function getLocalVideoInfo(id, { reloadPlaybackContext } = {}) {
     poToken: contentPoToken,
     clientInfo,
     adEndTimeUnixMs,
+    aiVerdict,
   }
 }
 

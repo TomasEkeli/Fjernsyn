@@ -297,6 +297,7 @@
  *   related?: VideoSummary[],
  *   chaptersKind?: 'chapters' | 'keyMoments',
  *   liveChat?: unknown,
+ *   aiVerdict?: 'ai' | 'not-ai' | null,
  * }} VideoDetails
  *
  * - `url`: the canonical URL on the origin, to share and open
@@ -325,6 +326,10 @@
  *   there is none, and always from Invidious; absent for PeerTube. An
  *   in-memory value, a library instance, as a cursor is: hold the details in
  *   a `shallowRef` or a plain variable, and never store or clone the handle
+ * - `aiVerdict`: YouTube only: whether YouTube labels the video "Made with
+ *   AI" (`helpers/aiMarker/label.js`), read from the `/next` response the
+ *   details came from, for the watch view to record. Local only; `null`
+ *   from Invidious, which does not carry the label; absent for PeerTube
  */
 
 // ---------------------------------------------------------------------------

@@ -263,13 +263,13 @@ function localRelated(youtube, info) {
 
 /**
  * @param {string} id
- * @param {{ info: any }} answer what `getLocalVideoInfo` answered
+ * @param {{ info: any, aiVerdict?: 'ai' | 'not-ai' }} answer what `getLocalVideoInfo` answered
  * @param {object} deps
  * @param {import('./deps').YouTubeDeps} deps.youtube
  * @param {Readonly<import('../index').PlatformConfig>} deps.config
  * @returns {DetailsWithoutPlayback}
  */
-export function localVideoDetails(id, { info }, { youtube, config }) {
+export function localVideoDetails(id, { info, aiVerdict }, { youtube, config }) {
   const basic = info.basic_info ?? {}
   const owner = info.secondary_info?.owner
   const live = !!basic.is_live
@@ -308,6 +308,7 @@ export function localVideoDetails(id, { info }, { youtube, config }) {
     // As Watch.js asks for it: a live or waiting live with a chat. A
     // `YT.LiveChat`, which polls nothing until the view starts it
     liveChat: (live || upcoming) && info.livechat ? info.getLiveChat() : null,
+    aiVerdict: aiVerdict === 'ai' || aiVerdict === 'not-ai' ? aiVerdict : null,
   }
 
   if (!live) {
@@ -462,6 +463,8 @@ export function invidiousVideoDetails(id, video, { youtube, config }) {
     related: invidiousRelated(video),
     // Invidious has no live chat to hand on
     liveChat: null,
+    // Invidious does not carry YouTube's AI label
+    aiVerdict: null,
   }
 
   if (!live) {

@@ -429,6 +429,14 @@ export default {
   },
 
   /**
+   * @param {number} action
+   * @param {any} [data]
+   */
+  dbAiVerdicts: (action, data) => {
+    return ipcRenderer.invoke(IpcChannels.DB_AI_VERDICTS, data ? { action, data } : { action })
+  },
+
+  /**
    * @param {(route: string) => void} handler
    */
   handleChangeView: (handler) => {
