@@ -12,6 +12,7 @@ vi.mock('../../../datastores/handlers/index', () => ({
     upsert: vi.fn(async () => {}),
     updatePosition: vi.fn(async () => {}),
     updateAlarm: vi.fn(async () => {}),
+    updateViewCount: vi.fn(async () => {}),
     delete: vi.fn(async () => {}),
     deleteAll: vi.fn(async () => {}),
   },
@@ -271,5 +272,17 @@ describe('the Later store', () => {
     await later.actions.laterWatchNow(context, 'b')
 
     expect(state.laterLiveQuiet).toEqual({})
+  })
+
+  it('writes a new view count, and nothing for the same one', async () => {
+    const state = freshState()
+    const context = contextFor(state)
+    await later.actions.addToLater(context, video('a', { viewCount: 10 }))
+
+    await later.actions.updateLaterViewCount(context, { id: 'a', viewCount: 10 })
+    await later.actions.updateLaterViewCount(context, { id: 'a', viewCount: 25 })
+
+    expect(state.laterItems.a.viewCount).toBe(25)
+    expect(DBLaterHandlers.updateViewCount.mock.calls).toEqual([['a', 25]])
   })
 })

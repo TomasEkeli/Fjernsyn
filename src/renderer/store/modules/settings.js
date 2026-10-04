@@ -808,6 +808,10 @@ const customActions = {
             commit('setLaterAlarm', data)
             break
 
+          case SyncEvents.LATER.UPDATE_VIEW_COUNT:
+            commit('setLaterViewCount', data)
+            break
+
           case SyncEvents.GENERAL.DELETE:
             commit('removeLaterItem', data)
             break

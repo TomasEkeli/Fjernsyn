@@ -253,6 +253,26 @@ const actions = {
   },
 
   /**
+   * Keeps a Later item's view count up to date, from the watch page's details
+   * when its video is opened, which costs no request.
+   * @param {any} context
+   * @param {{ id: string, viewCount: number }} payload
+   */
+  async updateLaterViewCount({ commit, state }, { id, viewCount }) {
+    const item = state.laterItems[id]
+
+    if (item == null || typeof viewCount !== 'number' || !Number.isFinite(viewCount) || item.viewCount === viewCount) { return }
+
+    commit('setLaterViewCount', { _id: id, viewCount })
+
+    try {
+      await DBLaterHandlers.updateViewCount(id, viewCount)
+    } catch (errMessage) {
+      console.error(errMessage)
+    }
+  },
+
+  /**
    * Follows a stated time that moved.
    * @param {any} context
    * @param {{ id: string, at: number }} payload
@@ -370,6 +390,11 @@ const mutations = {
 
   setLaterLiveQuiet(state, id) {
     state.laterLiveQuiet = { ...state.laterLiveQuiet, [id]: true }
+  },
+
+  setLaterViewCount(state, { _id, viewCount }) {
+    const item = state.laterItems[_id]
+    if (item != null) { item.viewCount = viewCount }
   },
 
   setLaterPosition(state, { _id, position }) {

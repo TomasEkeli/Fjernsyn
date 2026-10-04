@@ -1043,6 +1043,11 @@ async function load() {
       return
     }
 
+    // A Later item's view count, kept fresh for free from the details
+    if (store.getters.getIsInLater(details.videoId) && typeof details.viewCount === 'number') {
+      store.dispatch('updateLaterViewCount', { id: details.videoId, viewCount: details.viewCount })
+    }
+
     activeFormat.value = initialFormat()
     startTime.value = initialStartTime(resumePosition)
     // Theatre mode is only possible once the page knows what the sidebar holds

@@ -147,6 +147,7 @@ const DBActions = {
   LATER: {
     UPDATE_POSITION: 20,
     UPDATE_ALARM: 21,
+    UPDATE_VIEW_COUNT: 22,
   },
 }
 
@@ -199,6 +200,7 @@ const SyncEvents = {
   LATER: {
     UPDATE_POSITION: 20,
     UPDATE_ALARM: 21,
+    UPDATE_VIEW_COUNT: 22,
   },
 }
 
