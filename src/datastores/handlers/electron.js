@@ -268,6 +268,10 @@ class Later {
     return window.ftElectron.dbLater(DBActions.LATER.UPDATE_ALARM, { _id, alarm, premiereDate })
   }
 
+  static updateViewCount(_id, viewCount) {
+    return window.ftElectron.dbLater(DBActions.LATER.UPDATE_VIEW_COUNT, { _id, viewCount })
+  }
+
   static delete(_id) {
     return window.ftElectron.dbLater(DBActions.GENERAL.DELETE, _id)
   }

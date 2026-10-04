@@ -193,14 +193,29 @@ function cardData(item) {
     ...item,
     type: 'video',
     lengthSeconds: item.lengthSeconds ?? 0,
-    // As the subscriptions wall shows it. An item added without one (as the
-    // old Watch Later's were, playlists keeping none) takes the history's
-    viewCount: item.viewCount ?? store.getters.getHistoryCacheById[item.videoId]?.viewCount,
+    viewCount: viewCountOf(item),
     isUpcoming: ahead,
     premiereDate: ahead ? new Date(at) : undefined,
     // The row id the drag and the move events carry: the item's own `_id`
     playlistItemId: item._id,
   }
+}
+
+/**
+ * As the subscriptions wall shows it: the subscription cache's, which is the
+ * freshest where the video is in it, else the item's own (kept when it was
+ * added, and each time its watch page is opened), else the history's
+ * @param {import('../../helpers/later').LaterItem} item
+ * @returns {number | undefined}
+ */
+function viewCountOf(item) {
+  for (const cache of [store.getters.getVideoCache, store.getters.getLiveCache, store.getters.getShortsCache]) {
+    const found = cache[item.authorId]?.videos?.find(video => video.videoId === item.videoId)
+
+    if (typeof found?.viewCount === 'number') { return found.viewCount }
+  }
+
+  return item.viewCount ?? store.getters.getHistoryCacheById[item.videoId]?.viewCount
 }
 
 const armed = computed(() => store.getters.getLaterArmed.map(cardData))

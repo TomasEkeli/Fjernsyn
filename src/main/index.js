@@ -2516,6 +2516,11 @@ function runApp() {
           syncOtherWindows(IpcChannels.SYNC_LATER, event, { event: SyncEvents.LATER.UPDATE_ALARM, data })
           return null
 
+        case DBActions.LATER.UPDATE_VIEW_COUNT:
+          await baseHandlers.later.updateViewCount(data._id, data.viewCount)
+          syncOtherWindows(IpcChannels.SYNC_LATER, event, { event: SyncEvents.LATER.UPDATE_VIEW_COUNT, data })
+          return null
+
         case DBActions.GENERAL.DELETE:
           await baseHandlers.later.delete(data)
           syncOtherWindows(IpcChannels.SYNC_LATER, event, { event: SyncEvents.GENERAL.DELETE, data })

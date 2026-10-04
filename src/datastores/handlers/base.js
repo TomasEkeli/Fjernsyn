@@ -546,6 +546,10 @@ class Later {
     return db.later.updateAsync({ _id }, { $set: fields })
   }
 
+  static updateViewCount(_id, viewCount) {
+    return db.later.updateAsync({ _id }, { $set: { viewCount } })
+  }
+
   static delete(_id) {
     return db.later.removeAsync({ _id })
   }
