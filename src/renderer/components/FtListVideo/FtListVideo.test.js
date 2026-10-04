@@ -658,12 +658,20 @@ describe('FtListVideo, the Later buttons', () => {
     expect(store.dispatched).toEqual([{ type: 'disarm', payload: YOUTUBE_ID }])
   })
 
-  it('shows neither on the Later page, nor on a PeerTube card', async () => {
-    const later = (await mountCard(UPCOMING, { laterRow: true })).wrapper
-    expect(button(later, 'laterIcon')).toBeUndefined()
-    expect(button(later, 'armIcon')).toBeUndefined()
+  it('shows no clock on the Later page, and the calendar only on its queued rows', async () => {
+    const queuedRow = (await mountCard(UPCOMING, { laterRow: true })).wrapper
+    expect(button(queuedRow, 'laterIcon')).toBeUndefined()
+    expect(button(queuedRow, 'armIcon')).toBeDefined()
 
-    expect(button((await mountCard(PEERTUBE_VIDEO)).wrapper, 'laterIcon')).toBeUndefined()
+    store.setGetter('getIsArmed', () => true)
+    const armedRow = (await mountCard(UPCOMING, { laterRow: true })).wrapper
+    expect(button(armedRow, 'armIcon')).toBeUndefined()
+  })
+
+  it('shows neither on a PeerTube card', async () => {
+    const { wrapper } = await mountCard(PEERTUBE_VIDEO)
+    expect(button(wrapper, 'laterIcon')).toBeUndefined()
+    expect(button(wrapper, 'armIcon')).toBeUndefined()
   })
 
   it('gives the Later page its move and remove buttons, with no playlist in the link', async () => {

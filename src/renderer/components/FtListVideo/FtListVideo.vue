@@ -1578,7 +1578,15 @@ const armableAt = computed(() => {
   return subscriptionEntryScheduledAt(props.data)
 })
 
-const showArmButton = computed(() => showLaterButton.value && (isArmed.value || armableAt.value != null))
+// On the Later page too, so that a queued item can be armed (a mis-click on
+// the clock is undone in one more click), but not on its armed rows, which
+// have Don't start it beside them
+const showArmButton = computed(() => {
+  if (platformCard.value) { return false }
+  if (props.laterRow && isArmed.value) { return false }
+
+  return isArmed.value || armableAt.value != null
+})
 
 function laterVideoData() {
   return {

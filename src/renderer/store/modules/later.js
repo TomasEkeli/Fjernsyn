@@ -216,8 +216,8 @@ const actions = {
         commit('upsertLaterItem', item)
         await DBLaterHandlers.upsert(item)
       } else {
-        commit('setLaterAlarm', { _id: existing._id, alarm })
-        await DBLaterHandlers.updateAlarm(existing._id, alarm)
+        commit('setLaterAlarm', { _id: existing._id, alarm, premiereDate: at })
+        await DBLaterHandlers.updateAlarm(existing._id, alarm, at)
       }
     } catch (errMessage) {
       console.error(errMessage)
@@ -255,11 +255,13 @@ const actions = {
 
     if (alarm == null || alarm.at === at) { return }
 
+    // The stated time moves with it, so that the item disarmed keeps the
+    // time it is now known by, to be armed again
     const moved = { ...alarm, at }
-    commit('setLaterAlarm', { _id: id, alarm: moved })
+    commit('setLaterAlarm', { _id: id, alarm: moved, premiereDate: at })
 
     try {
-      await DBLaterHandlers.updateAlarm(id, moved)
+      await DBLaterHandlers.updateAlarm(id, moved, at)
     } catch (errMessage) {
       console.error(errMessage)
     }
@@ -363,9 +365,12 @@ const mutations = {
     if (item != null) { item.position = position }
   },
 
-  setLaterAlarm(state, { _id, alarm }) {
+  setLaterAlarm(state, { _id, alarm, premiereDate }) {
     const item = state.laterItems[_id]
-    if (item != null) { item.alarm = alarm }
+    if (item == null) { return }
+
+    item.alarm = alarm
+    if (typeof premiereDate === 'number') { item.premiereDate = premiereDate }
   },
 }
 

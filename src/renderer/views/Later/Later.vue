@@ -1,5 +1,8 @@
 <template>
-  <div class="laterPage">
+  <div
+    class="laterPage"
+    :class="{ grid: listType === 'grid' }"
+  >
     <FtCard class="card">
       <h2>
         <FontAwesomeIcon
