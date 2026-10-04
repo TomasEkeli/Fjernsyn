@@ -58,7 +58,7 @@
             @error="handlePlayerError"
             @loaded="handleVideoLoaded"
             @timeupdate="updateCurrentChapter"
-            @ended="handleVideoEnded"
+            @ended="handlePlayerEnded"
             @toggle-theatre-mode="useTheatreMode = !useTheatreMode"
             @toggle-autoplay="toggleAutoplay"
             @skip-to-next="handleSkipToNext"
@@ -160,6 +160,23 @@
             <LayerSubscribeButton :channel="video.channel" />
           </template>
           <template #actions>
+            <!-- The Later list's buttons, as on a card: YouTube only -->
+            <FtIconButton
+              v-if="isYouTube"
+              :title="isInLater ? t('Later.Remove from Later') : t('Later.Add to Later')"
+              :icon="isInLater ? ['fas', 'clock'] : ['far', 'clock']"
+              :theme="isInLater ? 'secondary' : 'base'"
+              class="laterButton"
+              @click="toggleLater"
+            />
+            <FtIconButton
+              v-if="isYouTube && (isArmed || armableAt !== null)"
+              :title="isArmed ? t('Later.Disarm') : t('Later.Arm')"
+              :icon="isArmed ? ['fas', 'calendar-check'] : ['far', 'calendar-plus']"
+              :theme="isArmed ? 'secondary' : 'base'"
+              class="armButton"
+              @click="toggleArmed"
+            />
             <FtIconButton
               v-if="canUseFormat('audio')"
               :title="activeFormat === 'audio' ? t('PeerTube.Watch.Play video') : t('PeerTube.Watch.Audio only')"
@@ -299,6 +316,7 @@ import { isHiddenAsAi } from '../../helpers/aiShown'
 import { PLATFORM_YOUTUBE, isYouTubeVideoRef, peerTubeVideoRef, platformOf } from '../../platform/refs'
 import { usePlatformLayer } from '../../platform/vue'
 import { useSabrHosting } from './useSabrHosting'
+import { subscriptionEntryIsUpcoming, subscriptionEntryScheduledAt } from '../../../subscriptionFeedMerge'
 
 /** @typedef {'dash' | 'legacy' | 'audio'} Format */
 /** @typedef {{ icon: string[], text: string, detail?: string, retryable?: boolean }} Message */
@@ -1510,6 +1528,62 @@ function nextToPlay() {
       showToast(t('Playing Next Video'))
     },
   }
+}
+
+// The Later list, for the video shown: its buttons, and its leaving the list
+// when played to its end
+const isInLater = computed(() => video.value !== null && store.getters.getIsInLater(video.value.videoId))
+const isArmed = computed(() => video.value !== null && store.getters.getIsArmed(video.value.videoId))
+
+/** The stated start of an upcoming video whose time is still ahead, else null */
+const armableAt = computed(() => {
+  if (video.value === null || !subscriptionEntryIsUpcoming(video.value)) { return null }
+
+  return subscriptionEntryScheduledAt(video.value)
+})
+
+function laterVideoData() {
+  const details = video.value
+
+  return {
+    videoId: details.videoId,
+    title: details.title,
+    author: details.author,
+    authorId: details.authorId,
+    lengthSeconds: typeof details.lengthSeconds === 'number' ? details.lengthSeconds : undefined,
+    published: details.published,
+    isUpcoming: details.isUpcoming === true,
+    premiereDate: details.premiereDate,
+  }
+}
+
+function toggleLater() {
+  if (isInLater.value) {
+    store.dispatch('removeFromLater', video.value.videoId)
+  } else {
+    store.dispatch('addToLater', laterVideoData())
+  }
+}
+
+function toggleArmed() {
+  if (isArmed.value) {
+    store.dispatch('disarm', video.value.videoId)
+  } else if (armableAt.value !== null) {
+    store.dispatch('arm', { video: laterVideoData(), at: armableAt.value })
+  }
+}
+
+/**
+ * The player's end: a queued Later item played to its end has been watched,
+ * and leaves the list before autoplay moves on. An armed one stays: it is
+ * waiting for its event, not this playing.
+ */
+function handlePlayerEnded() {
+  if (video.value !== null && isInLater.value && !isArmed.value) {
+    store.dispatch('removeFromLater', video.value.videoId)
+  }
+
+  handleVideoEnded()
 }
 
 /**
