@@ -1,0 +1,107 @@
+/*
+  On the right of the video, whatever the language's direction, no wider than
+  30% of it, from near the top down to just above the controls (46px + 2.5% is
+  their height, as the player's skipped segments reckon it). The newest message
+  is at the bottom, and the oldest are cut off at the top.
+ */
+/* stylelint-disable liberty/use-logical-spec */
+.liveChatOverlay {
+  position: absolute;
+  top: 5%;
+  right: 1%;
+  bottom: calc(46px + 2.5% + 2%);
+  width: 29%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.6s ease-in;
+
+  /* the text scales with the video, through the overlay's own width */
+  container-type: inline-size;
+}
+/* stylelint-enable liberty/use-logical-spec */
+
+.quiet {
+  opacity: 0;
+  transition: opacity 2s ease-out;
+}
+
+.panel {
+  max-block-size: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.3em;
+  padding-block: 0.4em;
+  padding-inline: 0.6em;
+  border-radius: 8px;
+
+  /* only enough to keep white text readable over a white picture */
+  background-color: rgb(0 0 0 / 25%);
+  color: #fff;
+  font-size: clamp(14px, 3.6cqi, 22px);
+  line-height: 1.35;
+  text-shadow: 0 0 3px rgb(0 0 0 / 90%), 0 1px 2px rgb(0 0 0 / 90%);
+}
+
+.message {
+  flex-shrink: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.time {
+  margin-inline-end: 0.4em;
+  font-size: 0.75em;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.name {
+  margin-inline-end: 0.4em;
+  font-weight: bold;
+  color: rgb(255 255 255 / 75%);
+}
+
+.member {
+  color: #81c784;
+}
+
+.moderator {
+  color: #64b5f6;
+}
+
+.owner {
+  padding-inline: 0.25em;
+  border-radius: 3px;
+  background-color: var(--primary-color);
+  color: var(--text-with-main-color);
+  text-shadow: none;
+}
+
+.amount {
+  margin-inline-end: 0.4em;
+  font-weight: bold;
+  color: #ffd54f;
+}
+
+.text :deep(a) {
+  color: inherit;
+}
+
+.text :deep(.liveChatEmoji) {
+  block-size: 1.2em;
+  inline-size: auto;
+  margin-block: 0;
+  margin-inline: 1px;
+  vertical-align: middle;
+}
+
+@media (prefers-reduced-transparency) {
+  .panel {
+    background-color: rgb(0 0 0 / 60%);
+  }
+}

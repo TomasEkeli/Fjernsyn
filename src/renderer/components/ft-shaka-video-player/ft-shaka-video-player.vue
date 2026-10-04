@@ -37,6 +37,13 @@
       ref="vrCanvas"
       class="vrCanvas"
     />
+    <!-- Beneath shaka's controls, which are added after it, so that their menus cover it -->
+    <LiveChatOverlay
+      v-if="liveChat"
+      :live-chat="liveChat"
+      :channel-id="channelId"
+      :enabled="liveChatOverlayEnabled"
+    />
     <div
       v-if="showStats"
       class="stats"
