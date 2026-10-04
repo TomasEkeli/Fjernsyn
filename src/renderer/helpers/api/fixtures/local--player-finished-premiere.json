@@ -1,0 +1,62 @@
+{
+  "recordedAt": "2026-10-04",
+  "source": "recorded",
+  "call": "actions.execute('/player', { videoId: '0U0WJxrfeHw', racyCheckOk: true, contentCheckOk: true })",
+  "notes": "A music video premiered the night before. Search still listed it as a live premiere at the time this was recorded. Trimmed to playabilityStatus, videoDetails and the microformat, without thumbnails, keywords or tracking.",
+  "answer": {
+    "playabilityStatus": {
+      "status": "UNPLAYABLE",
+      "reason": "Video unavailable",
+      "errorScreen": {
+        "playerErrorMessageRenderer": {
+          "reason": {
+            "runs": [
+              {
+                "text": "The page needs to be reloaded."
+              }
+            ]
+          },
+          "subreason": {
+            "simpleText": "The page needs to be reloaded."
+          }
+        }
+      }
+    },
+    "videoDetails": {
+      "videoId": "0U0WJxrfeHw",
+      "title": "4K Quay - Sadie Sink (Official Music Video)",
+      "lengthSeconds": "120",
+      "channelId": "UCFzKc97uC5MEiMUhIqGZReQ",
+      "shortDescription": "🎤 Follow The Artist 🎤",
+      "isCrawlable": true,
+      "viewCount": "457",
+      "author": "6ixBuzz Premieres",
+      "isLowLatencyLiveStream": false,
+      "isPrivate": false,
+      "isLiveContent": false,
+      "latencyClass": "MDE_STREAM_OPTIMIZATIONS_RENDERER_LATENCY_NORMAL"
+    },
+    "microformat": {
+      "playerMicroformatRenderer": {
+        "title": {
+          "simpleText": "4K Quay - Sadie Sink (Official Music Video)"
+        },
+        "description": {
+          "simpleText": "🎤 Follow The Artist 🎤"
+        },
+        "lengthSeconds": "121",
+        "externalChannelId": "UCFzKc97uC5MEiMUhIqGZReQ",
+        "ownerChannelName": "6ixBuzz Premieres",
+        "category": "Music",
+        "publishDate": "2026-10-03T15:00:11-07:00",
+        "uploadDate": "2026-10-03T15:00:11-07:00",
+        "liveBroadcastDetails": {
+          "isLiveNow": false,
+          "startTimestamp": "2026-10-03T22:00:11+00:00",
+          "endTimestamp": "2026-10-03T22:04:06+00:00"
+        },
+        "isUnlisted": false
+      }
+    }
+  }
+}

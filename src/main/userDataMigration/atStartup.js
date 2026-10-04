@@ -19,6 +19,12 @@ if (isDevelopment) {
   // folder, "Electron". Pin it to the real name, so development uses the same
   // folder and the same migration a user gets.
   app.setPath('userData', path.join(app.getPath('appData'), packageDetails.productName))
+
+  // A development run on another data folder, such as a copy of the real
+  // one to test something that changes it: `FT_USER_DATA=<folder> pnpm dev`
+  if (process.env.FT_USER_DATA) {
+    app.setPath('userData', path.resolve(process.env.FT_USER_DATA))
+  }
 }
 
 // These print and exit, and a first launch's copy has no business happening

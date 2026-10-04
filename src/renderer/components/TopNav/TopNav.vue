@@ -147,6 +147,20 @@
       </RouterLink>
       <RouterLink
         class="navLink"
+        to="/later"
+        :title="t('Later.Later')"
+      >
+        <FontAwesomeIcon
+          class="navIcon"
+          :icon="['fas', 'clock']"
+        />
+        <span
+          v-if="showLabels"
+          class="navLinkLabel"
+        >{{ t('Later.Later') }}</span>
+      </RouterLink>
+      <RouterLink
+        class="navLink"
         to="/history"
         :title="historyTitle"
       >

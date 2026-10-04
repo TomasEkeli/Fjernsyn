@@ -4,7 +4,7 @@ import {
   app, BrowserWindow, dialog, Menu, ipcMain,
   powerSaveBlocker, screen, session, shell,
   nativeTheme, net, protocol, clipboard,
-  Tray, ClipboardItem,
+  Tray, ClipboardItem, Notification, nativeImage,
 } from 'electron'
 import path from 'path'
 import cp from 'child_process'
@@ -312,6 +312,23 @@ function runApp() {
 
   let mainWindow
   let startupUrl
+
+  /**
+   * Makes a window the main one, the one that checks the Later list's armed
+   * items, and tells every window whether it now is (MAIN_WINDOW_CHANGED)
+   * @param {BrowserWindow} window
+   */
+  function setMainWindow(window) {
+    if (window === mainWindow) { return }
+
+    mainWindow = window
+
+    for (const other of BrowserWindow.getAllWindows()) {
+      if (!other.isDestroyed() && isFreeTubeUrl(other.webContents.getURL())) {
+        other.webContents.send(IpcChannels.MAIN_WINDOW_CHANGED, other === mainWindow)
+      }
+    }
+  }
   let tray = null
   let trayOnMinimize = false
   let trayWindows = []
@@ -439,6 +456,12 @@ function runApp() {
   }
 
   let proxyUrl
+
+  // Windows shows an app's notifications only under the id its Start menu
+  // shortcut carries, which the installer gives as the build's appId
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('io.github.tomasekeli.fjernsyn')
+  }
 
   app.on('ready', async (_, __) => {
     if (process.platform === 'darwin') {
@@ -883,7 +906,7 @@ function runApp() {
         }
       }
 
-      if (trayWindows.length === BrowserWindow.getAllWindows().length) { mainWindow = window }
+      if (trayWindows.length === BrowserWindow.getAllWindows().length) { setMainWindow(window) }
     } else if (trayWindows.length > 0) {
       window.close()
     }
@@ -1250,8 +1273,11 @@ function runApp() {
           if (newWindow === mainWindow) {
             // A timer is needed because getFocusedWindow doesn't update until the minimize event ends
             setTimeout(() => {
-              const newMainWindow = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows().find(window => window.isVisible())
-              if (newMainWindow) { mainWindow = newMainWindow }
+              // Fjernsyn: only an app window, never the GPU internals one, as the main window checks the Later list
+              const isAppWindow = window => isFreeTubeUrl(window.webContents.getURL())
+              const focused = BrowserWindow.getFocusedWindow()
+              const newMainWindow = (focused && isAppWindow(focused) ? focused : null) || BrowserWindow.getAllWindows().find(window => window.isVisible() && isAppWindow(window))
+              if (newMainWindow) { setMainWindow(newMainWindow) }
             }, 100)
           }
         }
@@ -1267,7 +1293,7 @@ function runApp() {
     }
 
     if (replaceMainWindow) {
-      mainWindow = newWindow
+      setMainWindow(newWindow)
     }
 
     if (savedMaximized) {
@@ -1373,7 +1399,8 @@ function runApp() {
       if (allWindows.length !== 0 && newWindow === mainWindow) {
         // Replace mainWindow to avoid accessing `mainWindow.webContents`
         // Which raises "Object has been destroyed" error
-        mainWindow = allWindows[0]
+        // Fjernsyn: an app window first, never the GPU internals one, as the main window checks the Later list
+        setMainWindow(allWindows.find(window => isFreeTubeUrl(window.webContents.getURL())) ?? allWindows[0])
       }
 
       stopPowerSaveBlockerForWindow(newWindow)
@@ -2461,6 +2488,145 @@ function runApp() {
       else throw err.toString()
     }
   })
+
+  // *********** //
+  // Later list
+  ipcMain.handle(IpcChannels.DB_LATER, async (event, { action, data }) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      return
+    }
+
+    try {
+      switch (action) {
+        case DBActions.GENERAL.FIND:
+          return await baseHandlers.later.find()
+
+        case DBActions.GENERAL.UPSERT:
+          await baseHandlers.later.upsert(data)
+          syncOtherWindows(IpcChannels.SYNC_LATER, event, { event: SyncEvents.GENERAL.UPSERT, data })
+          return null
+
+        case DBActions.LATER.UPDATE_POSITION:
+          await baseHandlers.later.updatePosition(data._id, data.position)
+          syncOtherWindows(IpcChannels.SYNC_LATER, event, { event: SyncEvents.LATER.UPDATE_POSITION, data })
+          return null
+
+        case DBActions.LATER.UPDATE_ALARM:
+          await baseHandlers.later.updateAlarm(data._id, data.alarm, data.premiereDate)
+          syncOtherWindows(IpcChannels.SYNC_LATER, event, { event: SyncEvents.LATER.UPDATE_ALARM, data })
+          return null
+
+        case DBActions.GENERAL.DELETE:
+          await baseHandlers.later.delete(data)
+          syncOtherWindows(IpcChannels.SYNC_LATER, event, { event: SyncEvents.GENERAL.DELETE, data })
+          return null
+
+        case DBActions.GENERAL.DELETE_ALL:
+          await baseHandlers.later.deleteAll()
+          syncOtherWindows(IpcChannels.SYNC_LATER, event, { event: SyncEvents.GENERAL.DELETE_ALL })
+          return null
+
+        default:
+          // eslint-disable-next-line no-throw-literal
+          throw 'invalid later db action'
+      }
+    } catch (err) {
+      if (typeof err === 'string') throw err
+      else throw err.toString()
+    }
+  })
+
+  // *********** //
+  // Later list: which window checks, whether it is seen, and the desktop
+  // notification of an armed event gone live while it is not
+
+  ipcMain.handle(IpcChannels.IS_MAIN_WINDOW, (event) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      return false
+    }
+
+    return mainWindow != null && BrowserWindow.fromWebContents(event.sender) === mainWindow
+  })
+
+  ipcMain.handle(IpcChannels.IS_WINDOW_SHOWN, (event) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      return false
+    }
+
+    const window = BrowserWindow.fromWebContents(event.sender)
+
+    return window != null && window.isVisible() && !window.isMinimized()
+  })
+
+  // Held until clicked or closed, as a notification that is collected loses its click
+  const liveNotifications = new Set()
+
+  ipcMain.handle(IpcChannels.SHOW_LIVE_NOTIFICATION, async (event, payload) => {
+    if (!isFreeTubeUrl(event.senderFrame.url) || typeof payload?.videoId !== 'string' || !Notification.isSupported()) {
+      return false
+    }
+
+    const { videoId, title, author, thumbnail } = payload
+
+    const window = BrowserWindow.fromWebContents(event.sender)
+
+    const notification = new Notification({
+      title: typeof title === 'string' ? title : videoId,
+      body: typeof author === 'string' ? author : '',
+      icon: await liveNotificationIcon(thumbnail),
+    })
+
+    liveNotifications.add(notification)
+    notification.on('close', () => liveNotifications.delete(notification))
+
+    notification.on('click', () => {
+      liveNotifications.delete(notification)
+
+      if (window == null || window.isDestroyed()) {
+        return
+      }
+
+      // As the tray restores a window, or as a second launch brings one forward
+      if (trayWindows.some(item => item.id === window.id)) {
+        trayClick(window)
+      } else if (window.isMinimized()) {
+        window.restore()
+      }
+
+      window.show()
+      window.focus()
+      window.webContents.send(IpcChannels.OPEN_LATER_ITEM, videoId)
+    })
+
+    notification.show()
+
+    return true
+  })
+
+  /**
+   * The video's thumbnail for the notification, from the cache when it is
+   * there; none when it cannot be had within a moment
+   * @param {unknown} url
+   */
+  async function liveNotificationIcon(url) {
+    if (typeof url !== 'string' || !url.startsWith('https://i.ytimg.com/')) {
+      return undefined
+    }
+
+    try {
+      const response = await net.fetch(url, { signal: AbortSignal.timeout(3000) })
+
+      if (!response.ok) {
+        return undefined
+      }
+
+      const image = nativeImage.createFromBuffer(Buffer.from(await response.arrayBuffer()))
+
+      return image.isEmpty() ? undefined : image
+    } catch {
+      return undefined
+    }
+  }
 
   // *********** //
 

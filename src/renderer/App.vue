@@ -51,6 +51,7 @@
       v-if="showCreatePlaylistPrompt"
     />
     <FtToast />
+    <LaterCountdown />
     <FtProgressBar
       v-if="showProgressBar"
     />
@@ -72,6 +73,7 @@ import FtPlaylistAddVideoPrompt from './components/FtPlaylistAddVideoPrompt/FtPl
 import FtCreatePlaylistPrompt from './components/FtCreatePlaylistPrompt/FtCreatePlaylistPrompt.vue'
 import FtKeyboardShortcutPrompt from './components/FtKeyboardShortcutPrompt/FtKeyboardShortcutPrompt.vue'
 import FtSearchFilters from './components/FtSearchFilters/FtSearchFilters.vue'
+import LaterCountdown from './components/LaterCountdown/LaterCountdown.vue'
 
 import store from './store/index'
 
@@ -85,6 +87,9 @@ import { getLocalClip } from './helpers/api/local.js'
 import { getClipInvidious } from './helpers/api/invidious.js'
 import { openPeerTubeEntry } from './platform/entryPoints'
 import { useWindowMoveGesture } from './composables/useWindowMoveGesture'
+import { useMainWindow } from './composables/useMainWindow'
+import { useLaterTakeover } from './composables/useLaterTakeover'
+import { useLaterScheduler } from './composables/useLaterScheduler'
 
 const route = useRoute()
 const router = useRouter()
@@ -118,6 +123,12 @@ const showProgressBar = computed(() => store.getters.getShowProgressBar)
 const defaultInvidiousInstance = computed(() => store.getters.getDefaultInvidiousInstance)
 
 const dataReady = ref(false)
+
+// The Later list: the main window, and only it, moves the old Watch Later
+// playlist into it once, and checks and fires its armed items
+const isMainWindow = useMainWindow()
+useLaterTakeover(store, isMainWindow)
+useLaterScheduler(store, router, isMainWindow)
 
 // A frameless window has no title bar, so a long press and a drag moves it
 useWindowMoveGesture({ enabled: () => store.getters.getFramelessWindow })
@@ -164,6 +175,7 @@ onMounted(async () => {
     store.dispatch('grabAllSubscriptions')
     store.dispatch('grabChannels')
     store.dispatch('grabAiVerdicts')
+    store.dispatch('grabLater')
     store.dispatch('grabSearchHistoryEntries')
 
     if (process.env.IS_ELECTRON) {

@@ -53,6 +53,19 @@
       />
     </FtFlexBox>
     <h4 class="groupTitle">
+      {{ t('Later.Later') }}
+    </h4>
+    <FtFlexBox class="box">
+      <FtButton
+        :label="t('Later.Import')"
+        @click="importLater"
+      />
+      <FtButton
+        :label="t('Later.Export')"
+        @click="exportLater"
+      />
+    </FtFlexBox>
+    <h4 class="groupTitle">
       {{ t('Settings.Data Settings.Search history') }}
     </h4>
     <FtFlexBox class="box">
@@ -132,6 +145,7 @@ import {
   writeFileWithPicker,
 } from '../../helpers/utils'
 import { processToBeAddedPlaylistVideo } from '../../helpers/playlists'
+import { laterFromExport, laterToExport } from '../../helpers/later'
 import { isYouTubeChannelStub, peerTubeChannelsFromNewPipe, peerTubeStubToNewPipeEntry, resolveNewPipeAccounts } from '../../platform/subscriptionExchange'
 import { getPlatformLayer } from '../../platform/vue'
 import { importedPlaylistVideo, isYouTubeRecord, splitImportedPlatformFields } from '../../platform/records'
@@ -1337,6 +1351,54 @@ async function exportPlaylists() {
 }
 
 // #endregion playlists
+
+// #region Later list
+
+/**
+ * The Later list's own pair: it replaces the Watch Later playlist, which used
+ * to travel with the playlists. An import adds what is not there already, as
+ * a block at the top in the file's order, alarms and all.
+ */
+async function importLater() {
+  let response
+  try {
+    response = await readFileWithPicker(
+      t('Later.Later'),
+      {
+        'application/x-freetube-db': '.db'
+      },
+      IMPORT_DIRECTORY_ID,
+      START_IN_DIRECTORY
+    )
+  } catch (err) {
+    const message = t('Settings.Data Settings.Unable to read file')
+    showToast(`${message}: ${err}`)
+    return
+  }
+
+  if (response === null) {
+    return
+  }
+
+  const { added } = await store.dispatch('addManyToLater', laterFromExport(response.content))
+
+  showToast(t('Later.Imported', { count: added }))
+}
+
+async function exportLater() {
+  const exportFileName = 'fjernsyn-later-' + getTodayDateStrLocalTimezone() + '.db'
+
+  await promptAndWriteToFile(
+    exportFileName,
+    laterToExport(Object.values(store.getters.getLaterItems)),
+    t('Later.Later'),
+    'application/x-freetube-db',
+    '.db',
+    t('Later.Exported')
+  )
+}
+
+// #endregion Later list
 
 // #region search history
 

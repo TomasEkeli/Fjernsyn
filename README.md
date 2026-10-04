@@ -24,7 +24,7 @@ The version numbers started again at 0.0.1 when it got its own name.
 
 Fjernsyn installs beside FreeTube and keeps its data in a folder of its own, so the two run on one machine without touching each other's data.
 
-On its first launch it copies what it finds in FreeTube's data folder: subscriptions, profiles, history, playlists and settings, along with any yt-dlp, ffmpeg and Deno installed there. FreeTube keeps its original data, and from then on the two apps keep their data apart.
+On its first launch it copies what it finds in FreeTube's data folder: subscriptions, profiles, history, playlists and settings, along with any yt-dlp, ffmpeg and Deno installed there. FreeTube keeps its original data, and from then on the two apps keep their data apart. The Watch Later playlist becomes Fjernsyn's Later list (see [Later](#later)).
 
 Flatpak and Snap installations of FreeTube keep their data inside a sandbox, where Fjernsyn does not look. For those, export from FreeTube and import into Fjernsyn.
 
@@ -67,6 +67,38 @@ If one service reports a channel as terminated, Fjernsyn checks an independent e
 Scheduled premieres and live streams are in a shelf over the other videos, collapsed by default, and "Hide Upcoming Premieres" does what it says.
 
 ![The subscription feed, with videos, shorts, live streams and posts mixed, the four filters on and the Upcoming shelf collapsed](_screenshots/subscriptions.webp)
+
+### Later
+
+FreeTube's Watch Later is a playlist, and a playlist makes a poor queue. Things I meant to watch piled up in the order I found them, nothing left when I had watched it, and nothing could tell me that a stream I wanted to catch had started. Fjernsyn has a Later list in its place, behind the Later button in the top bar.
+
+The clock on a video card, or on the watch page, puts the video at the top of the list, and a second click takes it off. Put the list in any order with the arrows on each row, or drag a row by its grip. A video leaves the list when you watch it to the end; stopping halfway, or only opening it, leaves it where it was.
+
+On the first start Fjernsyn moves whatever is in the Watch Later playlist into the Later list, in the same order, and deletes the playlist. New installs no longer get a Watch Later playlist. A playlist you name Watch Later yourself afterwards is an ordinary playlist and stays one.
+
+#### Streams and premieres
+
+An upcoming stream or premiere can be armed with its calendar button: on its card in the Upcoming shelf, on its watch page, or on its row in the Later list. Armed items have their own section at the top of the Later page, soonest first, each with its time and its state:
+
+- Waiting, until two minutes before the stated time.
+- Checking, from then until three hours after it.
+- Did not start, after that. It is still checked once an hour, until you remove it.
+- Live now, when it went live and you did not answer (below).
+
+Fjernsyn asks YouTube about each armed item once when it starts, once an hour, and every minute while it is Checking. An item fires when YouTube says it is live, whatever time was stated, so a stream that starts late is caught when it actually starts, and a moved time is followed. When it goes live:
+
+- If you are watching nothing, a notice counts down ten seconds and then opens the stream. Watch now goes at once, and Cancel stops it.
+- If you are watching a video, a notice appears on the player, in full window and fullscreen too, and stays until you pick Watch now or Dismiss. Several stack. Leave the watch page without answering and the item stays in the list as Live now, and does not interrupt you again until the next start; click it to watch.
+- If you are waiting on its own watch page, the page reloads into the stream.
+- If the window is minimised or in the tray, you get a desktop notification, and nothing plays. Clicking it brings the window back and opens the stream. Where the system shows no notification, a toast says what went live, and the item waits at the top of the list.
+
+Going to a stream takes it off the list. Cancel, Dismiss, the desktop notification, and a stream that ended before Fjernsyn saw it live all leave the item at the top of the list with its alarm off, and its calendar button arms it again.
+
+The checks are a single small request each, made only by the first window you opened, and only when Fjernsyn talks to YouTube directly; through Invidious nothing is checked. They are kept out of the request budget the subscription refresh uses, so a refresh does not hold them up.
+
+On Windows the desktop notification needs the installed build. I have not seen whether the portable one shows it.
+
+The Later list has its own export and import in Data settings, as it no longer travels with the playlists.
 
 ### Channels and profiles
 

@@ -74,14 +74,15 @@ const state = {
       videos: [],
       _id: 'favorites',
     },
-    {
-      playlistName: 'Watch Later',
-      protected: false,
-      description: 'Videos to watch later',
-      videos: [],
-      _id: 'watchLater',
-    },
   ],
+}
+
+// Fjernsyn: Watch Later is no longer made by default, as the Later list
+// (store/modules/later.js) replaces it. Kept here for the rename below, which
+// still gives the id to a playlist named Watch Later, as upstream does
+const watchLaterPlaylistDefaults = {
+  protected: false,
+  _id: 'watchLater',
 }
 
 const getters = {
@@ -335,7 +336,7 @@ const actions = {
         }
 
         if (watchLaterPlaylist != null) {
-          const defaultWatchLaterPlaylist = state.defaultPlaylists.find((e) => e._id === 'watchLater')
+          const defaultWatchLaterPlaylist = watchLaterPlaylistDefaults
 
           // Update existing matching playlist only if it exists
           if (watchLaterPlaylist._id !== defaultWatchLaterPlaylist._id || watchLaterPlaylist.protected !== defaultWatchLaterPlaylist.protected) {

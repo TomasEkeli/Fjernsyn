@@ -14,6 +14,7 @@ import store from '../../store/index'
 import { createTestI18n } from '../../testing/i18n'
 import { createTestRouter } from '../../testing/router'
 import LayerWatch from './LayerWatch.vue'
+import FtIconButton from '../../components/FtIconButton/FtIconButton.vue'
 
 // The player cannot run in a simulated DOM. The stand-in declares the props
 // and events the watch view uses, and plays back what a test tells it. `events`
@@ -151,6 +152,10 @@ const SETTINGS = vi.hoisted(() => ({
   getCurrentInvidiousInstanceUrl: 'https://inv.example',
   // The surface switch's, which both watch routes render in the app (WatchSurface)
   getEnableLayerSurfaces: false,
+  // The Later list's
+  getIsInLater: () => false,
+  getIsArmed: () => false,
+  getLaterFiredVideo: null,
 }))
 
 vi.mock('../../store/index', async () => {
@@ -2705,6 +2710,76 @@ describe('on the surface switch, as the app routes both watch routes (WatchSurfa
     expect(renders(wrapper)).toEqual(['Watch'])
     expect(dispatched('updateWatchProgress')).toEqual([{ videoId: UUID, watchProgress: 55 }])
     expect(player.events).toEqual(['position read', 'destroyed', 'unmounted'])
+    expect(layer.getVideo).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('the Later list on the watch page', () => {
+  /** @param {import('@vue/test-utils').VueWrapper} wrapper */
+  function button(wrapper, className) {
+    return wrapper.findAllComponents(FtIconButton).find(b => b.classes(className))
+  }
+
+  it('adds the video with its clock button', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+    button(wrapper, 'laterButton').vm.$emit('click')
+
+    expect(dispatched('addToLater')).toEqual([expect.objectContaining({ videoId: YT_ID, title: 'Never Gonna Give You Up', authorId: YT_CHANNEL })])
+    expect(button(wrapper, 'armButton')).toBeUndefined()
+  })
+
+  it('offers to arm an upcoming video, for its stated time', async () => {
+    const at = Date.now() + 60 * 60 * 1000
+    const { wrapper } = await openWatchPage(youtubeVideo({ isUpcoming: true, premiereDate: new Date(at) }), YT_PATH)
+
+    button(wrapper, 'armButton').vm.$emit('click')
+
+    expect(dispatched('arm')).toEqual([{ video: expect.objectContaining({ videoId: YT_ID }), at }])
+  })
+
+  it('takes a queued item off the list when played to its end, and not an armed one', async () => {
+    store.setGetter('getIsInLater', () => true)
+    const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+    findPlayer(wrapper).vm.$emit('ended')
+    expect(dispatched('removeFromLater')).toEqual([YT_ID])
+
+    store.dispatched.length = 0
+    store.setGetter('getIsArmed', () => true)
+    findPlayer(wrapper).vm.$emit('ended')
+    expect(dispatched('removeFromLater')).toEqual([])
+  })
+
+  it('takes nothing off for leaving halfway', async () => {
+    store.setGetter('getIsInLater', () => true)
+    const { router } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+    await router.push('/elsewhere')
+    await flushPromises()
+
+    expect(dispatched('removeFromLater')).toEqual([])
+  })
+})
+
+describe('an armed Later item gone live on its own page', () => {
+  it('reloads into the stream when the store says it fired', async () => {
+    await openWatchPage(youtubeVideo({ isUpcoming: true, liveStatus: 'waiting', premiereDate: new Date(Date.now() + 60_000) }), YT_PATH)
+    expect(layer.getVideo).toHaveBeenCalledTimes(1)
+
+    layer.getVideo.mockResolvedValue(youtubeLive())
+    store.setGetter('getLaterFiredVideo', { videoId: YT_ID, at: 1 })
+    await flushPromises()
+
+    expect(layer.getVideo).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not reload for another video', async () => {
+    await openWatchPage(youtubeVideo(), YT_PATH)
+
+    store.setGetter('getLaterFiredVideo', { videoId: 'otherVideo1', at: 1 })
+    await flushPromises()
+
     expect(layer.getVideo).toHaveBeenCalledTimes(1)
   })
 })

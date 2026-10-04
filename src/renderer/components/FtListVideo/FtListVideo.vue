@@ -17,7 +17,7 @@
       }"
     >
       <FontAwesomeIcon
-        :icon="['fas', 'fa-bars']"
+        :icon="['fas', 'grip']"
       />
     </div>
     <div
@@ -108,7 +108,29 @@
           @click="toggleQuickBookmarked"
         />
         <FtIconButton
-          v-if="inUserPlaylist && canMoveVideoUp"
+          v-if="showLaterButton"
+          :title="isInLater ? t('Later.Remove from Later') : t('Later.Add to Later')"
+          :icon="isInLater ? ['fas', 'clock'] : ['far', 'clock']"
+          class="laterIcon"
+          :class="{ inLater: isInLater }"
+          :theme="isInLater ? 'secondary' : 'base'"
+          :padding="playlistIconPadding"
+          :size="playlistIconSize"
+          @click="toggleLater"
+        />
+        <FtIconButton
+          v-if="showArmButton"
+          :title="isArmed ? t('Later.Disarm') : t('Later.Arm')"
+          :icon="isArmed ? ['fas', 'calendar-check'] : ['far', 'calendar-plus']"
+          class="armIcon"
+          :class="{ armed: isArmed }"
+          :theme="isArmed ? 'secondary' : 'base'"
+          :padding="playlistIconPadding"
+          :size="playlistIconSize"
+          @click="toggleArmed"
+        />
+        <FtIconButton
+          v-if="canEditList && canMoveVideoUp"
           :title="t('User Playlists.Move Video Up')"
           :icon="effectiveListTypeIsList ? ['fas', 'arrow-up'] : ['fas', 'arrow-left']"
           class="upArrowIcon"
@@ -117,7 +139,7 @@
           @click="moveVideoUp"
         />
         <FtIconButton
-          v-if="inUserPlaylist && canMoveVideoDown"
+          v-if="canEditList && canMoveVideoDown"
           :title="t('User Playlists.Move Video Down')"
           :icon="effectiveListTypeIsList ? ['fas', 'arrow-down'] : ['fas', 'arrow-right']"
           class="downArrowIcon"
@@ -126,7 +148,7 @@
           @click="moveVideoDown"
         />
         <FtIconButton
-          v-if="inUserPlaylist && canRemoveFromPlaylist"
+          v-if="canEditList && canRemoveFromPlaylist"
           :title="t('User Playlists.Remove from Playlist')"
           :icon="['fas', 'trash']"
           class="trashIcon"
@@ -354,6 +376,7 @@ import { wantAiVerdict } from '../../helpers/aiMarker/index.js'
 import { aiMarkOf, isChannelMarkedAi, markChannelAi, unmarkChannelAi } from '../../helpers/aiShown.js'
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
 import { cardShareOptions, describeCard, platformRecordFields, runCardShareOption } from '../../platform/cards'
+import { subscriptionEntryIsUpcoming, subscriptionEntryScheduledAt } from '../../../subscriptionFeedMerge'
 
 const props = defineProps({
   data: {
@@ -440,6 +463,15 @@ const props = defineProps({
    * other card still shows the marker for a video already known.
    */
   lookUpAiLabel: {
+    type: Boolean,
+    default: false,
+  },
+  /**
+   * A row of the Later page: ordered and removed as a playlist's rows are,
+   * with no playlist behind it, and without the card's own Later buttons, as
+   * the page has its own controls.
+   */
+  laterRow: {
     type: Boolean,
     default: false,
   },
@@ -622,6 +654,9 @@ const inSubscriptions = computed(() => route.name === 'subscriptions' || route.n
 
 const inUserPlaylist = computed(() => playlistTypeFinal.value === 'user' || selectedUserPlaylist.value != null)
 
+// The rows that can be moved and removed: a user playlist's, and the Later page's
+const canEditList = computed(() => inUserPlaylist.value || props.laterRow)
+
 /** @type {import('vue').ComputedRef<any>} */
 const selectedUserPlaylist = computed(() => {
   if (playlistIdFinal.value == null || playlistIdFinal.value === '') { return null }
@@ -668,7 +703,7 @@ const dropdownOptions = computed(() => {
       value: 'history'
     },
   ]
-  if (inUserPlaylist.value) {
+  if (canEditList.value) {
     if (props.canMoveVideoUp || props.canMoveVideoDown) {
       options.push({
         type: 'divider'
@@ -1528,6 +1563,59 @@ function removeFromQuickBookmarkPlaylist() {
 
   // TODO: Maybe show playlist name
   showToast(t('Video.Video has been removed from your saved list'))
+}
+
+// The Later list: YouTube only, and not on the Later page's own rows
+const isInLater = computed(() => store.getters.getIsInLater(id.value))
+const isArmed = computed(() => store.getters.getIsArmed(id.value))
+
+const showLaterButton = computed(() => !props.laterRow && !platformCard.value)
+
+/** The stated start, when the card is upcoming and it is still ahead */
+const armableAt = computed(() => {
+  if (!subscriptionEntryIsUpcoming(props.data)) { return null }
+
+  return subscriptionEntryScheduledAt(props.data)
+})
+
+// On the Later page too, so that a queued item can be armed (a mis-click on
+// the clock is undone in one more click), but not on its armed rows, which
+// have Don't start it beside them
+const showArmButton = computed(() => {
+  if (platformCard.value) { return false }
+  if (props.laterRow && isArmed.value) { return false }
+
+  return isArmed.value || armableAt.value != null
+})
+
+function laterVideoData() {
+  return {
+    videoId: id.value,
+    title: title.value,
+    author: channelName.value,
+    authorId: channelId.value,
+    lengthSeconds: props.data.lengthSeconds,
+    published: published.value,
+    isUpcoming: isUpcoming.value === true,
+    premiereDate: props.data.premiereDate,
+    premiereTimestamp: props.data.premiereTimestamp,
+  }
+}
+
+function toggleLater() {
+  if (isInLater.value) {
+    store.dispatch('removeFromLater', id.value)
+  } else {
+    store.dispatch('addToLater', laterVideoData())
+  }
+}
+
+function toggleArmed() {
+  if (isArmed.value) {
+    store.dispatch('disarm', id.value)
+  } else if (armableAt.value != null) {
+    store.dispatch('arm', { video: laterVideoData(), at: armableAt.value })
+  }
 }
 
 function moveVideoUp() {

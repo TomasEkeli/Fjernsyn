@@ -1,0 +1,62 @@
+{
+  "recordedAt": "2026-10-04",
+  "source": "recorded",
+  "call": "actions.execute('/player', { videoId: '7ZiUbT1-djA', racyCheckOk: true, contentCheckOk: true })",
+  "notes": "A stream that ended three days before, with its recording up: liveBroadcastDetails has an endTimestamp and isLiveNow false. Trimmed to playabilityStatus, videoDetails and the microformat, without thumbnails, keywords or tracking.",
+  "answer": {
+    "playabilityStatus": {
+      "status": "UNPLAYABLE",
+      "reason": "Video unavailable",
+      "errorScreen": {
+        "playerErrorMessageRenderer": {
+          "reason": {
+            "runs": [
+              {
+                "text": "The page needs to be reloaded."
+              }
+            ]
+          },
+          "subreason": {
+            "simpleText": "The page needs to be reloaded."
+          }
+        }
+      }
+    },
+    "videoDetails": {
+      "videoId": "7ZiUbT1-djA",
+      "title": "NASA's SpaceX Crew-13 Launch",
+      "lengthSeconds": "8612",
+      "channelId": "UCLA_DiR1FfKNvjuUpBHmylQ",
+      "shortDescription": "Four new crew members are heading to the International Space Station!",
+      "isCrawlable": true,
+      "viewCount": "574041",
+      "author": "NASA",
+      "isLowLatencyLiveStream": false,
+      "isPrivate": false,
+      "isLiveContent": true,
+      "latencyClass": "MDE_STREAM_OPTIMIZATIONS_RENDERER_LATENCY_NORMAL"
+    },
+    "microformat": {
+      "playerMicroformatRenderer": {
+        "title": {
+          "simpleText": "NASA's SpaceX Crew-13 Launch"
+        },
+        "description": {
+          "simpleText": "Four new crew members are heading to the International Space Station!"
+        },
+        "lengthSeconds": "8612",
+        "externalChannelId": "UCLA_DiR1FfKNvjuUpBHmylQ",
+        "ownerChannelName": "NASA",
+        "category": "Science & Technology",
+        "publishDate": "2026-10-01T08:53:01-07:00",
+        "uploadDate": "2026-10-01T08:53:01-07:00",
+        "liveBroadcastDetails": {
+          "isLiveNow": false,
+          "startTimestamp": "2026-10-01T13:19:16+00:00",
+          "endTimestamp": "2026-10-01T15:43:23+00:00"
+        },
+        "isUnlisted": false
+      }
+    }
+  }
+}

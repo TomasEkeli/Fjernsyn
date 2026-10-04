@@ -27,6 +27,7 @@
       :is-video-dragging="isVideoDragging"
       :video-dragging-possible="videoDraggingPossible"
       :ai-wall="aiWall"
+      :later-row="laterRow"
       @drag-video="dragVideo"
       @move-dragged-video="moveDraggedVideo"
       @drag-video-end="afterDrag"
@@ -138,6 +139,11 @@ const props = defineProps({
    * into the hidden channels; elsewhere a known video is marked and stays.
    */
   aiWall: {
+    type: Boolean,
+    default: false,
+  },
+  /** A row of the Later page: see FtListVideo */
+  laterRow: {
     type: Boolean,
     default: false,
   },

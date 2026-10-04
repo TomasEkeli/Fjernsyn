@@ -18,6 +18,7 @@ import { LiveChatOverlayButton } from './player-components/LiveChatOverlayButton
 import { SkipButton } from './player-components/SkipButton'
 import { VolumeBar } from './player-components/VolumeBar'
 import LiveChatOverlay from '../LiveChatOverlay/LiveChatOverlay.vue'
+import LaterLiveNotice from '../LaterLiveNotice/LaterLiveNotice.vue'
 import {
   deduplicateAudioTracks,
   findMostSimilarAudioBandwidth,
@@ -113,6 +114,7 @@ export default defineComponent({
   name: 'FtShakaVideoPlayer',
   components: {
     LiveChatOverlay,
+    LaterLiveNotice,
   },
   props: {
     format: {
@@ -4138,7 +4140,12 @@ export default defineComponent({
 
     // #region tear down
 
+    // A player up is watching, which the Later list's firing asks; its
+    // notices still unanswered when it goes count as dismissed
+    store.dispatch('laterPlayerMounted')
+
     onBeforeUnmount(() => {
+      store.dispatch('laterPlayerUnmounted')
       hasLoaded.value = false
       document.body.classList.remove('playerFullWindow')
       video.value?.removeEventListener('resize', fitWindowToVideo)

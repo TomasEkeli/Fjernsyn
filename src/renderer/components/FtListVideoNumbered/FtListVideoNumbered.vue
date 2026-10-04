@@ -29,7 +29,7 @@
           <FontAwesomeIcon
             v-if="canBecomeDraggable"
             class="grabBar"
-            :icon="['fas', 'fa-bars']"
+            :icon="['fas', 'grip-vertical']"
           />
 
           <span
@@ -55,6 +55,7 @@
         :can-move-video-up="canMoveVideoUp"
         :can-move-video-down="canMoveVideoDown"
         :can-remove-from-playlist="canRemoveFromPlaylist"
+        :later-row="laterRow"
         @pause-player="pausePlayer"
         @move-video-up="moveVideoUp"
         @move-video-down="moveVideoDown"
@@ -154,7 +155,12 @@ const props = defineProps({
   isCurrentVideo: {
     type: Boolean,
     default: false
-  }
+  },
+  /** A row of the Later page: see FtListVideo */
+  laterRow: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits([
@@ -170,7 +176,7 @@ const emit = defineEmits([
 ])
 const visible = ref(props.initialVisibleState)
 
-const inUserPlaylist = props.playlistType === 'user'
+const inUserPlaylist = props.playlistType === 'user' || props.laterRow
 const canBecomeDraggable = computed(() => inUserPlaylist && props.isSortOrderCustom && (props.canMoveVideoUp || props.canMoveVideoDown))
 const { dragVideo, moveDraggedVideo, afterDrag } = handleDragAndDrop(emit)
 const draggableEventHandlers = {

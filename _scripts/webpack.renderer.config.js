@@ -190,6 +190,10 @@ const config = {
       'process.env.FT_SUBS_TRACE': JSON.stringify(process.env.FT_SUBS_TRACE ?? ''),
       'process.env.FT_SUBS_FAIL': JSON.stringify(process.env.FT_SUBS_FAIL ?? ''),
       'process.env.FT_WATCH_TRACE': JSON.stringify(process.env.FT_WATCH_TRACE ?? ''),
+      // Holds the Later scheduler's first check back this many seconds, so
+      // that an armed stream already live can be made to fire while a video
+      // plays, to test the notice on the player
+      'process.env.FT_LATER_FIRST_CHECK_S': JSON.stringify(process.env.FT_LATER_FIRST_CHECK_S ?? ''),
       // How many subscription requests may be in flight at once. Overrides the
       // measured default, so the cap can be re-derived against a real
       // subscription list without a rebuild of the constant.

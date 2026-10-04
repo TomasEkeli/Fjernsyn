@@ -437,6 +437,59 @@ export default {
   },
 
   /**
+   * @param {number} action
+   * @param {any} [data]
+   */
+  dbLater: (action, data) => {
+    return ipcRenderer.invoke(IpcChannels.DB_LATER, data ? { action, data } : { action })
+  },
+
+  /**
+   * Whether this window is the main one, which checks the Later list
+   * @returns {Promise<boolean>}
+   */
+  isMainWindow: () => {
+    return ipcRenderer.invoke(IpcChannels.IS_MAIN_WINDOW)
+  },
+
+  /**
+   * @param {(isMain: boolean) => void} handler
+   */
+  handleMainWindowChanged: (handler) => {
+    ipcRenderer.on(IpcChannels.MAIN_WINDOW_CHANGED, (_, isMain) => {
+      handler(isMain === true)
+    })
+  },
+
+  /**
+   * Whether this window is seen: visible, and not minimised
+   * @returns {Promise<boolean>}
+   */
+  isWindowShown: () => {
+    return ipcRenderer.invoke(IpcChannels.IS_WINDOW_SHOWN)
+  },
+
+  /**
+   * A desktop notification that an armed Later item is live
+   * @param {{ videoId: string, title: string, author: string, thumbnail?: string }} payload
+   * @returns {Promise<boolean>} whether it was shown
+   */
+  showLiveNotification: (payload) => {
+    return ipcRenderer.invoke(IpcChannels.SHOW_LIVE_NOTIFICATION, payload)
+  },
+
+  /**
+   * @param {(videoId: string) => void} handler
+   */
+  handleOpenLaterItem: (handler) => {
+    ipcRenderer.on(IpcChannels.OPEN_LATER_ITEM, (_, videoId) => {
+      if (typeof videoId === 'string') {
+        handler(videoId)
+      }
+    })
+  },
+
+  /**
    * @param {(route: string) => void} handler
    */
   handleChangeView: (handler) => {
@@ -536,5 +589,14 @@ export default {
     ipcRenderer.on(IpcChannels.SYNC_CHANNELS, (_, { event, data }) => {
       handler(event, data)
     })
-  }
+  },
+
+  /**
+   * @param {(event: number, data: any) => void} handler
+   */
+  handleSyncLater: (handler) => {
+    ipcRenderer.on(IpcChannels.SYNC_LATER, (_, { event, data }) => {
+      handler(event, data)
+    })
+  },
 }

@@ -1,3 +1,5 @@
+import { startDragPicture } from './channelDragAndDrop'
+
 /**
  * @typedef {object} VideoData
  * @prop {string | null} videoId
@@ -33,6 +35,18 @@
  * @returns {EventHandlers} eventHandlers
  */
 export const handleDragAndDrop = (emit) => {
+  /** Whether the drag in hand has been ended, by its drop or by dragend */
+  let ended = true
+
+  const endDrag = () => {
+    document.removeEventListener('drop', endDrag, true)
+
+    if (ended) { return }
+
+    ended = true
+    emit('drag-video-end')
+  }
+
   /**
    * @type {DragVideo}
    */
@@ -42,6 +56,20 @@ export const handleDragAndDrop = (emit) => {
 
     // Allows drag and drop to work with touch devices.
     event.dataTransfer.setData('text/plain', '_')
+
+    // Fjernsyn: the picture under the pointer is the page's, not the
+    // browser's, which hangs over the drop for half a second or more after it
+    // (as on the Channels page). And the drag ends at the drop, not at the
+    // dragend that comes after that pause.
+    const source = event.currentTarget instanceof HTMLElement ? event.currentTarget : event.target
+    if (source instanceof HTMLElement) {
+      startDragPicture(event, source, null, (copy) => {
+        copy.classList.remove('draggedVideo')
+      })
+    }
+
+    ended = false
+    document.addEventListener('drop', endDrag, true)
 
     emit('drag-video', { videoId, playlistItemId })
   }
@@ -60,9 +88,7 @@ export const handleDragAndDrop = (emit) => {
   /**
    * @type {AfterDrag}
    */
-  const afterDrag = () => {
-    emit('drag-video-end')
-  }
+  const afterDrag = endDrag
 
   return {
     dragVideo,

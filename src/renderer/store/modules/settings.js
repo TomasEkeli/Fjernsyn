@@ -414,6 +414,10 @@ const state = {
   // This makes the `favorites` playlist uses as quick bookmark target
   // If the playlist is removed quick bookmark is disabled
   quickBookmarkTargetPlaylistId: 'favorites',
+  // Set once the built-in Watch Later playlist has been moved into the Later
+  // list (composables/useLaterTakeover.js), so that a playlist named Watch
+  // Later made afterwards, which upstream gives the same id, stays a playlist
+  laterTakeoverDone: false,
   generalAutoLoadMorePaginatedItemsEnabled: false,
   commentAutoLoadEnabled: true,
   hideToTrayOnMinimize: false,
@@ -787,6 +791,33 @@ const customActions = {
 
           default:
             console.error('channels: invalid sync event received')
+        }
+      })
+
+      window.ftElectron.handleSyncLater((event, data) => {
+        switch (event) {
+          case SyncEvents.GENERAL.UPSERT:
+            commit('upsertLaterItem', data)
+            break
+
+          case SyncEvents.LATER.UPDATE_POSITION:
+            commit('setLaterPosition', data)
+            break
+
+          case SyncEvents.LATER.UPDATE_ALARM:
+            commit('setLaterAlarm', data)
+            break
+
+          case SyncEvents.GENERAL.DELETE:
+            commit('removeLaterItem', data)
+            break
+
+          case SyncEvents.GENERAL.DELETE_ALL:
+            commit('setLaterItems', {})
+            break
+
+          default:
+            console.error('later: invalid sync event received')
         }
       })
 

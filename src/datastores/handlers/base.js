@@ -517,6 +517,44 @@ class AiVerdicts {
   }
 }
 
+/**
+ * The Later list: one record per video, by the video's ref (its videoId for
+ * YouTube). Every write touches one record and only the fields it names, so
+ * the scheduler changing an alarm and another window moving an item never
+ * overwrite each other.
+ */
+class Later {
+  static find() {
+    return db.later.findAsync({})
+  }
+
+  static upsert(item) {
+    return db.later.updateAsync({ _id: item._id }, item, { upsert: true })
+  }
+
+  static updatePosition(_id, position) {
+    return db.later.updateAsync({ _id }, { $set: { position } })
+  }
+
+  /**
+   * @param {string} _id
+   * @param {{ at: number, armedAt: number } | null} alarm
+   * @param {number} [premiereDate] the stated time, when it moved with the alarm
+   */
+  static updateAlarm(_id, alarm, premiereDate) {
+    const fields = typeof premiereDate === 'number' ? { alarm, premiereDate } : { alarm }
+    return db.later.updateAsync({ _id }, { $set: fields })
+  }
+
+  static delete(_id) {
+    return db.later.removeAsync({ _id })
+  }
+
+  static deleteAll() {
+    return db.later.removeAsync({}, { multi: true })
+  }
+}
+
 function loadDatastores() {
   return Promise.allSettled([
     db.settings.loadDatabaseAsync(),
@@ -527,6 +565,7 @@ function loadDatastores() {
     db.subscriptionCache.loadDatabaseAsync(),
     db.channels.loadDatabaseAsync(),
     db.aiVerdicts.loadDatabaseAsync(),
+    db.later.loadDatabaseAsync(),
   ])
 }
 
@@ -540,6 +579,7 @@ function compactAllDatastores() {
     db.subscriptionCache.compactDatafileAsync(),
     db.channels.compactDatafileAsync(),
     db.aiVerdicts.compactDatafileAsync(),
+    db.later.compactDatafileAsync(),
   ])
 }
 
@@ -552,6 +592,7 @@ export {
   SubscriptionCache as subscriptionCache,
   Channels as channels,
   AiVerdicts as aiVerdicts,
+  Later as later,
 
   loadDatastores,
   compactAllDatastores,
