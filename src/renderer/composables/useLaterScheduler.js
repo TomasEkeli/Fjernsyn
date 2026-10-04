@@ -37,7 +37,8 @@ const LIVE_TOAST_MS = 60 * 1000
  * first. A countdown holds the others back until it is answered; a notice on
  * the player does not, and the notices stack; a desktop notification and a
  * reload are answered at once. Notices still unanswered when the watch pages
- * are left count as dismissed.
+ * are left are taken down, and their items stay armed, shown as live on the
+ * Later page and not fired again this run; opening one counts as going to it.
  *
  * @param {any} store
  * @param {import('vue-router').Router} router
@@ -78,7 +79,7 @@ export function useLaterScheduler(store, router, isMainWindow) {
       for (const { _id: id, videoId } of armedInOrder(Object.values(store.getters.getLaterItems))) {
         // Taken off, disarmed or already firing since the tick began
         const alarm = alarmOf(id)
-        if (!active() || firing.has(id) || alarm == null) { continue }
+        if (!active() || firing.has(id) || alarm == null || store.getters.getLaterIsLiveQuiet(id)) { continue }
 
         const now = Date.now()
 
@@ -324,13 +325,22 @@ export function useLaterScheduler(store, router, isMainWindow) {
     }
   )
 
-  // Leaving the watch pages with notices unanswered dismisses them. Going
-  // from one video to the next keeps them, for the next video's player
+  // Leaving the watch pages with notices unanswered quiets them (below).
+  // Going from one video to the next keeps them, for the next video's player
   router.afterEach((to) => {
+    // An item left live and unanswered, opened after all: gone to
+    const opened = watchedVideoId(to)
+    if (opened !== null && store.getters.getLaterIsLiveQuiet(opened)) {
+      store.dispatch('laterWatchNow', opened)
+    }
+
     if (isWatchPath(to.path)) { return }
 
+    // Leaving the watch pages with notices unanswered: the items stay armed,
+    // shown as live on the Later page, and are not fired again this run
     for (const item of store.getters.getLaterNotices.slice()) {
-      store.dispatch('laterRefuse', item._id)
+      store.commit('removeLaterNotice', item._id)
+      store.commit('setLaterLiveQuiet', item._id)
     }
   })
 

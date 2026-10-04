@@ -204,14 +204,18 @@ const armed = computed(() => store.getters.getLaterArmed.map(cardData))
 
 const queued = computed(() => store.getters.getLaterQueued.map(cardData))
 
-/** @param {{ alarm: { at: number } }} item */
+/** @param {{ _id: string, alarm: { at: number } }} item */
 function stateOf(item) {
+  if (store.getters.getLaterIsLiveQuiet(item._id)) { return 'live' }
+
   return laterStateAt(now.value, item.alarm.at)
 }
 
-/** @param {'waiting' | 'checking' | 'didNotStart'} state */
+/** @param {'live' | 'waiting' | 'checking' | 'didNotStart'} state */
 function stateLabel(state) {
   switch (state) {
+    case 'live':
+      return t('Later.State.Live now')
     case 'waiting':
       return t('Later.State.Waiting')
     case 'checking':

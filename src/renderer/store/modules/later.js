@@ -42,6 +42,12 @@ const state = {
    * @type {{ videoId: string, at: number } | null}
    */
   laterFiredVideo: null,
+  /**
+   * Armed items found live whose notice was left unanswered: still armed, and
+   * not fired again this run, until they are gone to, disarmed or removed
+   * @type {Record<string, true>}
+   */
+  laterLiveQuiet: {},
 }
 
 const getters = {
@@ -56,6 +62,7 @@ const getters = {
   getLaterNotices: (state) => state.laterNotices,
   getLaterCountdown: (state) => state.laterCountdown,
   getLaterFiredVideo: (state) => state.laterFiredVideo,
+  getLaterIsLiveQuiet: (state) => (id) => state.laterLiveQuiet[id] === true,
 }
 
 /**
@@ -358,6 +365,11 @@ const mutations = {
 
   removeLaterItem(state, id) {
     delete state.laterItems[id]
+    delete state.laterLiveQuiet[id]
+  },
+
+  setLaterLiveQuiet(state, id) {
+    state.laterLiveQuiet = { ...state.laterLiveQuiet, [id]: true }
   },
 
   setLaterPosition(state, { _id, position }) {
@@ -371,6 +383,11 @@ const mutations = {
 
     item.alarm = alarm
     if (typeof premiereDate === 'number') { item.premiereDate = premiereDate }
+
+    if (alarm == null && state.laterLiveQuiet[_id]) {
+      const { [_id]: _, ...rest } = state.laterLiveQuiet
+      state.laterLiveQuiet = rest
+    }
   },
 }
 

@@ -458,6 +458,7 @@ Later:
     Waiting: Waiting
     Checking: Checking
     Did not start: Did not start
+    Live now: Live now
   No scheduled: Nothing scheduled. Arm an upcoming stream with its calendar button.
   No queued: Nothing to watch later. Add videos with their clock button.
   Live now: 'Live now: {channel}'
