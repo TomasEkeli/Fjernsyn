@@ -3,6 +3,64 @@
     <FtCard class="card">
       <h2>
         <FontAwesomeIcon
+          :icon="['fas', 'calendar-check']"
+          class="headingIcon"
+        />
+        {{ t('Later.Scheduled') }}
+      </h2>
+      <FtFlexBox
+        v-if="armed.length === 0"
+      >
+        <p class="message">
+          {{ t('Later.No scheduled') }}
+        </p>
+      </FtFlexBox>
+      <div
+        v-else
+        class="armedItems"
+      >
+        <div
+          v-for="item in armed"
+          :key="item._id"
+          class="armedItem"
+        >
+          <div class="armedHeader">
+            <span class="armedTime">{{ scheduledTimeOf(item) }}</span>
+            <span
+              class="armedState"
+              :class="stateOf(item)"
+            >{{ stateLabel(stateOf(item)) }}</span>
+            <span class="armedActions">
+              <FtButton
+                :label="t('Later.Disarm')"
+                :icon="['fas', 'calendar-xmark']"
+                background-color="var(--secondary-card-bg-color)"
+                text-color="var(--primary-text-color)"
+                class="armedAction disarmButton"
+                @click="disarm(item._id)"
+              />
+              <FtButton
+                :label="t('Later.Remove')"
+                :icon="['fas', 'trash']"
+                background-color="var(--secondary-card-bg-color)"
+                text-color="var(--primary-text-color)"
+                class="armedAction removeButton"
+                @click="remove(null, item._id)"
+              />
+            </span>
+          </div>
+          <FtListVideo
+            :data="item"
+            appearance="result"
+            force-list-type="list"
+            :later-row="true"
+          />
+        </div>
+      </div>
+    </FtCard>
+    <FtCard class="card">
+      <h2>
+        <FontAwesomeIcon
           :icon="['fas', 'clock']"
           class="headingIcon"
         />
@@ -83,20 +141,24 @@
 
 <script setup>
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import FtCard from '../../components/ft-card/ft-card.vue'
 import FtFlexBox from '../../components/ft-flex-box/ft-flex-box.vue'
+import FtButton from '../../components/FtButton/FtButton.vue'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
+import FtListVideo from '../../components/FtListVideo/FtListVideo.vue'
 import FtListVideoNumbered from '../../components/FtListVideoNumbered/FtListVideoNumbered.vue'
 import AutoScrollWrapper from '../../components/AutoScrollWrapper/AutoScrollWrapper.vue'
 
 import store from '../../store/index'
-import { throttle } from '../../helpers/utils'
+import { formatScheduledTime, throttle } from '../../helpers/utils'
+import { laterStateAt } from '../../helpers/later'
 
 /**
- * The Later page: the Later list's queued items, in their order, moved and
+ * The Later page: the armed items first, soonest first, each with its stated
+ * time and its state; then the queued items, in their order, moved and
  * removed as a playlist's are. The rows are the playlist rows, given no
  * playlist: `laterRow` turns on their move and remove controls, and their
  * events come here, to the Later store, so nothing on this page writes to
@@ -108,15 +170,64 @@ const { t } = useI18n()
 /** @type {import('vue').ComputedRef<'grid' | 'list'>} */
 const listType = computed(() => store.getters.getListType)
 
+/** The clock the armed items' states are read from, moved on twice a minute */
+const now = ref(Date.now())
+const clock = setInterval(() => { now.value = Date.now() }, 30_000)
+onBeforeUnmount(() => clearInterval(clock))
+
 /**
- * The rows' data: the items, with the row id the drag and the move events
- * carry, which is the item's own `_id`.
+ * What a row's card reads, from an item: the times as the card takes them,
+ * and upcoming only while its time is ahead, so that a stream that has been
+ * and gone is not still badged upcoming. A length the item does not know is
+ * no length, rather than the card's sign of a live.
+ * @param {import('../../helpers/later').LaterItem} item
  */
-const queued = computed(() => store.getters.getLaterQueued.map(item => ({
-  ...item,
-  type: 'video',
-  playlistItemId: item._id,
-})))
+function cardData(item) {
+  const at = item.alarm?.at ?? item.premiereDate
+  const ahead = at != null && at > now.value
+
+  return {
+    ...item,
+    type: 'video',
+    lengthSeconds: item.lengthSeconds ?? 0,
+    isUpcoming: ahead,
+    premiereDate: ahead ? new Date(at) : undefined,
+    // The row id the drag and the move events carry: the item's own `_id`
+    playlistItemId: item._id,
+  }
+}
+
+const armed = computed(() => store.getters.getLaterArmed.map(cardData))
+
+const queued = computed(() => store.getters.getLaterQueued.map(cardData))
+
+/** @param {{ alarm: { at: number } }} item */
+function stateOf(item) {
+  return laterStateAt(now.value, item.alarm.at)
+}
+
+/** @param {'waiting' | 'checking' | 'didNotStart'} state */
+function stateLabel(state) {
+  switch (state) {
+    case 'waiting':
+      return t('Later.State.Waiting')
+    case 'checking':
+      return t('Later.State.Checking')
+    default:
+      return t('Later.State.Did not start')
+  }
+}
+
+/** @param {{ alarm: { at: number } }} item */
+function scheduledTimeOf(item) {
+  // Read with the clock, so the relative part moves on with it
+  return now.value > 0 ? formatScheduledTime(item.alarm.at) : ''
+}
+
+/** @param {string} id */
+function disarm(id) {
+  store.dispatch('disarm', id)
+}
 
 /** @import { VideoData } from '../../helpers/dragAndDrop' */
 /** @type {import('vue').Ref<VideoData>} */
