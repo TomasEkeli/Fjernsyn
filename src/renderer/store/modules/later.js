@@ -36,8 +36,12 @@ const state = {
   laterNotices: [],
   /** @type {LaterItem | null} the armed item gone live, counting down to it */
   laterCountdown: null,
-  /** @type {string | null} the video whose own watch page is to reload into its stream */
-  laterFiredVideoId: null,
+  /**
+   * The armed item gone live whose own watch page is to reload into its
+   * stream: its video id, and when, so that a second firing is a change
+   * @type {{ videoId: string, at: number } | null}
+   */
+  laterFiredVideo: null,
 }
 
 const getters = {
@@ -51,7 +55,7 @@ const getters = {
   getLaterPlayerMounted: (state) => state.laterPlayersMounted > 0,
   getLaterNotices: (state) => state.laterNotices,
   getLaterCountdown: (state) => state.laterCountdown,
-  getLaterFiredVideoId: (state) => state.laterFiredVideoId,
+  getLaterFiredVideo: (state) => state.laterFiredVideo,
 }
 
 /**
@@ -299,23 +303,18 @@ Object.assign(actions, {
     await dispatch('disarm', id)
   },
 
+  /**
+   * A player up, or gone. Its notices are not dismissed with it: going from
+   * one video to the next unmounts one player before the next mounts, and the
+   * notices carry over; leaving the watch pages dismisses them (the scheduler)
+   * @param {any} context
+   */
   laterPlayerMounted({ commit }) {
     commit('changeLaterPlayersMounted', 1)
   },
 
-  /**
-   * A player gone: with none left, the notices it held were never answered,
-   * which counts as dismissing them.
-   * @param {any} context
-   */
-  async laterPlayerUnmounted({ commit, dispatch, state }) {
+  laterPlayerUnmounted({ commit }) {
     commit('changeLaterPlayersMounted', -1)
-
-    if (state.laterPlayersMounted > 0) { return }
-
-    for (const item of state.laterNotices.slice()) {
-      await dispatch('laterRefuse', item._id)
-    }
   },
 })
 
@@ -339,8 +338,8 @@ const mutations = {
     state.laterCountdown = item
   },
 
-  setLaterFiredVideoId(state, videoId) {
-    state.laterFiredVideoId = videoId
+  setLaterFiredVideo(state, fired) {
+    state.laterFiredVideo = fired
   },
 
   setLaterReady(state, value) {

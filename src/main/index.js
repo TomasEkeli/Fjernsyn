@@ -457,6 +457,12 @@ function runApp() {
 
   let proxyUrl
 
+  // Windows shows an app's notifications only under the id its Start menu
+  // shortcut carries, which the installer gives as the build's appId
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('io.github.tomasekeli.fjernsyn')
+  }
+
   app.on('ready', async (_, __) => {
     if (process.platform === 'darwin') {
       const dockMenu = Menu.buildFromTemplate([
@@ -1267,7 +1273,10 @@ function runApp() {
           if (newWindow === mainWindow) {
             // A timer is needed because getFocusedWindow doesn't update until the minimize event ends
             setTimeout(() => {
-              const newMainWindow = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows().find(window => window.isVisible())
+              // Fjernsyn: only an app window, never the GPU internals one, as the main window checks the Later list
+              const isAppWindow = window => isFreeTubeUrl(window.webContents.getURL())
+              const focused = BrowserWindow.getFocusedWindow()
+              const newMainWindow = (focused && isAppWindow(focused) ? focused : null) || BrowserWindow.getAllWindows().find(window => window.isVisible() && isAppWindow(window))
               if (newMainWindow) { setMainWindow(newMainWindow) }
             }, 100)
           }
@@ -1390,7 +1399,8 @@ function runApp() {
       if (allWindows.length !== 0 && newWindow === mainWindow) {
         // Replace mainWindow to avoid accessing `mainWindow.webContents`
         // Which raises "Object has been destroyed" error
-        setMainWindow(allWindows[0])
+        // Fjernsyn: an app window first, never the GPU internals one, as the main window checks the Later list
+        setMainWindow(allWindows.find(window => isFreeTubeUrl(window.webContents.getURL())) ?? allWindows[0])
       }
 
       stopPowerSaveBlockerForWindow(newWindow)
@@ -2551,10 +2561,12 @@ function runApp() {
   // Held until clicked or closed, as a notification that is collected loses its click
   const liveNotifications = new Set()
 
-  ipcMain.handle(IpcChannels.SHOW_LIVE_NOTIFICATION, async (event, { videoId, title, author, thumbnail }) => {
-    if (!isFreeTubeUrl(event.senderFrame.url) || typeof videoId !== 'string' || !Notification.isSupported()) {
+  ipcMain.handle(IpcChannels.SHOW_LIVE_NOTIFICATION, async (event, payload) => {
+    if (!isFreeTubeUrl(event.senderFrame.url) || typeof payload?.videoId !== 'string' || !Notification.isSupported()) {
       return false
     }
+
+    const { videoId, title, author, thumbnail } = payload
 
     const window = BrowserWindow.fromWebContents(event.sender)
 

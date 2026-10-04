@@ -72,7 +72,7 @@ watch(item, (current) => {
     seconds.value--
 
     if (seconds.value <= 0) {
-      watchNow()
+      finish()
     }
   }, 1000)
 }, { immediate: true })
@@ -86,6 +86,31 @@ watch(() => item.value != null && store.getters.getIsArmed(item.value._id), (arm
 })
 
 onBeforeUnmount(stop)
+
+/**
+ * At zero: to the stream, unless the window was hidden meanwhile, where
+ * nothing is to play; then as for a hidden window, a desktop notification,
+ * and the item waits at the top of the list
+ */
+async function finish() {
+  const current = item.value
+  stop()
+
+  if (current == null) { return }
+
+  if (process.env.IS_ELECTRON && !await window.ftElectron.isWindowShown()) {
+    await window.ftElectron.showLiveNotification({
+      videoId: current.videoId,
+      title: current.title,
+      author: current.author,
+      thumbnail: thumbnail.value,
+    }).catch(() => false)
+    store.dispatch('laterRefuse', current._id)
+    return
+  }
+
+  watchNow()
+}
 
 function watchNow() {
   const current = item.value
