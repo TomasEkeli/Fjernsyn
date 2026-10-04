@@ -32,6 +32,7 @@ const IpcChannels = {
   DB_SEARCH_HISTORY: 'db-search-history',
   DB_SUBSCRIPTION_CACHE: 'db-subscription-cache',
   DB_CHANNELS: 'db-channels',
+  DB_AI_VERDICTS: 'db-ai-verdicts',
 
   SYNC_SETTINGS: 'sync-settings',
   SYNC_HISTORY: 'sync-history',

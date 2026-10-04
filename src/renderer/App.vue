@@ -163,6 +163,7 @@ onMounted(async () => {
     store.dispatch('grabAllPlaylists')
     store.dispatch('grabAllSubscriptions')
     store.dispatch('grabChannels')
+    store.dispatch('grabAiVerdicts')
     store.dispatch('grabSearchHistoryEntries')
 
     if (process.env.IS_ELECTRON) {

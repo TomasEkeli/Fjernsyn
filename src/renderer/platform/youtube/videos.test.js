@@ -24,6 +24,8 @@ const YOUTUBE = {
   downloadOptions: [],
   // None of the fixtures has a chat: those are below
   liveChat: null,
+  // Nor an AI label: those are below too
+  aiVerdict: null,
 }
 
 const next = videoId => ({ type: 'video', videoId, title: `Next ${videoId}` })
@@ -402,6 +404,28 @@ describe('a YouTube video\'s live chat', () => {
 
     expect(video.liveStatus).toBe('live')
     expect(video.liveChat).toBeNull()
+  })
+})
+
+describe('a YouTube video\'s AI label', () => {
+  /** @param {'ai' | 'not-ai'} aiVerdict */
+  function labelled(aiVerdict) {
+    const copy = structuredClone(localOrdinary)
+    copy.answer.aiVerdict = aiVerdict
+    return localInstance(copy)
+  }
+
+  it.each(['ai', 'not-ai'])('is the verdict Local read from the /next it had anyway: %s', async (verdict) => {
+    const { fake, layer } = setUp({ answers: { getLocalVideoInfo: labelled(verdict) } })
+
+    expect((await layer.getVideo('dQw4w9WgXcQ')).aiVerdict).toBe(verdict)
+    expect(fake.callsOf('getLocalVideoInfo')).toHaveLength(1)
+  })
+
+  it('is none from Invidious, which does not carry the label', async () => {
+    const { layer } = setUp({ answers: { invidiousGetVideoInformation: invidiousOrdinary }, config: { backendPreference: 'invidious' } })
+
+    expect((await layer.getVideo('dQw4w9WgXcQ')).aiVerdict).toBeNull()
   })
 })
 

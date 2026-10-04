@@ -120,6 +120,10 @@
           >
             {{ t('Layer Search.Apply last filters', { filters: rememberedWords }) }}
           </button>
+          <!-- At the top right of the wall, where the Watched pill is on the
+               subscriptions page. A setting, not part of the query: Clear
+               leaves it as it is -->
+          <AiChip class="aiChip" />
         </template>
       </LayerSearchChips>
       <div
@@ -154,7 +158,16 @@
               {{ t('Layer Search.Not applied here', { platform: platformName(t, platform), filters: unappliedWords(platform) }) }}
             </p>
           </header>
-          <FtElementList :data="sectionOf(platform).items" />
+          <FtElementList
+            :data="sectionOf(platform).items"
+            ai-wall
+          />
+          <p
+            v-if="allHiddenAsAi(sectionOf(platform).items)"
+            class="message"
+          >
+            {{ t('AI Chip.All Hidden') }}
+          </p>
           <p
             v-if="isFinishedAndEmpty(platform)"
             class="message"
@@ -235,6 +248,7 @@ import { computed, onBeforeUnmount, onMounted, shallowReactive, shallowRef, watc
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
+import AiChip from '../../components/AiChip/AiChip.vue'
 import FtAutoLoadNextPageWrapper from '../../components/FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
 import FtCard from '../../components/ft-card/ft-card.vue'
@@ -244,6 +258,7 @@ import LayerSearchChips from '../../components/LayerSearchChips/LayerSearchChips
 
 import store from '../../store/index'
 import { showToast } from '../../helpers/utils'
+import { allHiddenAsAi } from '../../helpers/aiShown'
 import { SEARCH_CHAR_LIMIT } from '../../../constants'
 import { usePlatformLayer } from '../../platform/vue'
 import { appliedFilters, platformsOf } from '../../platform/search/capabilities'
@@ -489,7 +504,11 @@ function takePage(section, page, isNext) {
   section.cursor = page.cursor ?? null
   section.applied = Array.isArray(page.applied) ? page.applied : null
   section.loaded = true
-  section.emptyPagesInARow = page.items.length === 0 ? section.emptyPagesInARow + 1 : 0
+  // A page the AI pill hides whole is as empty as one with nothing in it, as
+  // far as loading the next by itself goes: nothing of it pushes the end of
+  // the list off the screen
+  const shownNothing = page.items.length === 0 || allHiddenAsAi(page.items)
+  section.emptyPagesInARow = shownNothing ? section.emptyPagesInARow + 1 : 0
 }
 
 /**

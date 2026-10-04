@@ -6,4 +6,5 @@ export {
   searchHistory as DBSearchHistoryHandlers,
   subscriptionCache as DBSubscriptionCacheHandlers,
   channels as DBChannelHandlers,
+  aiVerdicts as DBAiVerdictHandlers,
 } from 'DB_HANDLERS_ELECTRON_RENDERER_OR_WEB'

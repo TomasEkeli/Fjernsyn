@@ -22,6 +22,11 @@ import { reactive, readonly } from 'vue'
  * something has already refused us; enrichment keeps a narrow width so it fills
  * the slack a refresh leaves rather than competing with it.
  *
+ * It has outgrown the name. Any background request to YouTube that the reader
+ * did not ask for one by one goes through the same budget, so that it adds up
+ * with the subscription work instead of on top of it: the AI label lookups for
+ * the tiles on a wall ride the enrichment lane (helpers/aiMarker, ADR-0020).
+ *
  * The queues hold closures, so they stay out of the store; only the progress the
  * interface needs is reactive. It all lives at module scope rather than in a
  * component so that switching tabs, or navigating away entirely, does not
@@ -107,6 +112,9 @@ export const LANE_DELAYS_MS = {
  *   and a budget that counted that as one request would be counting a
  *   twenty-five channel burst as politeness.
  * @property {() => Promise<void>} run
+ * @property {() => void} [dropped] called instead of `run` when the job is
+ *   cancelled before its turn, for a caller that keeps its own note of what
+ *   it has queued and would otherwise never hear that it will not run
  */
 
 /** @type {Record<string, WorkerJob[]>} */
@@ -349,6 +357,45 @@ export function promoteSubscriptionJobs(lane, keys) {
 }
 
 /**
+ * Take jobs still queued out of their lane, by key, telling each it will not
+ * run. Jobs already in flight, and keys not queued, are left alone.
+ *
+ * For work whose reason to exist can go away while it waits, such as an AI
+ * label lookup for a tile that has scrolled off: a job that would only find
+ * out in its turn that there is nothing to do would still spend that turn's
+ * share of the budget and the lane's gap, ahead of jobs that are wanted.
+ *
+ * @param {string} lane
+ * @param {string[]} keys
+ * @returns {number} how many were taken out
+ */
+export function removeSubscriptionJobs(lane, keys) {
+  const removing = new Set(keys)
+  const removed = queues[lane].filter(job => removing.has(job.key))
+
+  if (removed.length === 0) { return 0 }
+
+  queues[lane] = queues[lane].filter(job => !removing.has(job.key))
+
+  for (const job of removed) {
+    claimed[lane].delete(job.key)
+  }
+
+  syncCounts()
+  signal()
+
+  for (const job of removed) {
+    try {
+      job.dropped?.()
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  return removed.length
+}
+
+/**
  * Drop everything queued for a lane. Jobs already in flight are allowed to
  * finish, since there is nothing to abort a request with here and their results
  * are still worth having.
@@ -358,13 +405,23 @@ export function promoteSubscriptionJobs(lane, keys) {
 export function cancelSubscriptionLane(lane) {
   cancelledLanes.add(lane)
 
-  for (const job of queues[lane]) {
+  const dropped = queues[lane]
+
+  for (const job of dropped) {
     claimed[lane].delete(job.key)
   }
 
   queues[lane] = []
   syncCounts()
   signal()
+
+  for (const job of dropped) {
+    try {
+      job.dropped?.()
+    } catch (error) {
+      console.error(error)
+    }
+  }
 }
 
 export function cancelAllSubscriptionWork() {

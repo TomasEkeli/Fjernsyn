@@ -199,7 +199,7 @@
           />
           <template v-else>
             <div
-              v-if="viewAllRoute || currentSortedList"
+              v-if="viewAllRoute || currentSortedList || aiChipShown"
               class="select-container"
             >
               <FtButton
@@ -219,6 +219,11 @@
                 :icon="getIconForSortPreference(currentSortedList.sort.value)"
                 @change="currentSortedList.changeSort"
               />
+              <!-- At the top right of the wall, as on the other walls -->
+              <AiChip
+                v-if="aiChipShown"
+                class="aiChip"
+              />
             </div>
             <!-- A PeerTube playlist links to its instance; a YouTube playlist
                  opens on the app's own playlist page, through the existing
@@ -235,7 +240,14 @@
               :data="currentItems"
               :use-channels-hidden-preference="false"
               :display="currentTabInfo.posts ? 'list' : ''"
+              ai-wall
             />
+            <p
+              v-if="allPagesHiddenAsAi"
+              class="message"
+            >
+              {{ t('AI Chip.All Hidden') }}
+            </p>
             <p
               v-if="isFinishedAndEmpty(currentList, currentItems)"
               class="message"
@@ -261,7 +273,7 @@
           />
         </div>
         <FtAutoLoadNextPageWrapper
-          v-else-if="currentList && hasMore(currentList)"
+          v-else-if="currentList && hasMore(currentList) && !lastPageHiddenAsAi"
           @load-next-page="currentList.load"
         >
           <div
@@ -274,6 +286,18 @@
             <FontAwesomeIcon :icon="['fas', 'search']" /> {{ t('Search Filters.Fetch more results') }}
           </div>
         </FtAutoLoadNextPageWrapper>
+        <!-- Not loaded by itself while the AI pill hides the whole of the last
+             page (lastPageHiddenAsAi) -->
+        <div
+          v-else-if="currentList && hasMore(currentList)"
+          class="getNextPage"
+          role="button"
+          tabindex="0"
+          @click="currentList.load"
+          @keydown.enter.space.prevent="currentList.load"
+        >
+          <FontAwesomeIcon :icon="['fas', 'search']" /> {{ t('Search Filters.Fetch more results') }}
+        </div>
       </FtCard>
     </template>
   </div>
@@ -292,6 +316,7 @@ import { computed, onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef, 
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
+import AiChip from '../../components/AiChip/AiChip.vue'
 import FtAgeRestricted from '../../components/FtAgeRestricted/FtAgeRestricted.vue'
 import FtAutoLoadNextPageWrapper from '../../components/FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
@@ -317,6 +342,7 @@ import {
   getIconForSortPreference,
   openExternalLink,
 } from '../../helpers/utils'
+import { allHiddenAsAi } from '../../helpers/aiShown'
 import { PLATFORM_YOUTUBE, isYouTubeChannelRef, parseChannelHandle, platformOf } from '../../platform/refs'
 import { subscriptionCacheEntries } from '../../platform/subscriptionCache'
 import { usePlatformLayer } from '../../platform/vue'
@@ -468,6 +494,29 @@ const currentTab = computed(() => {
 const currentTabInfo = computed(() => tabs.value.find(tab => tab.name === currentTab.value))
 
 /**
+ * The AI pill (helpers/aiShown.js), on a YouTube channel's tabs that list
+ * videos: the videos, shorts and live, and a search within the channel. Not
+ * on playlists or posts, which it would not change, nor on PeerTube, which
+ * has no label and no marked channels.
+ */
+const aiChipShown = computed(() => {
+  const tab = currentTabInfo.value
+
+  return isYouTube.value && tab != null && !tab.playlists && !tab.posts && !tab.about
+})
+
+/** Whether the AI pill has hidden everything the tab has loaded */
+const allPagesHiddenAsAi = computed(() => aiChipShown.value && allHiddenAsAi(currentItems.value))
+
+/**
+ * Whether the AI pill has hidden the whole of the page answered last. The
+ * next page is then loaded only when asked: nothing of this one pushed the
+ * end of the list off the screen, so it would load the next at once, and a
+ * marked channel's tab every page it has.
+ */
+const lastPageHiddenAsAi = computed(() => aiChipShown.value && allHiddenAsAi(currentList.value?.lastPage.value ?? []))
+
+/**
  * The video sorts the channel offers: an artist topic channel has no oldest
  * first, which the layer refuses, so the old view offers newest and popular
  */
@@ -503,6 +552,8 @@ let loadsStarted = 0
 function createPagedList(fetchPage, onFirstPage) {
   /** @type {import('vue').ShallowRef<T[]>} */
   const items = shallowRef([])
+  /** @type {import('vue').ShallowRef<T[]>} the items of the page answered last */
+  const lastPage = shallowRef([])
   const cursor = shallowRef(null)
   /** Whether the first page has been answered */
   const loaded = ref(false)
@@ -513,6 +564,7 @@ function createPagedList(fetchPage, onFirstPage) {
   function reset() {
     generation++
     items.value = []
+    lastPage.value = []
     cursor.value = null
     loaded.value = false
     loading.value = false
@@ -542,6 +594,7 @@ function createPagedList(fetchPage, onFirstPage) {
       }
 
       items.value = isNext ? [...items.value, ...page.items] : page.items
+      lastPage.value = page.items
       cursor.value = page.cursor ?? null
       loaded.value = true
     } catch (err) {
@@ -561,7 +614,7 @@ function createPagedList(fetchPage, onFirstPage) {
     }
   }
 
-  return { items, cursor, loaded, loading, error, reset, load }
+  return { items, lastPage, cursor, loaded, loading, error, reset, load }
 }
 
 /**

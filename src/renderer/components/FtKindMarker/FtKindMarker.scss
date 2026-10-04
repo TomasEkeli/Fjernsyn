@@ -27,6 +27,18 @@
   color: #fff;
 }
 
+// Made with AI is the one marker a viewer is warned by rather than told, so
+// it is larger than the rest and in a colour of its own: not the live red,
+// which means something else, and loud enough to find on a wall of thumbnails.
+.kindMarker.ai {
+  background-color: #7fff00;
+  color: #000;
+  font-size: 15px;
+  font-weight: 700;
+  padding-block: 4px;
+  padding-inline: 8px;
+}
+
 .kindMarkerIcon {
   // Keeps the icon from growing with a long label's line box
   block-size: 1em;

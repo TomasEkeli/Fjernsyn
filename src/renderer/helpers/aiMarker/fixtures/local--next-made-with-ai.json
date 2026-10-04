@@ -1,0 +1,138 @@
+{
+  "recordedAt": "2026-10-04",
+  "source": "recorded",
+  "call": "actions.execute('/next', { videoId: '8Kstkyi3RoE', racyCheckOk: true, contentCheckOk: true })",
+  "notes": "Labelled \"Made with AI\". The structured description panel kept, its items reduced to their kind except the \"How this was made\" section, which is whole bar its tracking fields; every other key emptied.",
+  "answer": {
+    "responseContext": {},
+    "contents": {},
+    "currentVideoEndpoint": {},
+    "trackingParams": {},
+    "playerOverlays": {},
+    "onResponseReceivedEndpoints": {},
+    "engagementPanels": [
+      {
+        "engagementPanelSectionListRenderer": {
+          "panelIdentifier": "engagement-panel-comments-section",
+          "targetId": "engagement-panel-comments-section",
+          "content": {
+            "sectionListRenderer": {}
+          }
+        }
+      },
+      {
+        "engagementPanelSectionListRenderer": {
+          "targetId": "engagement-panel-ads",
+          "content": {
+            "adsEngagementPanelContentRenderer": {}
+          }
+        }
+      },
+      {
+        "engagementPanelSectionListRenderer": {
+          "content": {}
+        }
+      },
+      {
+        "engagementPanelSectionListRenderer": {
+          "targetId": "PAsearch_preview",
+          "content": {
+            "sectionListRenderer": {}
+          }
+        }
+      },
+      {
+        "engagementPanelSectionListRenderer": {
+          "panelIdentifier": "engagement-panel-macro-markers-description-chapters",
+          "targetId": "engagement-panel-macro-markers-description-chapters",
+          "content": {
+            "macroMarkersListRenderer": {}
+          }
+        }
+      },
+      {
+        "engagementPanelSectionListRenderer": {
+          "panelIdentifier": "engagement-panel-structured-description",
+          "targetId": "engagement-panel-structured-description",
+          "content": {
+            "structuredDescriptionContentRenderer": {
+              "items": [
+                {
+                  "videoDescriptionHeaderRenderer": {}
+                },
+                {
+                  "expandableVideoDescriptionBodyRenderer": {}
+                },
+                {
+                  "howThisWasMadeSectionViewModel": {
+                    "sectionTitle": {
+                      "content": "How this was made"
+                    },
+                    "bodyText": {
+                      "content": "Sounds or visuals were altered or fully generated. Learn more",
+                      "commandRuns": [
+                        {
+                          "startIndex": 51,
+                          "length": 10,
+                          "onTap": {
+                            "innertubeCommand": {
+                              "commandMetadata": {
+                                "webCommandMetadata": {
+                                  "url": "//support.google.com/youtube/answer/15447836?hl=en",
+                                  "webPageType": "WEB_PAGE_TYPE_UNKNOWN",
+                                  "rootVe": 83769
+                                }
+                              },
+                              "urlEndpoint": {
+                                "url": "//support.google.com/youtube/answer/15447836?hl=en",
+                                "target": "TARGET_NEW_WINDOW"
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "styleRuns": [
+                        {
+                          "startIndex": 51,
+                          "length": 10,
+                          "fontColor": 4278607828
+                        }
+                      ]
+                    },
+                    "bodyHeader": {
+                      "content": "Made with AI"
+                    },
+                    "attributionText": {},
+                    "shouldRemoveBottomPadding": false
+                  }
+                },
+                {
+                  "horizontalCardListRenderer": {}
+                },
+                {
+                  "videoDescriptionTranscriptSectionRenderer": {}
+                },
+                {
+                  "videoDescriptionInfocardsSectionRenderer": {}
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "engagementPanelSectionListRenderer": {
+          "panelIdentifier": "engagement-panel-searchable-transcript",
+          "targetId": "engagement-panel-searchable-transcript",
+          "content": {
+            "continuationItemRenderer": {}
+          }
+        }
+      }
+    ],
+    "topbar": {},
+    "pageVisualEffects": {},
+    "microformat": {},
+    "frameworkUpdates": {}
+  }
+}

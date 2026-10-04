@@ -242,6 +242,7 @@
           v-if="recommendationsShown"
           :data="recommendedVideos"
           class="watchVideoSidebar"
+          ai-wall
           @pause-player="pausePlayer"
         />
       </template>
@@ -294,6 +295,7 @@ import { routeView } from '../../components/LayerSurfaceSwitch/surfaceSwitch'
 
 import store from '../../store/index'
 import { formatScheduledTime, getLocalesWithFallback, showToast } from '../../helpers/utils'
+import { isHiddenAsAi } from '../../helpers/aiShown'
 import { PLATFORM_YOUTUBE, isYouTubeVideoRef, peerTubeVideoRef, platformOf } from '../../platform/refs'
 import { usePlatformLayer } from '../../platform/vue'
 import { useSabrHosting } from './useSabrHosting'
@@ -596,7 +598,9 @@ const nextRecommendedVideo = computed(() => {
 
   return recommendedVideos.value.find((recommended) => {
     return !(channelsHidden.some(channel => channel.name === recommended.authorId || channel.name === recommended.author) ||
-      forbiddenTitles.some(text => recommended.title?.toLowerCase().includes(text) || recommended.author?.toLowerCase().includes(text)))
+      forbiddenTitles.some(text => recommended.title?.toLowerCase().includes(text) || recommended.author?.toLowerCase().includes(text)) ||
+      // Nor one the AI pill hides: autoplay does not lead where the list does not show
+      isHiddenAsAi(recommended))
   }) ?? null
 })
 
@@ -1006,6 +1010,12 @@ async function load() {
 
     video.value = details
     recommendedVideos.value = sortWatchedVideosLast(details.related ?? [])
+
+    // YouTube's AI label, read from the /next the details came from: kept,
+    // so that this video's tile is never asked about (helpers/aiMarker)
+    if (details.aiVerdict === 'ai' || details.aiVerdict === 'not-ai') {
+      store.dispatch('recordAiVerdict', { videoId: details.videoId, verdict: details.aiVerdict })
+    }
 
     // As Watch.js: shown as age restricted, and moved on from as if it had
     // ended, without a title or the subscription's details

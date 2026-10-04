@@ -26,6 +26,7 @@
       :dragged-video="draggedVideo"
       :is-video-dragging="isVideoDragging"
       :video-dragging-possible="videoDraggingPossible"
+      :ai-wall="aiWall"
       @drag-video="dragVideo"
       @move-dragged-video="moveDraggedVideo"
       @drag-video-end="afterDrag"
@@ -126,6 +127,17 @@ const props = defineProps({
     default: false,
   },
   videoDraggingPossible: {
+    type: Boolean,
+    default: false,
+  },
+  /**
+   * Whether this is one of the walls the AI pill governs (helpers/aiShown.js):
+   * its cards ask whether their videos were made with AI (see FtListVideo),
+   * and while the pill is off those that were are taken off it. Opted into by
+   * the walls a viewer finds things on, which carry the pill, as a wall opts
+   * into the hidden channels; elsewhere a known video is marked and stays.
+   */
+  aiWall: {
     type: Boolean,
     default: false,
   },

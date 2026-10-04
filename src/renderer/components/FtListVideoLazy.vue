@@ -3,7 +3,7 @@
     v-observe-visibility="visible ? false : {
       callback: onVisibilityChanged
     }"
-    :style="{ display }"
+    :style="{ display: hiddenAsAi ? 'none' : display }"
   >
     <FtListVideo
       v-if="visible"
@@ -22,6 +22,7 @@
       :can-move-video-up="canMoveVideoUp"
       :can-move-video-down="canMoveVideoDown"
       :can-remove-from-playlist="canRemoveFromPlaylist"
+      :look-up-ai-label="aiWall"
       @move-video-to-the-top="moveVideoToTheTop"
       @move-video-to-the-bottom="moveVideoToTheBottom"
       @pause-player="pausePlayer"
@@ -38,6 +39,7 @@ import { computed, ref } from 'vue'
 import FtListVideo from './FtListVideo/FtListVideo.vue'
 
 import store from '../store/index'
+import { isHiddenAsAi } from '../helpers/aiShown'
 
 const props = defineProps({
   data: {
@@ -111,11 +113,24 @@ const props = defineProps({
   hideForbiddenTitles: {
     type: Boolean,
     default: true
-  }
+  },
+  /** One of the walls the AI pill governs: see FtElementList */
+  aiWall: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const visible = ref(props.initialVisibleState)
 const display = ref('block')
+
+/**
+ * Made with AI while the AI pill hides it, on a wall the pill governs. Apart from the filters below,
+ * which are decided once, when the card first comes into view: this one is
+ * reactive to the verdicts, so a card already shown leaves when its verdict
+ * arrives, and comes back when the pill is pressed again.
+ */
+const hiddenAsAi = computed(() => props.aiWall && isHiddenAsAi(props.data))
 
 const channelsHidden = computed(() => {
   // Some component users like channel view will have this disabled

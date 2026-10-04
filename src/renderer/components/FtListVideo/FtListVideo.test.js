@@ -2,8 +2,9 @@ import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
-import { copyToClipboard, openExternalLink } from '../../helpers/utils'
+import { copyToClipboard, openExternalLink, showToast } from '../../helpers/utils'
 import { deArrowData, deArrowThumbnail } from '../../helpers/sponsorblock'
+import { wantAiVerdict } from '../../helpers/aiMarker/index'
 import { describe as describeEntity } from '../../platform/describe'
 import store from '../../store/index'
 import { mountWithApp } from '../../testing/mount'
@@ -40,6 +41,9 @@ const SETTINGS = vi.hoisted(() => ({
   getUseDeArrowThumbnails: true,
   getDeArrowCache: {},
   getDisableChannelLinks: false,
+  getAiVerdicts: {},
+  getAiChannels: '[]',
+  getHideAiVideos: false,
 }))
 
 vi.mock('../../store/index', async () => {
@@ -60,6 +64,11 @@ vi.mock('../../helpers/utils', async (importOriginal) => ({
   copyToClipboard: vi.fn(),
   openExternalLink: vi.fn(),
   showToast: vi.fn(),
+}))
+
+// The lookup as the tile sees it: a request on mount, and its release on unmount
+vi.mock('../../helpers/aiMarker/index', () => ({
+  wantAiVerdict: vi.fn(() => vi.fn()),
 }))
 
 vi.mock('../../helpers/sponsorblock', () => ({
@@ -305,6 +314,7 @@ describe('FtListVideo, a YouTube video (today\'s behaviour, pinned)', () => {
       'openYoutubeChannel',
       'openInvidiousChannel',
       'hideChannel',
+      'markChannelAi',
       'disableSponsorBlockOnChannel',
     ])
 
@@ -476,5 +486,118 @@ describe('FtListVideo, the records a card writes', () => {
     expect(Object.keys(videoData)).toEqual([
       'videoId', 'title', 'author', 'authorId', 'lengthSeconds', 'published', 'premiereDate', 'premiereTimestamp',
     ])
+  })
+})
+
+describe('FtListVideo, the AI marker', () => {
+  const MARKED = JSON.stringify([{ id: CHANNEL_ID, name: 'Rick Astley' }])
+
+  beforeEach(() => {
+    store.dispatched.length = 0
+  })
+
+  /** @param {import('@vue/test-utils').VueWrapper} wrapper */
+  function aiMarker(wrapper) {
+    return wrapper.findAll('.kindMarker').find(marker => marker.classes('ai'))
+  }
+
+  it('is carried by a video YouTube labels made with AI, saying the creator declared it', async () => {
+    store.setGetter('getAiVerdicts', { [YOUTUBE_ID]: true })
+    const { wrapper } = await mountCard(YOUTUBE_VIDEO)
+
+    expect(aiMarker(wrapper).text()).toBe('AI')
+    expect(aiMarker(wrapper).attributes('title')).toBe('The creator told YouTube this video was made with AI')
+  })
+
+  it('is carried by a video from a channel marked as AI, saying the user marked it', async () => {
+    store.setGetter('getAiChannels', MARKED)
+    const { wrapper } = await mountCard(YOUTUBE_VIDEO)
+
+    expect(aiMarker(wrapper).attributes('title')).toBe('From a channel you marked as AI')
+  })
+
+  it('is not carried by a video labelled not-ai, nor by one not yet known', async () => {
+    store.setGetter('getAiVerdicts', { [YOUTUBE_ID]: false })
+    const { wrapper: notAi } = await mountCard(YOUTUBE_VIDEO)
+    store.setGetter('getAiVerdicts', {})
+    const { wrapper: unknown } = await mountCard(YOUTUBE_VIDEO)
+
+    expect(aiMarker(notAi)).toBeUndefined()
+    expect(aiMarker(unknown)).toBeUndefined()
+  })
+
+  it('arrives on a card already shown, when the verdict does', async () => {
+    const { wrapper } = await mountCard(YOUTUBE_VIDEO)
+    expect(aiMarker(wrapper)).toBeUndefined()
+
+    store.setGetter('getAiVerdicts', { [YOUTUBE_ID]: true })
+    await flushPromises()
+
+    expect(aiMarker(wrapper)).toBeDefined()
+  })
+
+  it('stands beside the kind marker, not in its place', async () => {
+    store.setGetter('getAiVerdicts', { [YOUTUBE_ID]: true })
+    const { wrapper } = await mountCard({ ...YOUTUBE_VIDEO, type: 'shortVideo' })
+
+    expect(wrapper.findAll('.kindMarker').map(marker => marker.text())).toEqual(['Short', 'AI'])
+  })
+
+  it('asks for the verdict on mount where the wall looks up, and lets it go on unmount', async () => {
+    const { wrapper } = await mountCard(YOUTUBE_VIDEO, { lookUpAiLabel: true })
+
+    expect(wantAiVerdict).toHaveBeenCalledWith(YOUTUBE_VIDEO)
+    const release = wantAiVerdict.mock.results[0].value
+    expect(release).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+
+    expect(release).toHaveBeenCalledTimes(1)
+  })
+
+  it('asks nothing where the wall does not look up', async () => {
+    await mountCard(YOUTUBE_VIDEO)
+
+    expect(wantAiVerdict).not.toHaveBeenCalled()
+  })
+
+  it('offers to mark its channel as AI, and marks it with a toast', async () => {
+    const { wrapper } = await mountCard(YOUTUBE_VIDEO)
+
+    optionsButton(wrapper).vm.$emit('click', 'markChannelAi')
+
+    expect(store.dispatched).toEqual([{ type: 'updateAiChannels', payload: MARKED }])
+    expect(showToast).toHaveBeenCalledWith('Rick Astley marked as AI')
+  })
+
+  it('offers to unmark a marked channel, and unmarks it with a toast', async () => {
+    store.setGetter('getAiChannels', MARKED)
+    const { wrapper } = await mountCard(YOUTUBE_VIDEO)
+
+    expect(optionValues(wrapper)).toContain('unmarkChannelAi')
+    expect(optionValues(wrapper)).not.toContain('markChannelAi')
+
+    optionsButton(wrapper).vm.$emit('click', 'unmarkChannelAi')
+
+    expect(store.dispatched).toEqual([{ type: 'updateAiChannels', payload: '[]' }])
+    expect(showToast).toHaveBeenCalledWith('Rick Astley no longer marked as AI')
+  })
+
+  it('offers no marking for a video whose channel is not known', async () => {
+    const { authorId, ...withoutChannel } = YOUTUBE_VIDEO
+    const { wrapper } = await mountCard(withoutChannel)
+
+    expect(authorId).toBe(CHANNEL_ID)
+    expect(optionValues(wrapper)).not.toContain('markChannelAi')
+  })
+
+  it('never carries the marker on a PeerTube video, nor offers marking its channel', async () => {
+    store.setGetter('getAiVerdicts', { [UUID]: true })
+    store.setGetter('getAiChannels', JSON.stringify([{ id: HANDLE, name: 'Blender' }]))
+    const { wrapper } = await mountCard(PEERTUBE_VIDEO, { lookUpAiLabel: true })
+
+    expect(aiMarker(wrapper)).toBeUndefined()
+    expect(optionValues(wrapper)).not.toContain('markChannelAi')
+    expect(optionValues(wrapper)).not.toContain('unmarkChannelAi')
   })
 })

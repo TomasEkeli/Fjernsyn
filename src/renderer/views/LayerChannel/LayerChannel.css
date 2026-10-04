@@ -131,7 +131,7 @@
 .select-container {
   display: flex;
   flex-flow: row wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: baseline;
   gap: 10px;
   margin-block-end: 10px;
@@ -139,6 +139,17 @@
 
 .viewAllButton {
   margin-block-start: 33px;
+}
+
+/*
+ * The AI pill at the row's far end, over the wall's top right corner as on
+ * the other walls, with View All and the sort moved to the start; level with
+ * the sort's box rather than its label
+ */
+.aiChip {
+  align-self: flex-end;
+  margin-block-end: 4px;
+  margin-inline-start: auto;
 }
 
 .shareIcon {

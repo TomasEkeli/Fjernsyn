@@ -497,6 +497,26 @@ class Channels {
   }
 }
 
+/**
+ * One record per video, by video id: whether YouTube labels it "Made with AI"
+ * (`ai`), and when that was found out (`checkedAt`). Written once per video,
+ * as a creator declares the label at upload; a later write for the same video
+ * replaces the record whole.
+ */
+class AiVerdicts {
+  static find() {
+    return db.aiVerdicts.findAsync({})
+  }
+
+  static upsert(videoId, ai, checkedAt) {
+    return db.aiVerdicts.updateAsync(
+      { _id: videoId },
+      { _id: videoId, ai, checkedAt },
+      { upsert: true }
+    )
+  }
+}
+
 function loadDatastores() {
   return Promise.allSettled([
     db.settings.loadDatabaseAsync(),
@@ -506,6 +526,7 @@ function loadDatastores() {
     db.searchHistory.loadDatabaseAsync(),
     db.subscriptionCache.loadDatabaseAsync(),
     db.channels.loadDatabaseAsync(),
+    db.aiVerdicts.loadDatabaseAsync(),
   ])
 }
 
@@ -518,6 +539,7 @@ function compactAllDatastores() {
     db.searchHistory.compactDatafileAsync(),
     db.subscriptionCache.compactDatafileAsync(),
     db.channels.compactDatafileAsync(),
+    db.aiVerdicts.compactDatafileAsync(),
   ])
 }
 
@@ -529,6 +551,7 @@ export {
   SearchHistory as searchHistory,
   SubscriptionCache as subscriptionCache,
   Channels as channels,
+  AiVerdicts as aiVerdicts,
 
   loadDatastores,
   compactAllDatastores,

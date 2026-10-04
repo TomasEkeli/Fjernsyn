@@ -43,3 +43,6 @@ export const subscriptionCache = createDatastore('subscription-cache')
 // What the app has learned about each channel, by channel id: not a cache,
 // and not tied to being subscribed, so nothing clears it
 export const channels = createDatastore('channels')
+// Whether YouTube labels each video "Made with AI", by video id, as the AI
+// lookup and the watch page found out: kept for good, so nothing clears it
+export const aiVerdicts = createDatastore('ai-verdicts')

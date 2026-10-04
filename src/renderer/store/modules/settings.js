@@ -265,6 +265,14 @@ const state = {
   hideVideoLikesAndDislikes: false,
   hideVideoViews: false,
   hideWatchedSubs: false,
+  // Whether the walls hide videos made with AI: YouTube's "Made with AI"
+  // label and the channels marked as AI below. Off, so they are shown and
+  // marked; the AI pill on each wall switches it (helpers/aiShown.js)
+  hideAiVideos: false,
+  // Channels the user marked as AI, every video of which carries the AI
+  // marker without being asked about: a JSON list of { id, name }, as
+  // channelsHidden is a JSON list, so a settings export carries it
+  aiChannels: '[]',
   hideUploader: false,
   unsubscriptionPopupStatus: false,
   hideLabelsSideBar: false,

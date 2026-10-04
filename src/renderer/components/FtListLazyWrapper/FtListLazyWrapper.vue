@@ -32,6 +32,7 @@
         :layout="layout"
         :show-grab-bar="showGrabBar && layout === 'grid'"
         :grab-bar-enabled="isDraggable && layout === 'grid'"
+        :look-up-ai-label="aiWall"
         @move-video-up="moveVideoUp"
         @move-video-down="moveVideoDown"
         @move-video-to-the-top="moveVideoToTheTop"
@@ -78,6 +79,7 @@ import { computed, ref } from 'vue'
 
 import { handleDragAndDrop } from '../../helpers/dragAndDrop'
 import { isUpcomingPremiere } from '../../helpers/subscriptions'
+import { isHiddenAsAi } from '../../helpers/aiShown'
 
 import FtListVideo from '../FtListVideo/FtListVideo.vue'
 import FtListChannel from '../FtListChannel/FtListChannel.vue'
@@ -171,6 +173,11 @@ const props = defineProps({
     default: false,
   },
   videoDraggingPossible: {
+    type: Boolean,
+    default: false,
+  },
+  /** One of the walls the AI pill governs: see FtElementList */
+  aiWall: {
     type: Boolean,
     default: false,
   },
@@ -270,6 +277,13 @@ const showResult = computed(() => {
     const lowerCaseTitle = props.data.title?.toLowerCase()
 
     if (lowerCaseTitle != null && forbiddenTitles.value.some((text) => lowerCaseTitle.includes(text))) {
+      return false
+    }
+
+    // Made with AI while the AI pill hides it, on a wall the pill governs.
+    // Reactive to the verdicts, so a card already shown leaves when its
+    // verdict arrives
+    if (props.aiWall && isHiddenAsAi(props.data)) {
       return false
     }
   } else if (dataType === 'channel') {

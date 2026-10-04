@@ -83,12 +83,27 @@ $grab-bar-padding: 1em;
   margin-block-end: 5px;
 }
 
+// The kind marker and the AI marker, side by side when a card has both
+.kindMarkers {
+  column-gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
 // The sidebar cards on the watch page are small enough that the marker has to
 // be too, or it competes with the title it is introducing.
 .ft-list-item.recommendation .kindMarker,
 .ft-list-item.watchPlaylistItem .kindMarker {
   font-size: 10px;
   margin-block-end: 3px;
+}
+
+// Still the loudest marker there, in proportion
+.ft-list-item.recommendation .kindMarker.ai,
+.ft-list-item.watchPlaylistItem .kindMarker.ai {
+  font-size: 12px;
+  padding-block: 3px;
+  padding-inline: 6px;
 }
 
 .videoTagLine {

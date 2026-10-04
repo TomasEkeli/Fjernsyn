@@ -5,6 +5,7 @@ import { parseLooseJSON } from 'bgutils-js/utils'
 import { SEARCH_CHAR_LIMIT } from '../../../constants'
 import { PlayerCache } from './PlayerCache'
 import { traceWatch } from '../watchTrace'
+import { readAiLabel } from '../aiMarker/label'
 import { rememberChannelTags } from '../channelTags'
 import {
   CHANNEL_HANDLE_REGEX,
@@ -827,8 +828,11 @@ function buildSessionFromYtConfig(ytConfig, fetchFunc) {
  *     osName: string,
  *     osVersion: string
  *   },
- *   adEndTimeUnixMs: number
- * }>}
+ *   adEndTimeUnixMs: number,
+ *   aiVerdict: 'ai' | 'not-ai' | null
+ * }>} `aiVerdict` is YouTube's AI label, read from the `/next` response
+ * already in hand, so the watch page records it without a request of its own;
+ * `null` when that response has no description to read it from
  */
 export async function getLocalVideoInfo(id, { reloadPlaybackContext } = {}) {
   let responseTime
@@ -953,6 +957,8 @@ export async function getLocalVideoInfo(id, { reloadPlaybackContext } = {}) {
     })
   }
 
+  const aiVerdict = readAiLabel(nextResponse.data)
+
   traceWatch('video-response-shape', {
     videoId: id,
     playerKeys: Object.keys(playerResponse.data ?? {}),
@@ -1053,7 +1059,7 @@ export async function getLocalVideoInfo(id, { reloadPlaybackContext } = {}) {
 
   if ((info.playability_status.status === 'UNPLAYABLE' && (!hasTrailer || trailerIsAgeRestricted)) ||
     info.playability_status.status === 'LOGIN_REQUIRED') {
-    return { info, poToken: undefined, clientInfo }
+    return { info, poToken: undefined, clientInfo, aiVerdict }
   }
 
   if (hasTrailer && info.playability_status.status !== 'OK') {
@@ -1118,6 +1124,7 @@ export async function getLocalVideoInfo(id, { reloadPlaybackContext } = {}) {
     poToken: contentPoToken,
     clientInfo,
     adEndTimeUnixMs,
+    aiVerdict,
   }
 }
 
@@ -1264,6 +1271,35 @@ export async function getLocalChannelId(url, doLogError = false) {
   }
 
   return null
+}
+
+/**
+ * A video's raw `/next` response, unparsed, for a caller that wants one thing
+ * out of it and not a whole watch page: the AI label lookup
+ * (helpers/aiMarker). One request on a plain session, generated locally, with
+ * no PO token and no player script; MWEB answers about half what WEB does.
+ *
+ * Throws what the request throws, and throws for an answer with no contents,
+ * which is a refusal rather than a video with nothing to say.
+ * @param {string} videoId
+ * @param {object} [options]
+ * @param {string} [options.client] the Innertube client to ask as, WEB when not given
+ * @returns {Promise<any>}
+ */
+export async function getLocalWatchNext(videoId, { client } = {}) {
+  const session = await createSession()
+  const response = await session.actions.execute('/next', {
+    videoId,
+    racyCheckOk: true,
+    contentCheckOk: true,
+    ...(client ? { client } : {})
+  })
+
+  if (response.data?.contents == null) {
+    throw new Error(`/next for ${videoId} answered no contents`)
+  }
+
+  return response.data
 }
 
 /**

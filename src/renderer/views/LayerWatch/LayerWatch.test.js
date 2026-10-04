@@ -1320,6 +1320,19 @@ describe('a YouTube video', () => {
     expect(layer.getVideo).toHaveBeenCalledWith(YT_ID)
   })
 
+  it.each(['ai', 'not-ai'])('records the AI label its details read, %s, with no request of its own', async (verdict) => {
+    await openWatchPage(youtubeVideo({ aiVerdict: verdict }), YT_PATH)
+
+    expect(dispatched('recordAiVerdict')).toEqual([{ videoId: YT_ID, verdict }])
+    expect(layer.getVideo).toHaveBeenCalledTimes(1)
+  })
+
+  it('records nothing when its details carry no AI label (Invidious)', async () => {
+    await openWatchPage(youtubeVideo({ aiVerdict: null }), YT_PATH)
+
+    expect(dispatched('recordAiVerdict')).toEqual([])
+  })
+
   it('is not asked for when the route names no YouTube id', async () => {
     const { wrapper } = await openWatchPage(youtubeVideo(), '/watch/not-an-id')
 

@@ -37,11 +37,12 @@
             :title="$t('Watched Chip.Hint')"
             @toggle="toggleWatched"
           />
+          <AiChip />
         </div>
       </div>
       <SubscriptionsUpcomingShelf
         v-if="anyFeedEnabled && !isLoading"
-        :entries="upcomingList"
+        :entries="upcomingShown"
       />
       <SubscriptionsTabUi
         v-if="anyFeedEnabled"
@@ -67,6 +68,7 @@ import { computed, onBeforeUnmount, onMounted } from 'vue'
 import FtCard from '../../components/ft-card/ft-card.vue'
 import FtRefreshWidget from '../../components/FtRefreshWidget/FtRefreshWidget.vue'
 import FtToggleChip from '../../components/FtToggleChip/FtToggleChip.vue'
+import AiChip from '../../components/AiChip/AiChip.vue'
 import SubscriptionsTabUi from '../../components/SubscriptionsTabUi/SubscriptionsTabUi.vue'
 import SubscriptionsUpcomingShelf from '../../components/SubscriptionsUpcomingShelf/SubscriptionsUpcomingShelf.vue'
 
@@ -83,6 +85,7 @@ import {
   subscriptionFeedIsShown
 } from '../../helpers/subscriptionFeeds'
 import { setWatchedShown, watchedIsShown } from '../../helpers/watchedShown'
+import { withAiPreference } from '../../helpers/aiShown'
 
 import { KeyboardShortcuts } from '../../../constants'
 
@@ -226,6 +229,12 @@ const watchedShown = computed(() => watchedIsShown())
 function toggleWatched() {
   setWatchedShown(!watchedIsShown())
 }
+
+/**
+ * The shelf less what the AI pill hides, so that its count counts what it
+ * shows. The stream takes them out itself, before it pages.
+ */
+const upcomingShown = computed(() => withAiPreference(upcomingList.value))
 </script>
 
 <style scoped src="../../components/FtToggleChip/chipRow.css" />

@@ -1,0 +1,119 @@
+{
+  "recordedAt": "2026-10-04",
+  "source": "recorded",
+  "call": "actions.execute('/next', { videoId: '8Kstkyi3RoE', racyCheckOk: true, contentCheckOk: true, client: 'MWEB' }) on a session with lang 'nb'",
+  "notes": "As local--next-made-with-ai-mweb.json, asked in Norwegian (session `lang: nb`): the header says \"Laget med AI\" and the help link carries `hl=no`, while the answer id is the same. Trimmed the same way.",
+  "answer": {
+    "responseContext": {},
+    "contents": {},
+    "currentVideoEndpoint": {},
+    "trackingParams": {},
+    "playerOverlays": {},
+    "overlay": {},
+    "engagementPanels": [
+      {
+        "engagementPanelSectionListRenderer": {
+          "panelIdentifier": "engagement-panel-comments-section",
+          "targetId": "engagement-panel-comments-section",
+          "content": {
+            "sectionListRenderer": {}
+          }
+        }
+      },
+      {
+        "engagementPanelSectionListRenderer": {
+          "content": {}
+        }
+      },
+      {
+        "engagementPanelSectionListRenderer": {
+          "content": {
+            "sectionListRenderer": {}
+          }
+        }
+      },
+      {
+        "engagementPanelSectionListRenderer": {
+          "panelIdentifier": "engagement-panel-macro-markers-description-chapters",
+          "targetId": "engagement-panel-macro-markers-description-chapters",
+          "content": {
+            "macroMarkersListRenderer": {}
+          }
+        }
+      },
+      {
+        "engagementPanelSectionListRenderer": {
+          "panelIdentifier": "video-description-ep-identifier",
+          "content": {
+            "structuredDescriptionContentRenderer": {
+              "items": [
+                {
+                  "videoDescriptionHeaderRenderer": {}
+                },
+                {
+                  "expandableVideoDescriptionBodyRenderer": {}
+                },
+                {
+                  "howThisWasMadeSectionViewModel": {
+                    "sectionTitle": {
+                      "content": "Slik ble dette laget"
+                    },
+                    "bodyText": {
+                      "content": "Lyden eller grafikken er modifisert eller generert med AI. Finn ut mer",
+                      "commandRuns": [
+                        {
+                          "startIndex": 59,
+                          "length": 11,
+                          "onTap": {
+                            "innertubeCommand": {
+                              "commandMetadata": {
+                                "webCommandMetadata": {
+                                  "url": "//support.google.com/youtube/answer/15447836?hl=no",
+                                  "webPageType": "WEB_PAGE_TYPE_UNKNOWN",
+                                  "rootVe": 83769
+                                }
+                              },
+                              "urlEndpoint": {
+                                "url": "//support.google.com/youtube/answer/15447836?hl=no",
+                                "target": "TARGET_NEW_WINDOW"
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "styleRuns": [
+                        {
+                          "startIndex": 59,
+                          "length": 11,
+                          "fontColor": 4278607828
+                        }
+                      ]
+                    },
+                    "bodyHeader": {
+                      "content": "Laget med AI"
+                    },
+                    "attributionText": {},
+                    "shouldRemoveBottomPadding": false
+                  }
+                },
+                {
+                  "horizontalCardListRenderer": {}
+                },
+                {
+                  "videoDescriptionInfocardsSectionRenderer": {}
+                },
+                {
+                  "itemSectionRenderer": {}
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "topbar": {},
+    "pageVisualEffects": {},
+    "microformat": {},
+    "frameworkUpdates": {}
+  }
+}
