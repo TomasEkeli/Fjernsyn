@@ -63,6 +63,11 @@
   color: var(--text-with-accent-color);
 }
 
+.armedState.live {
+  background-color: #c00;
+  color: #fff;
+}
+
 .armedState.didNotStart {
   color: var(--tertiary-text-color);
 }

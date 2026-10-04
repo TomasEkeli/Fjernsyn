@@ -23,7 +23,7 @@ vi.mock('../../i18n/index', () => ({ default: { global: { t: key => key } } }))
 const NOW = Date.parse('2026-10-04T12:00:00Z')
 
 function freshState() {
-  return { laterItems: {}, laterReady: false, laterPlayersMounted: 0, laterNotices: [], laterCountdown: null, laterFiredVideo: null }
+  return { laterItems: {}, laterReady: false, laterPlayersMounted: 0, laterNotices: [], laterCountdown: null, laterFiredVideo: null, laterLiveQuiet: {} }
 }
 
 function contextFor(state) {
@@ -256,5 +256,20 @@ describe('the Later store', () => {
 
     // And again: everything is there already
     expect((await later.actions.addManyToLater(contextFor(target), laterFromExport(laterToExport(Object.values(source.laterItems))))).added).toBe(0)
+  })
+
+  it('forgets that an item went live unanswered once it is disarmed or removed', async () => {
+    const state = freshState()
+    const context = contextFor(state)
+    await later.actions.arm(context, { video: video('a'), at: NOW })
+    await later.actions.arm(context, { video: video('b'), at: NOW })
+    context.commit('setLaterLiveQuiet', 'a')
+    context.commit('setLaterLiveQuiet', 'b')
+    expect(later.getters.getLaterIsLiveQuiet(state)('a')).toBe(true)
+
+    await later.actions.disarm(context, 'a')
+    await later.actions.laterWatchNow(context, 'b')
+
+    expect(state.laterLiveQuiet).toEqual({})
   })
 })
