@@ -17,7 +17,7 @@
       }"
     >
       <FontAwesomeIcon
-        :icon="['fas', 'fa-bars']"
+        :icon="['fas', 'grip']"
       />
     </div>
     <div
