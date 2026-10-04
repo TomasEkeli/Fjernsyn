@@ -13,6 +13,7 @@ import { ScreenshotButton } from './player-components/ScreenshotButton'
 import { StatsButton } from './player-components/StatsButton'
 import { TheatreModeButton } from './player-components/TheatreModeButton'
 import { AutoplayToggle } from './player-components/AutoplayToggle'
+import { CopyLinkButton } from './player-components/CopyLinkButton'
 import { SkipButton } from './player-components/SkipButton'
 import { VolumeBar } from './player-components/VolumeBar'
 import {
@@ -239,6 +240,15 @@ export default defineComponent({
     platform: {
       type: String,
       default: 'youtube'
+    },
+    /**
+     * The video's canonical link on its own platform, without a time, which
+     * the copy link button copies. A YouTube video without one is linked by
+     * its id; a video from elsewhere without one has no button.
+     */
+    videoUrl: {
+      type: String,
+      default: ''
     },
   },
   emits: [
@@ -553,6 +563,22 @@ export default defineComponent({
     /** @type {import('vue').ComputedRef<number>} */
     const screenshotQuality = computed(() => {
       return store.getters.getScreenshotQuality
+    })
+
+    /**
+     * What the copy link button copies, see the `videoUrl` prop
+     * @type {import('vue').ComputedRef<string>}
+     */
+    const videoLink = computed(() => {
+      if (props.videoUrl) {
+        return props.videoUrl
+      }
+
+      if (props.platform === 'youtube' && props.videoId) {
+        return `https://www.youtube.com/watch?v=${props.videoId}`
+      }
+
+      return ''
     })
 
     /** @type {import('vue').ComputedRef<boolean>} */
@@ -1052,6 +1078,7 @@ export default defineComponent({
           'chapter',
           'loop',
           'ft_screenshot',
+          'ft_copy_link',
           'picture_in_picture',
           'ft_full_window',
           'ft_pin_controls',
@@ -1068,6 +1095,7 @@ export default defineComponent({
           // important button there, and the one that stays on screen when on
           'ft_pin_controls',
           'ft_screenshot',
+          'ft_copy_link',
           'ft_autoplay_toggle',
           'overflow_menu',
           'picture_in_picture',
@@ -1092,6 +1120,10 @@ export default defineComponent({
 
       if (!enableScreenshot.value || props.format === 'audio') {
         removeFromArrayIfExists(elementList, 'ft_screenshot')
+      }
+
+      if (!videoLink.value) {
+        removeFromArrayIfExists(elementList, 'ft_copy_link')
       }
 
       if (!props.theatrePossible) {
@@ -2428,6 +2460,30 @@ export default defineComponent({
 
     // #endregion screenshots
 
+    // #region copy link
+
+    /**
+     * Copies the video's link, and says so on the player itself: the app's
+     * toasts sit beneath the player in full window and outside it in
+     * fullscreen, which is where this button is for.
+     */
+    async function copyVideoLink() {
+      const link = videoLink.value
+      if (!link) {
+        return
+      }
+
+      try {
+        await navigator.clipboard.writeText(link)
+        showValueChange(t('Video.Player.Link copied'), 'link')
+      } catch (error) {
+        console.error(`Failed to copy ${link} to clipboard`, error)
+        showValueChange(t('Clipboard.Copy failed'))
+      }
+    }
+
+    // #endregion copy link
+
     // #region custom player controls
 
     const { ContextMenu: shakaContextMenu, Controls: shakaControls, OverflowMenu: shakaOverflowMenu } = shaka.ui
@@ -2644,6 +2700,24 @@ export default defineComponent({
       shakaOverflowMenu.registerElement('ft_screenshot', new ScreenshotButtonFactory())
     }
 
+    function registerCopyLinkButton() {
+      events.addEventListener('copyLink', () => {
+        copyVideoLink()
+      })
+
+      /**
+       * @implements {shaka.extern.IUIElement.Factory}
+       */
+      class CopyLinkButtonFactory {
+        create(rootElement, controls) {
+          return new CopyLinkButton(events, rootElement, controls)
+        }
+      }
+
+      shakaControls.registerElement('ft_copy_link', new CopyLinkButtonFactory())
+      shakaOverflowMenu.registerElement('ft_copy_link', new CopyLinkButtonFactory())
+    }
+
     function registerSkipButtons() {
       // skip to next video button
       events.addEventListener('nextVideo', () => {
@@ -2715,6 +2789,9 @@ export default defineComponent({
 
       shakaControls.registerElement('ft_screenshot', null)
       shakaOverflowMenu.registerElement('ft_screenshot', null)
+
+      shakaControls.registerElement('ft_copy_link', null)
+      shakaOverflowMenu.registerElement('ft_copy_link', null)
 
       shakaControls.registerElement('ft_next_previous', null)
       shakaOverflowMenu.registerElement('ft_next_previous', null)
@@ -2986,6 +3063,7 @@ export default defineComponent({
       'full-window-button',
       'theatre-button',
       'screenshot-button',
+      'copy-link-button',
     ]
     function blurTooltipButtons() {
       const element = document.activeElement
@@ -3563,6 +3641,7 @@ export default defineComponent({
       videoResizeObserver.observe(videoElement)
 
       registerScreenshotButton()
+      registerCopyLinkButton()
       registerAudioTrackSelection()
       registerAutoplayToggle()
 

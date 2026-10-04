@@ -56,6 +56,7 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
         delayLoadUntilUnix: { type: Number, default: 0 },
         vrProjection: { type: String, default: null },
         platform: { type: String, default: 'youtube' },
+        videoUrl: { type: String, default: '' },
         sabrData: { type: Object, default: null },
         sabrRegulator: { type: Object, default: null },
       },
@@ -499,6 +500,18 @@ describe('the layer watch page, for a playable video', () => {
 
     expect(copyToClipboard).toHaveBeenCalledWith(`https://${HOST}/w/3TuSBHAVmMRmg5pb1CjRNa`, expect.anything())
     expect(openExternalLink).toHaveBeenCalledWith(`https://${HOST}/w/3TuSBHAVmMRmg5pb1CjRNa`)
+  })
+
+  it('hands the player the canonical PeerTube URL to copy, without the time it starts at', async () => {
+    const { wrapper } = await openWatchPage(playableVideo(), `${WATCH_PATH}?timestamp=30`)
+
+    expect(findPlayer(wrapper).props('videoUrl')).toBe(`https://${HOST}/w/3TuSBHAVmMRmg5pb1CjRNa`)
+  })
+
+  it('hands the player the watch URL on the video\'s host to copy, when the details carry no URL', async () => {
+    const { wrapper } = await openWatchPage(playableVideo({ url: null }))
+
+    expect(findPlayer(wrapper).props('videoUrl')).toBe(`https://${HOST}/videos/watch/${UUID}`)
   })
 
   it('offers the video to a playlist, in the shape the old path gives it, plus its platform, host and thumbnail', async () => {
@@ -1331,6 +1344,7 @@ describe('a YouTube video', () => {
       title: 'Never Gonna Give You Up',
       thumbnail: YT_THUMBNAIL,
       platform: 'youtube',
+      videoUrl: `https://www.youtube.com/watch?v=${YT_ID}`,
     })
   })
 

@@ -40,6 +40,7 @@
             :title="video.title"
             :thumbnail="video.thumbnail"
             :platform="platformOf(video)"
+            :video-url="videoUrl"
             :loudness-db="source.loudnessDb ?? null"
             :delay-load-until-unix="source.delayLoadUntilMs ?? 0"
             :vr-projection="source.vrProjection ?? null"
@@ -426,6 +427,14 @@ const {
 const isYouTube = computed(() => video.value !== null && platformOf(video.value) === PLATFORM_YOUTUBE)
 
 const isLive = computed(() => video.value?.liveStatus === 'live' || source.value?.isLive === true)
+
+/** The canonical URL the player's copy link button copies, as LayerVideoInfo shares it */
+const videoUrl = computed(() => {
+  if (video.value === null) {
+    return ''
+  }
+  return video.value.url || layer.describe(video.value).shareUrl || ''
+})
 
 /**
  * As Watch.vue under `showFamilyFriendlyOnly`: a YouTube video YouTube does
