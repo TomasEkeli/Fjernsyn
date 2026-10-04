@@ -536,8 +536,14 @@ class Later {
     return db.later.updateAsync({ _id }, { $set: { position } })
   }
 
-  static updateAlarm(_id, alarm) {
-    return db.later.updateAsync({ _id }, { $set: { alarm } })
+  /**
+   * @param {string} _id
+   * @param {{ at: number, armedAt: number } | null} alarm
+   * @param {number} [premiereDate] the stated time, when it moved with the alarm
+   */
+  static updateAlarm(_id, alarm, premiereDate) {
+    const fields = typeof premiereDate === 'number' ? { alarm, premiereDate } : { alarm }
+    return db.later.updateAsync({ _id }, { $set: fields })
   }
 
   static delete(_id) {

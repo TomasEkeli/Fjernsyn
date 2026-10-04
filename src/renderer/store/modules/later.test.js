@@ -133,7 +133,7 @@ describe('the Later store', () => {
     expect(queuedIds(state)).toEqual([])
     expect(armedIds(state)).toEqual(['a'])
     expect(DBLaterHandlers.upsert).toHaveBeenCalledTimes(1)
-    expect(DBLaterHandlers.updateAlarm).toHaveBeenCalledWith('a', { at: NOW + 1000, armedAt: NOW })
+    expect(DBLaterHandlers.updateAlarm).toHaveBeenCalledWith('a', { at: NOW + 1000, armedAt: NOW }, NOW + 1000)
   })
 
   it('disarms to the top of the queued items', async () => {
@@ -158,6 +158,9 @@ describe('the Later store', () => {
     await later.actions.updateAlarmTime(context, { id: 'a', at: NOW + 5000 })
 
     expect(state.laterItems.a.alarm).toEqual({ at: NOW + 5000, armedAt: NOW })
+    // Kept through a disarm, to be armed again by
+    await later.actions.disarm(context, 'a')
+    expect(state.laterItems.a.premiereDate).toBe(NOW + 5000)
   })
 
   it('adds many as one block on top, in order, skipping what is there', async () => {

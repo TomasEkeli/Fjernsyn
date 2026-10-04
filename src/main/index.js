@@ -2512,7 +2512,7 @@ function runApp() {
           return null
 
         case DBActions.LATER.UPDATE_ALARM:
-          await baseHandlers.later.updateAlarm(data._id, data.alarm)
+          await baseHandlers.later.updateAlarm(data._id, data.alarm, data.premiereDate)
           syncOtherWindows(IpcChannels.SYNC_LATER, event, { event: SyncEvents.LATER.UPDATE_ALARM, data })
           return null
 
