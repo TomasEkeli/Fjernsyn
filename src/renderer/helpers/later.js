@@ -26,6 +26,7 @@
  * @property {string} author
  * @property {string} authorId
  * @property {number} [lengthSeconds]
+ * @property {number} [viewCount]     as it was when added
  * @property {number} [published]     ms
  * @property {boolean} [isUpcoming]   as it was when added
  * @property {number} [premiereDate]  ms, the stated time when added
@@ -185,6 +186,10 @@ export function laterItemFromVideo(video, now) {
 
   if (typeof video.lengthSeconds === 'number' && Number.isFinite(video.lengthSeconds)) {
     item.lengthSeconds = video.lengthSeconds
+  }
+
+  if (typeof video.viewCount === 'number' && Number.isFinite(video.viewCount)) {
+    item.viewCount = video.viewCount
   }
 
   const published = millisecondsOf(video.published)

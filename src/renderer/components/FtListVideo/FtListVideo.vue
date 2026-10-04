@@ -1595,6 +1595,7 @@ function laterVideoData() {
     author: channelName.value,
     authorId: channelId.value,
     lengthSeconds: props.data.lengthSeconds,
+    viewCount: viewCount.value,
     published: published.value,
     isUpcoming: isUpcoming.value === true,
     premiereDate: props.data.premiereDate,

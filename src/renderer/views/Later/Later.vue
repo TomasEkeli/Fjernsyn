@@ -179,9 +179,9 @@ const clock = setInterval(() => { now.value = Date.now() }, 30_000)
 onBeforeUnmount(() => clearInterval(clock))
 
 /**
- * What a row's card reads, from an item: the times as the card takes them,
- * and upcoming only while its time is ahead, so that a stream that has been
- * and gone is not still badged upcoming. A length the item does not know is
+ * What a row's card reads, from an item: its view count, the times as the
+ * card takes them, and upcoming only while its time is ahead, so that a
+ * stream that has been and gone is not still badged upcoming. A length the item does not know is
  * no length, rather than the card's sign of a live.
  * @param {import('../../helpers/later').LaterItem} item
  */
@@ -193,6 +193,9 @@ function cardData(item) {
     ...item,
     type: 'video',
     lengthSeconds: item.lengthSeconds ?? 0,
+    // As the subscriptions wall shows it. An item added without one (as the
+    // old Watch Later's were, playlists keeping none) takes the history's
+    viewCount: item.viewCount ?? store.getters.getHistoryCacheById[item.videoId]?.viewCount,
     isUpcoming: ahead,
     premiereDate: ahead ? new Date(at) : undefined,
     // The row id the drag and the move events carry: the item's own `_id`

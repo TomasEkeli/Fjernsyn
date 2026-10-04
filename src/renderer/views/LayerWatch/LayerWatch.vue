@@ -1551,6 +1551,7 @@ function laterVideoData() {
     author: details.author,
     authorId: details.authorId,
     lengthSeconds: typeof details.lengthSeconds === 'number' ? details.lengthSeconds : undefined,
+    viewCount: details.viewCount ?? undefined,
     published: details.published,
     isUpcoming: details.isUpcoming === true,
     premiereDate: details.premiereDate,
