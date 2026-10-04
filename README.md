@@ -68,6 +68,12 @@ Scheduled premieres and live streams are in a shelf over the other videos, colla
 
 ![The subscription feed, with videos, shorts, live streams and posts mixed, the four filters on and the Upcoming shelf collapsed](_screenshots/subscriptions.webp)
 
+### Later
+
+The Watch Later playlist is replaced by a Later list of its own, behind the Later button in the top bar. The clock on a video card, or on the watch page, puts the video at the top of the list. You can put the list in any order with arrows or by dragging, and a video leaves it when you have watched it to the end. On the first start, whatever was in Watch Later moves into the Later list, and the playlist is gone.
+
+An upcoming stream or premiere can be armed with its calendar button. Fjernsyn asks YouTube whether it has started, every minute from shortly before the stated time, and when it has, takes you there: after a ten second countdown if you are not watching anything, through a notice on the player if you are, and through a desktop notification if the window is hidden. A stream that has ended, or that you said no to, stays at the top of the list. The Later list has its own export and import in Data settings.
+
 ### Channels and profiles
 
 With a few hundred subscriptions, a checkbox list of every channel is unusable, and my profiles went stale. The Channels page is a place to sort channels into profiles.
