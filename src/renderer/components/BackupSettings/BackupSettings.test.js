@@ -229,6 +229,7 @@ describe('the Backup group', () => {
         [backupFile({}, { formatVersion: 7 }), 'This backup was written by a newer version of Fjernsyn (backup format 7), which this version cannot read'],
         [backupFile({ profiles: {} }), 'This backup cannot be read: its section "profiles" is not a list'],
         [backupFile({ bookmarks: [] }), 'This backup holds nothing this version of Fjernsyn can restore'],
+        [backupFile({ profiles: [{ ...MAIN_PROFILE, _id: 'art' }] }), 'This backup cannot be restored, as its profiles do not include All Channels, which holds every subscription'],
       ]
 
       for (const [file, message] of refusals) {
@@ -326,7 +327,7 @@ describe('the Backup group', () => {
         profiles: [MAIN_PROFILE],
         settings: [{ _id: 'maxVolume', value: 300 }],
       })
-      expect(toasts().filter(message => message.includes('failed'))).toEqual([])
+      expect(toasts().at(-1)).toBe('Restoring the backup. Fjernsyn restarts when it is done.')
     })
 
     it('shows a failure with where the safety copy is', async () => {
@@ -338,6 +339,7 @@ describe('the Backup group', () => {
       await flushPromises()
 
       expect(toasts()).toEqual([
+        'Restoring the backup. Fjernsyn restarts when it is done.',
         `The restore failed: disk full. Some sections may already be replaced. Your data from before the restore is in ${safetyCopyPath}; restore that file to go back.`,
       ])
     })
@@ -349,7 +351,20 @@ describe('the Backup group', () => {
       confirmationButton('Restore').click()
       await flushPromises()
 
-      expect(toasts()).toEqual(['The restore failed, and nothing was changed: Could not write the safety copy: read-only'])
+      expect(toasts()).toEqual([
+        'Restoring the backup. Fjernsyn restarts when it is done.',
+        'The restore failed, and nothing was changed: Could not write the safety copy: read-only',
+      ])
+    })
+
+    it('shows a failure when main cannot be reached', async () => {
+      window.ftElectron.restoreBackup.mockRejectedValue(new Error('no handler'))
+
+      await chooseBackup(backupFile({ profiles: [MAIN_PROFILE] }))
+      confirmationButton('Restore').click()
+      await flushPromises()
+
+      expect(toasts().at(-1)).toBe('The restore failed, and nothing was changed: Error: no handler')
     })
   })
 })

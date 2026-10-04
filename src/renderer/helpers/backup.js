@@ -19,6 +19,7 @@
  * added by a newer version survives a round trip through an older one.
  */
 
+import { MAIN_PROFILE_ID } from '../../constants'
 import { splitImportedPlatformFields } from '../platform/records'
 
 export const BACKUP_FORMAT = 'fjernsyn-backup'
@@ -39,7 +40,7 @@ export const BACKUP_SECTIONS = Object.freeze(['profiles', 'history', 'playlists'
 
 /**
  * Why a record was left out of a restore
- * @typedef {'missingFields' | 'invalidPeerTube' | 'duplicate' | 'unknownSetting' | 'machineBound' | 'playlistVideos'} LeftOutReason
+ * @typedef {'missingFields' | 'unstorable' | 'invalidPeerTube' | 'duplicate' | 'unknownSetting' | 'machineBound' | 'playlistVideos'} LeftOutReason
  */
 
 /**
@@ -58,7 +59,8 @@ export const BACKUP_SECTIONS = Object.freeze(['profiles', 'history', 'playlists'
 /**
  * @typedef {{ ok: false, reason: 'notJson' | 'notBackup' } |
  *   { ok: false, reason: 'newerVersion', formatVersion: number } |
- *   { ok: false, reason: 'sectionNotArray', section: BackupSection }} BackupRefusal
+ *   { ok: false, reason: 'sectionNotArray', section: BackupSection } |
+ *   { ok: false, reason: 'noMainProfile' }} BackupRefusal
  */
 
 /**
@@ -160,6 +162,12 @@ export function readBackup(text, { knownSettings, machineBoundSettings }) {
     counts[section] = count
   }
 
+  // Profiles without the one that holds every subscription would leave the
+  // app without its subscriptions: an empty list is fine, as the app makes it
+  if (sections.profiles?.length > 0 && !sections.profiles.some(profile => profile._id === MAIN_PROFILE_ID)) {
+    return { ok: false, reason: 'noMainProfile' }
+  }
+
   const known = new Set(BACKUP_SECTIONS)
 
   return {
@@ -223,7 +231,7 @@ const CHECKS = {
   },
 
   playlists(record) {
-    if (!isNonEmptyString(record._id) || !hasKeys(record, ['playlistName']) || !Array.isArray(record.videos)) {
+    if ((record._id !== undefined && !isNonEmptyString(record._id)) || !hasKeys(record, ['playlistName']) || !Array.isArray(record.videos)) {
       return { leftOut: 'missingFields' }
     }
 
@@ -310,7 +318,8 @@ const CHECKS = {
  */
 function readSection(section, input, context) {
   const key = recordKey(section)
-  const seen = new Set()
+  /** @type {Map<string, number>} the index in `records` of the one kept for each key */
+  const byKey = new Map()
   // A history entry is keyed by its video id, but the datastore will not take
   // two with the same _id either
   const seenIds = new Set()
@@ -334,16 +343,39 @@ function readSection(section, input, context) {
       continue
     }
 
-    const id = key(checked.record)
-    const _id = checked.record._id
-    if (seen.has(id) || (_id !== undefined && seenIds.has(_id))) {
+    const { record } = checked
+
+    if (!isStorable(record)) {
+      leave('unstorable')
+      continue
+    }
+
+    const id = key(record)
+    const _id = record._id
+
+    if (id !== '' && byKey.has(id)) {
+      // Of two history entries for one video, the one watched last is kept
+      const index = byKey.get(id)
+      const kept = records[index]
+
+      if (section === 'history' && record.timeWatched > kept.timeWatched && (_id === undefined || !seenIds.has(_id))) {
+        seenIds.delete(kept._id)
+        if (_id !== undefined) { seenIds.add(_id) }
+        records[index] = record
+      }
+
       leave('duplicate')
       continue
     }
 
-    seen.add(id)
+    if (_id !== undefined && seenIds.has(_id)) {
+      leave('duplicate')
+      continue
+    }
+
+    if (id !== '') { byKey.set(id, records.length) }
     if (_id !== undefined) { seenIds.add(_id) }
-    records.push(checked.record)
+    records.push(record)
 
     if (checked.videosLeftOut > 0) {
       leave('playlistVideos', checked.videosLeftOut)
@@ -351,6 +383,24 @@ function readSection(section, input, context) {
   }
 
   return { records, count: { kept: records.length, leftOut } }
+}
+
+/**
+ * Whether the datastore can store a record: it refuses a field name that
+ * begins with $ or has a dot in it, at any level
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function isStorable(value) {
+  if (Array.isArray(value)) {
+    return value.every(isStorable)
+  }
+
+  if (isPlainObject(value)) {
+    return Object.entries(value).every(([name, inner]) => !name.startsWith('$') && !name.includes('.') && isStorable(inner))
+  }
+
+  return true
 }
 
 /**

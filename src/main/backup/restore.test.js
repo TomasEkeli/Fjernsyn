@@ -270,6 +270,9 @@ describe('restoreBackup', () => {
         { safetyCopy: SAFETY_COPY, sections: { history: {} } },
         { safetyCopy: SAFETY_COPY, sections: { history: [null] } },
         { safetyCopy: SAFETY_COPY, sections: { settings: [{ value: 1 }] } },
+        // field names the datastore refuses, which would leave the section empty
+        { safetyCopy: SAFETY_COPY, sections: { profiles: [MAIN_PROFILE], history: [{ _id: 'bad', videoId: 'x', $where: 'nope' }] } },
+        { safetyCopy: SAFETY_COPY, sections: { settings: [{ _id: 'profilePictures', value: { 'a.b': 1 } }] } },
       ]) {
         const result = await restore(request)
         expect(result.ok, JSON.stringify(request)).toBe(false)
@@ -299,24 +302,41 @@ describe('restoreBackup', () => {
       await populate(datastores)
       const { restore, relaunch } = setup(datastores)
 
-      // The datastore refuses a field name that begins with $
+      datastores.history.insertAsync = vi.fn(async () => { throw new Error('disk full') })
+
       const result = await restore({
         safetyCopy: SAFETY_COPY,
         sections: {
           profiles: [MAIN_PROFILE],
-          history: [{ _id: 'bad', videoId: 'x', $where: 'nope' }],
+          history: [{ _id: 'n1', videoId: 'newVideo001' }],
           channels: [{ _id: 'UCnew' }],
         },
       })
 
       expect(result.ok).toBe(false)
-      expect(result.error).toMatch(/\$/)
+      expect(result.error).toBe('disk full')
       expect(result.safetyCopyPath).toBe(path.join(dataFolder, 'backups', 'before-restore-2026-10-04-163005.json'))
       expect(relaunch).not.toHaveBeenCalled()
 
       // what came before the failure is replaced, what came after is not
       expect(await onDisk('profiles')).toEqual([MAIN_PROFILE])
       expect(await onDisk('channels')).toEqual([{ _id: 'UCold', channelTags: ['old'] }])
+    })
+
+    it('removes no old safety copy, so that retries never push out the one from before the first', async () => {
+      const folder = path.join(dataFolder, 'backups')
+      mkdirSync(folder)
+      for (const day of ['01', '02', '03']) {
+        writeFileSync(path.join(folder, `before-restore-2026-10-${day}-120000.json`), 'x')
+      }
+
+      const datastores = await openDatastores()
+      datastores.profiles.insertAsync = vi.fn(async () => { throw new Error('disk full') })
+      const { restore } = setup(datastores)
+
+      await restore({ safetyCopy: SAFETY_COPY, sections: { profiles: [MAIN_PROFILE] } })
+
+      expect(readdirSync(folder)).toHaveLength(4)
     })
 
     it('goes on when an old safety copy cannot be removed', async () => {

@@ -363,7 +363,7 @@ describe('the backup format', () => {
         ['playlists', PLAYLIST, [
           { _id: 'noName', videos: [] },
           { _id: 'noVideos', playlistName: 'X' },
-          { playlistName: 'no id', videos: [] },
+          { _id: 5, playlistName: 'id not a string', videos: [] },
         ]],
         ['later', LATER_QUEUED, [
           { ...LATER_QUEUED, videoId: '' },
@@ -403,6 +403,33 @@ describe('the backup format', () => {
       expect(result.sections.aiVerdicts).toEqual([VERDICT])
       expect(result.counts.history.leftOut).toEqual({ duplicate: 1 })
       expect(result.counts.aiVerdicts.leftOut).toEqual({ duplicate: 1 })
+    })
+
+    it('keeps the one watched last of two history entries for the same video', () => {
+      const later = { ...YOUTUBE_HISTORY, _id: 'h9', timeWatched: YOUTUBE_HISTORY.timeWatched + 1000, watchProgress: 150 }
+      const earlier = { ...YOUTUBE_HISTORY, _id: 'h0', timeWatched: 1 }
+      const result = readBackup(backupText({ history: [YOUTUBE_HISTORY, later, earlier] }), SETTINGS_CONTEXT)
+
+      expect(result.sections.history).toEqual([later])
+      expect(result.counts.history).toEqual({ kept: 1, leftOut: { duplicate: 2 } })
+    })
+
+    it('leaves out a record with a field name the datastore cannot store, at any level', () => {
+      const result = readBackup(backupText({
+        channels: [CHANNEL, { _id: 'UCdot', 'a.b': 1 }, { _id: 'UCdollar', nested: [{ $where: 'x' }] }],
+        settings: [{ _id: 'profilePictures', value: { 'blender@video.blender.org': {} } }],
+      }), SETTINGS_CONTEXT)
+
+      expect(result.sections.channels).toEqual([CHANNEL])
+      expect(result.counts.channels.leftOut).toEqual({ unstorable: 2 })
+      expect(result.counts.settings).toEqual({ kept: 0, leftOut: { unstorable: 1 } })
+    })
+
+    it('keeps a playlist without an _id, which the datastore gives one', () => {
+      const playlist = { playlistName: 'Older export', videos: [] }
+      const result = readBackup(backupText({ playlists: [playlist, { ...playlist, playlistName: 'Another' }] }), SETTINGS_CONTEXT)
+
+      expect(result.sections.playlists).toEqual([playlist, { ...playlist, playlistName: 'Another' }])
     })
 
     it('leaves out a history entry with the _id of another, which the datastore would not take', () => {
@@ -487,6 +514,17 @@ describe('the backup format', () => {
       it('refuses a backup from a newer format version, saying which', () => {
         expect(readBackup(backupText({}, { formatVersion: 2 }), SETTINGS_CONTEXT))
           .toEqual({ ok: false, reason: 'newerVersion', formatVersion: 2 })
+      })
+
+      it('refuses profiles without the one that holds every subscription', () => {
+        expect(readBackup(backupText({ profiles: [ART_PROFILE] }), SETTINGS_CONTEXT)).toEqual({ ok: false, reason: 'noMainProfile' })
+        // left out as unreadable, which comes to the same
+        expect(readBackup(backupText({ profiles: [{ ...MAIN_PROFILE, bgColor: undefined }, ART_PROFILE] }), SETTINGS_CONTEXT))
+          .toEqual({ ok: false, reason: 'noMainProfile' })
+      })
+
+      it('takes an empty profiles section, as the app makes the main profile itself', () => {
+        expect(readBackup(backupText({ profiles: [] }), SETTINGS_CONTEXT).ok).toBe(true)
       })
 
       it('refuses a backup with a section that is not an array, naming it', () => {

@@ -296,6 +296,8 @@ function refusalText(refusal) {
       return t('Settings.Data Settings.Backup.Refused.Newer version', { version: refusal.formatVersion })
     case 'sectionNotArray':
       return t('Settings.Data Settings.Backup.Refused.Section not a list', { section: refusal.section })
+    case 'noMainProfile':
+      return t('Settings.Data Settings.Backup.Refused.No main profile')
     default:
       return t('Settings.Data Settings.Backup.Refused.Not a backup')
   }
@@ -328,6 +330,8 @@ const sectionLabels = computed(() => ({
  */
 function leftOutText(reason, count) {
   switch (reason) {
+    case 'unstorable':
+      return t('Settings.Data Settings.Backup.Confirm.Left out.Unstorable', { count }, count)
     case 'invalidPeerTube':
       return t('Settings.Data Settings.Backup.Confirm.Left out.Invalid PeerTube', { count }, count)
     case 'duplicate':
@@ -361,8 +365,15 @@ function cancel() {
 }
 
 async function restore() {
+  // A second click on Restore, before the confirmation has closed
+  if (pending.value === null) {
+    return
+  }
+
   const { contents } = pending.value
   pending.value = null
+
+  showToast(t('Settings.Data Settings.Backup.Restoring'))
 
   let safetyCopy
   try {
@@ -372,9 +383,15 @@ async function restore() {
     return
   }
 
-  const result = await window.ftElectron.restoreBackup({ safetyCopy, sections: contents.sections })
+  let result
+  try {
+    result = await window.ftElectron.restoreBackup({ safetyCopy, sections: contents.sections })
+  } catch (error) {
+    result = { ok: false, error: String(error), safetyCopyPath: null }
+  }
 
-  // On success the app relaunches, and this window is gone
+  // On success the app relaunches, and this window is gone. Main answers
+  // nothing to a window that is not the app's, which this one always is.
   if (result != null && !result.ok) {
     const message = result.safetyCopyPath === null
       ? t('Settings.Data Settings.Backup.Failed before writing', { error: result.error })

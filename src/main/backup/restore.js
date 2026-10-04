@@ -117,8 +117,6 @@ export async function restoreBackup({ datastores, dataFolder, relaunch, now = ()
     return { ok: false, error: `Could not write the safety copy: ${errorText(error)}`, safetyCopyPath: null }
   }
 
-  await removeOldSafetyCopies(folder, fileSystem)
-
   /** @type {Datastore[]} */
   const written = []
 
@@ -136,10 +134,12 @@ export async function restoreBackup({ datastores, dataFolder, relaunch, now = ()
           }
         }
       } else {
-        await datastore.removeAsync({}, { multi: true })
-        if (records.length > 0) {
-          await datastore.insertAsync(records)
-        }
+        // Queued together, so that no write from another window lands between
+        // the two: the datastore runs its commands in order
+        await Promise.all([
+          datastore.removeAsync({}, { multi: true }),
+          records.length > 0 ? datastore.insertAsync(records) : null,
+        ])
       }
 
       written.push(datastore)
@@ -152,7 +152,15 @@ export async function restoreBackup({ datastores, dataFolder, relaunch, now = ()
     return { ok: false, error: errorText(error), safetyCopyPath }
   }
 
-  relaunch()
+  // Only now, so that failed attempts never push out the copy from before
+  // the first of them
+  await removeOldSafetyCopies(folder, fileSystem)
+
+  try {
+    relaunch()
+  } catch (error) {
+    return { ok: false, error: `Could not restart: ${errorText(error)}`, safetyCopyPath }
+  }
 
   return { ok: true, safetyCopyPath }
 }
@@ -191,9 +199,32 @@ function requestProblem(request) {
     if (section === 'settings' && !records.every(record => typeof record._id === 'string')) {
       return 'The restore request has a setting without a name'
     }
+
+    if (!records.every(isStorable)) {
+      return `The restore request's ${section} section has a field name the datastore cannot store`
+    }
   }
 
   return null
+}
+
+/**
+ * Whether the datastore can store a record: it refuses a field name that
+ * begins with $ or has a dot in it, at any level. Checked before anything is
+ * written, as a section whose insert fails is left empty.
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function isStorable(value) {
+  if (Array.isArray(value)) {
+    return value.every(isStorable)
+  }
+
+  if (value !== null && typeof value === 'object') {
+    return Object.entries(value).every(([name, inner]) => !name.startsWith('$') && !name.includes('.') && isStorable(inner))
+  }
+
+  return true
 }
 
 /**

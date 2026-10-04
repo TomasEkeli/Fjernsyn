@@ -437,7 +437,8 @@ const state = {
   ytDlpCustomArgs: '[]',
   // A random id made once per data folder by main (src/main/backup/), which
   // goes in every backup's header so a backup says which installation wrote
-  // it. Never written by the renderer, never in a backup as a setting.
+  // it. Nothing in the renderer writes it, and no backup carries it as a
+  // setting, so no restore overwrites it.
   installationId: '',
 
   // The settings below have side effects

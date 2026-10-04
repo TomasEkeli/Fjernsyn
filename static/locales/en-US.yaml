@@ -941,6 +941,7 @@ Settings:
         Newer version: This backup was written by a newer version of Fjernsyn (backup format {version}), which this version cannot read
         Section not a list: 'This backup cannot be read: its section "{section}" is not a list'
         Nothing to restore: This backup holds nothing this version of Fjernsyn can restore
+        No main profile: This backup cannot be restored, as its profiles do not include All Channels, which holds every subscription
       Confirm:
         Title: Restore this backup?
         This installation: Written by Fjernsyn {version} on this installation.
@@ -950,6 +951,7 @@ Settings:
         Section count: '{section}: {count}'
         Left out:
           Missing fields: '1 left out: required fields missing | {count} left out: required fields missing'
+          Unstorable: '1 left out: a field name that cannot be stored | {count} left out: field names that cannot be stored'
           Invalid PeerTube: '1 left out: not a valid PeerTube entry | {count} left out: not valid PeerTube entries'
           Duplicate: '1 left out: the same entry twice | {count} left out: the same entries twice'
           Unknown setting: '1 left out: a setting this version does not know | {count} left out: settings this version does not know'
@@ -970,6 +972,7 @@ Settings:
         Settings: Settings
         Channels: Channel tags and Probe samples
         AI verdicts: AI labels already checked
+      Restoring: Restoring the backup. Fjernsyn restarts when it is done.
       Failed: 'The restore failed: {error}. Some sections may already be replaced. Your data from before the restore is in {path}; restore that file to go back.'
       Failed before writing: 'The restore failed, and nothing was changed: {error}'
   Proxy Settings:

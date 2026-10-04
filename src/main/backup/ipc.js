@@ -28,7 +28,8 @@ export function registerBackupHandlers({ relaunch }) {
     return backupsFolder(dataFolder)
   })
 
-  // Once a restore has started, another is refused until the relaunch
+  // Once a restore has started, another is refused until it fails or the
+  // app relaunches
   let restoring = false
 
   ipcMain.handle(IpcChannels.BACKUP_RESTORE, async (event, request) => {
@@ -42,7 +43,13 @@ export function registerBackupHandlers({ relaunch }) {
 
     restoring = true
 
-    const result = await restoreBackup({ datastores, dataFolder, relaunch }, request)
+    let result
+    try {
+      result = await restoreBackup({ datastores, dataFolder, relaunch }, request)
+    } catch (error) {
+      // restoreBackup answers every failure it knows of; this is one it does not
+      result = { ok: false, error: String(error), safetyCopyPath: null }
+    }
 
     if (!result.ok) {
       console.error('The restore failed', result.error)
