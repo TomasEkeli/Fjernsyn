@@ -34,6 +34,13 @@
           :tooltip="t('Tooltips.Distraction Free Settings.Hide Videos on Watch')"
           @change="updateHideWatchedSubs"
         />
+        <FtToggleSwitch
+          :label="t('Settings.Distraction Free Settings.Hide AI Videos')"
+          :default-value="hideAiVideos"
+          :compact="true"
+          :tooltip="t('Tooltips.Distraction Free Settings.Hide AI Videos')"
+          @change="updateHideAiVideos"
+        />
       </div>
       <div class="switchColumn">
         <FtToggleSwitch
@@ -80,6 +87,23 @@
         @change="handleChannelsHidden"
         @already-exists="handleChannelsExists"
         @toggle-show-tags="handleAddedChannelsHidden"
+      />
+    </FtFlexBox>
+    <FtFlexBox>
+      <FtInputTags
+        :label="t('Settings.Distraction Free Settings.Channels Marked as AI')"
+        :tag-name-placeholder="t('Settings.Distraction Free Settings.Hide Channels Placeholder')"
+        :tag-list="aiChannelTags"
+        :tooltip="t('Tooltips.Distraction Free Settings.Channels Marked as AI')"
+        :validate-tag-name="checkYoutubeChannelId"
+        :find-tag-info="findChannelTagInfoWrapper"
+        :are-channel-tags="true"
+        :show-tags="showAiChannels"
+        @invalid-name="handleInvalidChannel"
+        @error-find-tag-info="handleChannelAPIError"
+        @change="handleAiChannels"
+        @already-exists="handleChannelsExists"
+        @toggle-show-tags="showAiChannels = !showAiChannels"
       />
     </FtFlexBox>
     <FtFlexBox class="containingTextFlexBox">
@@ -254,6 +278,7 @@ import store from '../../store/index'
 
 import { showToast } from '../../helpers/utils'
 import { checkYoutubeChannelId, findChannelTagInfo } from '../../helpers/channels'
+import { markedAiChannels } from '../../helpers/aiShown'
 
 const { t } = useI18n()
 
@@ -580,6 +605,43 @@ const hideWatchedSubs = computed(() => store.getters.getHideWatchedSubs)
 function updateHideWatchedSubs(value) {
   store.dispatch('updateHideWatchedSubs', value)
 }
+
+/**
+ * The AI pill's setting, the other way round, as Hide Videos on Watch is the
+ * Watched pill's (helpers/aiShown.js)
+ * @type {import('vue').ComputedRef<boolean>}
+ */
+const hideAiVideos = computed(() => store.getters.getHideAiVideos)
+
+/**
+ * @param {boolean} value
+ */
+function updateHideAiVideos(value) {
+  store.dispatch('updateHideAiVideos', value)
+}
+
+/**
+ * The channels marked as AI, as channel tags: the tag's `name` is the
+ * channel id, as it is for the hidden channels, and `preferredName` its
+ * name. The only place to unmark a channel whose videos are hidden.
+ */
+const aiChannelTags = computed(() => {
+  return markedAiChannels().map(channel => ({ name: channel.id, preferredName: channel.name }))
+})
+
+/**
+ * @param {{ name: string, preferredName?: string }[]} tags
+ */
+function handleAiChannels(tags) {
+  const channels = tags
+    .filter(tag => typeof tag.name === 'string' && !tag.invalid)
+    .map(tag => ({ id: tag.name, name: tag.preferredName ?? '' }))
+
+  store.dispatch('updateAiChannels', JSON.stringify(channels))
+}
+
+/** Whether the marked channels are listed: the list's own, not kept */
+const showAiChannels = ref(true)
 
 onMounted(() => {
   verifyChannelsHidden()
