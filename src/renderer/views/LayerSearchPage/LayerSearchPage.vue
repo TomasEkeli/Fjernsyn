@@ -103,10 +103,6 @@
         @update="changeParameters"
       >
         <template #end>
-          <!-- Among the filters, where the eye already is when narrowing a
-               search, though it is a setting and not part of the query: Clear
-               leaves it as it is -->
-          <AiChip />
           <button
             v-if="!plain"
             type="button"
@@ -124,6 +120,10 @@
           >
             {{ t('Layer Search.Apply last filters', { filters: rememberedWords }) }}
           </button>
+          <!-- At the top right of the wall, where the Watched pill is on the
+               subscriptions page. A setting, not part of the query: Clear
+               leaves it as it is -->
+          <AiChip class="aiChip" />
         </template>
       </LayerSearchChips>
       <div

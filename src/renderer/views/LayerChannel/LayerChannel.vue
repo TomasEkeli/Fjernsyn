@@ -202,10 +202,6 @@
               v-if="viewAllRoute || currentSortedList || aiChipShown"
               class="select-container"
             >
-              <AiChip
-                v-if="aiChipShown"
-                class="aiChip"
-              />
               <FtButton
                 v-if="viewAllRoute"
                 class="viewAllButton"
@@ -222,6 +218,11 @@
                 :placeholder="t('Global.Sort By')"
                 :icon="getIconForSortPreference(currentSortedList.sort.value)"
                 @change="currentSortedList.changeSort"
+              />
+              <!-- At the top right of the wall, as on the other walls -->
+              <AiChip
+                v-if="aiChipShown"
+                class="aiChip"
               />
             </div>
             <!-- A PeerTube playlist links to its instance; a YouTube playlist
