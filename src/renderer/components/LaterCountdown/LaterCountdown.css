@@ -1,0 +1,66 @@
+.laterCountdown {
+  position: fixed;
+  inset-block-end: 50px;
+  inset-inline-end: 24px;
+
+  /* Above the toasts, which are above any prompt */
+  z-index: 301;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  gap: 8px 12px;
+  align-items: center;
+  max-inline-size: min(480px, calc(100vw - 48px));
+  padding: 12px;
+  border-radius: 12px;
+  background-color: var(--card-bg-color);
+  color: var(--primary-text-color);
+  box-shadow: 0 2px 8px 0 var(--primary-shadow-color);
+}
+
+.thumbnail {
+  grid-row: span 2;
+  inline-size: 120px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.text {
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.action {
+  padding-block: 6px;
+  padding-inline: 14px;
+  border-style: none;
+  border-radius: 6px;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.watchNow {
+  background-color: var(--accent-color);
+  color: var(--text-with-accent-color);
+}
+
+.watchNow:hover,
+.watchNow:focus-visible {
+  background-color: var(--accent-color-hover);
+}
+
+.cancel {
+  background-color: var(--secondary-card-bg-color);
+  color: var(--primary-text-color);
+}
+
+.cancel:hover,
+.cancel:focus-visible {
+  background-color: var(--side-nav-hover-color);
+}

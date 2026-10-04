@@ -28,6 +28,16 @@ const state = {
   /** @type {Record<string, LaterItem>} by `_id` */
   laterItems: {},
   laterReady: false,
+
+  // Firing (composables/useLaterScheduler.js), in this window's memory only:
+  /** How many video players are mounted: more than none is watching */
+  laterPlayersMounted: 0,
+  /** @type {LaterItem[]} armed items gone live, waiting on the player's notice */
+  laterNotices: [],
+  /** @type {LaterItem | null} the armed item gone live, counting down to it */
+  laterCountdown: null,
+  /** @type {string | null} the video whose own watch page is to reload into its stream */
+  laterFiredVideoId: null,
 }
 
 const getters = {
@@ -38,6 +48,10 @@ const getters = {
   getLaterArmed: (state) => armedInOrder(Object.values(state.laterItems)),
   getIsInLater: (state) => (id) => state.laterItems[id] != null,
   getIsArmed: (state) => (id) => state.laterItems[id]?.alarm != null,
+  getLaterPlayerMounted: (state) => state.laterPlayersMounted > 0,
+  getLaterNotices: (state) => state.laterNotices,
+  getLaterCountdown: (state) => state.laterCountdown,
+  getLaterFiredVideoId: (state) => state.laterFiredVideoId,
 }
 
 /**
@@ -248,7 +262,87 @@ const actions = {
   },
 }
 
+/**
+ * Takes an item off whatever notice holds it: the player's or the countdown
+ * @param {any} commit
+ * @param {any} state
+ * @param {string} id
+ */
+function clearFiring(commit, state, id) {
+  commit('removeLaterNotice', id)
+
+  if (state.laterCountdown?._id === id) {
+    commit('setLaterCountdown', null)
+  }
+}
+
+Object.assign(actions, {
+  /**
+   * An armed item gone live, gone to: it leaves the list. The caller opens
+   * its watch page.
+   * @param {any} context
+   * @param {string} id
+   */
+  async laterWatchNow({ commit, dispatch, state }, id) {
+    clearFiring(commit, state, id)
+    await dispatch('removeFromLater', id)
+  },
+
+  /**
+   * An armed item gone live, refused, dismissed, or handed to a desktop
+   * notification: its alarm comes off and it waits at the top of the list.
+   * @param {any} context
+   * @param {string} id
+   */
+  async laterRefuse({ commit, dispatch, state }, id) {
+    clearFiring(commit, state, id)
+    await dispatch('disarm', id)
+  },
+
+  laterPlayerMounted({ commit }) {
+    commit('changeLaterPlayersMounted', 1)
+  },
+
+  /**
+   * A player gone: with none left, the notices it held were never answered,
+   * which counts as dismissing them.
+   * @param {any} context
+   */
+  async laterPlayerUnmounted({ commit, dispatch, state }) {
+    commit('changeLaterPlayersMounted', -1)
+
+    if (state.laterPlayersMounted > 0) { return }
+
+    for (const item of state.laterNotices.slice()) {
+      await dispatch('laterRefuse', item._id)
+    }
+  },
+})
+
 const mutations = {
+  changeLaterPlayersMounted(state, by) {
+    state.laterPlayersMounted = Math.max(0, state.laterPlayersMounted + by)
+  },
+
+  addLaterNotice(state, item) {
+    if (state.laterNotices.some(notice => notice._id === item._id)) { return }
+
+    state.laterNotices = [...state.laterNotices, item]
+      .sort((a, b) => (a.alarm?.at ?? 0) - (b.alarm?.at ?? 0))
+  },
+
+  removeLaterNotice(state, id) {
+    state.laterNotices = state.laterNotices.filter(notice => notice._id !== id)
+  },
+
+  setLaterCountdown(state, item) {
+    state.laterCountdown = item
+  },
+
+  setLaterFiredVideoId(state, videoId) {
+    state.laterFiredVideoId = videoId
+  },
+
   setLaterReady(state, value) {
     state.laterReady = value
   },
