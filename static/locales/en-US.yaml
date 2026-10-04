@@ -466,6 +466,7 @@ Later:
   Cancel: Cancel
   Switching: '{title} is live. Switching to it in {seconds} s'
   Ended unseen: '{title} has ended. It is on your Later list.'
+  Went live hidden: '{title} went live while the window was hidden. It is at the top of your Later list.'
   Export: Export Later list
   Import: Import Later list
   Imported: '{count} added to your Later list'

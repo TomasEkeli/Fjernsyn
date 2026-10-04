@@ -155,7 +155,7 @@ const SETTINGS = vi.hoisted(() => ({
   // The Later list's
   getIsInLater: () => false,
   getIsArmed: () => false,
-  getLaterFiredVideoId: null,
+  getLaterFiredVideo: null,
 }))
 
 vi.mock('../../store/index', async () => {
@@ -2763,22 +2763,21 @@ describe('the Later list on the watch page', () => {
 })
 
 describe('an armed Later item gone live on its own page', () => {
-  it('reloads into the stream when the store says it fired, and clears the flag', async () => {
+  it('reloads into the stream when the store says it fired', async () => {
     await openWatchPage(youtubeVideo({ isUpcoming: true, liveStatus: 'waiting', premiereDate: new Date(Date.now() + 60_000) }), YT_PATH)
     expect(layer.getVideo).toHaveBeenCalledTimes(1)
 
     layer.getVideo.mockResolvedValue(youtubeLive())
-    store.setGetter('getLaterFiredVideoId', YT_ID)
+    store.setGetter('getLaterFiredVideo', { videoId: YT_ID, at: 1 })
     await flushPromises()
 
     expect(layer.getVideo).toHaveBeenCalledTimes(2)
-    expect(store.committed).toContainEqual({ type: 'setLaterFiredVideoId', payload: null })
   })
 
   it('does not reload for another video', async () => {
     await openWatchPage(youtubeVideo(), YT_PATH)
 
-    store.setGetter('getLaterFiredVideoId', 'otherVideo1')
+    store.setGetter('getLaterFiredVideo', { videoId: 'otherVideo1', at: 1 })
     await flushPromises()
 
     expect(layer.getVideo).toHaveBeenCalledTimes(1)

@@ -23,7 +23,7 @@ vi.mock('../../i18n/index', () => ({ default: { global: { t: key => key } } }))
 const NOW = Date.parse('2026-10-04T12:00:00Z')
 
 function freshState() {
-  return { laterItems: {}, laterReady: false, laterPlayersMounted: 0, laterNotices: [], laterCountdown: null, laterFiredVideoId: null }
+  return { laterItems: {}, laterReady: false, laterPlayersMounted: 0, laterNotices: [], laterCountdown: null, laterFiredVideo: null }
 }
 
 function contextFor(state) {
@@ -218,23 +218,18 @@ describe('the Later store', () => {
       expect(queuedIds(state)).toEqual(['a', 'q'])
     })
 
-    it('dismisses the notices when the last player goes', async () => {
+    it('counts the players up, and keeps the notices when one goes', async () => {
       const state = freshState()
       const context = contextFor(state)
       context.commit('addLaterNotice', await armed(context, 'a', NOW))
 
       later.actions.laterPlayerMounted(context)
-      later.actions.laterPlayerMounted(context)
       expect(later.getters.getLaterPlayerMounted(state)).toBe(true)
 
-      await later.actions.laterPlayerUnmounted(context)
-      expect(state.laterNotices.length).toBe(1)
-
-      await later.actions.laterPlayerUnmounted(context)
+      later.actions.laterPlayerUnmounted(context)
+      later.actions.laterPlayerUnmounted(context)
       expect(later.getters.getLaterPlayerMounted(state)).toBe(false)
-      expect(state.laterNotices).toEqual([])
-      expect(armedIds(state)).toEqual([])
-      expect(queuedIds(state)).toEqual(['a'])
+      expect(state.laterNotices.length).toBe(1)
     })
   })
 
