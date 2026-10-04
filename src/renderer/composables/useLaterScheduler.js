@@ -90,6 +90,7 @@ export function useLaterScheduler(store, router, isMainWindow) {
         }
 
         lastChecked.set(id, Date.now())
+        console.info(`Later: checked ${videoId}: ${answer.state}${answer.state === 'upcoming' && answer.startsAt ? ` at ${new Date(answer.startsAt).toISOString()}` : ''}`) // eslint-disable-line no-console
         await act(id, answer)
       }
     } catch (error) {
@@ -181,6 +182,8 @@ export function useLaterScheduler(store, router, isMainWindow) {
         ownPageReloads: store.getters.getEnableLayerSurfaces === true,
         playerMounted: store.getters.getLaterPlayerMounted,
       }, item.videoId)
+
+      console.info(`Later: firing ${item.videoId}: ${decision} (shown ${shown}, on ${watchingVideoId ?? 'no watch page'}, player ${store.getters.getLaterPlayerMounted ? 'up' : 'down'})`) // eslint-disable-line no-console
 
       switch (decision) {
         case 'notify':
