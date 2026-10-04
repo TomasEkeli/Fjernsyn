@@ -54,6 +54,7 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
         startInPip: { type: Boolean, default: false },
         currentPlaybackRate: { type: Number, default: 1 },
         loudnessDb: { type: Number, default: null },
+        heatmap: { type: Array, default: null },
         delayLoadUntilUnix: { type: Number, default: 0 },
         vrProjection: { type: String, default: null },
         platform: { type: String, default: 'youtube' },
@@ -1724,6 +1725,19 @@ describe('what the layer answers of a YouTube video, passed on', () => {
       delayLoadUntilUnix: 1_790_000_012_345,
       vrProjection: 'EQUIRECTANGULAR',
     })
+  })
+
+  it('hands the player its most replayed heatmap', async () => {
+    const heatmap = [{ startSeconds: 0, endSeconds: 2.14, intensity: 1 }]
+    const { wrapper } = await openWatchPage(youtubeVideo({}, { heatmap }), YT_PATH)
+
+    expect(findPlayer(wrapper).props('heatmap')).toEqual(heatmap)
+  })
+
+  it('hands the player no heatmap where the source has none', async () => {
+    const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+    expect(findPlayer(wrapper).props('heatmap')).toBeNull()
   })
 
   it('hands the player a measured loudness of 0 as it is', async () => {

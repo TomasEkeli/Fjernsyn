@@ -37,6 +37,7 @@ import {
   copyToClipboard,
 } from '../../helpers/utils'
 import { AudioGainStage, loudnessDbToGain } from '../../helpers/player/audioGain'
+import { HEATMAP_VIEW_BOX, heatmapPath } from '../../helpers/player/heatmap'
 import { MANIFEST_TYPE_SABR } from '../../helpers/player/SabrManifestParser'
 import { sabrWallInjectionEnabled, shouldAbandonRefresh } from '../../helpers/player/sabrWallInjection'
 import { isWatchPath } from '../../helpers/watchRoute'
@@ -238,6 +239,15 @@ export default defineComponent({
      */
     loudnessDb: {
       type: Number,
+      default: null
+    },
+    /**
+     * YouTube's most replayed heatmap, drawn above the seek bar while it is
+     * hovered. `null` when there is none.
+     * @type {import('vue').PropType<import('../../platform/shapes').HeatmapPoint[] | null>}
+     */
+    heatmap: {
+      type: Array,
       default: null
     },
     /**
@@ -624,6 +634,11 @@ export default defineComponent({
     /** @type {import('vue').ComputedRef<boolean>} */
     const videoSkipMouseScroll = computed(() => {
       return store.getters.getVideoSkipMouseScroll
+    })
+
+    /** @type {import('vue').ComputedRef<boolean>} */
+    const showMostReplayedHeatmap = computed(() => {
+      return store.getters.getShowMostReplayedHeatmap
     })
 
     /** @type {import('vue').ComputedRef<any[]>} */
@@ -1345,6 +1360,10 @@ export default defineComponent({
 
       if (hasLoaded.value && props.chapters.length > 0) {
         createChapterMarkers()
+      }
+
+      if (hasLoaded.value) {
+        createHeatmap()
       }
 
       if (useSponsorBlock.value && sponsorBlockSegments.length > 0) {
@@ -3565,6 +3584,53 @@ export default defineComponent({
     }
 
     /**
+     * Draws the most replayed heatmap above the seek bar, in place of any drawn
+     * before, so that it is safe to call on every load and UI rebuild. It sits
+     * outside the marker container, above the bar rather than over it, so the
+     * SponsorBlock segments and chapter ticks on the bar stay uncovered. The CSS
+     * shows it only while the seek bar is hovered.
+     */
+    function createHeatmap() {
+      const seekBarContainer = container.value?.querySelector('.shaka-seek-bar-container')
+
+      if (!seekBarContainer) {
+        return
+      }
+
+      seekBarContainer.querySelector(':scope > .seekBarHeatmap')?.remove()
+
+      if (!showMostReplayedHeatmap.value || isLive.value || !player) {
+        return
+      }
+
+      const { start, end } = player.seekRange()
+      const path = heatmapPath(props.heatmap, end - start)
+
+      if (!path) {
+        return
+      }
+
+      const svgNamespace = 'http://www.w3.org/2000/svg'
+      const svg = document.createElementNS(svgNamespace, 'svg')
+      svg.classList.add('seekBarHeatmap')
+      svg.setAttribute('viewBox', HEATMAP_VIEW_BOX)
+      svg.setAttribute('preserveAspectRatio', 'none')
+      svg.setAttribute('aria-hidden', 'true')
+
+      const pathElement = document.createElementNS(svgNamespace, 'path')
+      pathElement.setAttribute('d', path)
+      svg.appendChild(pathElement)
+
+      seekBarContainer.appendChild(svg)
+    }
+
+    watch(showMostReplayedHeatmap, () => {
+      if (hasLoaded.value) {
+        createHeatmap()
+      }
+    })
+
+    /**
      * @param {HTMLDivElement[]} markers
      */
     function addMarkers(markers) {
@@ -3959,6 +4025,8 @@ export default defineComponent({
       if (props.chapters.length > 0) {
         createChapterMarkers()
       }
+
+      createHeatmap()
 
       if (startInFullscreen && process.env.IS_ELECTRON) {
         startInFullscreen = false

@@ -348,6 +348,58 @@ describe('a YouTube video\'s chapters', () => {
   })
 })
 
+describe('a YouTube video\'s most replayed heatmap', () => {
+  const marker = (start, duration, intensity) => ({
+    type: 'HeatMarker',
+    time_range_start_millis: start,
+    marker_duration_millis: duration,
+    heat_marker_intensity_score_normalized: intensity,
+  })
+  const withHeatmap = markers => localWith(localOrdinary, (info) => {
+    info.heat_map = { type: 'Heatmap', max_height_dp: 40, min_height_dp: 4, heat_markers: markers }
+  })
+
+  it('on Local, is youtubei.js\' markers in seconds, in order', async () => {
+    const { source } = await sourceOf({ local: withHeatmap([marker(2140, 2140, 0.42), marker(0, 2140, 1)]) })
+
+    expect(source.heatmap).toEqual([
+      { startSeconds: 0, endSeconds: 2.14, intensity: 1 },
+      { startSeconds: 2.14, endSeconds: 4.28, intensity: 0.42 },
+    ])
+  })
+
+  it('on Local, leaves out a marker that is not a number and holds the intensity between 0 and 1', async () => {
+    const { source } = await sourceOf({
+      local: withHeatmap([marker(0, 1000, 1.5), marker(1000, 1000, -0.2), marker(2000, Number.NaN, 0.5), { type: 'HeatMarker' }]),
+    })
+
+    expect(source.heatmap).toEqual([
+      { startSeconds: 0, endSeconds: 1, intensity: 1 },
+      { startSeconds: 1, endSeconds: 2, intensity: 0 },
+    ])
+  })
+
+  it.each([
+    ['youtubei.js found none', localOrdinary],
+    ['its markers are empty', withHeatmap([])],
+  ])('on Local, is none where %s', async (_what, local) => {
+    expect((await sourceOf({ local })).source.heatmap).toBeNull()
+  })
+
+  it('carries over SABR as over DASH', async () => {
+    const local = withHeatmap([marker(0, 2140, 1)])
+    local.answer.poToken = 'po-token'
+    const { source } = await sourceOf({ local })
+
+    expect(source.transport).toBe('sabr')
+    expect(source.heatmap).toEqual([{ startSeconds: 0, endSeconds: 2.14, intensity: 1 }])
+  })
+
+  it('on Invidious, is absent, which only Local knows', async () => {
+    expect((await sourceOf({ invidious: invidiousOrdinary })).source).not.toHaveProperty('heatmap')
+  })
+})
+
 describe('a YouTube video\'s storyboard', () => {
   it('on Local, is a WebVTT data URI of the largest board', async () => {
     const { source } = await sourceOf({ local: localOrdinary })

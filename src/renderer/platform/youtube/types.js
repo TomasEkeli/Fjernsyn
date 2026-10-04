@@ -337,6 +337,10 @@
  *   a broadcast plays as a live in the format ring (no legacy formats, DASH
  *   and audio only) although it is not live now, which `isLive` alone cannot
  *   say.
+ * - `heatmap`: L youtubei.js' `heat_map.heat_markers` (read from `/next`),
+ *   in seconds, ordered, intensity held between 0 and 1, markers without
+ *   numbers left out; `null` without markers. I absent. The player's `heatmap`
+ *   prop.
  *
  * Captions: L from `info.captions.caption_tracks`, as WebVTT (`fmt=vtt`), with
  * `id` (`vss_id`) and `isAutomatic` (`kind === 'asr'`). When no track is in
@@ -368,7 +372,7 @@
  * `{instance}/api/v1/storyboards/{id}?height=90`, answering WebVTT, not a
  * data URI. None for lives on either.
  *
- * @typedef {Pick<import('../shapes').ManifestPlaybackSource, 'loudnessDb' | 'delayLoadUntilMs' | 'expiresAt' | 'vrProjection' | 'isPostLiveDvr'>} YouTubePlaybackExtras
+ * @typedef {Pick<import('../shapes').ManifestPlaybackSource, 'loudnessDb' | 'delayLoadUntilMs' | 'expiresAt' | 'vrProjection' | 'isPostLiveDvr' | 'heatmap'>} YouTubePlaybackExtras
  */
 
 /**

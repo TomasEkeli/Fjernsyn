@@ -357,6 +357,35 @@ function withThumbnail(chapter, thumbnails) {
 }
 
 /**
+ * The most replayed heatmap youtubei.js reads from `/next` (`heat_map`), in
+ * seconds and in order, each intensity held between 0 and 1. A marker without
+ * numbers is left out; `null` without markers.
+ *
+ * @param {any} info
+ * @returns {import('../shapes').HeatmapPoint[] | null}
+ */
+function localHeatmap(info) {
+  const markers = info.heat_map?.heat_markers
+
+  if (!Array.isArray(markers)) {
+    return null
+  }
+
+  const heatmap = markers
+    .filter(marker => Number.isFinite(marker?.time_range_start_millis) &&
+      Number.isFinite(marker.marker_duration_millis) &&
+      Number.isFinite(marker.heat_marker_intensity_score_normalized))
+    .map(marker => ({
+      startSeconds: marker.time_range_start_millis / 1000,
+      endSeconds: (marker.time_range_start_millis + marker.marker_duration_millis) / 1000,
+      intensity: Math.min(1, Math.max(0, marker.heat_marker_intensity_score_normalized)),
+    }))
+    .sort((a, b) => a.startSeconds - b.startSeconds)
+
+  return heatmap.length > 0 ? heatmap : null
+}
+
+/**
  * The storyboard's boards, smallest first, as youtubei.js answers them.
  *
  * @param {any} info
@@ -422,6 +451,7 @@ function localExtras({ info, adEndTimeUnixMs }, playable) {
     expiresAt: dateOf(info.streaming_data?.expires),
     vrProjection: playable ? vrProjectionOf(adaptive, format => !!format.has_video, 'projection_type') : null,
     isPostLiveDvr: !!info.basic_info?.is_post_live_dvr,
+    heatmap: localHeatmap(info),
   }
 
   if (isNumber(adEndTimeUnixMs)) {
