@@ -25,6 +25,11 @@
   flex-wrap: wrap;
 }
 
+/* At the row's far end, with or without the scope tabs beside it */
+.aiChip {
+  margin-inline-start: auto;
+}
+
 .tab {
   background: transparent;
   border: 0;

@@ -45,6 +45,13 @@
         {{ $t("Subscriptions.Empty Channels") }}
       </p>
     </FtFlexBox>
+    <FtFlexBox
+      v-if="!isLoading && allHiddenAsAi(activeVideoList)"
+    >
+      <p class="message">
+        {{ $t('AI Chip.All Hidden') }}
+      </p>
+    </FtFlexBox>
     <FtElementList
       v-if="!isLoading && activeVideoList.length > 0"
       :data="activeVideoList"
@@ -81,6 +88,7 @@ import store from '../../store/index'
 
 import { debounce } from '../../helpers/utils'
 import { watchedIsShown, withWatchedPreference } from '../../helpers/watchedShown'
+import { allHiddenAsAi } from '../../helpers/aiShown'
 
 /**
  * The subscriptions stream, as a list on a page.

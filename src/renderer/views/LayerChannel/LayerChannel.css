@@ -141,6 +141,13 @@
   margin-block-start: 33px;
 }
 
+/* The AI pill, at the row's start, level with the sort's box rather than its label */
+.aiChip {
+  align-self: flex-end;
+  margin-block-end: 4px;
+  margin-inline-end: auto;
+}
+
 .shareIcon {
   align-self: center;
 }

@@ -6,7 +6,14 @@
       <h3>
         {{ $t("Up Next") }}
       </h3>
+      <AiChip v-if="showAiChip" />
     </div>
+    <p
+      v-if="showAiChip && allHiddenAsAi(data)"
+      class="aiAllHidden"
+    >
+      {{ $t('AI Chip.All Hidden') }}
+    </p>
     <FtListVideoLazy
       v-for="video in data"
       :key="video.videoId"
@@ -22,8 +29,11 @@
 
 <script setup>
 
+import AiChip from '../AiChip/AiChip.vue'
 import FtCard from '../ft-card/ft-card.vue'
 import FtListVideoLazy from '../FtListVideoLazy.vue'
+
+import { allHiddenAsAi } from '../../helpers/aiShown'
 
 defineProps({
   data: {
@@ -33,6 +43,11 @@ defineProps({
   // Fjernsyn: whether the cards ask whether their videos were made with AI
   // (FtListVideo); the layer's watch view opts in, upstream's Watch does not
   lookUpAiLabel: {
+    type: Boolean,
+    default: false
+  },
+  // Fjernsyn: the AI pill above the list, and saying so when it hides them all
+  showAiChip: {
     type: Boolean,
     default: false
   }

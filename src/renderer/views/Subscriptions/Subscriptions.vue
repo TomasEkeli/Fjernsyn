@@ -37,6 +37,7 @@
             :title="$t('Watched Chip.Hint')"
             @toggle="toggleWatched"
           />
+          <AiChip />
         </div>
       </div>
       <SubscriptionsUpcomingShelf
@@ -67,6 +68,7 @@ import { computed, onBeforeUnmount, onMounted } from 'vue'
 import FtCard from '../../components/ft-card/ft-card.vue'
 import FtRefreshWidget from '../../components/FtRefreshWidget/FtRefreshWidget.vue'
 import FtToggleChip from '../../components/FtToggleChip/FtToggleChip.vue'
+import AiChip from '../../components/AiChip/AiChip.vue'
 import SubscriptionsTabUi from '../../components/SubscriptionsTabUi/SubscriptionsTabUi.vue'
 import SubscriptionsUpcomingShelf from '../../components/SubscriptionsUpcomingShelf/SubscriptionsUpcomingShelf.vue'
 

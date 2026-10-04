@@ -23,6 +23,7 @@
             {{ scopeLabel(t, scope) }}
           </button>
         </nav>
+        <AiChip class="aiChip" />
       </div>
       <div
         v-if="query.scope === 'peertube'"
@@ -159,6 +160,12 @@
             look-up-ai-label
           />
           <p
+            v-if="allHiddenAsAi(sectionOf(platform).items)"
+            class="message"
+          >
+            {{ t('AI Chip.All Hidden') }}
+          </p>
+          <p
             v-if="isFinishedAndEmpty(platform)"
             class="message"
           >
@@ -187,7 +194,7 @@
             />
           </div>
           <FtAutoLoadNextPageWrapper
-            v-else-if="hasMore(platform) && !isAll && !autoLoadPaused(platform)"
+            v-else-if="hasMore(platform) && !isAll && !autoLoadPaused(platform) && !allHiddenAsAi(sectionOf(platform).items)"
             @load-next-page="load(platform)"
           >
             <div
@@ -238,6 +245,7 @@ import { computed, onBeforeUnmount, onMounted, shallowReactive, shallowRef, watc
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
+import AiChip from '../../components/AiChip/AiChip.vue'
 import FtAutoLoadNextPageWrapper from '../../components/FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
 import FtCard from '../../components/ft-card/ft-card.vue'
@@ -247,6 +255,7 @@ import LayerSearchChips from '../../components/LayerSearchChips/LayerSearchChips
 
 import store from '../../store/index'
 import { showToast } from '../../helpers/utils'
+import { allHiddenAsAi } from '../../helpers/aiShown'
 import { SEARCH_CHAR_LIMIT } from '../../../constants'
 import { usePlatformLayer } from '../../platform/vue'
 import { appliedFilters, platformsOf } from '../../platform/search/capabilities'

@@ -8,6 +8,12 @@
 }
 
 .VideoRecommendationsTopBar {
+  align-items: center;
   display: flex;
   justify-content: space-between;
+}
+
+.aiAllHidden {
+  color: var(--tertiary-text-color);
+  margin: 0;
 }

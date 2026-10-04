@@ -116,7 +116,7 @@ export function unmarkChannelAi(channelId) {
 export function aiMarkOf(video) {
   if (video == null || platformOf(video) !== PLATFORM_YOUTUBE) { return null }
 
-  if (typeof video.videoId === 'string' && store.getters.getAiVerdicts[video.videoId] === true) {
+  if (typeof video.videoId === 'string' && store.getters.getAiVerdicts?.[video.videoId] === true) {
     return 'declared'
   }
 

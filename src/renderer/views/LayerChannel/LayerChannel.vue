@@ -199,9 +199,13 @@
           />
           <template v-else>
             <div
-              v-if="viewAllRoute || currentSortedList"
+              v-if="viewAllRoute || currentSortedList || aiChipShown"
               class="select-container"
             >
+              <AiChip
+                v-if="aiChipShown"
+                class="aiChip"
+              />
               <FtButton
                 v-if="viewAllRoute"
                 class="viewAllButton"
@@ -238,6 +242,12 @@
               look-up-ai-label
             />
             <p
+              v-if="allPagesHiddenAsAi"
+              class="message"
+            >
+              {{ t('AI Chip.All Hidden') }}
+            </p>
+            <p
               v-if="isFinishedAndEmpty(currentList, currentItems)"
               class="message"
             >
@@ -262,7 +272,7 @@
           />
         </div>
         <FtAutoLoadNextPageWrapper
-          v-else-if="currentList && hasMore(currentList)"
+          v-else-if="currentList && hasMore(currentList) && !allPagesHiddenAsAi"
           @load-next-page="currentList.load"
         >
           <div
@@ -275,6 +285,19 @@
             <FontAwesomeIcon :icon="['fas', 'search']" /> {{ t('Search Filters.Fetch more results') }}
           </div>
         </FtAutoLoadNextPageWrapper>
+        <!-- Not loaded by itself while the AI pill hides everything loaded so
+             far: the marker of the next page would never leave the screen, so
+             a marked channel's page would load every page it has -->
+        <div
+          v-else-if="currentList && hasMore(currentList)"
+          class="getNextPage"
+          role="button"
+          tabindex="0"
+          @click="currentList.load"
+          @keydown.enter.space.prevent="currentList.load"
+        >
+          <FontAwesomeIcon :icon="['fas', 'search']" /> {{ t('Search Filters.Fetch more results') }}
+        </div>
       </FtCard>
     </template>
   </div>
@@ -293,6 +316,7 @@ import { computed, onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef, 
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
+import AiChip from '../../components/AiChip/AiChip.vue'
 import FtAgeRestricted from '../../components/FtAgeRestricted/FtAgeRestricted.vue'
 import FtAutoLoadNextPageWrapper from '../../components/FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
@@ -318,6 +342,7 @@ import {
   getIconForSortPreference,
   openExternalLink,
 } from '../../helpers/utils'
+import { allHiddenAsAi } from '../../helpers/aiShown'
 import { PLATFORM_YOUTUBE, isYouTubeChannelRef, parseChannelHandle, platformOf } from '../../platform/refs'
 import { subscriptionCacheEntries } from '../../platform/subscriptionCache'
 import { usePlatformLayer } from '../../platform/vue'
@@ -467,6 +492,21 @@ const currentTab = computed(() => {
 })
 
 const currentTabInfo = computed(() => tabs.value.find(tab => tab.name === currentTab.value))
+
+/**
+ * The AI pill (helpers/aiShown.js), on a YouTube channel's tabs that list
+ * videos: the videos, shorts and live, and a search within the channel. Not
+ * on playlists or posts, which it would not change, nor on PeerTube, which
+ * has no label and no marked channels.
+ */
+const aiChipShown = computed(() => {
+  const tab = currentTabInfo.value
+
+  return isYouTube.value && tab != null && !tab.playlists && !tab.posts && !tab.about
+})
+
+/** Whether the AI pill has hidden everything the tab has loaded */
+const allPagesHiddenAsAi = computed(() => aiChipShown.value && allHiddenAsAi(currentItems.value))
 
 /**
  * The video sorts the channel offers: an artist topic channel has no oldest
