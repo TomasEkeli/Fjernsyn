@@ -139,6 +139,24 @@ export function isHiddenAsAi(video) {
 }
 
 /**
+ * The entries left once the pill has taken out those made with AI, or all of
+ * them while AI videos are shown. For a wall that pages what it has in hand,
+ * as the subscriptions stream does, so that a page is counted, and said to be
+ * empty, after the pill and not before; as `withWatchedPreference` is.
+ *
+ * @template T
+ * @param {T[]} entries
+ * @returns {T[]}
+ */
+export function withAiPreference(entries) {
+  if (aiIsShown()) {
+    return entries
+  }
+
+  return entries.filter(entry => !isHiddenAsAi(entry))
+}
+
+/**
  * Whether the pill has taken every entry off a wall that has any, so that
  * the wall can say so instead of looking broken.
  *

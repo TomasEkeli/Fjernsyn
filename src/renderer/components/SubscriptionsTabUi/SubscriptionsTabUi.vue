@@ -33,6 +33,12 @@
         {{ $t("Subscriptions.Disabled Automatic Fetching") }}
       </p>
       <p
+        v-else-if="aiHidEverything"
+        class="message"
+      >
+        {{ $t('AI Chip.All Hidden') }}
+      </p>
+      <p
         v-else-if="videoList.length > 0 && !watchedIsShown()"
         class="message"
       >
@@ -45,18 +51,11 @@
         {{ $t("Subscriptions.Empty Channels") }}
       </p>
     </FtFlexBox>
-    <FtFlexBox
-      v-if="!isLoading && allHiddenAsAi(activeVideoList)"
-    >
-      <p class="message">
-        {{ $t('AI Chip.All Hidden') }}
-      </p>
-    </FtFlexBox>
     <FtElementList
       v-if="!isLoading && activeVideoList.length > 0"
       :data="activeVideoList"
       :use-channels-hidden-preference="false"
-      look-up-ai-label
+      ai-wall
     />
     <FtAutoLoadNextPageWrapper
       v-if="!isLoading && filteredVideoList.length > dataLimit"
@@ -88,7 +87,7 @@ import store from '../../store/index'
 
 import { debounce } from '../../helpers/utils'
 import { watchedIsShown, withWatchedPreference } from '../../helpers/watchedShown'
-import { allHiddenAsAi } from '../../helpers/aiShown'
+import { aiIsShown, withAiPreference } from '../../helpers/aiShown'
 
 /**
  * The subscriptions stream, as a list on a page.
@@ -163,7 +162,10 @@ const onlyShowLatestFromChannelNumber = computed(() => {
 })
 
 const filteredVideoList = computed(() => {
-  let videoList = withWatchedPreference(props.videoList)
+  // AI videos hidden by the pill are out before the stream is cut into pages,
+  // as watched ones are, so that a page of them does not stand empty while
+  // more is to be had below
+  let videoList = withAiPreference(withWatchedPreference(props.videoList))
 
   if (onlyShowLatestFromChannel.value) {
     const authors = new Map()
@@ -190,6 +192,12 @@ const filteredVideoList = computed(() => {
 
   return videoList
 })
+
+/**
+ * Whether the AI pill took out everything watched videos left, for the empty
+ * stream to say so, rather than that nothing has been published
+ */
+const aiHidEverything = computed(() => !aiIsShown() && withWatchedPreference(props.videoList).length > 0)
 
 function increaseLimit() {
   dataLimit.value += PAGE_SIZE

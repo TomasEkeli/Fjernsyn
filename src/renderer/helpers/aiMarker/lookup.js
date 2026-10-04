@@ -2,6 +2,17 @@ import { isYouTubeVideoRef, platformOf, PLATFORM_YOUTUBE } from '../../platform/
 import { readAiLabel } from './label'
 
 /**
+ * Failures in a row after which lookups pause: YouTube refusing one video is
+ * likely refusing the next, and asking on regardless, two a second while the
+ * reader scrolls, is the way to be refused for longer and to poison the watch
+ * page that PO token minting needs.
+ */
+export const FAILURES_BEFORE_PAUSE = 3
+
+/** How long lookups pause for, after that many failures in a row */
+export const PAUSE_MS = 5 * 60 * 1000
+
+/**
  * Finding out whether YouTube labels a video "Made with AI", one video at a
  * time.
  *
@@ -18,28 +29,42 @@ import { readAiLabel } from './label'
  * - `verdicts` is where verdicts are kept: `get(videoId)` answers `'ai'`,
  *   `'not-ai'` or `undefined`, and `set(videoId, verdict)` keeps one
  * - `schedule({ key, run, dropped })` queues `run` to be called in its turn,
- *   and calls `dropped` instead if the queue is cleared before then
+ *   and calls `dropped` instead if it is taken out of the queue first
+ * - `unschedule(key)` takes a queued lookup back out, calling its `dropped`
  * - `isChannelMarked(channelId)` says whether the user marked a channel as AI
  * - `enabled()` says whether lookups may be made at all, on this backend
  *
  * A video is never looked up when it already has a verdict, when a lookup for
  * it is already queued or running, when it is not a YouTube video, or when its
- * channel is marked. A lookup whose every tile has gone by the time its turn
- * comes makes no request. A failed lookup keeps nothing, so the next tile for
- * that video asks again.
+ * channel is marked. A lookup is taken back out of the queue when its last
+ * tile goes, and one whose tiles have all gone by its turn makes no request.
+ * A failed lookup keeps nothing, so the next tile for that video asks again,
+ * and so does an answer the label cannot be read from. A few failures in a
+ * row pause lookups for a while.
  *
  * @param {object} deps
  * @param {(videoId: string) => Promise<any>} deps.request
  * @param {{ get: (videoId: string) => ('ai' | 'not-ai' | undefined), set: (videoId: string, verdict: 'ai' | 'not-ai') => void }} deps.verdicts
  * @param {(job: { key: string, run: () => Promise<void>, dropped: () => void }) => void} deps.schedule
+ * @param {(key: string) => void} [deps.unschedule]
  * @param {(channelId: string) => boolean} deps.isChannelMarked
  * @param {() => boolean} [deps.enabled]
  * @param {(message: string, error: unknown) => void} [deps.onFailure]
+ * @param {() => number} [deps.now]
  */
-export function createAiLookup({ request, verdicts, schedule, isChannelMarked, enabled = () => true, onFailure = () => {} }) {
+export function createAiLookup({
+  request,
+  verdicts,
+  schedule,
+  unschedule = () => {},
+  isChannelMarked,
+  enabled = () => true,
+  onFailure = () => {},
+  now = () => Date.now(),
+}) {
   /**
    * How many tiles want each video's answer right now. A tile that unmounts
-   * stops wanting it; a lookup nobody wants when its turn comes is skipped.
+   * stops wanting it; a lookup nobody wants is taken out of the queue.
    * @type {Map<string, number>}
    */
   const wanted = new Map()
@@ -49,6 +74,19 @@ export function createAiLookup({ request, verdicts, schedule, isChannelMarked, e
    * @type {Set<string>}
    */
   const pending = new Set()
+
+  /**
+   * Videos whose lookup is running, which cannot be taken back.
+   * @type {Set<string>}
+   */
+  const running = new Set()
+
+  let failuresInARow = 0
+  let pausedUntil = 0
+
+  function paused() {
+    return now() < pausedUntil
+  }
 
   /**
    * @param {any} video
@@ -87,8 +125,31 @@ export function createAiLookup({ request, verdicts, schedule, isChannelMarked, e
 
     if (count > 0) {
       wanted.set(id, count)
+      return
+    }
+
+    wanted.delete(id)
+
+    // Nobody is waiting for it now: out of the queue, so it does not spend a
+    // turn ahead of lookups somebody is waiting for
+    if (pending.has(id) && !running.has(id)) {
+      unschedule(id)
+    }
+  }
+
+  /**
+   * @param {string} id
+   * @param {unknown} error
+   */
+  function failed(id, error) {
+    failuresInARow++
+
+    if (failuresInARow >= FAILURES_BEFORE_PAUSE) {
+      failuresInARow = 0
+      pausedUntil = now() + PAUSE_MS
+      onFailure(`AI label lookups failed ${FAILURES_BEFORE_PAUSE} times in a row; pausing them for ${PAUSE_MS / 60000} minutes`, error)
     } else {
-      wanted.delete(id)
+      onFailure(`AI label lookup for ${id} failed; it will be asked again`, error)
     }
   }
 
@@ -97,18 +158,27 @@ export function createAiLookup({ request, verdicts, schedule, isChannelMarked, e
    * @param {string | null} channelId
    */
   async function run(id, channelId) {
+    running.add(id)
+
     try {
-      // Gone from every wall, known by now (opening the video records it), or
-      // its channel marked since it was queued: there is nothing to ask
-      if (!wanted.has(id) || verdicts.get(id) !== undefined) { return }
+      // Gone from every wall, known by now (opening the video records it),
+      // its channel marked since it was queued, or lookups paused: there is
+      // nothing to ask
+      if (!wanted.has(id) || verdicts.get(id) !== undefined || paused()) { return }
       if (channelId !== null && isChannelMarked(channelId)) { return }
 
-      const response = await request(id)
+      const verdict = readAiLabel(await request(id))
 
-      verdicts.set(id, readAiLabel(response))
+      if (verdict === null) {
+        throw new Error('the answer has no description to read the label from')
+      }
+
+      failuresInARow = 0
+      verdicts.set(id, verdict)
     } catch (error) {
-      onFailure(`AI label lookup for ${id} failed; it will be asked again`, error)
+      failed(id, error)
     } finally {
+      running.delete(id)
       pending.delete(id)
     }
   }
@@ -124,7 +194,7 @@ export function createAiLookup({ request, verdicts, schedule, isChannelMarked, e
   function want(video) {
     const id = youtubeId(video)
 
-    if (id === null || verdicts.get(id) !== undefined || channelIsMarked(video) || !enabled()) {
+    if (id === null || verdicts.get(id) !== undefined || channelIsMarked(video) || !enabled() || paused()) {
       return () => {}
     }
 

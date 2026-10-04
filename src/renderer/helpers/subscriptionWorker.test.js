@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   cancelSubscriptionLane,
-  enqueueSubscriptionJob,
   enqueueSubscriptionJobs,
   LANE_ENRICHMENT,
+  removeSubscriptionJobs,
   resetSubscriptionWorkerForTests,
   setSubscriptionBudgetForTests,
   setSubscriptionWorkerDelayForTests
@@ -44,25 +44,30 @@ describe('the request manager, cancelling a lane', () => {
 
     running.finish()
   })
+})
 
-  it('settles a job awaited through enqueueSubscriptionJob when it is dropped, rather than never', async () => {
+describe('the request manager, taking jobs back out', () => {
+  it('takes out the queued jobs named, telling each, and leaves the rest and the running one', async () => {
     setSubscriptionWorkerDelayForTests(0)
-    setSubscriptionBudgetForTests(1)
+    setSubscriptionBudgetForTests(1, 10)
 
     const running = heldJob('running')
-    enqueueSubscriptionJobs(LANE_ENRICHMENT, [running.job])
+    const unwanted = heldJob('unwanted')
+    const wanted = heldJob('wanted')
+
+    enqueueSubscriptionJobs(LANE_ENRICHMENT, [running.job, unwanted.job, wanted.job])
     await vi.waitFor(() => expect(running.job.run).toHaveBeenCalled())
 
-    const dropped = vi.fn()
-    const run = vi.fn()
-    const settled = enqueueSubscriptionJob(LANE_ENRICHMENT, { key: 'waiting', run, dropped })
-
-    cancelSubscriptionLane(LANE_ENRICHMENT)
-
-    await expect(settled).resolves.toBeUndefined()
-    expect(dropped).toHaveBeenCalledTimes(1)
-    expect(run).not.toHaveBeenCalled()
+    expect(removeSubscriptionJobs(LANE_ENRICHMENT, ['unwanted', 'running', 'never queued'])).toBe(1)
+    expect(unwanted.job.dropped).toHaveBeenCalledTimes(1)
+    expect(running.job.dropped).not.toHaveBeenCalled()
 
     running.finish()
+    await vi.waitFor(() => expect(wanted.job.run).toHaveBeenCalled())
+    expect(unwanted.job.run).not.toHaveBeenCalled()
+
+    // Its key is free again
+    expect(enqueueSubscriptionJobs(LANE_ENRICHMENT, [heldJob('unwanted').job])).toBe(1)
+    wanted.finish()
   })
 })

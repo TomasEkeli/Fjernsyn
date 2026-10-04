@@ -20,6 +20,12 @@
  * `ytInitialData`, all carry the section; where in the panel it sits is not
  * relied on, only that it is in the engagement panels.
  *
+ * A response with no structured description at all has not said anything
+ * either way, and answers `null` rather than `not-ai`: an age gate, a
+ * sign-in wall or an experiment that drops the panel would otherwise unmark a
+ * video for good, as a verdict is never asked again. Every ordinary `/next`
+ * has the panel, whether or not the section is in it.
+ *
  * Pure, so that the watch view and the lookup read it the same way.
  */
 
@@ -37,6 +43,8 @@ export const AUTO_DUBBED_HELP_ANSWER = '15569972'
 
 const SECTION_KEY = 'howThisWasMadeSectionViewModel'
 
+const DESCRIPTION_KEY = 'structuredDescriptionContentRenderer'
+
 const AI_ANSWER_LINK = new RegExp(`/answer/${AI_HELP_ANSWER}(?!\\d)`)
 
 /**
@@ -49,19 +57,20 @@ const MAX_DEPTH = 12
 /**
  * @param {unknown} value
  * @param {number} depth
- * @param {(section: object) => boolean} test
- * @returns {boolean} whether any "How this was made" section passes
+ * @param {string} wantedKey
+ * @param {(found: object) => boolean} test
+ * @returns {boolean} whether anything under the key passes
  */
-function anySection(value, depth, test) {
+function anyUnder(value, depth, wantedKey, test) {
   if (depth > MAX_DEPTH || value === null || typeof value !== 'object') { return false }
 
   if (Array.isArray(value)) {
-    return value.some(item => anySection(item, depth + 1, test))
+    return value.some(item => anyUnder(item, depth + 1, wantedKey, test))
   }
 
   for (const [key, inner] of Object.entries(value)) {
-    if (key === SECTION_KEY && inner !== null && typeof inner === 'object' && test(inner)) { return true }
-    if (anySection(inner, depth + 1, test)) { return true }
+    if (key === wantedKey && inner !== null && typeof inner === 'object' && test(inner)) { return true }
+    if (anyUnder(inner, depth + 1, wantedKey, test)) { return true }
   }
 
   return false
@@ -82,14 +91,15 @@ function linksToAiAnswer(value) {
  * The verdict for a video, from its `/next` response.
  *
  * @param {any} nextResponse the raw `/next` JSON, any client
- * @returns {'ai' | 'not-ai'}
+ * @returns {'ai' | 'not-ai' | null} `null` when the response has no
+ *   structured description to read it from
  */
 export function readAiLabel(nextResponse) {
   const panels = nextResponse?.engagementPanels
 
-  if (!Array.isArray(panels)) { return VERDICT_NOT_AI }
+  if (!Array.isArray(panels) || !anyUnder(panels, 0, DESCRIPTION_KEY, () => true)) { return null }
 
-  return anySection(panels, 0, section => linksToAiAnswer(section.bodyText ?? section))
+  return anyUnder(panels, 0, SECTION_KEY, section => linksToAiAnswer(section.bodyText ?? section))
     ? VERDICT_AI
     : VERDICT_NOT_AI
 }

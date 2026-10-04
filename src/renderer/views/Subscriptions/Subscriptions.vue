@@ -42,7 +42,7 @@
       </div>
       <SubscriptionsUpcomingShelf
         v-if="anyFeedEnabled && !isLoading"
-        :entries="upcomingList"
+        :entries="upcomingShown"
       />
       <SubscriptionsTabUi
         v-if="anyFeedEnabled"
@@ -85,6 +85,7 @@ import {
   subscriptionFeedIsShown
 } from '../../helpers/subscriptionFeeds'
 import { setWatchedShown, watchedIsShown } from '../../helpers/watchedShown'
+import { withAiPreference } from '../../helpers/aiShown'
 
 import { KeyboardShortcuts } from '../../../constants'
 
@@ -228,6 +229,12 @@ const watchedShown = computed(() => watchedIsShown())
 function toggleWatched() {
   setWatchedShown(!watchedIsShown())
 }
+
+/**
+ * The shelf less what the AI pill hides, so that its count counts what it
+ * shows. The stream takes them out itself, before it pages.
+ */
+const upcomingShown = computed(() => withAiPreference(upcomingList.value))
 </script>
 
 <style scoped src="../../components/FtToggleChip/chipRow.css" />

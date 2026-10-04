@@ -6,10 +6,10 @@
       <h3>
         {{ $t("Up Next") }}
       </h3>
-      <AiChip v-if="showAiChip" />
+      <AiChip v-if="aiWall" />
     </div>
     <p
-      v-if="showAiChip && allHiddenAsAi(data)"
+      v-if="aiWall && allHiddenAsAi(data)"
       class="aiAllHidden"
     >
       {{ $t('AI Chip.All Hidden') }}
@@ -21,7 +21,7 @@
       appearance="recommendation"
       force-list-type="list"
       :use-channels-hidden-preference="true"
-      :look-up-ai-label="lookUpAiLabel"
+      :ai-wall="aiWall"
       @pause-player="pausePlayer"
     />
   </FtCard>
@@ -40,14 +40,10 @@ defineProps({
     type: Array,
     required: true
   },
-  // Fjernsyn: whether the cards ask whether their videos were made with AI
-  // (FtListVideo); the layer's watch view opts in, upstream's Watch does not
-  lookUpAiLabel: {
-    type: Boolean,
-    default: false
-  },
-  // Fjernsyn: the AI pill above the list, and saying so when it hides them all
-  showAiChip: {
+  // Fjernsyn: one of the walls the AI pill governs (FtElementList's
+  // `aiWall`), with the pill above the list. The layer's watch view opts
+  // in; upstream's Watch does not, and is as it was
+  aiWall: {
     type: Boolean,
     default: false
   }

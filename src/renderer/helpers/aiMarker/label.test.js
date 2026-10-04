@@ -32,17 +32,26 @@ describe('readAiLabel', () => {
     expect(readAiLabel(ordinary.answer)).toBe('not-ai')
   })
 
-  it('reads a response with no engagement panels as not-ai', () => {
+  it('reads nothing from a response with no engagement panels: it has said neither', () => {
     const { engagementPanels, ...withoutPanels } = structuredClone(madeWithAi.answer)
 
     expect(engagementPanels).not.toHaveLength(0)
-    expect(readAiLabel(withoutPanels)).toBe('not-ai')
+    expect(readAiLabel(withoutPanels)).toBeNull()
   })
 
-  it('reads anything that is not a response as not-ai', () => {
-    expect(readAiLabel(undefined)).toBe('not-ai')
-    expect(readAiLabel(null)).toBe('not-ai')
-    expect(readAiLabel({ engagementPanels: 'nonsense' })).toBe('not-ai')
+  it('reads nothing from panels without the structured description, where the section would be', () => {
+    const answer = structuredClone(ordinary.answer)
+    answer.engagementPanels = answer.engagementPanels
+      .filter(panel => panel.engagementPanelSectionListRenderer?.content?.structuredDescriptionContentRenderer === undefined)
+
+    expect(answer.engagementPanels).not.toHaveLength(0)
+    expect(readAiLabel(answer)).toBeNull()
+  })
+
+  it('reads nothing from anything that is not a response', () => {
+    expect(readAiLabel(undefined)).toBeNull()
+    expect(readAiLabel(null)).toBeNull()
+    expect(readAiLabel({ engagementPanels: 'nonsense' })).toBeNull()
   })
 
   it('does not take the "AI" words for the label: only the help answer counts', () => {

@@ -829,9 +829,10 @@ function buildSessionFromYtConfig(ytConfig, fetchFunc) {
  *     osVersion: string
  *   },
  *   adEndTimeUnixMs: number,
- *   aiVerdict: 'ai' | 'not-ai'
+ *   aiVerdict: 'ai' | 'not-ai' | null
  * }>} `aiVerdict` is YouTube's AI label, read from the `/next` response
- * already in hand, so the watch page records it without a request of its own
+ * already in hand, so the watch page records it without a request of its own;
+ * `null` when that response has no description to read it from
  */
 export async function getLocalVideoInfo(id, { reloadPlaybackContext } = {}) {
   let responseTime

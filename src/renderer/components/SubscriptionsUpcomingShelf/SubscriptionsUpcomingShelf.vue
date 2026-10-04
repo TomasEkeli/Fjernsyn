@@ -52,7 +52,7 @@
       class="shelfList"
       :data="entries"
       :use-channels-hidden-preference="false"
-      look-up-ai-label
+      ai-wall
     />
   </section>
 </template>

@@ -32,7 +32,7 @@
         :layout="layout"
         :show-grab-bar="showGrabBar && layout === 'grid'"
         :grab-bar-enabled="isDraggable && layout === 'grid'"
-        :look-up-ai-label="lookUpAiLabel"
+        :look-up-ai-label="aiWall"
         @move-video-up="moveVideoUp"
         @move-video-down="moveVideoDown"
         @move-video-to-the-top="moveVideoToTheTop"
@@ -176,8 +176,8 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-  /** Whether a video's card asks whether it was made with AI: see FtListVideo */
-  lookUpAiLabel: {
+  /** One of the walls the AI pill governs: see FtElementList */
+  aiWall: {
     type: Boolean,
     default: false,
   },
@@ -280,10 +280,10 @@ const showResult = computed(() => {
       return false
     }
 
-    // Made with AI while the AI pill hides it. Read on every wall, whether or
-    // not it looks up, and reactive to the verdicts, so a card already shown
-    // leaves when its verdict arrives
-    if (isHiddenAsAi(props.data)) {
+    // Made with AI while the AI pill hides it, on a wall the pill governs.
+    // Reactive to the verdicts, so a card already shown leaves when its
+    // verdict arrives
+    if (props.aiWall && isHiddenAsAi(props.data)) {
       return false
     }
   } else if (dataType === 'channel') {

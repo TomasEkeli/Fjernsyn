@@ -10,7 +10,8 @@ import {
   markChannelAi,
   markedAiChannels,
   setAiShown,
-  unmarkChannelAi
+  unmarkChannelAi,
+  withAiPreference
 } from './aiShown'
 
 vi.mock('../store/index', async () => {
@@ -98,6 +99,16 @@ describe('aiShown', () => {
     store.setGetter('getHideAiVideos', false)
 
     expect(allHiddenAsAi([declared, fromMarked])).toBe(false)
+  })
+
+  it('takes AI videos out of a list only while hidden, leaving the list itself while shown', () => {
+    const entries = [declared, notAi, unknown, fromMarked]
+
+    expect(withAiPreference(entries)).toBe(entries)
+
+    store.setGetter('getHideAiVideos', true)
+
+    expect(withAiPreference(entries)).toEqual([notAi, unknown])
   })
 
   it('marks and unmarks a channel in the setting, keeping its name', () => {

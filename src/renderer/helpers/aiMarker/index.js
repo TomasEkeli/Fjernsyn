@@ -1,6 +1,6 @@
 import store from '../../store/index'
 
-import { enqueueSubscriptionJobs, LANE_ENRICHMENT, promoteSubscriptionJobs } from '../subscriptionWorker'
+import { enqueueSubscriptionJobs, LANE_ENRICHMENT, promoteSubscriptionJobs, removeSubscriptionJobs } from '../subscriptionWorker'
 import { isChannelMarkedAi } from '../aiShown'
 import { createAiLookup } from './lookup'
 
@@ -14,6 +14,8 @@ import { createAiLookup } from './lookup'
  * the back-fill improves a feed that is already usable and may run for most
  * of an hour after a refresh, while a lookup is for a tile on screen now, and
  * behind six hundred channels it would answer long after anyone was looking.
+ * A lookup whose tiles have all gone is taken back out of the lane, so a page
+ * scrolled past or left does not hold up the next one's.
  */
 
 /** Keeps a lookup's key apart from the back-fill's, which shares the lane */
@@ -68,6 +70,11 @@ function schedule({ key, run, dropped }) {
   promoteSubscriptionJobs(LANE_ENRICHMENT, Array.from(queued))
 }
 
+/** @param {string} key */
+function unschedule(key) {
+  removeSubscriptionJobs(LANE_ENRICHMENT, [KEY_PREFIX + key])
+}
+
 const lookup = createAiLookup({
   request: requestWatchNext,
   verdicts: {
@@ -81,6 +88,7 @@ const lookup = createAiLookup({
     },
   },
   schedule,
+  unschedule,
   isChannelMarked: isChannelMarkedAi,
   // Local only: YouTube is asked from the user's own address, which is the
   // backend that already does so. The web build has no Local API at all

@@ -157,7 +157,7 @@
           </header>
           <FtElementList
             :data="sectionOf(platform).items"
-            look-up-ai-label
+            ai-wall
           />
           <p
             v-if="allHiddenAsAi(sectionOf(platform).items)"
@@ -194,7 +194,7 @@
             />
           </div>
           <FtAutoLoadNextPageWrapper
-            v-else-if="hasMore(platform) && !isAll && !autoLoadPaused(platform) && !allHiddenAsAi(sectionOf(platform).items)"
+            v-else-if="hasMore(platform) && !isAll && !autoLoadPaused(platform)"
             @load-next-page="load(platform)"
           >
             <div
@@ -501,7 +501,11 @@ function takePage(section, page, isNext) {
   section.cursor = page.cursor ?? null
   section.applied = Array.isArray(page.applied) ? page.applied : null
   section.loaded = true
-  section.emptyPagesInARow = page.items.length === 0 ? section.emptyPagesInARow + 1 : 0
+  // A page the AI pill hides whole is as empty as one with nothing in it, as
+  // far as loading the next by itself goes: nothing of it pushes the end of
+  // the list off the screen
+  const shownNothing = page.items.length === 0 || allHiddenAsAi(page.items)
+  section.emptyPagesInARow = shownNothing ? section.emptyPagesInARow + 1 : 0
 }
 
 /**

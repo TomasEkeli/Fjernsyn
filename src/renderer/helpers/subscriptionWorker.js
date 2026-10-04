@@ -321,15 +321,6 @@ export function enqueueSubscriptionJob(lane, job) {
         } finally {
           resolve()
         }
-      },
-      // Cancelled before its turn: it will not run, and waiting on it would
-      // be waiting forever
-      dropped: () => {
-        try {
-          job.dropped?.()
-        } finally {
-          resolve()
-        }
       }
     }])
 
@@ -363,6 +354,45 @@ export function promoteSubscriptionJobs(lane, keys) {
   queues[lane] = promoted.concat(queues[lane].filter(job => !wanted.has(job.key)))
 
   return promoted.length
+}
+
+/**
+ * Take jobs still queued out of their lane, by key, telling each it will not
+ * run. Jobs already in flight, and keys not queued, are left alone.
+ *
+ * For work whose reason to exist can go away while it waits, such as an AI
+ * label lookup for a tile that has scrolled off: a job that would only find
+ * out in its turn that there is nothing to do would still spend that turn's
+ * share of the budget and the lane's gap, ahead of jobs that are wanted.
+ *
+ * @param {string} lane
+ * @param {string[]} keys
+ * @returns {number} how many were taken out
+ */
+export function removeSubscriptionJobs(lane, keys) {
+  const removing = new Set(keys)
+  const removed = queues[lane].filter(job => removing.has(job.key))
+
+  if (removed.length === 0) { return 0 }
+
+  queues[lane] = queues[lane].filter(job => !removing.has(job.key))
+
+  for (const job of removed) {
+    claimed[lane].delete(job.key)
+  }
+
+  syncCounts()
+  signal()
+
+  for (const job of removed) {
+    try {
+      job.dropped?.()
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  return removed.length
 }
 
 /**
