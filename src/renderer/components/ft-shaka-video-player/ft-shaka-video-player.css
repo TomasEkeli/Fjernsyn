@@ -78,7 +78,10 @@
   font-size: 1.1em;
   background-color: rgb(0 0 0 / 60%);
   color: #fff;
-  width: 85px;
+
+  /* as wide as a volume or a speed, and wider for a message that needs it */
+  min-width: 85px;
+  width: max-content;
   display: flex;
   align-items: center;
   justify-content: center;
