@@ -437,6 +437,14 @@ export default {
   },
 
   /**
+   * @param {number} action
+   * @param {any} [data]
+   */
+  dbLater: (action, data) => {
+    return ipcRenderer.invoke(IpcChannels.DB_LATER, data ? { action, data } : { action })
+  },
+
+  /**
    * @param {(route: string) => void} handler
    */
   handleChangeView: (handler) => {
@@ -536,5 +544,14 @@ export default {
     ipcRenderer.on(IpcChannels.SYNC_CHANNELS, (_, { event, data }) => {
       handler(event, data)
     })
-  }
+  },
+
+  /**
+   * @param {(event: number, data: any) => void} handler
+   */
+  handleSyncLater: (handler) => {
+    ipcRenderer.on(IpcChannels.SYNC_LATER, (_, { event, data }) => {
+      handler(event, data)
+    })
+  },
 }

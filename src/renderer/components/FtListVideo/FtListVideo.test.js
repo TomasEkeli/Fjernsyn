@@ -44,6 +44,8 @@ const SETTINGS = vi.hoisted(() => ({
   getAiVerdicts: {},
   getAiChannels: '[]',
   getHideAiVideos: false,
+  getIsInLater: () => false,
+  getIsArmed: () => false,
 }))
 
 vi.mock('../../store/index', async () => {
@@ -599,5 +601,77 @@ describe('FtListVideo, the AI marker', () => {
     expect(aiMarker(wrapper)).toBeUndefined()
     expect(optionValues(wrapper)).not.toContain('markChannelAi')
     expect(optionValues(wrapper)).not.toContain('unmarkChannelAi')
+  })
+})
+
+describe('FtListVideo, the Later buttons', () => {
+  const NOW = Date.parse('2026-10-04T12:00:00Z')
+  const UPCOMING = { ...YOUTUBE_VIDEO, isUpcoming: true, premiereDate: new Date(NOW + 60 * 60 * 1000) }
+
+  beforeEach(() => {
+    vi.spyOn(Date, 'now').mockReturnValue(NOW)
+    store.dispatched.length = 0
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  /** @param {import('@vue/test-utils').VueWrapper} wrapper */
+  function button(wrapper, className) {
+    return wrapper.findAllComponents(FtIconButton).find(b => b.classes(className))
+  }
+
+  it('shows the clock on a YouTube card, and adds the video to Later', async () => {
+    const { wrapper } = await mountCard(YOUTUBE_VIDEO)
+
+    button(wrapper, 'laterIcon').vm.$emit('click')
+
+    expect(store.dispatched).toEqual([{ type: 'addToLater', payload: expect.objectContaining({ videoId: YOUTUBE_ID, title: 'Never Gonna Give You Up' }) }])
+    expect(button(wrapper, 'armIcon')).toBeUndefined()
+  })
+
+  it('removes a video already there', async () => {
+    store.setGetter('getIsInLater', () => true)
+    const { wrapper } = await mountCard(YOUTUBE_VIDEO)
+
+    button(wrapper, 'laterIcon').vm.$emit('click')
+
+    expect(store.dispatched).toEqual([{ type: 'removeFromLater', payload: YOUTUBE_ID }])
+  })
+
+  it('offers to arm an upcoming card whose time is ahead, for its stated time', async () => {
+    const { wrapper } = await mountCard(UPCOMING)
+
+    button(wrapper, 'armIcon').vm.$emit('click')
+
+    expect(store.dispatched).toEqual([{ type: 'arm', payload: { video: expect.objectContaining({ videoId: YOUTUBE_ID }), at: NOW + 60 * 60 * 1000 } }])
+  })
+
+  it('does not offer to arm one whose time has passed, unless it is armed', async () => {
+    const past = { ...UPCOMING, premiereDate: new Date(NOW - 1000) }
+    expect(button((await mountCard(past)).wrapper, 'armIcon')).toBeUndefined()
+
+    store.setGetter('getIsArmed', () => true)
+    const { wrapper } = await mountCard(past)
+    button(wrapper, 'armIcon').vm.$emit('click')
+    expect(store.dispatched).toEqual([{ type: 'disarm', payload: YOUTUBE_ID }])
+  })
+
+  it('shows neither on the Later page, nor on a PeerTube card', async () => {
+    const later = (await mountCard(UPCOMING, { laterRow: true })).wrapper
+    expect(button(later, 'laterIcon')).toBeUndefined()
+    expect(button(later, 'armIcon')).toBeUndefined()
+
+    expect(button((await mountCard(PEERTUBE_VIDEO)).wrapper, 'laterIcon')).toBeUndefined()
+  })
+
+  it('gives the Later page its move and remove buttons, with no playlist in the link', async () => {
+    const { wrapper } = await mountCard(YOUTUBE_VIDEO, { laterRow: true, canMoveVideoUp: true, canRemoveFromPlaylist: true, playlistItemId: YOUTUBE_ID })
+
+    expect(button(wrapper, 'upArrowIcon')).toBeDefined()
+    button(wrapper, 'trashIcon').vm.$emit('click')
+    expect(wrapper.emitted('remove-from-playlist')).toEqual([[YOUTUBE_ID, YOUTUBE_ID]])
+    expect(wrapper.find('a.thumbnailLink').attributes('href')).not.toContain('playlist')
   })
 })

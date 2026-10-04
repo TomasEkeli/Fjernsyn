@@ -46,3 +46,6 @@ export const channels = createDatastore('channels')
 // Whether YouTube labels each video "Made with AI", by video id, as the AI
 // lookup and the watch page found out: kept for good, so nothing clears it
 export const aiVerdicts = createDatastore('ai-verdicts')
+// The Later list, one record per video, by the video's ref: what to watch
+// later, in an order of its own, and which upcoming events are armed
+export const later = createDatastore('later')

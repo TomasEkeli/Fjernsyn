@@ -33,6 +33,7 @@
         :show-grab-bar="showGrabBar && layout === 'grid'"
         :grab-bar-enabled="isDraggable && layout === 'grid'"
         :look-up-ai-label="aiWall"
+        :later-row="laterRow"
         @move-video-up="moveVideoUp"
         @move-video-down="moveVideoDown"
         @move-video-to-the-top="moveVideoToTheTop"
@@ -181,6 +182,11 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /** A row of the Later page: see FtListVideo */
+  laterRow: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits([
@@ -194,7 +200,7 @@ const emit = defineEmits([
   'drag-video-end'
 ])
 
-const inUserPlaylist = props.playlistType === 'user'
+const inUserPlaylist = props.playlistType === 'user' || props.laterRow
 const showGrabBar = computed(() => inUserPlaylist && props.videoDraggingPossible)
 const isDraggable = computed(() => showGrabBar.value && (props.canMoveVideoUp || props.canMoveVideoDown))
 const { dragVideo, moveDraggedVideo, afterDrag } = handleDragAndDrop(emit)

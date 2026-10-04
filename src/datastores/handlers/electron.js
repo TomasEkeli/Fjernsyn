@@ -251,6 +251,32 @@ class AiVerdicts {
   }
 }
 
+class Later {
+  static find() {
+    return window.ftElectron.dbLater(DBActions.GENERAL.FIND)
+  }
+
+  static upsert(item) {
+    return window.ftElectron.dbLater(DBActions.GENERAL.UPSERT, item)
+  }
+
+  static updatePosition(_id, position) {
+    return window.ftElectron.dbLater(DBActions.LATER.UPDATE_POSITION, { _id, position })
+  }
+
+  static updateAlarm(_id, alarm) {
+    return window.ftElectron.dbLater(DBActions.LATER.UPDATE_ALARM, { _id, alarm })
+  }
+
+  static delete(_id) {
+    return window.ftElectron.dbLater(DBActions.GENERAL.DELETE, _id)
+  }
+
+  static deleteAll() {
+    return window.ftElectron.dbLater(DBActions.GENERAL.DELETE_ALL)
+  }
+}
+
 export {
   Settings as settings,
   History as history,
@@ -260,4 +286,5 @@ export {
   SubscriptionCache as subscriptionCache,
   Channels as channels,
   AiVerdicts as aiVerdicts,
+  Later as later,
 }

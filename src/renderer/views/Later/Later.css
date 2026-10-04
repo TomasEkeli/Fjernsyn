@@ -1,0 +1,62 @@
+.card {
+  inline-size: 85%;
+  margin-block: 0 20px;
+  margin-inline: auto;
+}
+
+.card:last-child {
+  margin-block-end: 60px;
+}
+
+.headingIcon {
+  color: var(--primary-color);
+}
+
+.message {
+  color: var(--tertiary-text-color);
+}
+
+.laterItems {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* As the Playlist view's rows: the number beside the card */
+.laterItem {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  column-gap: 8px;
+  align-items: center;
+}
+
+.laterItem-move,
+.laterItem-enter-active,
+.laterItem-leave-active {
+  transition: all 0.2s ease;
+}
+
+/* The row's buttons are hidden while it moves, and its link is not clicked */
+.laterItem-move :deep(.playlistIcons),
+.laterItem-enter-active :deep(.playlistIcons),
+.laterItem-leave-active :deep(.playlistIcons) {
+  display: none;
+}
+
+.laterItem-move :deep(.thumbnailLink),
+.laterItem-enter-active :deep(.thumbnailLink),
+.laterItem-leave-active :deep(.thumbnailLink) {
+  pointer-events: none;
+}
+
+.laterItem-enter-from,
+.laterItem-leave-to {
+  opacity: 0;
+  transform: translate(calc(10% * var(--horizontal-directionality-coefficient)));
+}
+
+@media only screen and (width <= 680px) {
+  .card {
+    inline-size: 90%;
+  }
+}

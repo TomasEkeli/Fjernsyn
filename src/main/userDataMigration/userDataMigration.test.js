@@ -27,6 +27,7 @@ function populateOldFolder(fs) {
   fs.file(`${OLD}/search-history.db`, 'search history')
   fs.file(`${OLD}/subscription-cache.db`, 'subscription cache')
   fs.file(`${OLD}/channels.db`, 'channels')
+  fs.file(`${OLD}/later.db`, 'later')
   fs.file(`${OLD}/bin/yt-dlp`, 'yt-dlp binary', 0o755)
   fs.file(`${OLD}/bin/ffmpeg`, 'ffmpeg binary', 0o755)
   fs.file(`${OLD}/experiment-replace-http-cache`)
@@ -45,7 +46,7 @@ function populateOldFolder(fs) {
  * @param {ReturnType<typeof createMemoryFileSystem>} fs
  */
 function openEmptyDatabases(fs) {
-  for (const name of ['settings', 'profiles', 'playlists', 'history', 'search-history', 'subscription-cache', 'channels']) {
+  for (const name of ['settings', 'profiles', 'playlists', 'history', 'search-history', 'subscription-cache', 'channels', 'later']) {
     fs.file(`${NEW}/${name}.db`, '')
   }
 }
@@ -104,6 +105,7 @@ describe('user data migration', () => {
       'experiment-disable-hardware-acceleration',
       'experiment-replace-http-cache',
       'history.db',
+      'later.db',
       'playlists.db',
       'profiles.db',
       'search-history.db',
@@ -328,7 +330,7 @@ describe('user data migration', () => {
 
       expect(result.outcome).toBe('copied')
       expect(databaseNames(fs.snapshot(NEW))).toEqual([
-        'channels.db', 'history.db', 'playlists.db', 'profiles.db', 'search-history.db', 'settings.db', 'subscription-cache.db',
+        'channels.db', 'history.db', 'later.db', 'playlists.db', 'profiles.db', 'search-history.db', 'settings.db', 'subscription-cache.db',
       ])
       expect(fs.snapshot(NEW)['.migration-incomplete']).toBeUndefined()
       expect(fs.snapshot(NEW)['.migration-lock']).toBeUndefined()

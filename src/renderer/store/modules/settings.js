@@ -790,6 +790,33 @@ const customActions = {
         }
       })
 
+      window.ftElectron.handleSyncLater((event, data) => {
+        switch (event) {
+          case SyncEvents.GENERAL.UPSERT:
+            commit('upsertLaterItem', data)
+            break
+
+          case SyncEvents.LATER.UPDATE_POSITION:
+            commit('setLaterPosition', data)
+            break
+
+          case SyncEvents.LATER.UPDATE_ALARM:
+            commit('setLaterAlarm', data)
+            break
+
+          case SyncEvents.GENERAL.DELETE:
+            commit('removeLaterItem', data)
+            break
+
+          case SyncEvents.GENERAL.DELETE_ALL:
+            commit('setLaterItems', {})
+            break
+
+          default:
+            console.error('later: invalid sync event received')
+        }
+      })
+
       window.ftElectron.handleSyncSubscriptionCache((event, data) => {
         switch (event) {
           case SyncEvents.SUBSCRIPTION_CACHE.UPDATE_VIDEOS_BY_CHANNEL:

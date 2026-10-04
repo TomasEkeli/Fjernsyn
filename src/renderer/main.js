@@ -31,6 +31,8 @@ import {
   faBarsProgress,
   faBorderAll,
   faBookmark,
+  faCalendarCheck,
+  faCalendarPlus,
   faCheck,
   faChevronRight,
   faCircleExclamation,
@@ -133,6 +135,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faBookmark as farBookmark,
+  faCalendarPlus as farCalendarPlus,
+  faClock as farClock,
   faDotCircle as farDotCircle
 } from '@fortawesome/free-regular-svg-icons'
 import {
@@ -161,6 +165,8 @@ library.add(
   faBarsProgress,
   faBorderAll,
   faBookmark,
+  faCalendarCheck,
+  faCalendarPlus,
   faCheck,
   faChevronRight,
   faCircleExclamation,
@@ -263,6 +269,8 @@ library.add(
 
   // solid icons
   farBookmark,
+  farCalendarPlus,
+  farClock,
   farDotCircle,
 
   // brand icons
