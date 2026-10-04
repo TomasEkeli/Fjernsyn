@@ -22,11 +22,16 @@ vi.mock('../../i18n/index', () => ({ default: { global: { t: key => key } } }))
 const NOW = Date.parse('2026-10-04T12:00:00Z')
 
 function freshState() {
-  return { laterItems: {}, laterReady: false }
+  return { laterItems: {}, laterReady: false, laterPlayersMounted: 0, laterNotices: [], laterCountdown: null, laterFiredVideoId: null }
 }
 
 function contextFor(state) {
-  return { state, commit: (type, payload) => later.mutations[type](state, payload) }
+  const context = {
+    state,
+    commit: (type, payload) => later.mutations[type](state, payload),
+    dispatch: (type, payload) => later.actions[type](context, payload),
+  }
+  return context
 }
 
 function video(videoId, extra = {}) {
@@ -168,5 +173,67 @@ describe('the Later store', () => {
 
     expect(result).toEqual({ added: 2, failed: 0 })
     expect(queuedIds(state)).toEqual(['x', 'y', 'there'])
+  })
+
+  describe('firing', () => {
+    async function armed(context, id, at) {
+      await later.actions.arm(context, { video: video(id), at })
+      return context.state.laterItems[id]
+    }
+
+    it('stacks the notices on the player soonest first', async () => {
+      const state = freshState()
+      const context = contextFor(state)
+      const late = await armed(context, 'late', NOW + 2000)
+      const soon = await armed(context, 'soon', NOW + 1000)
+
+      context.commit('addLaterNotice', late)
+      context.commit('addLaterNotice', soon)
+      context.commit('addLaterNotice', soon)
+
+      expect(later.getters.getLaterNotices(state).map(i => i._id)).toEqual(['soon', 'late'])
+    })
+
+    it('takes an item gone to off the list, and its notice with it', async () => {
+      const state = freshState()
+      const context = contextFor(state)
+      context.commit('addLaterNotice', await armed(context, 'a', NOW))
+
+      await later.actions.laterWatchNow(context, 'a')
+
+      expect(state.laterNotices).toEqual([])
+      expect(later.getters.getIsInLater(state)('a')).toBe(false)
+    })
+
+    it('leaves a refused item at the top, disarmed, and ends its countdown', async () => {
+      const state = freshState()
+      const context = contextFor(state)
+      await later.actions.addToLater(context, video('q'))
+      context.commit('setLaterCountdown', await armed(context, 'a', NOW))
+
+      await later.actions.laterRefuse(context, 'a')
+
+      expect(state.laterCountdown).toBeNull()
+      expect(queuedIds(state)).toEqual(['a', 'q'])
+    })
+
+    it('dismisses the notices when the last player goes', async () => {
+      const state = freshState()
+      const context = contextFor(state)
+      context.commit('addLaterNotice', await armed(context, 'a', NOW))
+
+      later.actions.laterPlayerMounted(context)
+      later.actions.laterPlayerMounted(context)
+      expect(later.getters.getLaterPlayerMounted(state)).toBe(true)
+
+      await later.actions.laterPlayerUnmounted(context)
+      expect(state.laterNotices.length).toBe(1)
+
+      await later.actions.laterPlayerUnmounted(context)
+      expect(later.getters.getLaterPlayerMounted(state)).toBe(false)
+      expect(state.laterNotices).toEqual([])
+      expect(armedIds(state)).toEqual([])
+      expect(queuedIds(state)).toEqual(['a'])
+    })
   })
 })

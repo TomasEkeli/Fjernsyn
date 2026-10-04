@@ -1824,6 +1824,18 @@ watch(
   }
 )
 
+// An armed Later item gone live while its own page is open: the page
+// reloads into the stream, as if newly opened. Told through the store, so
+// that the scheduler does not reach into the view
+watch(() => store.getters.getLaterFiredVideoId, (videoId) => {
+  if (videoId == null || videoId !== route.params.id || !rendersThisView(route)) {
+    return
+  }
+
+  store.commit('setLaterFiredVideoId', null)
+  load()
+})
+
 onMounted(() => {
   window.addEventListener('beforeunload', handleWatchProgressAutoSave)
   document.addEventListener('keydown', resetAutoplayInterruptionTimeout)

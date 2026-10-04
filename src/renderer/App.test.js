@@ -18,6 +18,8 @@ vi.mock('./store/index', async () => {
     default: createFakeStore({
       getters: {
         getDefaultInvidiousInstance: 'https://inv.example',
+        getLaterNotices: [],
+        getLaterCountdown: null,
       },
     }),
   }
@@ -50,6 +52,7 @@ vi.mock('./components/FtPlaylistAddVideoPrompt/FtPlaylistAddVideoPrompt.vue', ()
 vi.mock('./components/FtCreatePlaylistPrompt/FtCreatePlaylistPrompt.vue', () => stub('FtCreatePlaylistPrompt'))
 vi.mock('./components/FtKeyboardShortcutPrompt/FtKeyboardShortcutPrompt.vue', () => stub('FtKeyboardShortcutPrompt'))
 vi.mock('./components/FtSearchFilters/FtSearchFilters.vue', () => stub('FtSearchFilters'))
+vi.mock('./components/LaterCountdown/LaterCountdown.vue', () => stub('LaterCountdown'))
 
 /** @type {((url: string) => unknown) | null} */
 let openUrlHandler = null
@@ -79,6 +82,10 @@ beforeEach(() => {
   openUrlHandler = null
   window.ftElectron = {
     handleOpenUrl: vi.fn((handler) => { openUrlHandler = handler }),
+    // The Later list's: a second window, so that nothing is taken over or checked
+    isMainWindow: vi.fn(async () => false),
+    handleMainWindowChanged: vi.fn(),
+    handleOpenLaterItem: vi.fn(),
   }
   window.matchMedia ??= () => ({ matches: false })
   store.dispatched.length = 0
