@@ -242,6 +242,7 @@
           v-if="recommendationsShown"
           :data="recommendedVideos"
           class="watchVideoSidebar"
+          look-up-ai-label
           @pause-player="pausePlayer"
         />
       </template>

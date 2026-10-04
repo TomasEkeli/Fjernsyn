@@ -49,6 +49,7 @@
       v-if="!isLoading && activeVideoList.length > 0"
       :data="activeVideoList"
       :use-channels-hidden-preference="false"
+      look-up-ai-label
     />
     <FtAutoLoadNextPageWrapper
       v-if="!isLoading && filteredVideoList.length > dataLimit"

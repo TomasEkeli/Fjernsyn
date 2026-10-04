@@ -14,6 +14,7 @@
       appearance="recommendation"
       force-list-type="list"
       :use-channels-hidden-preference="true"
+      :look-up-ai-label="lookUpAiLabel"
       @pause-player="pausePlayer"
     />
   </FtCard>
@@ -28,6 +29,12 @@ defineProps({
   data: {
     type: Array,
     required: true
+  },
+  // Fjernsyn: whether the cards ask whether their videos were made with AI
+  // (FtListVideo); the layer's watch view opts in, upstream's Watch does not
+  lookUpAiLabel: {
+    type: Boolean,
+    default: false
   }
 })
 

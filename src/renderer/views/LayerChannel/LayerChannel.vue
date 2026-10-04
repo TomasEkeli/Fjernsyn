@@ -235,6 +235,7 @@
               :data="currentItems"
               :use-channels-hidden-preference="false"
               :display="currentTabInfo.posts ? 'list' : ''"
+              look-up-ai-label
             />
             <p
               v-if="isFinishedAndEmpty(currentList, currentItems)"
