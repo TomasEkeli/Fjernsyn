@@ -1580,7 +1580,7 @@ const armableAt = computed(() => {
 
 // On the Later page too, so that a queued item can be armed (a mis-click on
 // the clock is undone in one more click), but not on its armed rows, which
-// have Don't start it beside them
+// have Move to Watch later instead beside them, in the schedule
 const showArmButton = computed(() => {
   if (platformCard.value) { return false }
   if (props.laterRow && isArmed.value) { return false }
