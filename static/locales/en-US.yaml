@@ -464,8 +464,6 @@ Later:
     Ago: '{duration} ago'
     Now: now
   Next: 'next {distance}'
-  Show more: Show {count} more
-  Show fewer: Show fewer
   No queued: Nothing to watch later. Add videos with their clock button.
   Live now: 'Live now: {channel}'
   Watch now: Watch now

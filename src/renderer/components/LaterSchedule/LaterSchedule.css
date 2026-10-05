@@ -1,36 +1,33 @@
 /*
- * Set apart from the queue under it as the Subscriptions shelf is from the
- * stream: a tint and no colour of its own, since it is not what the page is
- * for. The one thing that stands out is how far off each item is.
+ * A pill on the heading's line, and a panel over the queue when it is opened.
+ * Neither takes room from the queue: the pill sits where the heading leaves
+ * space anyway, and the panel is an overlay. The one thing that stands out in
+ * either is how far off things are.
  */
 
 .laterSchedule {
-  background-color: var(--secondary-card-bg-color);
-  border-radius: 8px;
-  padding-block: 4px;
-  padding-inline: 8px;
+  position: relative;
 }
 
-/* The whole line is the control, as on the Subscriptions shelf */
-.scheduleHeader {
+.schedulePill {
   align-items: center;
-  background: none;
+  background-color: var(--secondary-card-bg-color);
   border: 0;
+  border-radius: 16px;
   color: var(--secondary-text-color);
   cursor: pointer;
   display: flex;
-  flex-wrap: wrap;
   font-family: inherit;
   font-size: 0.95rem;
   font-weight: 500;
-  gap: 6px 10px;
-  inline-size: 100%;
-  padding-block: 10px;
-  padding-inline: 4px;
-  text-align: start;
+  gap: 8px;
+  padding-block: 6px;
+  padding-inline: 12px;
+  white-space: nowrap;
 }
 
-.scheduleHeader:hover {
+.schedulePill:hover,
+.schedulePill[aria-expanded='true'] {
   color: var(--primary-text-color);
 }
 
@@ -45,54 +42,79 @@
 }
 
 .scheduleCount {
-  background-color: var(--card-bg-color);
-  border-radius: 10px;
-  font-size: 0.85em;
-  padding-block: 1px;
-  padding-inline: 7px;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Folded, the answer to the glance, in the same weight as the open rows give it */
+/* The answer to the glance, in the weight the rows give it */
 .scheduleNext {
-  align-items: center;
   color: var(--primary-text-color);
-  display: inline-flex;
   font-weight: bold;
-  gap: 8px;
 }
 
-/* Pushes the chevron to the far end, wherever that is in this writing mode */
-.scheduleChevron {
-  margin-inline-start: auto;
+.schedulePanel {
+  background-color: var(--card-bg-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 30%);
+  box-sizing: border-box;
+  inline-size: min(440px, calc(100vw - 32px));
+  inset-block-start: calc(100% + 6px);
+  inset-inline-end: 0;
+  max-block-size: 70vh;
+  overflow-y: auto;
+  padding-block: 4px;
+  padding-inline: 12px;
+  position: absolute;
+
+  /* Over the queue's cards, under the top bar (4) when scrolled beneath it */
+  z-index: 3;
+}
+
+/* In from the right, or from the left where the page reads that way */
+.schedulePanel-enter-active,
+.schedulePanel-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.schedulePanel-enter-from,
+.schedulePanel-leave-to {
+  opacity: 0;
+  transform: translateX(calc(24px * var(--horizontal-directionality-coefficient)));
 }
 
 /*
  * One grid for every row, so that the distances line up in a column of their
- * own and are read down it, as a timetable's times are.
+ * own and are read down it, as a timetable's times are. Each row is two
+ * lines: how far off and what, then whose, its state and when exactly.
  */
 .scheduleRows {
+  column-gap: 12px;
   display: grid;
-  grid-template-columns: max-content minmax(0, 1fr) max-content max-content;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
   list-style: none;
   margin: 0;
-  padding-block: 0 4px;
-  padding-inline: 4px;
+  padding: 0;
 }
 
 .scheduleRow {
   align-items: center;
-  border-block-start: 1px solid var(--scrollbar-color);
-  column-gap: 16px;
   display: grid;
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
-  min-block-size: 36px;
+  grid-template-rows: auto auto;
+  padding-block: 8px;
+  row-gap: 2px;
+}
+
+.scheduleRow + .scheduleRow {
+  border-block-start: 1px solid var(--scrollbar-color);
 }
 
 .scheduleDistance {
   font-size: 1.05rem;
-  font-weight: bold;
   font-variant-numeric: tabular-nums;
+  font-weight: bold;
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .scheduleRow.didNotStart .scheduleDistance {
@@ -100,33 +122,33 @@
   font-weight: normal;
 }
 
-.scheduleWhat {
-  display: flex;
-  gap: 6px;
-  min-inline-size: 0;
-}
-
 .scheduleVideo {
   color: var(--primary-text-color);
-  flex-shrink: 1;
-  min-inline-size: 0;
+  grid-column: 2;
+  grid-row: 1;
   overflow: hidden;
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.scheduleChannel {
-  color: var(--secondary-text-color);
-  flex-shrink: 0;
-  white-space: nowrap;
+.scheduleMeta {
+  align-items: center;
+  color: var(--tertiary-text-color);
+  display: flex;
+  font-size: 0.85em;
+  gap: 8px;
+  grid-column: 2;
+  grid-row: 2;
+  min-inline-size: 0;
 }
 
-/* The separator, kept out of the link's underline and out of the text read aloud */
-.scheduleChannel::before {
-  content: '·' / '';
-  display: inline-block;
-  margin-inline-end: 6px;
+.scheduleChannel {
+  color: var(--secondary-text-color);
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .scheduleChannelLink {
@@ -138,23 +160,17 @@
   text-decoration: underline;
 }
 
-.scheduleWhen {
-  align-items: center;
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
 .scheduleAt {
-  color: var(--tertiary-text-color);
-  font-size: 0.85em;
+  flex-shrink: 0;
   font-variant-numeric: tabular-nums;
+  margin-inline-start: auto;
 }
 
 .scheduleState {
-  background-color: var(--card-bg-color);
+  background-color: var(--secondary-card-bg-color);
   border-radius: 10px;
   color: var(--secondary-text-color);
+  flex-shrink: 0;
   font-size: 0.8rem;
   font-weight: normal;
   padding-block: 1px;
@@ -178,42 +194,6 @@
 .scheduleActions {
   display: flex;
   gap: 2px;
-}
-
-.scheduleMore {
-  background: none;
-  border: 0;
-  color: var(--primary-color);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 0.9rem;
-  padding-block: 4px 8px;
-  padding-inline: 4px;
-}
-
-.scheduleMore:hover {
-  text-decoration: underline;
-}
-
-/*
- * Narrow, the title gets a line of its own under the distance, rather than
- * being squeezed to nothing between the columns.
- */
-@media only screen and (width <= 680px) {
-  .scheduleRows {
-    grid-template-columns: minmax(0, 1fr) max-content max-content;
-  }
-
-  .scheduleRow {
-    grid-template-areas:
-      'distance when actions'
-      'what what what';
-    padding-block: 4px;
-    row-gap: 2px;
-  }
-
-  .scheduleDistance { grid-area: distance; }
-  .scheduleWhat { grid-area: what; }
-  .scheduleWhen { grid-area: when; }
-  .scheduleActions { grid-area: actions; }
+  grid-column: 3;
+  grid-row: 1 / span 2;
 }

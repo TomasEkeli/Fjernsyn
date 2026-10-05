@@ -18,8 +18,11 @@ import { createTestI18n } from './i18n'
  * @param {Record<string, any>} [options.props]
  * @param {Record<string, any>} [options.stubs] as for `@vue/test-utils`' `global.stubs`
  * @param {Record<string, any>} [options.attrs]
+ * @param {Element | string} [options.attachTo] for a component that listens on
+ *   the document, so that events from inside it reach the document; unmount
+ *   it after the test
  */
-export function mountWithApp(component, { store, router, i18n, provide, props, stubs, attrs } = {}) {
+export function mountWithApp(component, { store, router, i18n, provide, props, stubs, attrs, attachTo } = {}) {
   const plugins = [i18n ?? createTestI18n()]
 
   if (store) {
@@ -33,6 +36,7 @@ export function mountWithApp(component, { store, router, i18n, provide, props, s
   return mount(component, {
     props,
     attrs,
+    attachTo,
     global: {
       plugins,
       provide,

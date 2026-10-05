@@ -1,5 +1,4 @@
-.card,
-.schedule {
+.card {
   inline-size: 85%;
   margin-block: 0 20px;
   margin-inline: auto;
@@ -9,16 +8,10 @@
   margin-block-end: 60px;
 }
 
-/* Over the card, apart from it, as the Subscriptions shelf is over its stream */
-.schedule {
-  box-sizing: border-box;
-  margin-block: 12px;
-}
-
 /*
   On a wall the Watch later grid runs edge to edge (wall.css); an empty Watch
   later goes as wide, so the page is one width. What is in it takes the
-  wall's edge as its margin, as on the wall, and so does the schedule.
+  wall's edge as its margin, as on the wall.
  */
 .laterPage.grid .card {
   inline-size: 100%;
@@ -30,9 +23,13 @@
   margin-inline: var(--ft-wall-edge);
 }
 
-.laterPage.grid .schedule {
-  inline-size: auto;
-  margin-inline: var(--ft-wall-edge);
+/* The heading, and the schedule's pill at the far end of its line */
+.heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
 }
 
 .headingIcon {
@@ -83,8 +80,7 @@
 }
 
 @media only screen and (width <= 680px) {
-  .card,
-  .schedule {
+  .card {
     inline-size: 90%;
   }
 }

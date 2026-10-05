@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import store from '../../store/index'
 import { mountWithApp } from '../../testing/mount'
@@ -10,7 +10,6 @@ vi.mock('../../store/index', async () => {
   return {
     default: createFakeStore({
       getters: {
-        getLaterScheduleExpanded: true,
         getLaterIsLiveQuiet: () => false,
         getDisableChannelLinks: false,
       },
@@ -47,13 +46,28 @@ function armed(id, at) {
   }
 }
 
+/** @type {import('@vue/test-utils').VueWrapper | null} */
+let mounted = null
+
 /** @param {object[]} items */
 function mountSchedule(items) {
-  return mountWithApp(LaterSchedule, {
+  mounted = mountWithApp(LaterSchedule, {
     store,
     router: createTestRouter(),
     props: { items, now: NOW },
+    // In the document, so that a press inside it reaches the document as one
+    // in the app does, and is not mistaken for one outside it
+    attachTo: document.body,
   })
+
+  return mounted
+}
+
+/** @param {object[]} items */
+async function mountOpen(items) {
+  const wrapper = mountSchedule(items)
+  await wrapper.find('.schedulePill').trigger('click')
+  return wrapper
 }
 
 /** @param {import('@vue/test-utils').VueWrapper} wrapper */
@@ -63,8 +77,13 @@ function distances(wrapper) {
 
 beforeEach(() => {
   store.dispatched.length = 0
-  store.setGetter('getLaterScheduleExpanded', true)
   store.setGetter('getLaterIsLiveQuiet', () => false)
+})
+
+afterEach(() => {
+  // Its document listeners go with it
+  mounted?.unmount()
+  mounted = null
 })
 
 describe('LaterSchedule', () => {
@@ -72,26 +91,70 @@ describe('LaterSchedule', () => {
     expect(mountSchedule([]).find('.laterSchedule').exists()).toBe(false)
   })
 
-  it('leads every row with how far off it is', () => {
+  it('is closed to begin with, its pill saying how many and how far off the next one is', () => {
     const wrapper = mountSchedule([
-      armed('a', NOW + 25 * MINUTE),
-      armed('b', NOW + HOUR + 40 * MINUTE),
+      armed('gone', NOW - 4 * HOUR),
+      armed('next', NOW + 2 * HOUR),
+      armed('later', NOW + 3 * HOUR),
     ])
 
-    expect(distances(wrapper)).toEqual(['in 25 min', 'in 1 hr, 40 min'])
+    expect(wrapper.find('.schedulePanel').exists()).toBe(false)
+    expect(wrapper.find('.scheduleCount').text()).toBe('3')
+    expect(wrapper.find('.scheduleNext').text()).toBe('next in 2 hr')
   })
 
-  it('says how long ago for one whose time has passed, and now within the minute', () => {
-    const wrapper = mountSchedule([
+  it('names the next one\'s state on the pill when it is not plain waiting', () => {
+    const wrapper = mountSchedule([armed('a', NOW + MINUTE)])
+
+    expect(wrapper.find('.schedulePill .scheduleState').text()).toBe('Checking')
+  })
+
+  it('opens and closes from its pill', async () => {
+    const wrapper = await mountOpen([armed('a', NOW + HOUR)])
+
+    expect(wrapper.find('.schedulePanel').exists()).toBe(true)
+    expect(wrapper.find('.schedulePill').attributes('aria-expanded')).toBe('true')
+
+    await wrapper.find('.schedulePill').trigger('click')
+
+    expect(wrapper.find('.schedulePanel').exists()).toBe(false)
+  })
+
+  it('closes on Escape', async () => {
+    const wrapper = await mountOpen([armed('a', NOW + HOUR)])
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.schedulePanel').exists()).toBe(false)
+  })
+
+  it('closes on a press outside it, and not on one inside it', async () => {
+    const wrapper = await mountOpen([armed('a', NOW + HOUR)])
+
+    wrapper.find('.scheduleDistance').element.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('.schedulePanel').exists()).toBe(true)
+
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('.schedulePanel').exists()).toBe(false)
+  })
+
+  it('lists every item, each led by how far off it is', async () => {
+    const wrapper = await mountOpen([
       armed('a', NOW - 5 * MINUTE),
       armed('b', NOW + 10 * 1000),
+      armed('c', NOW + 25 * MINUTE),
+      armed('d', NOW + HOUR + 40 * MINUTE),
+      armed('e', NOW + 35 * HOUR),
     ])
 
-    expect(distances(wrapper)).toEqual(['5 min ago', 'now'])
+    expect(distances(wrapper)).toEqual(['5 min ago', 'now', 'in 25 min', 'in 1 hr, 40 min', 'in 1 day, 11 hr'])
   })
 
-  it('shows a state only where it is not plain waiting', () => {
-    const wrapper = mountSchedule([
+  it('shows a state in a row only where it is not plain waiting', async () => {
+    const wrapper = await mountOpen([
       armed('a', NOW + MINUTE),
       armed('b', NOW + 5 * HOUR),
     ])
@@ -101,46 +164,8 @@ describe('LaterSchedule', () => {
     expect(rows[1].find('.scheduleState').exists()).toBe(false)
   })
 
-  it('shows the soonest three, and the rest when asked', async () => {
-    const wrapper = mountSchedule([1, 2, 3, 4, 5].map(n => armed(`${n}`, NOW + n * HOUR)))
-
-    expect(wrapper.findAll('.scheduleRow')).toHaveLength(3)
-    expect(wrapper.find('.scheduleMore').text()).toBe('Show 2 more')
-
-    await wrapper.find('.scheduleMore').trigger('click')
-
-    expect(wrapper.findAll('.scheduleRow')).toHaveLength(5)
-    expect(wrapper.find('.scheduleMore').text()).toBe('Show fewer')
-  })
-
-  it('offers no more with three or fewer', () => {
-    expect(mountSchedule([armed('a', NOW + HOUR)]).find('.scheduleMore').exists()).toBe(false)
-  })
-
-  it('folded, is one line saying how far off the next one is', () => {
-    store.setGetter('getLaterScheduleExpanded', false)
-
-    const wrapper = mountSchedule([
-      armed('gone', NOW - 4 * HOUR),
-      armed('next', NOW + 2 * HOUR),
-      armed('later', NOW + 3 * HOUR),
-    ])
-
-    expect(wrapper.find('.scheduleRows').exists()).toBe(false)
-    expect(wrapper.find('.scheduleCount').text()).toBe('3')
-    expect(wrapper.find('.scheduleNext').text()).toBe('next in 2 hr')
-  })
-
-  it('remembers being folded or opened', async () => {
-    const wrapper = mountSchedule([armed('a', NOW + HOUR)])
-
-    await wrapper.find('.scheduleHeader').trigger('click')
-
-    expect(store.dispatched).toEqual([{ type: 'updateLaterScheduleExpanded', payload: false }])
-  })
-
   it('disarms and removes by the item', async () => {
-    const wrapper = mountSchedule([armed('a', NOW + HOUR)])
+    const wrapper = await mountOpen([armed('a', NOW + HOUR)])
 
     await wrapper.find('.disarmButton button').trigger('click')
     await wrapper.find('.removeButton button').trigger('click')
@@ -151,8 +176,8 @@ describe('LaterSchedule', () => {
     ])
   })
 
-  it('links the title to its watch page and the name to its channel', () => {
-    const wrapper = mountSchedule([armed('a', NOW + HOUR)])
+  it('links the title to its watch page and the name to its channel', async () => {
+    const wrapper = await mountOpen([armed('a', NOW + HOUR)])
 
     expect(wrapper.find('.scheduleVideo').attributes('href')).toBe('/watch/a')
     expect(wrapper.find('a.scheduleChannel').attributes('href')).toBe('/channel/UCa')

@@ -3,19 +3,20 @@
     class="laterPage"
     :class="{ grid: listType === 'grid' }"
   >
-    <LaterSchedule
-      class="schedule"
-      :items="armed"
-      :now="now"
-    />
     <FtCard class="card">
-      <h2>
-        <FontAwesomeIcon
-          :icon="['fas', 'clock']"
-          class="headingIcon"
+      <div class="heading">
+        <h2>
+          <FontAwesomeIcon
+            :icon="['fas', 'clock']"
+            class="headingIcon"
+          />
+          {{ t('Later.Watch later') }}
+        </h2>
+        <LaterSchedule
+          :items="armed"
+          :now="now"
         />
-        {{ t('Later.Watch later') }}
-      </h2>
+      </div>
       <FtFlexBox
         v-if="queued.length === 0"
       >
@@ -105,10 +106,10 @@ import store from '../../store/index'
 import { throttle } from '../../helpers/utils'
 
 /**
- * The Later page: the armed items first, as a schedule (`LaterSchedule`),
- * which is not there at all when nothing is armed; then the queued items, in
- * their order, moved and removed as a playlist's are. The rows are the
- * playlist rows, given no
+ * The Later page: the queued items, in their order, moved and removed as a
+ * playlist's are, with the armed ones as a schedule (`LaterSchedule`) on the
+ * heading's line, over them when opened and not there at all when nothing is
+ * armed. The rows are the playlist rows, given no
  * playlist: `laterRow` turns on their move and remove controls, and their
  * events come here, to the Later store, so nothing on this page writes to
  * `playlists.db`, and no link carries a `playlistId`.
