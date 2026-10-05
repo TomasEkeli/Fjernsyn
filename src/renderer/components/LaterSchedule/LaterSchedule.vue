@@ -24,7 +24,6 @@
       type="button"
       :aria-expanded="open"
       :aria-controls="panelId"
-      :title="t('Later.Scheduled')"
       @click="open = !open"
     >
       <FontAwesomeIcon
@@ -32,6 +31,7 @@
         :icon="['fas', 'calendar-check']"
         aria-hidden="true"
       />
+      <span class="scheduleLabel">{{ t('Later.Scheduled streams') }}</span>
       <span class="scheduleCount">{{ items.length }}</span>
       <span
         v-if="next"
@@ -53,7 +53,7 @@
         v-if="open"
         :id="panelId"
         class="schedulePanel"
-        :aria-label="t('Later.Scheduled')"
+        :aria-label="t('Later.Scheduled streams')"
       >
         <ol class="scheduleRows">
           <li

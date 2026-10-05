@@ -9,20 +9,24 @@
   position: relative;
 }
 
+/*
+ * Says what it is before it is opened: what is in it, how many, and how far
+ * off the next one is, at the size of the text around it.
+ */
 .schedulePill {
   align-items: center;
   background-color: var(--secondary-card-bg-color);
   border: 0;
-  border-radius: 16px;
+  border-radius: 20px;
   color: var(--secondary-text-color);
   cursor: pointer;
   display: flex;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 500;
-  gap: 8px;
-  padding-block: 6px;
-  padding-inline: 12px;
+  gap: 10px;
+  padding-block: 9px;
+  padding-inline: 16px;
   white-space: nowrap;
 }
 
@@ -41,14 +45,31 @@
   color: var(--primary-color);
 }
 
+.scheduleLabel {
+  color: var(--primary-text-color);
+}
+
 .scheduleCount {
+  background-color: var(--card-bg-color);
+  border-radius: 10px;
+  font-size: 0.85em;
   font-variant-numeric: tabular-nums;
+  padding-block: 1px;
+  padding-inline: 8px;
 }
 
 /* The answer to the glance, in the weight the rows give it */
 .scheduleNext {
   color: var(--primary-text-color);
   font-weight: bold;
+}
+
+/* Set off from what the pill is, as what it says; kept out of what is read aloud */
+.scheduleNext::before {
+  color: var(--tertiary-text-color);
+  content: '·' / '';
+  font-weight: normal;
+  margin-inline-end: 10px;
 }
 
 .schedulePanel {

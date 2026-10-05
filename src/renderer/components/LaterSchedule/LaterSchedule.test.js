@@ -91,7 +91,7 @@ describe('LaterSchedule', () => {
     expect(mountSchedule([]).find('.laterSchedule').exists()).toBe(false)
   })
 
-  it('is closed to begin with, its pill saying how many and how far off the next one is', () => {
+  it('is closed to begin with, its pill saying what it is, how many and how far off the next one is', () => {
     const wrapper = mountSchedule([
       armed('gone', NOW - 4 * HOUR),
       armed('next', NOW + 2 * HOUR),
@@ -99,6 +99,7 @@ describe('LaterSchedule', () => {
     ])
 
     expect(wrapper.find('.schedulePanel').exists()).toBe(false)
+    expect(wrapper.find('.scheduleLabel').text()).toBe('Scheduled streams')
     expect(wrapper.find('.scheduleCount').text()).toBe('3')
     expect(wrapper.find('.scheduleNext').text()).toBe('next in 2 hr')
   })
