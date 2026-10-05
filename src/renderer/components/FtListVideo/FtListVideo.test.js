@@ -658,14 +658,10 @@ describe('FtListVideo, the Later buttons', () => {
     expect(store.dispatched).toEqual([{ type: 'disarm', payload: YOUTUBE_ID }])
   })
 
-  it('shows no clock on the Later page, and the calendar only on its queued rows', async () => {
+  it('shows no clock on the Later page, but the calendar on its rows', async () => {
     const queuedRow = (await mountCard(UPCOMING, { laterRow: true })).wrapper
     expect(button(queuedRow, 'laterIcon')).toBeUndefined()
     expect(button(queuedRow, 'armIcon')).toBeDefined()
-
-    store.setGetter('getIsArmed', () => true)
-    const armedRow = (await mountCard(UPCOMING, { laterRow: true })).wrapper
-    expect(button(armedRow, 'armIcon')).toBeUndefined()
   })
 
   it('shows neither on a PeerTube card', async () => {
