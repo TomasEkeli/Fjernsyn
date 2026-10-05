@@ -350,6 +350,11 @@ const state = {
   // the default moved — a stored choice is read as it always was, so nobody who
   // opened it finds it closed again.
   upcomingShelfExpanded: false,
+  // Whether the Scheduled shelf over the Later page's queue is open. Kept for
+  // the same reason as the one above. Open to begin with, unlike that one: its
+  // rows are one line each and only the soonest few are shown, so open it
+  // costs a few lines, and folded it would hide which streams are coming.
+  laterScheduleExpanded: true,
   sponsorBlockShowSkippedToast: true,
   sponsorBlockUrl: 'https://sponsor.ajay.app',
   sponsorBlockSponsor: {
