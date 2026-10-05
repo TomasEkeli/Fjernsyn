@@ -904,6 +904,24 @@ export function getRelativeTimeUntilDate(date) {
 export function formatScheduledTime(date) {
   if (!date) { return '' }
 
+  const absolute = formatScheduledDate(date)
+  const relative = getRelativeTimeUntilDate(date)
+
+  if (relative === '') { return absolute }
+
+  return i18n.global.t('Global.Scheduled Time', { absolute, relative })
+}
+
+/**
+ * The exact half of `formatScheduledTime` alone, "09-12 12:00", for where how
+ * far off it is is already shown in its own place, and ticks.
+ *
+ * @param {number} date milliseconds since the epoch
+ * @returns {string}
+ */
+export function formatScheduledDate(date) {
+  if (!date) { return '' }
+
   const when = new Date(date)
 
   /** @type {Intl.DateTimeFormatOptions} */
@@ -918,12 +936,7 @@ export function formatScheduledTime(date) {
     options.year = 'numeric'
   }
 
-  const absolute = new Intl.DateTimeFormat([i18n.global.locale.value, 'en'], options).format(when)
-  const relative = getRelativeTimeUntilDate(date)
-
-  if (relative === '') { return absolute }
-
-  return i18n.global.t('Global.Scheduled Time', { absolute, relative })
+  return new Intl.DateTimeFormat([i18n.global.locale.value, 'en'], options).format(when)
 }
 
 /**

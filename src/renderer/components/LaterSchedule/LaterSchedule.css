@@ -1,0 +1,220 @@
+/*
+ * A pill on the heading's line, and a panel over the queue when it is opened.
+ * Neither takes room from the queue: the pill sits where the heading leaves
+ * space anyway, and the panel is an overlay. The one thing that stands out in
+ * either is how far off things are.
+ */
+
+.laterSchedule {
+  position: relative;
+}
+
+/*
+ * Says what it is before it is opened: what is in it, how many, and how far
+ * off the next one is, at the size of the text around it.
+ */
+.schedulePill {
+  align-items: center;
+  background-color: var(--secondary-card-bg-color);
+  border: 0;
+  border-radius: 20px;
+  color: var(--secondary-text-color);
+  cursor: pointer;
+  display: flex;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 500;
+  gap: 10px;
+  padding-block: 9px;
+  padding-inline: 16px;
+  white-space: nowrap;
+}
+
+.schedulePill:hover,
+.schedulePill[aria-expanded='true'] {
+  color: var(--primary-text-color);
+}
+
+.scheduleIcon,
+.scheduleChevron {
+  /* Keeps the icon from growing with the label's line box */
+  block-size: 1em;
+}
+
+.scheduleIcon {
+  color: var(--primary-color);
+}
+
+.scheduleLabel {
+  color: var(--primary-text-color);
+}
+
+.scheduleCount {
+  background-color: var(--card-bg-color);
+  border-radius: 10px;
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+  padding-block: 1px;
+  padding-inline: 8px;
+}
+
+/* The answer to the glance, in the weight the rows give it */
+.scheduleNext {
+  color: var(--primary-text-color);
+  font-weight: bold;
+}
+
+/* Set off from what the pill is, as what it says; kept out of what is read aloud */
+.scheduleNext::before {
+  color: var(--tertiary-text-color);
+  content: '·' / '';
+  font-weight: normal;
+  margin-inline-end: 10px;
+}
+
+.schedulePanel {
+  background-color: var(--card-bg-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 30%);
+  box-sizing: border-box;
+  inline-size: min(440px, calc(100vw - 32px));
+  inset-block-start: calc(100% + 6px);
+  inset-inline-end: 0;
+  max-block-size: 70vh;
+  overflow-y: auto;
+  padding-block: 4px;
+  padding-inline: 12px;
+  position: absolute;
+
+  /* Over the queue's cards, under the top bar (4) when scrolled beneath it */
+  z-index: 3;
+}
+
+/* In from the right, or from the left where the page reads that way */
+.schedulePanel-enter-active,
+.schedulePanel-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.schedulePanel-enter-from,
+.schedulePanel-leave-to {
+  opacity: 0;
+  transform: translateX(calc(24px * var(--horizontal-directionality-coefficient)));
+}
+
+/*
+ * One grid for every row, so that the distances line up in a column of their
+ * own and are read down it, as a timetable's times are. Each row is two
+ * lines: how far off and what, then whose, its state and when exactly.
+ */
+.scheduleRows {
+  column-gap: 12px;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.scheduleRow {
+  align-items: center;
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  grid-template-rows: auto auto;
+  padding-block: 8px;
+  row-gap: 2px;
+}
+
+.scheduleRow + .scheduleRow {
+  border-block-start: 1px solid var(--scrollbar-color);
+}
+
+.scheduleDistance {
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: bold;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.scheduleRow.didNotStart .scheduleDistance {
+  color: var(--tertiary-text-color);
+  font-weight: normal;
+}
+
+.scheduleVideo {
+  color: var(--primary-text-color);
+  grid-column: 2;
+  grid-row: 1;
+  overflow: hidden;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scheduleMeta {
+  align-items: center;
+  color: var(--tertiary-text-color);
+  display: flex;
+  font-size: 0.85em;
+  gap: 8px;
+  grid-column: 2;
+  grid-row: 2;
+  min-inline-size: 0;
+}
+
+.scheduleChannel {
+  color: var(--secondary-text-color);
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scheduleChannelLink {
+  text-decoration: none;
+}
+
+.scheduleVideo:hover,
+.scheduleChannelLink:hover {
+  text-decoration: underline;
+}
+
+.scheduleAt {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  margin-inline-start: auto;
+}
+
+.scheduleState {
+  background-color: var(--secondary-card-bg-color);
+  border-radius: 10px;
+  color: var(--secondary-text-color);
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: normal;
+  padding-block: 1px;
+  padding-inline: 8px;
+}
+
+.scheduleState.checking {
+  background-color: var(--accent-color);
+  color: var(--text-with-accent-color);
+}
+
+.scheduleState.live {
+  background-color: #c00;
+  color: #fff;
+}
+
+.scheduleState.didNotStart {
+  color: var(--tertiary-text-color);
+}
+
+.scheduleActions {
+  display: flex;
+  gap: 2px;
+  grid-column: 3;
+  grid-row: 1 / span 2;
+}

@@ -161,6 +161,42 @@ export function laterStateAt(now, at) {
 }
 
 /**
+ * How far off an armed item's stated time is, as the schedule is read at a
+ * glance: to the minute under an hour, hours and minutes under a day, days and
+ * hours beyond, and never weeks, since "in 19 days" is what one wants to know
+ * of something one means to be present for. Two units at most, the larger
+ * first; a unit that is zero is left out. Within half a minute either side it
+ * is no duration at all, which the page reads as now.
+ *
+ * In the shape `Intl.DurationFormat` takes, so the page words it in the
+ * reader's language without a string per unit.
+ * @param {number} now ms
+ * @param {number} at the stated start, ms
+ * @returns {{ past: boolean, duration: { days?: number, hours?: number, minutes?: number } }}
+ */
+export function distanceTo(now, at) {
+  const totalMinutes = Math.round(Math.abs(at - now) / 60_000)
+  const past = totalMinutes > 0 && now > at
+
+  /** @type {{ days?: number, hours?: number, minutes?: number }} */
+  const duration = {}
+
+  if (totalMinutes >= 24 * 60) {
+    duration.days = Math.floor(totalMinutes / (24 * 60))
+    const hours = Math.floor((totalMinutes % (24 * 60)) / 60)
+    if (hours > 0) { duration.hours = hours }
+  } else if (totalMinutes >= 60) {
+    duration.hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+    if (minutes > 0) { duration.minutes = minutes }
+  } else if (totalMinutes > 0) {
+    duration.minutes = totalMinutes
+  }
+
+  return { past, duration }
+}
+
+/**
  * The record for a video, from whatever the card or the watch page had, so
  * that the page renders without asking YouTube. Neither positioned nor armed:
  * the caller sets both.

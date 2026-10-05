@@ -446,20 +446,24 @@ User Playlists:
       There was an issue with creating the playlist.: There was an issue with creating the playlist.
 Later:
   Later: Later
-  Scheduled: Scheduled
+  Scheduled streams: Scheduled streams
   Watch later: Watch later
   Add to Later: Watch later
   Remove from Later: Remove from Later
   Already in Later: Already on your Later list
   Arm: Start when it goes live
-  Disarm: Don't start it
+  Disarm: Move to Watch later instead
   Remove: Remove
   State:
     Waiting: Waiting
     Checking: Checking
     Did not start: Did not start
     Live now: Live now
-  No scheduled: Nothing scheduled. Arm an upcoming stream with its calendar button.
+  Distance:
+    In: in {duration}
+    Ago: '{duration} ago'
+    Now: now
+  Next: 'next {distance}'
   No queued: Nothing to watch later. Add videos with their clock button.
   Live now: 'Live now: {channel}'
   Watch now: Watch now

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   armedInOrder,
+  distanceTo,
   laterFromExport,
   laterItemFromVideo,
   laterToExport,
@@ -143,6 +144,42 @@ describe('the Later list helpers', () => {
 
     it('did not start after that', () => {
       expect(laterStateAt(at + 3 * 60 * 60 * 1000 + 1, at)).toBe('didNotStart')
+    })
+  })
+
+  describe('distanceTo', () => {
+    const at = Date.parse('2026-10-04T20:00:00Z')
+    const MINUTE = 60 * 1000
+    const HOUR = 60 * MINUTE
+    const DAY = 24 * HOUR
+
+    it('is nothing within half a minute either side', () => {
+      expect(distanceTo(at - 29 * 1000, at)).toEqual({ past: false, duration: {} })
+      expect(distanceTo(at + 29 * 1000, at)).toEqual({ past: false, duration: {} })
+    })
+
+    it('is minutes alone under an hour', () => {
+      expect(distanceTo(at - 25 * MINUTE, at)).toEqual({ past: false, duration: { minutes: 25 } })
+      expect(distanceTo(at - 59 * MINUTE, at)).toEqual({ past: false, duration: { minutes: 59 } })
+    })
+
+    it('is hours and minutes under a day, leaving out no minutes', () => {
+      expect(distanceTo(at - (HOUR + 40 * MINUTE), at)).toEqual({ past: false, duration: { hours: 1, minutes: 40 } })
+      expect(distanceTo(at - 3 * HOUR, at)).toEqual({ past: false, duration: { hours: 3 } })
+    })
+
+    it('is days and hours from a day on, never weeks', () => {
+      expect(distanceTo(at - (DAY + 11 * HOUR + 59 * MINUTE), at)).toEqual({ past: false, duration: { days: 1, hours: 11 } })
+      expect(distanceTo(at - 19 * DAY, at)).toEqual({ past: false, duration: { days: 19 } })
+    })
+
+    it('rounds to the minute', () => {
+      expect(distanceTo(at - (HOUR + 59 * MINUTE + 40 * 1000), at)).toEqual({ past: false, duration: { hours: 2 } })
+    })
+
+    it('says when the time has passed', () => {
+      expect(distanceTo(at + 5 * MINUTE, at)).toEqual({ past: true, duration: { minutes: 5 } })
+      expect(distanceTo(at + 4 * HOUR, at)).toEqual({ past: true, duration: { hours: 4 } })
     })
   })
 

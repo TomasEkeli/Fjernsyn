@@ -4,71 +4,19 @@
     :class="{ grid: listType === 'grid' }"
   >
     <FtCard class="card">
-      <h2>
-        <FontAwesomeIcon
-          :icon="['fas', 'calendar-check']"
-          class="headingIcon"
-        />
-        {{ t('Later.Scheduled') }}
-      </h2>
-      <FtFlexBox
-        v-if="armed.length === 0"
-      >
-        <p class="message">
-          {{ t('Later.No scheduled') }}
-        </p>
-      </FtFlexBox>
-      <div
-        v-else
-        class="armedItems"
-      >
-        <div
-          v-for="item in armed"
-          :key="item._id"
-          class="armedItem"
-        >
-          <div class="armedHeader">
-            <span class="armedTime">{{ scheduledTimeOf(item) }}</span>
-            <span
-              class="armedState"
-              :class="stateOf(item)"
-            >{{ stateLabel(stateOf(item)) }}</span>
-            <span class="armedActions">
-              <FtButton
-                :label="t('Later.Disarm')"
-                :icon="['fas', 'calendar-xmark']"
-                background-color="var(--secondary-card-bg-color)"
-                text-color="var(--primary-text-color)"
-                class="armedAction disarmButton"
-                @click="disarm(item._id)"
-              />
-              <FtButton
-                :label="t('Later.Remove')"
-                :icon="['fas', 'trash']"
-                background-color="var(--secondary-card-bg-color)"
-                text-color="var(--primary-text-color)"
-                class="armedAction removeButton"
-                @click="remove(null, item._id)"
-              />
-            </span>
-          </div>
-          <FtListVideo
-            :data="item"
-            appearance="result"
-            force-list-type="list"
-            :later-row="true"
+      <div class="heading">
+        <h2>
+          <FontAwesomeIcon
+            :icon="['fas', 'clock']"
+            class="headingIcon"
           />
-        </div>
-      </div>
-    </FtCard>
-    <FtCard class="card">
-      <h2>
-        <FontAwesomeIcon
-          :icon="['fas', 'clock']"
-          class="headingIcon"
+          {{ t('Later.Watch later') }}
+        </h2>
+        <LaterSchedule
+          :items="armed"
+          :now="now"
         />
-        {{ t('Later.Watch later') }}
-      </h2>
+      </div>
       <FtFlexBox
         v-if="queued.length === 0"
       >
@@ -149,20 +97,19 @@ import { useI18n } from 'vue-i18n'
 
 import FtCard from '../../components/ft-card/ft-card.vue'
 import FtFlexBox from '../../components/ft-flex-box/ft-flex-box.vue'
-import FtButton from '../../components/FtButton/FtButton.vue'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
-import FtListVideo from '../../components/FtListVideo/FtListVideo.vue'
 import FtListVideoNumbered from '../../components/FtListVideoNumbered/FtListVideoNumbered.vue'
 import AutoScrollWrapper from '../../components/AutoScrollWrapper/AutoScrollWrapper.vue'
+import LaterSchedule from '../../components/LaterSchedule/LaterSchedule.vue'
 
 import store from '../../store/index'
-import { formatScheduledTime, throttle } from '../../helpers/utils'
-import { laterStateAt } from '../../helpers/later'
+import { throttle } from '../../helpers/utils'
 
 /**
- * The Later page: the armed items first, soonest first, each with its stated
- * time and its state; then the queued items, in their order, moved and
- * removed as a playlist's are. The rows are the playlist rows, given no
+ * The Later page: the queued items, in their order, moved and removed as a
+ * playlist's are, with the armed ones as a schedule (`LaterSchedule`) on the
+ * heading's line, over them when opened and not there at all when nothing is
+ * armed. The rows are the playlist rows, given no
  * playlist: `laterRow` turns on their move and remove controls, and their
  * events come here, to the Later store, so nothing on this page writes to
  * `playlists.db`, and no link carries a `playlistId`.
@@ -218,41 +165,10 @@ function viewCountOf(item) {
   return item.viewCount ?? store.getters.getHistoryCacheById[item.videoId]?.viewCount
 }
 
-const armed = computed(() => store.getters.getLaterArmed.map(cardData))
+/** As the store gives them: the schedule reads only their times and names */
+const armed = computed(() => store.getters.getLaterArmed)
 
 const queued = computed(() => store.getters.getLaterQueued.map(cardData))
-
-/** @param {{ _id: string, alarm: { at: number } }} item */
-function stateOf(item) {
-  if (store.getters.getLaterIsLiveQuiet(item._id)) { return 'live' }
-
-  return laterStateAt(now.value, item.alarm.at)
-}
-
-/** @param {'live' | 'waiting' | 'checking' | 'didNotStart'} state */
-function stateLabel(state) {
-  switch (state) {
-    case 'live':
-      return t('Later.State.Live now')
-    case 'waiting':
-      return t('Later.State.Waiting')
-    case 'checking':
-      return t('Later.State.Checking')
-    default:
-      return t('Later.State.Did not start')
-  }
-}
-
-/** @param {{ alarm: { at: number } }} item */
-function scheduledTimeOf(item) {
-  // Read with the clock, so the relative part moves on with it
-  return now.value > 0 ? formatScheduledTime(item.alarm.at) : ''
-}
-
-/** @param {string} id */
-function disarm(id) {
-  store.dispatch('disarm', id)
-}
 
 /** @import { VideoData } from '../../helpers/dragAndDrop' */
 /** @type {import('vue').Ref<VideoData>} */

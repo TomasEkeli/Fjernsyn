@@ -9,9 +9,9 @@
 }
 
 /*
-  On a wall the Watch later grid runs edge to edge (wall.css); the Scheduled
-  card, and an empty Watch later, go as wide, so the page is one width. What
-  is in them takes the wall's edge as its margin, as on the wall.
+  On a wall the Watch later grid runs edge to edge (wall.css); an empty Watch
+  later goes as wide, so the page is one width. What is in it takes the
+  wall's edge as its margin, as on the wall.
  */
 .laterPage.grid .card {
   inline-size: 100%;
@@ -23,65 +23,21 @@
   margin-inline: var(--ft-wall-edge);
 }
 
+/* The heading, and the schedule's pill at the far end of its line */
+.heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+}
+
 .headingIcon {
   color: var(--primary-color);
 }
 
 .message {
   color: var(--tertiary-text-color);
-}
-
-.armedItems {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.armedHeader {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
-  margin-block-end: 4px;
-}
-
-.armedTime {
-  font-weight: bold;
-}
-
-.armedState {
-  padding-block: 2px;
-  padding-inline: 8px;
-  border-radius: 10px;
-  font-size: 0.85em;
-  background-color: var(--secondary-card-bg-color);
-  color: var(--secondary-text-color);
-}
-
-.armedState.checking {
-  background-color: var(--accent-color);
-  color: var(--text-with-accent-color);
-}
-
-.armedState.live {
-  background-color: #c00;
-  color: #fff;
-}
-
-.armedState.didNotStart {
-  color: var(--tertiary-text-color);
-}
-
-.armedActions {
-  display: flex;
-  gap: 8px;
-  margin-inline-start: auto;
-}
-
-.armedAction {
-  margin: 0;
-  padding-block: 4px;
-  padding-inline: 10px;
 }
 
 .laterItems {
