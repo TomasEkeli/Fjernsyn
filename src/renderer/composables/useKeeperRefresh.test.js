@@ -1,8 +1,10 @@
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
+import { createStore } from 'vuex'
 
 import { DBPlaylistHandlers } from '../../datastores/handlers/index'
+import historyModule from '../store/modules/history'
 import { mountWithApp } from '../testing/mount'
 import { useKeeperRefresh } from './useKeeperRefresh'
 
@@ -69,9 +71,9 @@ function mountRefresh(store) {
 }
 
 /** Main saying the keeper changed these sections */
-async function changed(sections) {
+async function changed(sections, history = null) {
   const [[handler]] = window.ftElectron.handleKeeperDataChanged.mock.calls
-  handler(sections)
+  handler({ sections, history })
   await flushPromises()
 }
 
@@ -94,6 +96,22 @@ describe('loading again what the keeper changed', () => {
       'grabSearchHistoryEntries',
     ])
     expect(store.dispatched.indexOf('grabAllSubscriptions')).toBeGreaterThan(store.dispatched.indexOf('grabAllProfiles All Channels'))
+  })
+
+  it('puts the history\'s changes in place, in the order they were watched, rather than loading it all again', async () => {
+    const entry = (videoId, timeWatched, watchProgress = 0) => ({ _id: `id-${videoId}`, videoId, timeWatched, watchProgress })
+    const store = createStore({ modules: { history: historyModule } })
+    store.commit('setHistoryCacheSorted', [entry('ccc', 30), entry('bbb', 20), entry('aaa', 10)])
+    store.commit('setHistoryCacheById', Object.fromEntries(store.state.history.historyCacheSorted.map(record => [record.videoId, record])))
+    const dispatch = vi.spyOn(store, 'dispatch')
+    mountRefresh(store)
+
+    // bbb watched further on the other machine, aaa removed there, ddd new but watched long ago
+    await changed(['history'], { put: [entry('bbb', 20, 120), entry('ddd', 5)], removed: ['aaa'] })
+
+    expect(store.state.history.historyCacheSorted.map(({ videoId, watchProgress }) => `${videoId}@${watchProgress}`)).toEqual(['ccc@0', 'bbb@120', 'ddd@0'])
+    expect(Object.keys(store.state.history.historyCacheById).sort()).toEqual(['bbb', 'ccc', 'ddd'])
+    expect(dispatch).not.toHaveBeenCalled()
   })
 
   it('loads only the sections named', async () => {

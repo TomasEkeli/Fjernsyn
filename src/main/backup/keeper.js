@@ -105,6 +105,15 @@ const gunzip = promisify(gunzipCallback)
  *   { kind: 'newer', sync: SyncRead, parsed: any }} KeptRead
  */
 
+/**
+ * What a merge while the app ran changed, for the windows: the sections to
+ * load again, and the history's records themselves, as the whole history is
+ * tens of megabytes to load again every minute while another machine plays
+ * @typedef {object} DataChanges
+ * @property {string[]} sections
+ * @property {{ put: Record<string, any>[], removed: string[] } | null} history the entries put whole, and the videos whose entries went
+ */
+
 // #endregion types
 
 /**
@@ -159,7 +168,7 @@ function isMissing(error) {
  * @param {string | null} deps.machineName
  * @param {(job: object) => Promise<any>} deps.runJob the worker's, or the job run inline
  * @param {(status: KeeperStatus) => void} [deps.onStatus]
- * @param {(sections: string[]) => void} [deps.onDataChanged] a merge while the app ran changed these sections in the datastores
+ * @param {(changes: DataChanges) => void} [deps.onDataChanged] a merge while the app ran changed these sections in the datastores
  * @param {typeof fs} [deps.fileSystem]
  * @param {() => number} [deps.now] must agree with the file system's clock, as file ages are measured by it
  * @param {(ms: number) => Promise<void>} [deps.sleep]
@@ -898,11 +907,15 @@ export function createKeeper({
     const shared = await loadShared()
     const known = shared !== null && kept.parsed.header.lineage.includes(lineageEntry(state.lastSeen))
 
+    const ours = await collect()
+    // Which video each of this machine's entries is, for a window to remove it by
+    const ourVideos = new Map(ours.history.map(record => [record._id, record.videoId]))
+
     const result = await runJob({
       type: 'merge',
       theirs: { syncText: kept.sync.text, baseText: kept.baseText },
       ancestor: known ? shared : null,
-      sections: await collect(),
+      sections: ours,
       header: header(),
       machineBound: [...MACHINE_BOUND_SETTINGS],
       wantSafetyCopy: atStartup || now() - lastSafetyCopyAt >= SAFETY_COPY_EVERY_MS,
@@ -939,7 +952,7 @@ export function createKeeper({
       if (atStartup) {
         setStatus({ tookIn: { key: kept.sync.hash, machineName: kept.parsed.header.machineName, writtenAt: kept.sync.mtime } })
       } else {
-        onDataChanged(sections)
+        onDataChanged({ sections, history: historyChanges(result.toApply.history, ourVideos) })
         setStatus({ mergedFrom: { machineName: kept.parsed.header.machineName, at: now() } })
       }
     }
@@ -952,6 +965,21 @@ export function createKeeper({
     // What this machine adds to theirs is written by the same tick
     changed = true
     return true
+  }
+
+  /**
+   * @param {{ put: Record<string, any>[], remove: string[] } | undefined} changes
+   * @param {Map<string, string>} ourVideos
+   * @returns {DataChanges['history']}
+   */
+  function historyChanges(changes, ourVideos) {
+    if (changes === undefined) { return null }
+
+    // An entry put back under another _id is put, not removed
+    const put = new Set(changes.put.map(record => record.videoId))
+    const removed = changes.remove.map(_id => ourVideos.get(_id)).filter(videoId => typeof videoId === 'string' && !put.has(videoId))
+
+    return { put: changes.put, removed }
   }
 
   /** The hash of the sync file whose base has not come */

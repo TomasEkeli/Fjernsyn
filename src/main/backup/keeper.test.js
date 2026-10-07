@@ -120,7 +120,10 @@ async function machine(name, { folder = keptFolder(), settings = [], ...options 
         m.jobs.push(job.type)
         return runKeeperJob(job)
       },
-      onDataChanged: sections => m.dataChanged.push(sections),
+      onDataChanged: (changes) => {
+        m.dataChanged.push(changes.sections)
+        m.historyChanges = [...(m.historyChanges ?? []), changes.history]
+      },
       sleep,
       ...(fileSystem ? { fileSystem } : {}),
     })

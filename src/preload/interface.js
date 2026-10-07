@@ -521,12 +521,17 @@ export default {
 
   /**
    * The keeper took in another machine's changes while the app ran: the
-   * sections it changed in the datastores, for every window to load again
-   * @param {(sections: string[]) => void} handler
+   * sections it changed in the datastores, for every window to load again,
+   * and the history's changes themselves, which are applied rather than the
+   * whole history loaded again
+   * @param {(changes: { sections: string[], history: { put: object[], removed: string[] } | null }) => void} handler
    */
   handleKeeperDataChanged: (handler) => {
-    ipcRenderer.on(IpcChannels.KEEPER_DATA_CHANGED, (_, sections) => {
-      handler(Array.isArray(sections) ? sections : [])
+    ipcRenderer.on(IpcChannels.KEEPER_DATA_CHANGED, (_, changes) => {
+      handler({
+        sections: Array.isArray(changes?.sections) ? changes.sections : [],
+        history: changes?.history ?? null,
+      })
     })
   },
 
