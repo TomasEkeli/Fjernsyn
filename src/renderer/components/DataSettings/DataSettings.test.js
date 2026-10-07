@@ -43,6 +43,9 @@ vi.mock('../../platform/vue', () => ({
   getPlatformLayer: () => layer,
 }))
 
+// The Backup group has its own tests, and asks main's keeper on mount
+vi.mock('../BackupSettings/BackupSettings.vue', () => ({ default: { name: 'BackupSettings', render: () => null } }))
+
 vi.mock('../../helpers/utils', async (importOriginal) => ({
   ...(await importOriginal()),
   showToast: vi.fn(),

@@ -17,3 +17,14 @@
   font-size: 0.9em;
   opacity: 0.85;
 }
+
+.keeperRow {
+  align-items: center;
+  column-gap: 1rem;
+  justify-content: center;
+}
+
+.keeperFolder {
+  overflow-wrap: anywhere;
+  font-weight: bold;
+}

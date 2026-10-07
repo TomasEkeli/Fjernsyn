@@ -90,6 +90,14 @@ const BACKUP_FOLDER = '/home/me/.config/Fjernsyn/backups'
 
 const MACHINE_NAME = 'synthetic-desktop'
 
+const KEPT_FOLDER = '/home/me/Sync/fjernsyn'
+
+/** @type {import('../../../main/backup/keeper').KeeperStatus} */
+const NOT_KEEPING = { folder: null, ready: true, writtenAt: null, failure: null, pause: null, arriving: null, tookIn: null }
+
+/** The keeper keeping KEPT_FOLDER, with what the test gives it */
+const keeping = (fields = {}) => ({ ...NOT_KEEPING, folder: KEPT_FOLDER, ...fields })
+
 /**
  * A backup file's text, written by another installation on another machine
  * unless the header says otherwise
@@ -119,6 +127,11 @@ beforeEach(() => {
     getBackupFolder: vi.fn(async () => BACKUP_FOLDER),
     getMachineName: vi.fn(async () => MACHINE_NAME),
     restoreBackup: vi.fn(async () => ({ ok: true, safetyCopyPath: `${BACKUP_FOLDER}/before-restore-2026-10-04-163005.json` })),
+    getKeeperStatus: vi.fn(async () => NOT_KEEPING),
+    handleKeeperStatus: vi.fn(),
+    chooseKeeperFolder: vi.fn(async () => NOT_KEEPING),
+    stopKeeping: vi.fn(async () => NOT_KEEPING),
+    answerKeeper: vi.fn(async () => NOT_KEEPING),
   }
 })
 
@@ -452,6 +465,120 @@ describe('the Backup group', () => {
       await flushPromises()
 
       expect(toasts().at(-1)).toBe('The restore failed, and nothing was changed: Error: no handler')
+    })
+  })
+
+  describe('the kept backup', () => {
+    // 16:30 on 7 October 2026, local time
+    const NOW = new Date(2026, 9, 7, 16, 30)
+    const AT_1402 = new Date(2026, 9, 7, 14, 2).getTime()
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(NOW)
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    /** Main pushing a status, as it does on every change */
+    async function push(status) {
+      const [[handler]] = window.ftElectron.handleKeeperStatus.mock.calls
+      handler(status)
+      await flushPromises()
+    }
+
+    async function mountKeeping(status) {
+      window.ftElectron.getKeeperStatus.mockResolvedValue(status)
+      const wrapper = mountBackup()
+      await flushPromises()
+      return wrapper
+    }
+
+    const folderRow = wrapper => wrapper.findAll('.keeperRow')[0]
+
+    /** The status line's text and its buttons, or null when there is none */
+    function statusLine(wrapper) {
+      const row = wrapper.findAll('.keeperRow')[1]
+      return row === undefined
+        ? null
+        : { text: row.find('.keeperStatus').text(), buttons: row.findAll('button').map(found => found.text()) }
+    }
+
+    it('says Not set and offers Choose folder alone when nothing is kept', async () => {
+      const wrapper = await mountKeeping(NOT_KEEPING)
+
+      expect(folderRow(wrapper).text()).toContain('Keep a backup in')
+      expect(folderRow(wrapper).text()).toContain('Not set')
+      expect(folderRow(wrapper).findAll('button').map(found => found.text())).toEqual(['Choose folder'])
+      expect(statusLine(wrapper)).toBeNull()
+    })
+
+    it('shows the folder chosen in main\'s dialog, and Stop keeping', async () => {
+      window.ftElectron.chooseKeeperFolder.mockResolvedValue(keeping())
+      const wrapper = await mountKeeping(NOT_KEEPING)
+
+      await button(wrapper, 'Choose folder').trigger('click')
+      await flushPromises()
+
+      expect(window.ftElectron.chooseKeeperFolder).toHaveBeenCalledTimes(1)
+      expect(folderRow(wrapper).text()).toContain(KEPT_FOLDER)
+      expect(folderRow(wrapper).findAll('button').map(found => found.text())).toEqual(['Choose folder', 'Stop keeping'])
+      expect(statusLine(wrapper)).toEqual({ text: 'Not written yet', buttons: [] })
+    })
+
+    it('goes back to Not set on Stop keeping', async () => {
+      const wrapper = await mountKeeping(keeping({ writtenAt: AT_1402 }))
+
+      await button(wrapper, 'Stop keeping').trigger('click')
+      await flushPromises()
+
+      expect(window.ftElectron.stopKeeping).toHaveBeenCalledTimes(1)
+      expect(folderRow(wrapper).text()).toContain('Not set')
+      expect(statusLine(wrapper)).toBeNull()
+    })
+
+    it('follows the status main pushes, with the date when the write was not today', async () => {
+      const wrapper = await mountKeeping(keeping())
+
+      await push(keeping({ writtenAt: AT_1402 }))
+      expect(statusLine(wrapper)).toEqual({ text: 'Written 14:02', buttons: [] })
+
+      await push(keeping({ writtenAt: new Date(2026, 9, 6, 9, 5).getTime() }))
+      expect(statusLine(wrapper)).toEqual({ text: 'Written 2026-10-06 09:05', buttons: [] })
+    })
+
+    it('shows every state with its buttons', async () => {
+      const pause = { key: 'k', machineName: 'synthetic-laptop', writtenAt: AT_1402, detail: null, formatVersion: null }
+      const states = [
+        [{ failure: { message: 'ENOSPC: no space left on device', since: AT_1402 } }, 'Couldn\'t write: ENOSPC: no space left on device', []],
+        [{ pause: { ...pause, reason: 'otherMachine' } }, 'Paused: synthetic-laptop wrote the backup at 14:02.', ['Restore (relaunches)', 'Overwrite with this machine\'s data']],
+        [{ pause: { ...pause, reason: 'otherMachine', machineName: null } }, 'Paused: another machine wrote the backup at 14:02.', ['Restore (relaunches)', 'Overwrite with this machine\'s data']],
+        [{ pause: { ...pause, reason: 'refused', detail: 'baseMismatch' } }, 'Paused: the backup in the folder can\'t be read (its base file does not match it).', ['Overwrite with this machine\'s data']],
+        [{ pause: { ...pause, reason: 'refused' } }, 'Paused: the backup in the folder can\'t be read.', ['Overwrite with this machine\'s data']],
+        [{ pause: { ...pause, reason: 'newer', formatVersion: 2 } }, 'Paused: the backup was written by a newer Fjernsyn. Update Fjernsyn to keep it.', []],
+        [{ pause: { ...pause, reason: 'baseMissing' } }, 'Paused: the backup synthetic-laptop wrote at 14:02 is still arriving.', []],
+      ]
+
+      const wrapper = await mountKeeping(keeping())
+
+      for (const [fields, text, buttons] of states) {
+        await push(keeping({ writtenAt: AT_1402, ...fields }))
+        expect(statusLine(wrapper)).toEqual({ text, buttons })
+      }
+    })
+
+    it('sends the answer a pause\'s button gives', async () => {
+      const pause = { reason: 'otherMachine', key: 'k', machineName: 'synthetic-laptop', writtenAt: AT_1402, detail: null, formatVersion: null }
+      const wrapper = await mountKeeping(keeping({ pause }))
+      window.ftElectron.answerKeeper.mockResolvedValue(keeping({ pause }))
+
+      await button(wrapper, 'Restore (relaunches)').trigger('click')
+      await button(wrapper, 'Overwrite with this machine\'s data').trigger('click')
+      await flushPromises()
+
+      expect(window.ftElectron.answerKeeper.mock.calls).toEqual([['restore'], ['overwrite']])
     })
   })
 })

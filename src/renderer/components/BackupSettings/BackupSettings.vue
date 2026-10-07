@@ -18,6 +18,37 @@
         @click="chooseBackup"
       />
     </FtFlexBox>
+    <FtFlexBox class="keeperRow">
+      <p class="keeperLabel">
+        {{ t('Settings.Data Settings.Backup.Keeper.Keep a backup in') }}
+      </p>
+      <p class="keeperFolder">
+        {{ keeperFolder ?? t('Settings.Data Settings.Backup.Keeper.Not set') }}
+      </p>
+      <FtButton
+        :label="t('Settings.Data Settings.Backup.Keeper.Choose folder')"
+        @click="chooseKeeperFolder"
+      />
+      <FtButton
+        v-if="keeperFolder !== null"
+        :label="t('Settings.Data Settings.Backup.Keeper.Stop keeping')"
+        @click="stopKeeping"
+      />
+    </FtFlexBox>
+    <FtFlexBox
+      v-if="keeperLine !== null"
+      class="keeperRow"
+    >
+      <p class="keeperStatus">
+        {{ keeperLine.text }}
+      </p>
+      <FtButton
+        v-for="action in keeperLine.actions"
+        :key="action.answer"
+        :label="action.label"
+        @click="answerKeeper(action.answer)"
+      />
+    </FtFlexBox>
     <FtPrompt
       v-if="pending !== null"
       :label="t('Settings.Data Settings.Backup.Confirm.Title')"
@@ -99,11 +130,14 @@ import { BACKUP_SECTIONS, backupFileName, readBackup, writeBackup } from '../../
 import { listAllDownloads } from '../../helpers/downloads'
 import { isRunning } from '../../helpers/ytdlpDownloads'
 import { getTodayDateStrLocalTimezone, showToast, writeFileWithPicker } from '../../helpers/utils'
+import { answerKeeper, chooseKeeperFolder, stopKeeping, useKeeperStatus, useKeeperWords } from '../../composables/useKeeperStatus'
 
 /**
  * The Backup group at the top of Data settings: everything in one file, and a
  * restore that replaces each section the file holds, then relaunches. The
  * format is helpers/backup.js; the restore itself is main's (main/backup).
+ * Below them the kept backup: the folder main's keeper keeps it in, and what
+ * the keeper last did, with the choices a pause leaves open.
  */
 
 const USING_ELECTRON = process.env.IS_ELECTRON
@@ -470,6 +504,85 @@ async function restore() {
 }
 
 // #endregion restore
+
+// #region kept backup
+
+const keeperStatus = useKeeperStatus()
+const keeperWords = useKeeperWords()
+
+/** @type {import('vue').ComputedRef<string | null>} */
+const keeperFolder = computed(() => keeperStatus.value?.folder ?? null)
+
+/**
+ * @typedef KeeperLine
+ * @property {string} text
+ * @property {{ label: string, answer: import('../../../main/backup/keeper').KeeperAnswer }[]} actions
+ */
+
+/**
+ * What the keeper last did, or why it stopped, while it keeps a folder. A
+ * pause keeps its choices here, so one put off with Not now can be made later.
+ * @type {import('vue').ComputedRef<KeeperLine | null>}
+ */
+const keeperLine = computed(() => {
+  const status = keeperStatus.value
+
+  if (status == null || status.folder === null) {
+    return null
+  }
+
+  if (status.pause !== null) {
+    return pauseLine(status.pause)
+  }
+
+  if (status.failure !== null) {
+    return { text: t('Settings.Data Settings.Backup.Keeper.Could not write', { message: status.failure.message }), actions: [] }
+  }
+
+  return {
+    text: status.writtenAt === null
+      ? t('Settings.Data Settings.Backup.Keeper.Not written yet')
+      : t('Settings.Data Settings.Backup.Keeper.Written', { time: keeperWords.time(status.writtenAt) }),
+    actions: [],
+  }
+})
+
+/**
+ * @param {NonNullable<import('../../../main/backup/keeper').KeeperStatus['pause']>} pause
+ * @returns {KeeperLine | null}
+ */
+function pauseLine(pause) {
+  const overwrite = { label: t('Settings.Data Settings.Backup.Keeper.Overwrite with this data'), answer: 'overwrite' }
+  const machine = keeperWords.machine(pause.machineName)
+  const time = keeperWords.time(pause.writtenAt)
+
+  switch (pause.reason) {
+    case 'otherMachine':
+      return {
+        text: t('Settings.Data Settings.Backup.Keeper.Paused.Other machine', { machine, time }),
+        actions: [{ label: t('Settings.Data Settings.Backup.Keeper.Restore relaunches'), answer: 'restore' }, overwrite],
+      }
+    case 'refused': {
+      const reason = keeperWords.refusedReason(pause.detail)
+
+      return {
+        text: reason === null
+          ? t('Settings.Data Settings.Backup.Keeper.Paused.Refused without reason')
+          : t('Settings.Data Settings.Backup.Keeper.Paused.Refused', { reason }),
+        actions: [overwrite],
+      }
+    }
+    case 'newer':
+      return { text: t('Settings.Data Settings.Backup.Keeper.Paused.Newer'), actions: [] }
+    case 'baseMissing':
+      // The notice asks Restore or Overwrite once the base arrives
+      return { text: t('Settings.Data Settings.Backup.Keeper.Paused.Base missing', { machine, time }), actions: [] }
+    default:
+      return null
+  }
+}
+
+// #endregion kept backup
 </script>
 
 <style scoped src="./BackupSettings.css" />
