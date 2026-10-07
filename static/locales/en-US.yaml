@@ -950,8 +950,10 @@ Settings:
       Confirm:
         Title: Restore this backup?
         This installation: Written by Fjernsyn {version} on this installation.
-        Other installation: Written by Fjernsyn {version} on another installation.
+        This installation on machine: Written by Fjernsyn {version} on {machine}, this installation.
+        Other installation: Written by Fjernsyn {version} on {machine}.
         Unknown version: an unknown version
+        Unknown machine: another machine
         Replaces: Each section below replaces what is here now. Anything the backup does not hold is left as it is.
         Section count: '{section}: {count}'
         Left out:

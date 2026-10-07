@@ -75,6 +75,7 @@
 <script setup>
 import { computed, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { gunzipSync, strFromU8 } from 'fflate'
 
 import FtButton from '../FtButton/FtButton.vue'
 import FtFlexBox from '../ft-flex-box/ft-flex-box.vue'
@@ -97,7 +98,7 @@ import {
 import { BACKUP_SECTIONS, backupFileName, readBackup, writeBackup } from '../../helpers/backup'
 import { listAllDownloads } from '../../helpers/downloads'
 import { isRunning } from '../../helpers/ytdlpDownloads'
-import { getTodayDateStrLocalTimezone, readFileWithPicker, showToast, writeFileWithPicker } from '../../helpers/utils'
+import { getTodayDateStrLocalTimezone, showToast, writeFileWithPicker } from '../../helpers/utils'
 
 /**
  * The Backup group at the top of Data settings: everything in one file, and a
@@ -167,13 +168,28 @@ function storedInstallationId(storedSettings) {
 }
 
 /**
+ * This computer's host name, from main. Only ever shown, so a backup is still
+ * written without it when main cannot say.
+ * @returns {Promise<string | null>}
+ */
+async function currentMachineName() {
+  try {
+    const name = await window.ftElectron.getMachineName()
+    return typeof name === 'string' && name !== '' ? name : null
+  } catch (error) {
+    console.error('Could not get the machine name', error)
+    return null
+  }
+}
+
+/**
  * A backup of the app as it is now: what Export backup saves, and the safety
  * copy a restore writes first
  */
 async function buildBackupText() {
-  const { installationId, sections } = await collectBackup()
+  const [{ installationId, sections }, machineName] = await Promise.all([collectBackup(), currentMachineName()])
 
-  return writeBackup({ appVersion: packageDetails.version, installationId, sections })
+  return writeBackup({ appVersion: packageDetails.version, installationId, machineName, sections })
 }
 
 // #endregion collecting
@@ -218,25 +234,68 @@ async function exportBackup() {
  */
 const pending = shallowRef(null)
 
-async function chooseBackup() {
-  let response
+/**
+ * The backup file chosen, as bytes: readFileWithPicker in helpers/utils.js
+ * gives text, which a gzipped file does not survive. A gzip file is offered
+ * by `.gz` alone, as a base's `.json.gz` is.
+ * @returns {Promise<Uint8Array | null>} null when the picker is cancelled
+ */
+async function pickBackupFile() {
+  let file
   try {
-    response = await readFileWithPicker(
-      t('Settings.Data Settings.Backup.Backup file'),
-      { 'application/json': '.json' },
-      IMPORT_DIRECTORY_ID,
-      START_IN_DIRECTORY
-    )
+    /** @type {FileSystemFileHandle[]} */
+    const [handle] = await window.showOpenFilePicker({
+      excludeAcceptAllOption: true,
+      multiple: false,
+      id: IMPORT_DIRECTORY_ID,
+      startIn: START_IN_DIRECTORY,
+      types: [{
+        description: t('Settings.Data Settings.Backup.Backup file'),
+        accept: { 'application/json': ['.json'], 'application/gzip': ['.gz'] },
+      }],
+    })
+
+    file = await handle.getFile()
+  } catch (error) {
+    // the picker was cancelled
+    if (error.name === 'AbortError') {
+      return null
+    }
+
+    throw error
+  }
+
+  return new Uint8Array(await file.arrayBuffer())
+}
+
+/**
+ * A backup file's text, unpacked first when it is gzipped, as a base from the
+ * kept backup is. Its first two bytes say so, whatever the file is called.
+ * @param {Uint8Array} bytes
+ * @returns {string}
+ */
+function backupFileText(bytes) {
+  const gzipped = bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b
+
+  return strFromU8(gzipped ? gunzipSync(bytes) : bytes)
+}
+
+async function chooseBackup() {
+  let text
+  try {
+    const bytes = await pickBackupFile()
+
+    if (bytes === null) {
+      return
+    }
+
+    text = backupFileText(bytes)
   } catch (error) {
     showToast(`${t('Settings.Data Settings.Unable to read file')}: ${error}`)
     return
   }
 
-  if (response === null) {
-    return
-  }
-
-  const contents = readBackup(response.content, {
+  const contents = readBackup(text, {
     knownSettings: Object.keys(store.state.settings),
     machineBoundSettings: NON_TRANSFERABLE_SETTINGS,
   })
@@ -305,11 +364,20 @@ function refusalText(refusal) {
 
 const writtenBy = computed(() => {
   const backup = pending.value
-  const version = backup.contents.header.appVersion ?? t('Settings.Data Settings.Backup.Confirm.Unknown version')
+  const { appVersion, machineName } = backup.contents.header
+  const version = appVersion ?? t('Settings.Data Settings.Backup.Confirm.Unknown version')
 
-  return backup.sameInstallation
-    ? t('Settings.Data Settings.Backup.Confirm.This installation', { version })
-    : t('Settings.Data Settings.Backup.Confirm.Other installation', { version })
+  if (backup.sameInstallation) {
+    // An older backup from here does not name the machine, and "another
+    // machine" would be wrong about it
+    return machineName === null
+      ? t('Settings.Data Settings.Backup.Confirm.This installation', { version })
+      : t('Settings.Data Settings.Backup.Confirm.This installation on machine', { version, machine: machineName })
+  }
+
+  const machine = machineName ?? t('Settings.Data Settings.Backup.Confirm.Unknown machine')
+
+  return t('Settings.Data Settings.Backup.Confirm.Other installation', { version, machine })
 })
 
 /** @type {import('vue').ComputedRef<Record<string, string>>} */
