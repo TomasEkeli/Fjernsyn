@@ -419,7 +419,10 @@ export function createKeeper({
    * @returns {Promise<{ text: string } | { problem: 'missing' | 'baseUnreadable' | 'baseMismatch' }>}
    */
   async function readBase(folder, reference) {
-    if (baseCache?.sha256 === reference.sha256) {
+    // Only while the file is still in the folder: a sync file built on a base
+    // that is gone would name a base no other machine can read
+    if (baseCache?.sha256 === reference.sha256 &&
+      await fileSystem.stat(path.join(folder, reference.file)).then(() => true, () => false)) {
       return { text: baseCache.text }
     }
 
@@ -585,6 +588,9 @@ export function createKeeper({
       const lock = await readLock(folder)
       if (lock.exists && lock.token === token) {
         await fileSystem.rm(path.join(folder, LOCK_FILE_NAME), { force: true })
+      } else {
+        // Taken over while this keeper wrote: another may have written too
+        log(lock.exists ? `lock now held by ${lock.machineName ?? 'an unknown machine'}; left in place` : 'lock already gone')
       }
     } catch (error) {
       log(`could not remove the lock: ${errorText(error)}`)
