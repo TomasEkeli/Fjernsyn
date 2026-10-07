@@ -209,7 +209,7 @@ describe('another machine\'s changes', () => {
     await mountNotices(KEEPING, { windowUp: true })
 
     const [[handler]] = window.ftElectron.handleKeeperDataChanged.mock.calls
-    handler(['history'])
+    handler({ sections: ['history'], history: null })
     await flushPromises()
 
     expect(store.dispatched.map(({ type }) => type)).toEqual(['grabHistory'])

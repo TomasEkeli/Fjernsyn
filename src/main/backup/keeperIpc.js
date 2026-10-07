@@ -125,7 +125,7 @@ export function registerKeeper({ installationId, chooseDefaultFolder }) {
     runJob: createWorkerRunner(),
     onStatus: status => sendToAllWindows(IpcChannels.KEEPER_STATUS_CHANGED, status),
     // Every window loads the merged sections again, as it loads them at startup
-    onDataChanged: sections => sendToAllWindows(IpcChannels.KEEPER_DATA_CHANGED, sections),
+    onDataChanged: changes => sendToAllWindows(IpcChannels.KEEPER_DATA_CHANGED, changes),
   })
 
   watchDatastores(datastores, () => keeper.markChanged())

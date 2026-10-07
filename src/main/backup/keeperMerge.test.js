@@ -72,7 +72,10 @@ async function machine(name) {
     installationId: `installation-${name}`,
     machineName: name,
     runJob: async job => runKeeperJob(job),
-    onDataChanged: sections => m.dataChanged.push(sections),
+    onDataChanged: (changes) => {
+      m.dataChanged.push(changes.sections)
+      m.historyChanges = [...(m.historyChanges ?? []), changes.history]
+    },
     sleep: async () => {},
   })
   watchDatastores(datastores, () => m.keeper.markChanged())
@@ -103,6 +106,8 @@ describe('two machines running at once', () => {
     expect(desktop.keeper.status()).toMatchObject({ pause: null, mergedFrom: { machineName: 'Laptop' } })
     expect(await history(desktop)).toEqual(['desktop0001@30', 'laptop00001@30'])
     expect(desktop.dataChanged).toEqual([['history']])
+    // The entry itself goes to the windows, not word to load the whole history
+    expect(desktop.historyChanges).toEqual([{ put: [expect.objectContaining({ videoId: 'laptop00001' })], removed: [] }])
   })
 
   it('keeps both sides when both changed, and the two converge', async () => {
@@ -151,6 +156,7 @@ describe('two machines running at once', () => {
     await desktop.keeper.tick()
 
     expect(await history(desktop)).toEqual(['keep0000001@30'])
+    expect(desktop.historyChanges).toEqual([{ put: [], removed: ['remove00001'] }])
   })
 
   it('a machine joining with data of its own keeps it, and gives it to the other', async () => {

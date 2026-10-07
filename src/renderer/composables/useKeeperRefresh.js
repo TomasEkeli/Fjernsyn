@@ -21,6 +21,11 @@ import { DBPlaylistHandlers } from '../../datastores/handlers/index'
  *   grabAllPlaylists would keep the old ones and make Favorites again, once
  *   in each window. The next start makes it, as every start does.
  *
+ * - history: the entries main sends are put in place and the ones gone
+ *   removed, rather than the whole history loaded again, which with its
+ *   descriptions is tens of megabytes, and would come every minute while
+ *   another machine plays.
+ *
  * A change that comes before the window's data has loaded is held, and
  * loaded once it has: the startup load may have read the datastores before
  * the change, and nothing may load before the settings have.
@@ -69,11 +74,37 @@ async function reloadPlaylists(store) {
 }
 
 /**
+ * The history's changes put into the history store as they are, its order by
+ * when each was watched kept
+ * @param {import('vuex').Store<any>} store
+ * @param {{ put: Record<string, any>[], removed: string[] }} changes
+ */
+function applyHistory(store, { put, removed }) {
+  for (const videoId of removed) {
+    store.commit('removeFromHistoryCacheById', videoId)
+  }
+
+  // Each is put at the top, as a video just watched is; an entry from the
+  // other machine may have been watched long ago, so the order is checked
+  for (const record of put) {
+    store.commit('upsertToHistoryCache', record)
+  }
+
+  const sorted = store.state.history.historyCacheSorted
+  const inOrder = sorted.every((record, index) => index === 0 || sorted[index - 1].timeWatched >= record.timeWatched)
+
+  if (!inOrder) {
+    store.commit('setHistoryCacheSorted', [...sorted].sort((a, b) => b.timeWatched - a.timeWatched))
+  }
+}
+
+/**
  * @param {import('vuex').Store<any>} store
  * @param {Set<string>} sections
  * @param {string} defaultProfileName
+ * @param {{ put: Record<string, any>[], removed: string[] } | null} [historyChanges] the history's changes, applied in place of loading it again
  */
-async function reload(store, sections, defaultProfileName) {
+async function reload(store, sections, defaultProfileName, historyChanges = null) {
   // As at startup, the settings before anything that reads them
   if (sections.has('settings')) {
     await store.dispatch('grabChangedUserSettings')
@@ -90,7 +121,11 @@ async function reload(store, sections, defaultProfileName) {
   }
 
   for (const [section, action] of Object.entries(GRAB_ACTIONS)) {
-    if (sections.has(section)) {
+    if (!sections.has(section)) { continue }
+
+    if (section === 'history' && historyChanges !== null) {
+      applyHistory(store, historyChanges)
+    } else {
       loads.push(store.dispatch(action))
     }
   }
@@ -106,8 +141,8 @@ async function reload(store, sections, defaultProfileName) {
 let listeningTo = null
 
 /**
- * What the listener hands the sections to: the window's latest use
- * @type {(sections: string[]) => void}
+ * What the listener hands the changes to: the window's latest use
+ * @type {(changes: { sections: string[], history: { put: Record<string, any>[], removed: string[] } | null }) => void}
  */
 let receive = () => {}
 
@@ -130,26 +165,31 @@ export function useKeeperRefresh(store, dataLoaded) {
   // One load at a time, so that an older one never lands over a newer
   let loading = Promise.resolve()
 
-  /** @param {Iterable<string>} sections */
-  function load(sections) {
+  /**
+   * @param {Iterable<string>} sections
+   * @param {{ put: Record<string, any>[], removed: string[] } | null} [historyChanges]
+   */
+  function load(sections, historyChanges = null) {
     const wanted = new Set(sections)
 
     loading = loading
-      .then(() => reload(store, wanted, t('Profile.All Channels')))
+      .then(() => reload(store, wanted, t('Profile.All Channels'), historyChanges))
       .catch(error => console.error('Could not load again what the backup keeper changed', error))
   }
 
-  receive = (sections) => {
+  receive = ({ sections, history }) => {
     if (toValue(dataLoaded)) {
-      load(sections)
+      load(sections, history)
     } else {
+      // Held changes are loaded whole once the data has: a load in between
+      // may or may not have read them
       sections.forEach(section => held.add(section))
     }
   }
 
   if (listeningTo !== window.ftElectron) {
     listeningTo = window.ftElectron
-    window.ftElectron.handleKeeperDataChanged(sections => receive(sections))
+    window.ftElectron.handleKeeperDataChanged(changes => receive(changes))
   }
 
   watch(() => toValue(dataLoaded), (loaded) => {
