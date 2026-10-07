@@ -1,3 +1,5 @@
+import os from 'node:os'
+
 import { app, ipcMain } from 'electron'
 
 import { IpcChannels } from '../../constants'
@@ -7,7 +9,8 @@ import { backupsFolder, ensureInstallationId, restoreBackup } from './restore'
 
 /**
  * The IPC surface of the backup: where the safety copies go, for the
- * confirmation to say, and the restore itself. Also makes this data folder's
+ * confirmation to say, this computer's name, for the header, and the restore
+ * itself. Also makes this data folder's
  * installation id, if it has none yet, for the backups' header.
  *
  * @param {object} deps
@@ -26,6 +29,16 @@ export function registerBackupHandlers({ relaunch }) {
     }
 
     return backupsFolder(dataFolder)
+  })
+
+  // The host name, read on each request rather than once, as it may change
+  // while the app runs
+  ipcMain.handle(IpcChannels.BACKUP_MACHINE_NAME, (event) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      return null
+    }
+
+    return os.hostname()
   })
 
   // Once a restore has started, another is refused until it fails or the

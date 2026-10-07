@@ -46,6 +46,7 @@ const SECTION_DATASTORES = Object.freeze([
  */
 function isRestorableSetting(id, value) {
   return id !== 'screenshotFolderPath' &&
+    id !== 'backupFolder' &&
     id !== 'installationId' &&
     id !== 'bounds' &&
     isRendererWritableYtDlpSetting(id, value)
