@@ -16,11 +16,16 @@ import { runKeeperJob } from './keeperWorker'
 // another keeper acts in between; never released, it is a crash, and a fresh
 // keeper on the same data folder is the restart. Nothing waits on real time:
 // ages are set on the files' modified times, against clocks near the real one.
+// So every age set is far past its limit, in case the real clock is stepped
+// back during a run; and as every test does real file and datastore work, the
+// slowest take over three seconds of the default five on a loaded machine.
 
 const MINUTE = 60_000
 const DAY = 24 * 60 * MINUTE
-/** Older than the two minutes after which a lock is stale */
-const STALE = 2 * MINUTE + 10_000
+/** A lock this old is stale by any clock: the limit is two minutes */
+const STALE = 60 * MINUTE
+/** Each test opens three or more machines of eight datastores and gzips bases */
+const SLOW = { timeout: 30_000 }
 
 const DATASTORE_FILES = {
   settings: 'settings',
@@ -227,7 +232,7 @@ function syncTool(from, to) {
 
 // #endregion the harness
 
-describe('reading while another keeper writes', () => {
+describe('reading while another keeper writes', SLOW, () => {
   it.each([
     ['after the lock is made', 'after', at.lockMade, OLD],
     ['after the new base\'s temporary file', 'after', at.tempWritten('base'), OLD],
@@ -279,7 +284,7 @@ describe('reading while another keeper writes', () => {
   })
 })
 
-describe('writers at once', () => {
+describe('writers at once', SLOW, () => {
   it.each([
     ['b ticks while a holds the lock', /lock held by MACHINE-a; skipping this tick/, async (a, b) => {
       const held = a.hold('after', at.lockMade)
@@ -438,7 +443,7 @@ describe('writers at once', () => {
   })
 })
 
-describe('crashed writes', () => {
+describe('crashed writes', SLOW, () => {
   /**
    * a writes h1, then crashes at a step of writing h2
    * @returns {Promise<string[]>} the folder's files before the crash
@@ -541,7 +546,7 @@ describe('crashed writes', () => {
     await b.keeper.start()
     expect(files()).toContain(temp)
 
-    age(path.join(folderPath(), temp), DAY + MINUTE)
+    age(path.join(folderPath(), temp), 2 * DAY)
 
     const restarted = await machine('b')
     await restarted.keeper.start()
@@ -566,7 +571,7 @@ describe('crashed writes', () => {
     expect(files()).toContain(orphan)
     expect(files().filter(isBaseFileName)).toHaveLength(2)
 
-    age(path.join(folderPath(), orphan), 7 * DAY + MINUTE)
+    age(path.join(folderPath(), orphan), 8 * DAY)
     await a.datastores.history.insertAsync(historyEntry('h4'))
     await a.keeper.tick()
 
