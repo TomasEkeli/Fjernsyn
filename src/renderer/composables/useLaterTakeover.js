@@ -38,25 +38,22 @@ export async function runLaterTakeover(store, now = Date.now()) {
     return 'nothing-to-move'
   }
 
+  // Every platform's videos: a PeerTube one keeps what it needs to render and
+  // route (laterItemFromVideo), as it had in the playlist
   const videos = (playlist.videos ?? []).filter(video => typeof video?.videoId === 'string' && video.videoId !== '')
-  const youtube = videos.filter(video => video.platform == null)
 
-  const { failed } = await store.dispatch('addManyToLater', youtube.map(video => laterItemFromVideo(video, video.timeAdded ?? now)))
+  const { failed } = await store.dispatch('addManyToLater', videos.map(video => laterItemFromVideo(video, video.timeAdded ?? now)))
 
   if (failed > 0) {
     return 'failed'
   }
 
-  // The Later list holds YouTube videos only: a playlist with others in it is
-  // kept, as an ordinary playlist, rather than lose them
-  if (youtube.length === videos.length) {
-    if (store.getters.getQuickBookmarkTargetPlaylistId === WATCH_LATER_PLAYLIST_ID) {
-      const favorites = store.getters.getPlaylist('favorites')
-      await store.dispatch('updateQuickBookmarkTargetPlaylistId', favorites != null ? 'favorites' : '')
-    }
-
-    await store.dispatch('removePlaylist', WATCH_LATER_PLAYLIST_ID)
+  if (store.getters.getQuickBookmarkTargetPlaylistId === WATCH_LATER_PLAYLIST_ID) {
+    const favorites = store.getters.getPlaylist('favorites')
+    await store.dispatch('updateQuickBookmarkTargetPlaylistId', favorites != null ? 'favorites' : '')
   }
+
+  await store.dispatch('removePlaylist', WATCH_LATER_PLAYLIST_ID)
 
   await store.dispatch('updateLaterTakeoverDone', true)
 

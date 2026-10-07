@@ -138,13 +138,16 @@ describe('the Watch Later takeover', () => {
     expect(queuedIds(store)).toEqual(['a'])
   })
 
-  it('keeps a playlist holding PeerTube videos, which the Later list cannot hold', async () => {
-    const store = fakeStore({ playlists: [{ _id: 'watchLater', videos: [video('a'), video('uuid', { platform: 'peertube', host: 'x.org' })] }] })
+  it('moves PeerTube videos too, with what they need to render and route, and deletes the playlist', async () => {
+    const uuid = 'b29290cc-dc51-4a12-bcb2-2aa5fece7605'
+    const thumbnail = 'https://x.org/lazy-static/previews/a.jpg'
+    const store = fakeStore({ playlists: [{ _id: 'watchLater', videos: [video('a'), video(uuid, { platform: 'peertube', host: 'x.org', thumbnail })] }] })
 
-    await runLaterTakeover(store, NOW)
+    expect(await runLaterTakeover(store, NOW)).toBe('moved')
 
-    expect(queuedIds(store)).toEqual(['a'])
-    expect(store.playlists.map(p => p._id)).toEqual(['watchLater'])
+    expect(queuedIds(store)).toEqual(['a', uuid])
+    expect(store.laterState.laterItems[uuid]).toMatchObject({ platform: 'peertube', host: 'x.org', thumbnail })
+    expect(store.playlists).toEqual([])
     expect(store.settings.laterTakeoverDone).toBe(true)
   })
 })

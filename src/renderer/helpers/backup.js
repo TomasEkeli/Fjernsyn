@@ -21,6 +21,7 @@
 
 import { MAIN_PROFILE_ID } from '../../constants'
 import { splitImportedPlatformFields } from '../platform/records'
+import { PLATFORM_YOUTUBE, platformOf } from '../platform/refs'
 
 export const BACKUP_FORMAT = 'fjernsyn-backup'
 
@@ -248,20 +249,28 @@ const CHECKS = {
     return { record: videosLeftOut === 0 ? record : { ...record, videos }, videosLeftOut }
   },
 
-  // What the Later import accepts, with the item's own place and alarm kept
-  later(record) {
-    if (!isNonEmptyString(record.videoId) || typeof record.title !== 'string') {
+  // What the Later import accepts, with the item's own place and alarm kept;
+  // a PeerTube item checked as the other PeerTube records are, and never armed
+  later(original) {
+    if (!isNonEmptyString(original.videoId) || typeof original.title !== 'string') {
       return { leftOut: 'missingFields' }
     }
 
-    const alarm = record.alarm != null && typeof record.alarm.at === 'number'
+    const checked = checkedPeerTube(original)
+    if (!('record' in checked)) { return checked }
+
+    const record = checked.record
+    const youtube = platformOf(record) === PLATFORM_YOUTUBE
+
+    const alarm = youtube && record.alarm != null && typeof record.alarm.at === 'number'
       ? { ...record.alarm, armedAt: typeof record.alarm.armedAt === 'number' ? record.alarm.armedAt : record.alarm.at }
       : null
 
     return {
       record: {
         ...record,
-        _id: isNonEmptyString(record._id) ? record._id : record.videoId,
+        // A PeerTube item's uuid may have been put in lower case by the check
+        _id: youtube && isNonEmptyString(record._id) ? record._id : record.videoId,
         addedAt: typeof record.addedAt === 'number' ? record.addedAt : 0,
         position: typeof record.position === 'number' && Number.isFinite(record.position) ? record.position : 0,
         alarm,

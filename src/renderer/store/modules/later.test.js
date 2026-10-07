@@ -137,6 +137,23 @@ describe('the Later store', () => {
     expect(DBLaterHandlers.updateAlarm).toHaveBeenCalledWith('a', { at: NOW + 1000, armedAt: NOW }, NOW + 1000)
   })
 
+  it('never arms a PeerTube video, which nothing can check', async () => {
+    const state = freshState()
+    const context = contextFor(state)
+    const uuid = 'b29290cc-dc51-4a12-bcb2-2aa5fece7605'
+    const peertube = video(uuid, { platform: 'peertube', host: 'video.blender.org', isUpcoming: true })
+
+    await later.actions.arm(context, { video: peertube, at: NOW + 1000 })
+    expect(state.laterItems).toEqual({})
+
+    await later.actions.addToLater(context, peertube)
+    await later.actions.arm(context, { video: peertube, at: NOW + 1000 })
+
+    expect(queuedIds(state)).toEqual([uuid])
+    expect(armedIds(state)).toEqual([])
+    expect(DBLaterHandlers.updateAlarm).not.toHaveBeenCalled()
+  })
+
   it('disarms to the top of the queued items', async () => {
     const state = freshState()
     const context = contextFor(state)

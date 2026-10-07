@@ -18,10 +18,17 @@
  * @property {number} armedAt  when it was armed, ms
  */
 
+import { importedPlaylistVideo } from '../platform/records'
+import { PLATFORM_PEERTUBE, PLATFORM_YOUTUBE, platformOf } from '../platform/refs'
+
 /**
  * @typedef {object} LaterItem
- * @property {string} _id        the video's ref: its videoId for YouTube
+ * @property {string} _id        the video's `videoId`: YouTube's id, or a
+ *   PeerTube video's uuid, which is the same on every instance it federates to
  * @property {string} videoId
+ * @property {'peertube'} [platform] absent for YouTube, as on every record
+ * @property {string} [host]       PeerTube: the origin, for its route
+ * @property {string} [thumbnail]  PeerTube: not to be built from the id
  * @property {string} title
  * @property {string} author
  * @property {string} authorId
@@ -197,9 +204,20 @@ export function distanceTo(now, at) {
 }
 
 /**
+ * Whether an item can be armed: only YouTube's, since a check is a YouTube
+ * `/player` request. A PeerTube item is only ever queued.
+ * @param {{ platform?: string }} item
+ */
+export function isArmable(item) {
+  return platformOf(item) === PLATFORM_YOUTUBE
+}
+
+/**
  * The record for a video, from whatever the card or the watch page had, so
  * that the page renders without asking YouTube. Neither positioned nor armed:
- * the caller sets both.
+ * the caller sets both. A PeerTube video keeps its platform, origin host and
+ * thumbnail, as a playlist entry does, so that it renders and routes to its
+ * own watch page from what is stored.
  * @param {any} video
  * @param {number} now
  * @returns {LaterItem}
@@ -235,6 +253,12 @@ export function laterItemFromVideo(video, now) {
 
   if (premiereDate != null && Number.isFinite(premiereDate)) { item.premiereDate = premiereDate }
 
+  if (platformOf(video) === PLATFORM_PEERTUBE) {
+    item.platform = PLATFORM_PEERTUBE
+    item.host = video.host
+    if (typeof video.thumbnail === 'string' && video.thumbnail !== '') { item.thumbnail = video.thumbnail }
+  }
+
   return item
 }
 
@@ -268,7 +292,9 @@ export function laterToExport(items) {
 /**
  * The items of an export file, in its order: every line that parses into an
  * object with a video id and a title. Their positions are not kept, as an
- * import puts them above the list as a block; anything else of theirs is.
+ * import puts them above the list as a block; anything else of theirs is. A
+ * PeerTube item is checked as an imported playlist video is, and left out when
+ * it cannot be one; it never comes armed.
  * @param {string} text
  * @returns {LaterItem[]}
  */
@@ -290,13 +316,17 @@ export function laterFromExport(text) {
       continue
     }
 
-    const alarm = parsed.alarm != null && typeof parsed.alarm.at === 'number'
-      ? { at: parsed.alarm.at, armedAt: typeof parsed.alarm.armedAt === 'number' ? parsed.alarm.armedAt : parsed.alarm.at }
+    // A PeerTube item's platform fields, checked as a playlist import checks them
+    const checked = importedPlaylistVideo(parsed)
+    if (checked === null) { continue }
+
+    const alarm = isArmable(checked) && checked.alarm != null && typeof checked.alarm.at === 'number'
+      ? { at: checked.alarm.at, armedAt: typeof checked.alarm.armedAt === 'number' ? checked.alarm.armedAt : checked.alarm.at }
       : null
 
     items.push({
-      ...parsed,
-      _id: parsed.videoId,
+      ...checked,
+      _id: checked.videoId,
       addedAt: typeof parsed.addedAt === 'number' ? parsed.addedAt : 0,
       position: 0,
       alarm,

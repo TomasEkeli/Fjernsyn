@@ -2752,6 +2752,35 @@ describe('the Later list on the watch page', () => {
     expect(dispatched('arm')).toEqual([{ video: expect.objectContaining({ videoId: YT_ID }), at }])
   })
 
+  it('adds a PeerTube video with its clock button, with what the Later page needs to render and route it', async () => {
+    const { wrapper } = await openWatchPage(playableVideo())
+
+    button(wrapper, 'laterButton').vm.$emit('click')
+
+    expect(dispatched('addToLater')).toEqual([expect.objectContaining({
+      videoId: UUID, title: 'Sprite Fright', authorId: HANDLE, platform: 'peertube', host: HOST, thumbnail: THUMBNAIL,
+    })])
+  })
+
+  it('removes a PeerTube video already there, and never offers to arm one', async () => {
+    store.setGetter('getIsInLater', id => id === UUID)
+    const { wrapper } = await openWatchPage(liveVideo('waiting', { isUpcoming: true, premiereDate: new Date(Date.now() + 60 * 60 * 1000) }))
+
+    expect(button(wrapper, 'armButton')).toBeUndefined()
+
+    button(wrapper, 'laterButton').vm.$emit('click')
+    expect(dispatched('removeFromLater')).toEqual([UUID])
+  })
+
+  it('takes a PeerTube item off the list when played to its end', async () => {
+    store.setGetter('getIsInLater', id => id === UUID)
+    const { wrapper } = await openWatchPage(playableVideo())
+
+    findPlayer(wrapper).vm.$emit('ended')
+
+    expect(dispatched('removeFromLater')).toEqual([UUID])
+  })
+
   it('takes a queued item off the list when played to its end, and not an armed one', async () => {
     store.setGetter('getIsInLater', () => true)
     const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
