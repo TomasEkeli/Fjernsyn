@@ -987,6 +987,8 @@ export function createKeeper({
     log(`startup: folder ${folder}, last seen ${short(state.lastSeen)}, machine ${machineName ?? '-'}`)
 
     await removeTemporaryFiles(folder, { own: true })
+    // The state file is written the same way, in the data folder
+    await removeTemporaryFiles(backupsFolder(dataFolder), { own: true })
 
     const lock = await readLock(folder)
     const freshLock = lock.exists && lock.fresh
@@ -1236,10 +1238,15 @@ export function createKeeper({
      * cannot hold the quit
      * @param {number} [limit]
      */
-    quit: (limit = QUIT_LIMIT_MS) => Promise.race([
-      exclusive(quitStep).catch(() => {}),
-      sleep(limit).then(() => log('quit: the write did not finish in time')),
-    ]),
+    quit: (limit = QUIT_LIMIT_MS) => {
+      let finished = false
+      return Promise.race([
+        exclusive(quitStep).catch(() => {}).finally(() => { finished = true }),
+        sleep(limit).then(() => {
+          if (!finished) { log('quit: the write did not finish in time') }
+        }),
+      ])
+    },
 
     /** @param {KeeperAnswer} answer */
     answer: async (answer) => {
