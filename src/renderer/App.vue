@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="dataReady"
+    v-if="dataReady && !showStartScreen"
     class="app"
     :class="{
       hideOutlines: outlinesHidden,
@@ -56,6 +56,14 @@
       v-if="showProgressBar"
     />
   </div>
+  <!--
+    Fjernsyn: the test card while the app starts, faded out over the page once
+    it is up. It is outside the block above, so what comes after it here shows
+    over the start screen as well as over the page.
+  -->
+  <Transition name="fade">
+    <StartScreen v-if="showStartScreen" />
+  </Transition>
 </template>
 
 <script setup>
@@ -74,6 +82,7 @@ import FtCreatePlaylistPrompt from './components/FtCreatePlaylistPrompt/FtCreate
 import FtKeyboardShortcutPrompt from './components/FtKeyboardShortcutPrompt/FtKeyboardShortcutPrompt.vue'
 import FtSearchFilters from './components/FtSearchFilters/FtSearchFilters.vue'
 import LaterCountdown from './components/LaterCountdown/LaterCountdown.vue'
+import StartScreen from './components/StartScreen/StartScreen.vue'
 
 import store from './store/index'
 
@@ -90,6 +99,7 @@ import { useWindowMoveGesture } from './composables/useWindowMoveGesture'
 import { useMainWindow } from './composables/useMainWindow'
 import { useLaterTakeover } from './composables/useLaterTakeover'
 import { useLaterScheduler } from './composables/useLaterScheduler'
+import { useStartScreen, waitForKeeper } from './composables/useStartScreen'
 
 const route = useRoute()
 const router = useRouter()
@@ -123,6 +133,7 @@ const showProgressBar = computed(() => store.getters.getShowProgressBar)
 const defaultInvidiousInstance = computed(() => store.getters.getDefaultInvidiousInstance)
 
 const dataReady = ref(false)
+const showStartScreen = useStartScreen(dataReady)
 
 // The Later list: the main window, and only it, moves the old Watch Later
 // playlist into it once, and checks and fires its armed items
@@ -154,6 +165,7 @@ if (process.env.IS_ELECTRON && process.platform === 'darwin') {
 }
 
 onMounted(async () => {
+  await waitForKeeper()
   await store.dispatch('grabUserSettings')
 
   updateTheme()

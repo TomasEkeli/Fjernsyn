@@ -1,0 +1,11 @@
+/*
+ * Over the whole window, so it covers the page as it fades out. Above the
+ * page's own layers and below the prompts (201) and toasts (300), so that a
+ * prompt asked while the app starts shows over it.
+ */
+.startScreen {
+  background-color: #808080;
+  inset: 0;
+  position: fixed;
+  z-index: 200;
+}
