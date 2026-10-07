@@ -12,6 +12,7 @@ import { IpcChannels, SyncEvents } from '../../constants'
 import * as datastores from '../../datastores/index'
 import { isFreeTubeUrl } from '../utils'
 import { createKeeper, TICK_MS, watchDatastores } from './keeper'
+import { runKeeperJob } from './keeperWorker'
 
 /**
  * The keeper wired into main: the datastores watched for writes, the startup
@@ -24,12 +25,16 @@ const ANSWERS = new Set(['restore', 'overwrite', 'notNow', 'wait', 'continue', '
 
 /**
  * The keeper's jobs in a worker thread, started on the first job and again
- * after one that died
+ * after one that died. A worker that cannot start at all (its script not
+ * found, or not loadable from a packaged build) is not tried again: the jobs
+ * run on main's thread instead, slower to the touch but kept.
  * @returns {(job: object) => Promise<any>}
  */
 function createWorkerRunner() {
   /** @type {Worker | null} */
   let worker = null
+  let broken = false
+  let answered = false
   let nextId = 0
   /** @type {Map<number, { resolve: (value: any) => void, reject: (error: Error) => void }>} */
   const waiting = new Map()
@@ -46,6 +51,7 @@ function createWorkerRunner() {
     worker = new Worker(new URL('./keeperWorker.js', import.meta.url), { workerData: { fjernsynKeeper: true } })
 
     worker.on('message', ({ id, result, error }) => {
+      answered = true
       const job = waiting.get(id)
       if (job === undefined) { return }
 
@@ -57,20 +63,38 @@ function createWorkerRunner() {
       }
     })
 
-    worker.on('error', error => failAll(error))
+    worker.on('error', (error) => {
+      if (!answered) {
+        broken = true
+        console.error('The keeper\'s worker could not start; its jobs run on the main thread', error)
+      }
+      failAll(error)
+    })
     worker.on('exit', code => failAll(new Error(`The keeper's worker stopped (${code})`)))
 
     // The worker must never keep the app from quitting
     worker.unref()
   }
 
-  return (job) => new Promise((resolve, reject) => {
+  const inWorker = job => new Promise((resolve, reject) => {
     if (worker === null) { start() }
 
     const id = nextId++
     waiting.set(id, { resolve, reject })
     worker.postMessage({ id, job })
   })
+
+  return async (job) => {
+    if (!broken) {
+      try {
+        return await inWorker(job)
+      } catch (error) {
+        if (!broken) { throw error }
+      }
+    }
+
+    return runKeeperJob(job)
+  }
 }
 
 /**

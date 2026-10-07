@@ -558,7 +558,7 @@ describe('the Backup group', () => {
         [{ pause: { ...pause, reason: 'refused', detail: 'baseMismatch' } }, 'Paused: the backup in the folder can\'t be read (its base file does not match it).', ['Overwrite with this machine\'s data']],
         [{ pause: { ...pause, reason: 'refused' } }, 'Paused: the backup in the folder can\'t be read.', ['Overwrite with this machine\'s data']],
         [{ pause: { ...pause, reason: 'newer', formatVersion: 2 } }, 'Paused: the backup was written by a newer Fjernsyn. Update Fjernsyn to keep it.', []],
-        [{ pause: { ...pause, reason: 'baseMissing' } }, 'Paused: the backup synthetic-laptop wrote at 14:02 is still arriving.', []],
+        [{ pause: { ...pause, reason: 'baseMissing' } }, 'Paused: the backup synthetic-laptop wrote at 14:02 is still arriving.', ['Overwrite with this machine\'s data']],
       ]
 
       const wrapper = await mountKeeping(keeping())

@@ -41,6 +41,9 @@ export const RETRIES = 2
 export const FOREIGN_TEMP_MS = 24 * 60 * 60_000
 export const UNREFERENCED_BASE_MS = 7 * 24 * 60 * 60_000
 export const LOG_CAP_BYTES = 1024 * 1024
+export const STARTUP_READ_LIMIT_MS = 30_000
+const RENAME_TRIES = 5
+const RENAME_RETRY_MS = 200
 
 const gunzip = promisify(gunzipCallback)
 
@@ -78,6 +81,7 @@ const gunzip = promisify(gunzipCallback)
  * @property {string | null} lastSeen the hash of the sync file as this machine last wrote or took it in
  * @property {string | null} contentHash the content last written or taken in
  * @property {string | null} pending the hash of a sync file being renamed into place
+ * @property {string | null} pendingContent the content of that sync file, made the content hash with it
  */
 
 /**
@@ -190,8 +194,13 @@ export function createKeeper({
   /** Raised by every write to a datastore the backup holds */
   let changed = true
 
-  /** Overwrite was chosen: the next write goes ahead whoever wrote the sync file */
-  let overwriting = false
+  /**
+   * Overwrite was chosen over the sync file with this hash (null: none was
+   * there): a write goes ahead over that file, and only that one, whoever
+   * wrote it. Undefined when not overwriting.
+   * @type {string | null | undefined}
+   */
+  let overwriteHash
 
   /** The hash of the sync file the pause is about */
   let pausedOn = null
@@ -272,7 +281,8 @@ export function createKeeper({
       } catch {}
 
       if (size + Buffer.byteLength(line) > LOG_CAP_BYTES) {
-        await fileSystem.rename(file, `${file}.1`)
+        // A rename that fails (a viewer holding it on Windows) must not stop the log
+        await fileSystem.rename(file, `${file}.1`).catch(() => {})
       }
 
       await fileSystem.appendFile(file, line, 'utf8')
@@ -293,11 +303,13 @@ export function createKeeper({
    */
   function pause(reason, sync, { parsed = null, detail = null, formatVersion = null } = {}) {
     pausedOn = sync?.hash ?? null
-    overwriting = false
+    overwriteHash = undefined
 
     const pauseStatus = {
       reason,
-      key: `${reason}:${sync?.hash ?? 'none'}`,
+      // Another machine writing while this one is paused gives the file a new
+      // hash every minute; the question is the same until it is answered
+      key: reason === 'otherMachine' ? `${reason}:${state.lastSeen ?? 'none'}` : `${reason}:${sync?.hash ?? 'none'}`,
       machineName: parsed?.ok ? parsed.header.machineName : null,
       writtenAt: sync?.mtime ?? null,
       detail,
@@ -313,13 +325,25 @@ export function createKeeper({
     setStatus({ pause: null })
   }
 
+  /**
+   * The sync file in the folder is the one this keeper was renaming into
+   * place when it stopped: its own, now last seen, with the content it held
+   */
+  function adoptPending() {
+    log(`sync file ${short(state.pending)} is the pending one: now last seen`)
+    state.lastSeen = state.pending
+    state.contentHash = state.pendingContent ?? state.contentHash
+    state.pending = null
+    state.pendingContent = null
+  }
+
   // #endregion status and log
 
   // #region state file
 
   /** @param {string | null} folder */
   function emptyState(folder) {
-    return { folder, lastSeen: null, contentHash: null, pending: null }
+    return { folder, lastSeen: null, contentHash: null, pending: null, pendingContent: null }
   }
 
   async function loadState() {
@@ -328,7 +352,7 @@ export function createKeeper({
       const read = JSON.parse(text)
       const field = name => typeof read?.[name] === 'string' ? read[name] : null
 
-      return { folder: field('folder'), lastSeen: field('lastSeen'), contentHash: field('contentHash'), pending: field('pending') }
+      return { folder: field('folder'), lastSeen: field('lastSeen'), contentHash: field('contentHash'), pending: field('pending'), pendingContent: field('pendingContent') }
     } catch (error) {
       if (!isMissing(error)) {
         log(`state file unreadable, starting afresh: ${errorText(error)}`)
@@ -381,11 +405,21 @@ export function createKeeper({
 
     await fileSystem.writeFile(temporary, data)
 
-    try {
-      await fileSystem.rename(temporary, path.join(folder, name))
-    } catch (error) {
-      await fileSystem.rm(temporary, { force: true }).catch(() => {})
-      throw error
+    for (let tries = 1; ; tries++) {
+      try {
+        await fileSystem.rename(temporary, path.join(folder, name))
+        return
+      } catch (error) {
+        // Windows refuses to replace a file another program holds open, as a
+        // sync tool or a virus scanner may for a moment
+        if (tries < RENAME_TRIES && ['EPERM', 'EACCES', 'EBUSY'].includes(error?.code)) {
+          await sleep(RENAME_RETRY_MS * tries)
+          continue
+        }
+
+        await fileSystem.rm(temporary, { force: true }).catch(() => {})
+        throw error
+      }
     }
   }
 
@@ -430,7 +464,13 @@ export function createKeeper({
     try {
       packed = await fileSystem.readFile(path.join(folder, reference.file))
     } catch (error) {
-      return { problem: isMissing(error) ? 'missing' : 'baseUnreadable' }
+      // A file that cannot be opened (held by a sync tool, online only and
+      // the network down) is as good as not here yet: looked for again,
+      // never refused with Overwrite offered
+      if (!isMissing(error)) {
+        log(`base ${reference.file} could not be read: ${errorText(error)}`)
+      }
+      return { problem: 'missing' }
     }
 
     let text
@@ -462,7 +502,18 @@ export function createKeeper({
     let readAgainForBase = false
 
     for (;;) {
-      const sync = await readSync(folder)
+      let sync
+      try {
+        sync = await readSync(folder)
+      } catch (error) {
+        if (!retry || failures >= RETRIES) { throw error }
+
+        failures++
+        log(`sync file could not be read (${errorText(error)}), reading again in a second`)
+        await sleep(RETRY_MS)
+        continue
+      }
+
       if (sync === null) {
         return { kind: 'none' }
       }
@@ -712,11 +763,12 @@ export function createKeeper({
 
       const sync = await readSync(folder)
 
-      if (sync !== null && !overwriting) {
+      // Overwrite goes over the file it was chosen for, and no newer one
+      const overwrite = overwriteHash !== undefined && (sync?.hash ?? null) === overwriteHash
+
+      if (sync !== null && !overwrite) {
         if (sync.hash === state.pending) {
-          log(`sync file ${short(sync.hash)} is the pending one: now last seen`)
-          state.lastSeen = sync.hash
-          state.pending = null
+          adoptPending()
           await saveState()
         } else if (sync.hash !== state.lastSeen) {
           pause('otherMachine', sync, { parsed: readSyncFile(sync.text) })
@@ -724,7 +776,7 @@ export function createKeeper({
         }
       }
 
-      const current = sync !== null && sync.hash === state.lastSeen && !overwriting
+      const current = sync !== null && sync.hash === state.lastSeen && !overwrite
 
       if (!changed && current) {
         return
@@ -786,12 +838,14 @@ export function createKeeper({
         }
 
         state.pending = result.syncHash
+        state.pendingContent = result.contentHash
         await saveState()
 
         await writeAtomic(folder, SYNC_FILE_NAME, result.syncText)
 
         state.lastSeen = result.syncHash
         state.pending = null
+        state.pendingContent = null
         state.contentHash = result.contentHash
         await saveState()
       } finally {
@@ -804,7 +858,7 @@ export function createKeeper({
         await removeTemporaryFiles(folder, { own: false })
       }
 
-      overwriting = false
+      overwriteHash = undefined
 
       const counts = Object.entries(sections).map(([name, records]) => `${name} ${records.length}`).join(', ')
       log(`wrote sync file ${short(result.syncHash)} (${result.syncText.length} chars${result.newBase ? `, new base ${result.newBase.file}` : ''}), content ${short(result.contentHash)}, ${counts}, ${now() - started} ms`)
@@ -825,9 +879,11 @@ export function createKeeper({
    * Safety copy, then each section replaced. Last seen moves only once every
    * section is, so a take in cut short is taken in again at the next start.
    * @param {Extract<KeptRead, { kind: 'ok' }>} kept
+   * @param {object} [options]
+   * @param {boolean} [options.keepUnwritten] ask rather than take in when this machine has changes it never wrote: a start's take in, which nobody chose
    * @returns {Promise<'same' | 'tookIn' | 'failed'>}
    */
-  async function takeIn(kept) {
+  async function takeIn(kept, { keepUnwritten = false } = {}) {
     const started = now()
     const prepared = await runJob({
       type: 'prepareTakeIn',
@@ -849,9 +905,19 @@ export function createKeeper({
       log(`sync file ${short(kept.sync.hash)} by ${writer} has the same content as here: nothing to take in`)
       state.lastSeen = kept.sync.hash
       state.pending = null
+      state.pendingContent = null
       state.contentHash = prepared.keptContentHash
       await saveState()
       return 'same'
+    }
+
+    // Changes made here and never written (a crash before the tick, a quit
+    // write that failed, a pause put off with Not now) would be lost to the
+    // safety copy without a word: the same question as when both machines run
+    if (keepUnwritten && state.contentHash !== null && prepared.localContentHash !== state.contentHash) {
+      log(`this machine has changes it never wrote (content ${short(prepared.localContentHash)}, last written or taken in ${short(state.contentHash)}): asking before taking in sync file ${short(kept.sync.hash)} by ${writer}`)
+      pause('otherMachine', kept.sync, { parsed: kept.parsed })
+      return 'failed'
     }
 
     const result = await restoreBackup({
@@ -870,6 +936,7 @@ export function createKeeper({
 
     state.lastSeen = kept.sync.hash
     state.pending = null
+    state.pendingContent = null
     state.contentHash = prepared.keptContentHash
     await saveState()
 
@@ -906,9 +973,7 @@ export function createKeeper({
     }
 
     if (kept.sync.hash === state.pending) {
-      log(`sync file ${short(kept.sync.hash)} is the pending one: now last seen`)
-      state.lastSeen = kept.sync.hash
-      state.pending = null
+      adoptPending()
       await saveState()
       setStatus({ writtenAt: kept.sync.mtime })
       return true
@@ -924,7 +989,7 @@ export function createKeeper({
         return false
 
       case 'ok': {
-        const outcome = await takeIn(kept)
+        const outcome = await takeIn(kept, { keepUnwritten: true })
 
         if (outcome === 'tookIn') {
           setStatus({ tookIn: { key: kept.sync.hash, machineName: kept.parsed.header.machineName, writtenAt: kept.sync.mtime } })
@@ -997,7 +1062,24 @@ export function createKeeper({
       log(`startup: a fresh lock by ${lock.machineName ?? 'an unknown machine'}`)
     }
 
-    const kept = await readKept(folder, { retry: !freshLock })
+    // A folder that hangs (a network mount, a file online only while the
+    // network is down) must not hold the start screen up for good
+    let timer
+    const kept = await Promise.race([
+      readKept(folder, { retry: !freshLock }),
+      new Promise((resolve) => {
+        timer = setTimeout(() => resolve(null), STARTUP_READ_LIMIT_MS)
+        timer.unref?.()
+      }),
+    ])
+    clearTimeout(timer)
+
+    if (kept === null) {
+      log(`startup: the folder did not answer in ${STARTUP_READ_LIMIT_MS / 1000} s; going on without a take in`)
+      setStatus({ failure: { message: 'The backup folder did not answer at startup', since: now() } })
+      markReady()
+      return
+    }
 
     if (await settle(kept, { freshLock })) {
       markReady()
@@ -1013,36 +1095,43 @@ export function createKeeper({
     while (status.arriving?.waitingSince != null) {
       await sleep(LOOK_AGAIN_MS)
 
-      const done = await exclusive(async () => {
-        if (status.arriving?.waitingSince == null) { return true }
-
-        const folder = await currentFolder()
-        if (folder === null) {
-          setStatus({ arriving: null })
-          markReady()
-          return true
-        }
-
-        const kept = await readKept(folder)
-
-        if (kept.kind === 'baseMissing') {
-          if (kept.sync.hash !== awaited?.sync.hash) {
-            log(`a newer sync file ${short(kept.sync.hash)} arrived while waiting; its base is not here either`)
-            arriving(kept, status.arriving.waitingSince)
-          }
-          return false
-        }
-
-        log(`waited ${Math.round((now() - status.arriving.waitingSince) / 1000)} s: ${kept.kind}`)
-        await settle(kept)
-        awaited = null
-        setStatus({ arriving: null })
-        markReady()
-        return true
+      const done = await exclusive(lookForBase).catch((error) => {
+        // Looked for again in ten seconds; Stop waiting is always there
+        log(`looking for the base failed: ${errorText(error)}`)
+        return false
       })
 
       if (done) { return }
     }
+  }
+
+  /** @returns {Promise<boolean>} whether the waiting is over */
+  async function lookForBase() {
+    if (status.arriving?.waitingSince == null) { return true }
+
+    const folder = await currentFolder()
+    if (folder === null) {
+      setStatus({ arriving: null })
+      markReady()
+      return true
+    }
+
+    const kept = await readKept(folder)
+
+    if (kept.kind === 'baseMissing') {
+      if (kept.sync.hash !== awaited?.sync.hash) {
+        log(`a newer sync file ${short(kept.sync.hash)} arrived while waiting; its base is not here either`)
+        arriving(kept, status.arriving.waitingSince)
+      }
+      return false
+    }
+
+    log(`waited ${Math.round((now() - status.arriving.waitingSince) / 1000)} s: ${kept.kind}`)
+    await settle(kept)
+    awaited = null
+    setStatus({ arriving: null })
+    markReady()
+    return true
   }
 
   /**
@@ -1061,7 +1150,8 @@ export function createKeeper({
       return
     }
 
-    if (sync.hash === pausedOn && status.pause.reason !== 'baseMissing') { return }
+    // A file that could not be read, or whose base had not come, is read again
+    if (sync.hash === pausedOn && (status.pause.reason === 'otherMachine' || status.pause.reason === 'newer')) { return }
 
     const kept = await readKept(folder, { retry: false })
 
@@ -1111,7 +1201,13 @@ export function createKeeper({
         }
 
         relaunching = true
-        const outcome = await takeIn(kept)
+        let outcome
+        try {
+          outcome = await takeIn(kept)
+        } catch (error) {
+          relaunching = false
+          throw error
+        }
 
         if (outcome === 'failed') {
           relaunching = false
@@ -1132,7 +1228,7 @@ export function createKeeper({
       case 'overwrite':
         if (status.pause === null || status.pause.reason === 'newer') { return }
         resume()
-        overwriting = true
+        overwriteHash = (await readSync(folder))?.hash ?? null
         changed = true
         await write(folder)
         return
@@ -1179,7 +1275,7 @@ export function createKeeper({
     const ours = kept.kind !== 'none' && kept.parsed?.ok && kept.parsed.header.installationId === installationId
 
     if (kept.kind === 'none' || ours) {
-      overwriting = true
+      overwriteHash = kept.kind === 'none' ? null : kept.sync.hash
       changed = true
       await write(folder)
       return
@@ -1198,7 +1294,7 @@ export function createKeeper({
     state = emptyState(null)
     await saveState()
     pausedOn = null
-    overwriting = false
+    overwriteHash = undefined
     setStatus({ folder: null, pause: null, failure: null, writtenAt: null, arriving: null })
   }
 

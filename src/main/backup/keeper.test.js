@@ -274,6 +274,27 @@ describe('the keeper', () => {
       expect(safetyCopies(a)).toEqual([])
     })
 
+    it('asks rather than takes in when this machine has changes it never wrote', async () => {
+      mkdirSync(keptFolder())
+      const a = await machine('a')
+      const b = await machine('b')
+      await a.keeper.start()
+      await a.keeper.tick()
+      await b.keeper.start()
+
+      // b changes something and stops before its tick; a writes meanwhile
+      await b.datastores.history.insertAsync(historyEntry('bbbbbbbbbbb', 2))
+      await a.datastores.history.insertAsync(historyEntry('aaaaaaaaaaa', 1))
+      await a.keeper.tick()
+
+      b.restart()
+      await b.keeper.start()
+
+      expect(b.keeper.status()).toMatchObject({ ready: true, tookIn: null, pause: { reason: 'otherMachine', machineName: 'MACHINE-a' } })
+      expect(await videoIds(b)).toEqual(['bbbbbbbbbbb'])
+      expect(await logOf(b)).toMatch(/changes it never wrote/)
+    })
+
     it('makes a pending sync file last seen, without pausing', async () => {
       mkdirSync(keptFolder())
       const a = await machine('a')
@@ -658,6 +679,26 @@ describe('the keeper', () => {
       expect(syncDoc().changes.history.put).toHaveLength(2)
     })
 
+    it('Overwrite that could not write goes over that file only, never a newer one', async () => {
+      const { a, b } = await pausedPair()
+      const blocked = kept('fjernsyn-sync.lock')
+      writeFileSync(blocked, JSON.stringify({ token: 'other', machineName: 'MACHINE-b' }))
+
+      await a.keeper.answer('overwrite')
+      expect(syncDoc().machineName).toBe('MACHINE-b')
+
+      // b writes again before a's next tick
+      rmSync(blocked)
+      await b.datastores.history.insertAsync(historyEntry('eeeeeeeeeee', 5))
+      await b.keeper.tick()
+      const theirs = readSyncText()
+
+      await a.keeper.tick()
+
+      expect(readSyncText()).toBe(theirs)
+      expect(a.keeper.status().pause).toMatchObject({ reason: 'otherMachine' })
+    })
+
     it('Overwrite rebases when the base is not in the folder', async () => {
       const { a } = await pausedPair()
       const [base] = bases()
@@ -823,6 +864,7 @@ describe('the keeper', () => {
         lastSeen: hashOf(readSyncText()),
         contentHash: expect.stringMatching(/^[\da-f]{64}$/),
         pending: null,
+        pendingContent: null,
       })
     })
 

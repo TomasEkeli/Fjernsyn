@@ -575,8 +575,9 @@ function pauseLine(pause) {
     case 'newer':
       return { text: t('Settings.Data Settings.Backup.Keeper.Paused.Newer'), actions: [] }
     case 'baseMissing':
-      // The notice asks Restore or Overwrite once the base arrives
-      return { text: t('Settings.Data Settings.Backup.Keeper.Paused.Base missing', { machine, time }), actions: [] }
+      // The notice asks Restore or Overwrite once the base arrives. Overwrite
+      // is here too, as a base that never comes would otherwise leave no way out
+      return { text: t('Settings.Data Settings.Backup.Keeper.Paused.Base missing', { machine, time }), actions: [overwrite] }
     default:
       return null
   }
