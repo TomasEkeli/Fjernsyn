@@ -10,16 +10,18 @@ import { backupsFolder, ensureInstallationId, restoreBackup } from './restore'
 /**
  * The IPC surface of the backup: where the safety copies go, for the
  * confirmation to say, this computer's name, for the header, and the restore
- * itself. Also makes this data folder's
- * installation id, if it has none yet, for the backups' header.
+ * itself. Also makes this data folder's installation id, if it has none yet,
+ * for the backups' header.
  *
  * @param {object} deps
  * @param {() => void} deps.relaunch main's relaunch, the one the experimental settings use
+ * @returns {{ installationId: Promise<string> }} the id, made once here, so that the keeper does not make a second one at the same moment
  */
 export function registerBackupHandlers({ relaunch }) {
   const dataFolder = app.getPath('userData')
 
-  ensureInstallationId(datastores.settings).catch((error) => {
+  const installationId = ensureInstallationId(datastores.settings)
+  installationId.catch((error) => {
     console.error('Could not make the installation id', error)
   })
 
@@ -71,4 +73,6 @@ export function registerBackupHandlers({ relaunch }) {
 
     return result
   })
+
+  return { installationId }
 }

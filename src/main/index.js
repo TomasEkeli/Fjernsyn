@@ -30,6 +30,7 @@ import contextMenu from 'electron-context-menu'
 
 import packageDetails from '../../package.json'
 import { registerBackupHandlers } from './backup/ipc'
+import { registerKeeper } from './backup/keeperIpc'
 import { handleOpenInExternalPlayer } from './externalPlayer'
 import { registerPeerTubeDownloadHandlers } from './peertubeDownloads/ipc'
 import { createPeerTubeRequestHeaders, peerTubeUserAgent } from './peertubeRequests'
@@ -1789,7 +1790,8 @@ function runApp() {
   ipcMain.on(IpcChannels.OPEN_IN_EXTERNAL_PLAYER, handleOpenInExternalPlayer)
 
   registerYtDlpHandlers({ chooseDefaultFolder })
-  registerBackupHandlers({ relaunch })
+  const { installationId } = registerBackupHandlers({ relaunch })
+  const keeper = registerKeeper({ relaunch, installationId, chooseDefaultFolder })
   registerPeerTubeDownloadHandlers({ userAgent: peerTubeUserAgent(packageDetails.version) })
 
   ipcMain.handle(IpcChannels.GET_REPLACE_HTTP_CACHE, (event) => {
@@ -1927,6 +1929,11 @@ function runApp() {
           // The same goes for the yt-dlp executable and download folder,
           // which only main's pickers may set
           if (!isRendererWritableYtDlpSetting(data._id, data.value)) {
+            return null
+          }
+
+          // The kept backup's folder: main's folder dialog sets it, Stop keeping clears it
+          if (data._id === 'backupFolder') {
             return null
           }
 
@@ -2695,6 +2702,8 @@ function runApp() {
     if (resourcesCleanUpDone) {
       return
     }
+
+    await keeper.quit()
 
     await Promise.allSettled([
       baseHandlers.compactAllDatastores(),
