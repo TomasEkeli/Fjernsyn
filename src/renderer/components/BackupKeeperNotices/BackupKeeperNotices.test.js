@@ -226,7 +226,7 @@ describe('the toasts', () => {
     showPage()
     await wrapper.setProps({ windowUp: true })
     await flushPromises()
-    expect(toasts()).toEqual(['Restored from the backup written by synthetic-laptop at 14:02'])
+    expect(toasts()).toEqual(['Took in the changes synthetic-laptop wrote at 14:02'])
 
     await push({ ...status })
     wrapper.unmount()

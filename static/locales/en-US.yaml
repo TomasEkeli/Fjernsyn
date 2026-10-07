@@ -1010,7 +1010,7 @@ Settings:
           Newer: "The backup in the folder was written by a newer Fjernsyn, which this version can't read. Update Fjernsyn to keep it."
         Overwrite with this data: "Overwrite with this machine's data"
         Not now: Not now
-        Restored: 'Restored from the backup written by {machine} at {time}'
+        Restored: 'Took in the changes {machine} wrote at {time}'
         Failed: "Couldn't write the kept backup: {message}"
   Proxy Settings:
     Proxy Settings: Proxy
