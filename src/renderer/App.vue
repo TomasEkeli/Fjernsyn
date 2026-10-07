@@ -64,6 +64,7 @@
   <Transition name="fade">
     <StartScreen v-if="showStartScreen" />
   </Transition>
+  <BackupKeeperNotices :window-up="dataReady && !showStartScreen" />
 </template>
 
 <script setup>
@@ -83,6 +84,7 @@ import FtKeyboardShortcutPrompt from './components/FtKeyboardShortcutPrompt/FtKe
 import FtSearchFilters from './components/FtSearchFilters/FtSearchFilters.vue'
 import LaterCountdown from './components/LaterCountdown/LaterCountdown.vue'
 import StartScreen from './components/StartScreen/StartScreen.vue'
+import BackupKeeperNotices from './components/BackupKeeperNotices/BackupKeeperNotices.vue'
 
 import store from './store/index'
 

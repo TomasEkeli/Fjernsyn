@@ -58,6 +58,7 @@ vi.mock('./components/FtCreatePlaylistPrompt/FtCreatePlaylistPrompt.vue', () => 
 vi.mock('./components/FtKeyboardShortcutPrompt/FtKeyboardShortcutPrompt.vue', () => stub('FtKeyboardShortcutPrompt'))
 vi.mock('./components/FtSearchFilters/FtSearchFilters.vue', () => stub('FtSearchFilters'))
 vi.mock('./components/LaterCountdown/LaterCountdown.vue', () => stub('LaterCountdown'))
+vi.mock('./components/BackupKeeperNotices/BackupKeeperNotices.vue', () => stub('BackupKeeperNotices'))
 
 /** @type {((url: string) => unknown) | null} */
 let openUrlHandler = null
