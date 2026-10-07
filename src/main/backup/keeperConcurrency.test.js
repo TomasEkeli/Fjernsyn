@@ -159,7 +159,6 @@ async function machine(name, { folder = 'kept', history = [], clockOffset = 0 } 
     machineName: `MACHINE-${name}`,
     // A rebase on request, as the worker does once the sync file is too large
     runJob: async job => runKeeperJob(m.rebase && job.type === 'build' ? { ...job, forceRebase: true } : job),
-    relaunch: () => {},
     fileSystem,
     now: () => Date.now() + clockOffset,
     sleep: async () => {},
@@ -314,7 +313,7 @@ describe('writers at once', SLOW, () => {
       bHeld.release()
       await bTick
     }],
-  ])('two keepers ticking together, %s: one writes, the other does not, and pauses on its next tick', async (_, logged, play) => {
+  ])('two keepers ticking together, %s: one writes, the other does not, merges it on its next tick and writes the two', async (_, logged, play) => {
     const { a, b } = await both()
 
     await play(a, b)
@@ -324,11 +323,15 @@ describe('writers at once', SLOW, () => {
     expect(await logOf(b)).toMatch(logged)
 
     await b.keeper.tick()
+    expect(JSON.parse(syncText()).machineName).toBe('MACHINE-b')
     await a.keeper.tick()
 
-    expect(b.keeper.status().pause).toMatchObject({ reason: 'otherMachine', machineName: 'MACHINE-a' })
-    expect(a.keeper.status().pause).toBeNull()
-    expect(await watched(b)).toEqual(['b2', 'h1'])
+    for (const m of [a, b]) {
+      expect(m.keeper.status()).toMatchObject({ pause: null, failure: null })
+      expect(await watched(m)).toEqual(['a2', 'b2', 'h1'])
+    }
+    expect(b.keeper.status().mergedFrom).toMatchObject({ machineName: 'MACHINE-a' })
+    expect(await logOf(b)).toMatch(/by MACHINE-a against the shared state/)
   })
 
   it.each(['a', 'b'])('two keepers taking over one stale lock at once: only the last to overwrite it goes on (%s reads it back first)', async (first) => {
@@ -366,14 +369,19 @@ describe('writers at once', SLOW, () => {
     expect(bLog).toMatch(/stale lock of MACHINE-gone taken over/)
     expect(bLog).not.toMatch(/lock lost/)
 
+    // a merges b's write, and b a's union of the two
     await a.keeper.tick()
     await b.keeper.tick()
-    expect(a.keeper.status().pause).toMatchObject({ reason: 'otherMachine', machineName: 'MACHINE-b' })
-    expect(b.keeper.status().pause).toBeNull()
+    for (const m of [a, b]) {
+      expect(m.keeper.status()).toMatchObject({ pause: null, failure: null })
+      expect(await watched(m)).toEqual(['a2', 'b2', 'h1'])
+    }
+    expect(a.keeper.status().mergedFrom).toMatchObject({ machineName: 'MACHINE-b' })
   })
 
-  it('a stale lock taken over after the other keeper has read it back: both write, the last rename wins, and the other pauses on its next tick', async () => {
-    // The read back cannot catch this order; the pause on a lost write does
+  it('a stale lock taken over after the other keeper has read it back: both write, the last rename wins, and the other merges it as a union, its lost write kept', async () => {
+    // The read back cannot catch this order; the merge after a lost write
+    // keeps it, as the winner's lineage does not name it
     const { a, b } = await both()
     writeFileSync(lockFile(), JSON.stringify({ token: 'gone', installationId: 'installation-gone', machineName: 'MACHINE-gone', time: new Date().toISOString() }))
     age(lockFile(), 3 * MINUTE)
@@ -404,11 +412,16 @@ describe('writers at once', SLOW, () => {
 
     await a.keeper.tick()
     await b.keeper.tick()
-    expect(a.keeper.status().pause).toBeNull()
-    expect(b.keeper.status().pause).toMatchObject({ reason: 'otherMachine', machineName: 'MACHINE-a' })
+    expect(b.keeper.status()).toMatchObject({ pause: null, failure: null, mergedFrom: { machineName: 'MACHINE-a' } })
+    expect(await watched(b)).toEqual(['a2', 'b2', 'h1'])
+    expect(await logOf(b)).toMatch(/by MACHINE-a with the shared state unknown, as a union/)
+
+    await a.keeper.tick()
+    expect(a.keeper.status()).toMatchObject({ pause: null, failure: null })
+    expect(await watched(a)).toEqual(['a2', 'b2', 'h1'])
   })
 
-  it.each([2, 3])('one keeper\'s files copied over the others\', as a sync tool would, with %i keepers: each lost write pauses, the winning one carries on', async (count) => {
+  it.each([2, 3])('one keeper\'s files copied over the others\', as a sync tool would, with %i keepers: each losing side merges the winner as a union, its lost write kept, and the winner carries on', async (count) => {
     const a = await machine('a', { folder: 'kept-a', history: OLD })
     await a.keeper.start()
     await a.keeper.tick()
@@ -431,8 +444,10 @@ describe('writers at once', SLOW, () => {
     for (const m of others) {
       syncTool('kept-a', `kept-${m.name}`)
       await m.keeper.tick()
-      expect(m.keeper.status().pause).toMatchObject({ reason: 'otherMachine', machineName: 'MACHINE-a' })
-      expect(await watched(m)).toEqual([`${m.name}2`, 'h1'])
+      expect(m.keeper.status()).toMatchObject({ pause: null, failure: null, mergedFrom: { machineName: 'MACHINE-a' } })
+      expect(await watched(m)).toEqual(['a2', `${m.name}2`, 'h1'])
+      expect(await logOf(m)).toMatch(/by MACHINE-a with the shared state unknown, as a union/)
+      expect(JSON.parse(syncText(`kept-${m.name}`)).machineName).toBe(`MACHINE-${m.name}`)
     }
 
     const before = syncText('kept-a')
@@ -440,6 +455,14 @@ describe('writers at once', SLOW, () => {
     await a.keeper.tick()
     expect(a.keeper.status()).toMatchObject({ pause: null, failure: null })
     expect(syncText('kept-a')).not.toBe(before)
+
+    // Carried back, each losing side's write reaches the winner too
+    for (const m of others) {
+      syncTool(`kept-${m.name}`, 'kept-a')
+      await a.keeper.tick()
+      expect(a.keeper.status()).toMatchObject({ pause: null, failure: null })
+    }
+    expect(await watched(a)).toEqual(['a2', 'a3', ...others.map(m => `${m.name}2`), 'h1'])
   })
 })
 
@@ -535,7 +558,7 @@ describe('crashed writes', SLOW, () => {
 
     expect(b.keeper.status()).toMatchObject({ ready: true, arriving: null, pause: null, tookIn: null })
     expect(await watched(b)).toEqual([])
-    expect(await logOf(b)).toMatch(/a fresh lock, and the folder does not read cleanly \(baseMissing\): no take in/)
+    expect(await logOf(b)).toMatch(/a fresh lock, and the folder does not read cleanly \(baseMissing\): nothing taken in/)
   })
 
   it('crashed after writing a temporary file: another keeper leaves it until it is a day old, then removes it at its start', async () => {
@@ -580,20 +603,23 @@ describe('crashed writes', SLOW, () => {
     expect(await readerSees()).toEqual(['h1', 'h2', 'h3', 'h4'])
   })
 
-  it('crashed while a take in replaces the sections: the next start takes in again, and the first safety copy stays', async () => {
-    const a = await written()
+  it('crashed while a merge puts records one by one: the next start merges again, and the first safety copy stays', async () => {
+    const a = await written('a', NEW)
     const b = await machine('b', { history: ['b1'] })
 
-    // The history's insert never returns: profiles are replaced, history emptied
+    // The first put goes through; the second never returns
+    const original = b.datastores.history.updateAsync
+    let puts = 0
     let crashed
     const reached = new Promise((resolve) => { crashed = resolve })
-    b.datastores.history.insertAsync = () => {
+    b.datastores.history.updateAsync = function (...args) {
+      if (++puts === 1) { return original.apply(this, args) }
       crashed()
       return new Promise(() => {})
     }
     b.keeper.start()
     await reached
-    // The removal queued before it is on disk
+    // The put before it is on disk
     await b.datastores.history.countAsync({})
 
     const backups = path.join(b.dataFolder, 'backups')
@@ -604,11 +630,11 @@ describe('crashed writes', SLOW, () => {
 
     // A second later, as a safety copy is named by the second
     const restarted = await machine('b', { clockOffset: 2000 })
-    expect(await watched(restarted)).toEqual([])
+    expect(await watched(restarted)).toHaveLength(2)
     await restarted.keeper.start()
 
     expect(restarted.keeper.status()).toMatchObject({ ready: true, pause: null, tookIn: { machineName: 'MACHINE-a' } })
-    expect(await watched(restarted)).toEqual(OLD)
+    expect(await watched(restarted)).toEqual(['b1', 'h1', 'h2'])
     expect(copies()).toHaveLength(2)
     expect(copies()[0]).toBe(first)
     expect(readFileSync(path.join(backups, first), 'utf8')).toBe(firstText)
@@ -619,6 +645,7 @@ describe('crashed writes', SLOW, () => {
       await m.keeper.tick()
       expect(m.keeper.status()).toMatchObject({ pause: null, failure: null })
     }
+    expect(await watched(other)).toEqual(['b1', 'h1', 'h2'])
     expect(a.keeper.status().pause).toBeNull()
   })
 })
