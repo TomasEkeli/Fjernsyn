@@ -1,5 +1,9 @@
 import os from 'node:os'
-import { Worker } from 'node:worker_threads'
+// Without the node: prefix, as webpack recognises `new Worker(new URL(...))`
+// only from 'worker_threads' by that name. Taken for the global Worker
+// instead, it swaps in a constructor of its own that main's bundle never
+// defines.
+import { Worker } from 'worker_threads'
 
 import { app, BrowserWindow, ipcMain } from 'electron'
 
