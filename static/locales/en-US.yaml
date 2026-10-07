@@ -998,27 +998,18 @@ Settings:
           Malformed changes: its changes are malformed
           Base mismatch: its base file does not match it
           Base unreadable: "its base file can't be read"
+        Arriving: 'Waiting for the backup {machine} wrote at {time} to arrive; nothing is written until it does.'
+        Took in: 'Took in changes from {machine} at {time}'
         Paused:
-          Other machine: 'Paused: {machine} wrote the backup at {time}.'
           Refused: "Paused: the backup in the folder can't be read ({reason})."
           Refused without reason: "Paused: the backup in the folder can't be read."
           Newer: 'Paused: the backup was written by a newer Fjernsyn. Update Fjernsyn to keep it.'
-          Base missing: 'Paused: the backup {machine} wrote at {time} is still arriving.'
         Prompt:
-          Other machine: "{machine} wrote the backup at {time}. Restore it (relaunches) or overwrite it with this machine's data?"
           Refused: "The backup in the folder can't be read ({reason}). Overwrite it with this machine's data?"
           Refused without reason: "The backup in the folder can't be read. Overwrite it with this machine's data?"
           Newer: "The backup in the folder was written by a newer Fjernsyn, which this version can't read. Update Fjernsyn to keep it."
-          Arriving: 'The backup {machine} wrote at {time} is still arriving: its base file is not in the folder yet.'
-          Waiting: 'Waiting for the base file: {time}'
-        Restore: Restore
-        Restore relaunches: Restore (relaunches)
-        Overwrite: Overwrite
         Overwrite with this data: "Overwrite with this machine's data"
         Not now: Not now
-        Wait for it: Wait for it
-        Continue with this data: "Continue with this machine's data"
-        Stop waiting: Stop waiting
         Restored: 'Restored from the backup written by {machine} at {time}'
         Failed: "Couldn't write the kept backup: {message}"
   Proxy Settings:

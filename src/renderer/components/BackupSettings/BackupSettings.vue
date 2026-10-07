@@ -49,6 +49,14 @@
         @click="answerKeeper(action.answer)"
       />
     </FtFlexBox>
+    <FtFlexBox
+      v-if="keeperLine?.merged"
+      class="keeperRow"
+    >
+      <p class="keeperMerged">
+        {{ keeperLine.merged }}
+      </p>
+    </FtFlexBox>
     <FtPrompt
       v-if="pending !== null"
       :label="t('Settings.Data Settings.Backup.Confirm.Title')"
@@ -517,11 +525,16 @@ const keeperFolder = computed(() => keeperStatus.value?.folder ?? null)
  * @typedef KeeperLine
  * @property {string} text
  * @property {{ label: string, answer: import('../../../main/backup/keeper').KeeperAnswer }[]} actions
+ * @property {string | null} merged when another machine's changes were last taken in, shown under the written line
  */
 
+/** @type {import('vue').ComputedRef<KeeperLine['actions'][number]>} */
+const overwriteAction = computed(() => ({ label: t('Settings.Data Settings.Backup.Keeper.Overwrite with this data'), answer: 'overwrite' }))
+
 /**
- * What the keeper last did, or why it stopped, while it keeps a folder. A
- * pause keeps its choices here, so one put off with Not now can be made later.
+ * What the keeper last did, or why it stopped or waits, while it keeps a
+ * folder. A pause keeps its choices here, so one put off with Not now can be
+ * made later.
  * @type {import('vue').ComputedRef<KeeperLine | null>}
  */
 const keeperLine = computed(() => {
@@ -535,8 +548,20 @@ const keeperLine = computed(() => {
     return pauseLine(status.pause)
   }
 
+  if (status.arriving !== null) {
+    // Overwrite, as a base that never comes would otherwise leave no way out
+    return {
+      text: t('Settings.Data Settings.Backup.Keeper.Arriving', {
+        machine: keeperWords.machine(status.arriving.machineName),
+        time: keeperWords.time(status.arriving.writtenAt),
+      }),
+      actions: [overwriteAction.value],
+      merged: null,
+    }
+  }
+
   if (status.failure !== null) {
-    return { text: t('Settings.Data Settings.Backup.Keeper.Could not write', { message: status.failure.message }), actions: [] }
+    return { text: t('Settings.Data Settings.Backup.Keeper.Could not write', { message: status.failure.message }), actions: [], merged: null }
   }
 
   return {
@@ -544,6 +569,12 @@ const keeperLine = computed(() => {
       ? t('Settings.Data Settings.Backup.Keeper.Not written yet')
       : t('Settings.Data Settings.Backup.Keeper.Written', { time: keeperWords.time(status.writtenAt) }),
     actions: [],
+    merged: status.mergedFrom == null
+      ? null
+      : t('Settings.Data Settings.Backup.Keeper.Took in', {
+          machine: keeperWords.machine(status.mergedFrom.machineName),
+          time: keeperWords.time(status.mergedFrom.at),
+        }),
   }
 })
 
@@ -552,16 +583,7 @@ const keeperLine = computed(() => {
  * @returns {KeeperLine | null}
  */
 function pauseLine(pause) {
-  const overwrite = { label: t('Settings.Data Settings.Backup.Keeper.Overwrite with this data'), answer: 'overwrite' }
-  const machine = keeperWords.machine(pause.machineName)
-  const time = keeperWords.time(pause.writtenAt)
-
   switch (pause.reason) {
-    case 'otherMachine':
-      return {
-        text: t('Settings.Data Settings.Backup.Keeper.Paused.Other machine', { machine, time }),
-        actions: [{ label: t('Settings.Data Settings.Backup.Keeper.Restore relaunches'), answer: 'restore' }, overwrite],
-      }
     case 'refused': {
       const reason = keeperWords.refusedReason(pause.detail)
 
@@ -569,15 +591,12 @@ function pauseLine(pause) {
         text: reason === null
           ? t('Settings.Data Settings.Backup.Keeper.Paused.Refused without reason')
           : t('Settings.Data Settings.Backup.Keeper.Paused.Refused', { reason }),
-        actions: [overwrite],
+        actions: [overwriteAction.value],
+        merged: null,
       }
     }
     case 'newer':
-      return { text: t('Settings.Data Settings.Backup.Keeper.Paused.Newer'), actions: [] }
-    case 'baseMissing':
-      // The notice asks Restore or Overwrite once the base arrives. Overwrite
-      // is here too, as a base that never comes would otherwise leave no way out
-      return { text: t('Settings.Data Settings.Backup.Keeper.Paused.Base missing', { machine, time }), actions: [overwrite] }
+      return { text: t('Settings.Data Settings.Backup.Keeper.Paused.Newer'), actions: [], merged: null }
     default:
       return null
   }
