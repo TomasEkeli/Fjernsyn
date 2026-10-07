@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { BACKUP_SECTIONS } from './backup'
 import {
+  LINEAGE_LENGTH,
   REBASE_THRESHOLD,
   SYNC_FILE_NAME,
   SYNC_FORMAT,
@@ -11,6 +12,7 @@ import {
   computeChanges,
   contentText,
   isBaseFileName,
+  lineageEntry,
   readSyncFile,
   rebaseNeeded,
   writeSyncFile,
@@ -337,7 +339,7 @@ describe('the kept backup format', () => {
     it('writes the header, the base and the changes in the stable order', () => {
       const document = JSON.parse(writeSyncFile({ ...HEADER, base: BASE_REFERENCE, changes: CHANGES }))
 
-      expect(Object.keys(document)).toEqual(['format', 'formatVersion', 'appVersion', 'installationId', 'machineName', 'base', 'changes'])
+      expect(Object.keys(document)).toEqual(['format', 'formatVersion', 'appVersion', 'installationId', 'machineName', 'lineage', 'base', 'changes'])
       expect(document.format).toBe('fjernsyn-sync')
       expect(document.formatVersion).toBe(1)
       expect(Object.keys(document.base)).toEqual(['file', 'sha256'])
@@ -356,6 +358,7 @@ describe('the kept backup format', () => {
   "appVersion": "0.1.230",
   "installationId": "${HEADER.installationId}",
   "machineName": "DESKTOP-TEST",
+  "lineage": [],
   "base": {
     "file": "base-0123456789abcdef.json.gz",
     "sha256": "${SHA256}"
@@ -391,6 +394,17 @@ describe('the kept backup format', () => {
       expect(second).toBe(first)
     })
 
+    it('writes the lineage after the machine name and before the base, at most LINEAGE_LENGTH entries, newest first', () => {
+      const lineage = Array.from({ length: LINEAGE_LENGTH + 5 }, (_, i) => i.toString(16).padStart(16, '0'))
+      const text = writeSyncFile({ ...HEADER, lineage, base: BASE_REFERENCE, changes: {} })
+      const document = JSON.parse(text)
+
+      expect(Object.keys(document).indexOf('lineage')).toBe(Object.keys(document).indexOf('machineName') + 1)
+      expect(Object.keys(document).indexOf('base')).toBe(Object.keys(document).indexOf('lineage') + 1)
+      expect(document.lineage).toEqual(lineage.slice(0, LINEAGE_LENGTH))
+      expect(readSyncFile(text).header.lineage).toEqual(lineage.slice(0, LINEAGE_LENGTH))
+    })
+
     it('writes no changes as an empty object', () => {
       const document = JSON.parse(writeSyncFile({ ...HEADER, base: BASE_REFERENCE, changes: {} }))
 
@@ -405,14 +419,14 @@ describe('the kept backup format', () => {
 
       expect(result).toEqual({
         ok: true,
-        header: { formatVersion: 1, ...HEADER },
+        header: { formatVersion: 1, ...HEADER, lineage: [] },
         base: BASE_REFERENCE,
         changes,
       })
     })
 
     it('reads a header without an app version, installation id or machine name as unknown', () => {
-      const header = { formatVersion: 1, appVersion: null, installationId: null, machineName: null }
+      const header = { formatVersion: 1, appVersion: null, installationId: null, machineName: null, lineage: [] }
       const bare = JSON.stringify({ format: SYNC_FORMAT, formatVersion: 1, base: BASE_REFERENCE, changes: {} })
 
       expect(readSyncFile(bare).header).toEqual(header)
@@ -424,7 +438,18 @@ describe('the kept backup format', () => {
       const result = readSyncFile(syncText({ writtenWith: 'a newer Fjernsyn' }))
 
       expect(result.ok).toBe(true)
-      expect(result.header).toEqual({ formatVersion: 1, ...HEADER })
+      expect(result.header).toEqual({ formatVersion: 1, ...HEADER, lineage: [] })
+    })
+
+    it('reads an absent or invalid lineage as empty, and drops the entries that are no lineage entry', () => {
+      const entry = lineageEntry(SHA256)
+
+      expect(entry).toBe('0123456789abcdef')
+      for (const lineage of [undefined, null, 'not a list', { 0: entry }]) {
+        expect(readSyncFile(syncText({ lineage })).header.lineage, JSON.stringify(lineage)).toEqual([])
+      }
+      expect(readSyncFile(syncText({ lineage: [entry, 5, SHA256, entry.toUpperCase(), 'fedcba9876543210'] })).header.lineage)
+        .toEqual([entry, 'fedcba9876543210'])
     })
 
     it('drops the sections it does not know', () => {

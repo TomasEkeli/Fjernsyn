@@ -93,7 +93,7 @@ const MACHINE_NAME = 'synthetic-desktop'
 const KEPT_FOLDER = '/home/me/Sync/fjernsyn'
 
 /** @type {import('../../../main/backup/keeper').KeeperStatus} */
-const NOT_KEEPING = { folder: null, ready: true, writtenAt: null, failure: null, pause: null, arriving: null, tookIn: null }
+const NOT_KEEPING = { folder: null, ready: true, writtenAt: null, failure: null, pause: null, arriving: null, tookIn: null, mergedFrom: null }
 
 /** The keeper keeping KEPT_FOLDER, with what the test gives it */
 const keeping = (fields = {}) => ({ ...NOT_KEEPING, folder: KEPT_FOLDER, ...fields })
@@ -551,14 +551,14 @@ describe('the Backup group', () => {
 
     it('shows every state with its buttons', async () => {
       const pause = { key: 'k', machineName: 'synthetic-laptop', writtenAt: AT_1402, detail: null, formatVersion: null }
+      const arriving = { machineName: 'synthetic-laptop', writtenAt: AT_1402, since: AT_1402 }
       const states = [
         [{ failure: { message: 'ENOSPC: no space left on device', since: AT_1402 } }, 'Couldn\'t write: ENOSPC: no space left on device', []],
-        [{ pause: { ...pause, reason: 'otherMachine' } }, 'Paused: synthetic-laptop wrote the backup at 14:02.', ['Restore (relaunches)', 'Overwrite with this machine\'s data']],
-        [{ pause: { ...pause, reason: 'otherMachine', machineName: null } }, 'Paused: another machine wrote the backup at 14:02.', ['Restore (relaunches)', 'Overwrite with this machine\'s data']],
         [{ pause: { ...pause, reason: 'refused', detail: 'baseMismatch' } }, 'Paused: the backup in the folder can\'t be read (its base file does not match it).', ['Overwrite with this machine\'s data']],
         [{ pause: { ...pause, reason: 'refused' } }, 'Paused: the backup in the folder can\'t be read.', ['Overwrite with this machine\'s data']],
         [{ pause: { ...pause, reason: 'newer', formatVersion: 2 } }, 'Paused: the backup was written by a newer Fjernsyn. Update Fjernsyn to keep it.', []],
-        [{ pause: { ...pause, reason: 'baseMissing' } }, 'Paused: the backup synthetic-laptop wrote at 14:02 is still arriving.', ['Overwrite with this machine\'s data']],
+        [{ arriving }, 'Waiting for the backup synthetic-laptop wrote at 14:02 to arrive; nothing is written until it does.', ['Overwrite with this machine\'s data']],
+        [{ arriving: { ...arriving, machineName: null } }, 'Waiting for the backup another machine wrote at 14:02 to arrive; nothing is written until it does.', ['Overwrite with this machine\'s data']],
       ]
 
       const wrapper = await mountKeeping(keeping())
@@ -566,19 +566,32 @@ describe('the Backup group', () => {
       for (const [fields, text, buttons] of states) {
         await push(keeping({ writtenAt: AT_1402, ...fields }))
         expect(statusLine(wrapper)).toEqual({ text, buttons })
+        expect(wrapper.find('.keeperMerged').exists()).toBe(false)
       }
     })
 
-    it('sends the answer a pause\'s button gives', async () => {
-      const pause = { reason: 'otherMachine', key: 'k', machineName: 'synthetic-laptop', writtenAt: AT_1402, detail: null, formatVersion: null }
-      const wrapper = await mountKeeping(keeping({ pause }))
-      window.ftElectron.answerKeeper.mockResolvedValue(keeping({ pause }))
+    it('says when another machine\'s changes were last taken in, under the written line', async () => {
+      const wrapper = await mountKeeping(keeping({ writtenAt: AT_1402, mergedFrom: { machineName: 'synthetic-laptop', at: AT_1402 - 60_000 } }))
 
-      await button(wrapper, 'Restore (relaunches)').trigger('click')
+      expect(statusLine(wrapper)).toEqual({ text: 'Written 14:02', buttons: [] })
+      expect(wrapper.find('.keeperMerged').text()).toBe('Took in changes from synthetic-laptop at 14:01')
+
+      await push(keeping({ writtenAt: AT_1402 }))
+      expect(wrapper.find('.keeperMerged').exists()).toBe(false)
+    })
+
+    it('sends Overwrite from a pause and while a base is awaited', async () => {
+      const pause = { reason: 'refused', key: 'k', machineName: 'synthetic-laptop', writtenAt: AT_1402, detail: 'notJson', formatVersion: null }
+      const wrapper = await mountKeeping(keeping({ pause }))
+
       await button(wrapper, 'Overwrite with this machine\'s data').trigger('click')
       await flushPromises()
 
-      expect(window.ftElectron.answerKeeper.mock.calls).toEqual([['restore'], ['overwrite']])
+      await push(keeping({ arriving: { machineName: 'synthetic-laptop', writtenAt: AT_1402, since: AT_1402 } }))
+      await button(wrapper, 'Overwrite with this machine\'s data').trigger('click')
+      await flushPromises()
+
+      expect(window.ftElectron.answerKeeper.mock.calls).toEqual([['overwrite'], ['overwrite']])
     })
   })
 })

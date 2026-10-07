@@ -46,6 +46,7 @@ const IpcChannels = {
   KEEPER_CHOOSE_FOLDER: 'keeper-choose-folder',
   KEEPER_STOP: 'keeper-stop',
   KEEPER_ANSWER: 'keeper-answer',
+  KEEPER_DATA_CHANGED: 'keeper-data-changed',
 
   SYNC_SETTINGS: 'sync-settings',
   SYNC_HISTORY: 'sync-history',

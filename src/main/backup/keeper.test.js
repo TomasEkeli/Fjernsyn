@@ -17,11 +17,11 @@ import path from 'node:path'
 import { gunzipSync, gzipSync } from 'node:zlib'
 
 import Datastore from '@seald-io/nedb'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { writeBackup } from '../../renderer/helpers/backup'
-import { baseFileName, isBaseFileName, SYNC_FILE_NAME, writeSyncFile } from '../../renderer/helpers/keptBackup'
-import { createKeeper, LOG_CAP_BYTES, LOOK_AGAIN_MS, RETRY_MS, watchDatastores } from './keeper'
+import { baseFileName, isBaseFileName, lineageEntry, SYNC_FILE_NAME, writeSyncFile } from '../../renderer/helpers/keptBackup'
+import { createKeeper, LOG_CAP_BYTES, RETRY_MS, SHARED_BASE_FILE_NAME, SHARED_SYNC_FILE_NAME, watchDatastores } from './keeper'
 import { runKeeperJob } from './keeperWorker'
 
 // Keepers on temporary folders, with real datastores and files, and the
@@ -106,7 +106,7 @@ async function machine(name, { folder = keptFolder(), settings = [], ...options 
     await datastores.settings.insertAsync(settings)
   }
 
-  const m = { datastores, dataFolder, jobs: [], relaunch: vi.fn(), keeper: null }
+  const m = { datastores, dataFolder, jobs: [], dataChanged: [], keeper: null }
 
   /** A new keeper on the same data, as after a restart of the app */
   m.restart = ({ sleep = untimed, fileSystem } = {}) => {
@@ -120,7 +120,7 @@ async function machine(name, { folder = keptFolder(), settings = [], ...options 
         m.jobs.push(job.type)
         return runKeeperJob(job)
       },
-      relaunch: m.relaunch,
+      onDataChanged: sections => m.dataChanged.push(sections),
       sleep,
       ...(fileSystem ? { fileSystem } : {}),
     })
@@ -221,7 +221,8 @@ describe('the keeper', () => {
     expect(b.keeper.status().tookIn).toMatchObject({ machineName: 'MACHINE-a' })
     expect(safetyCopies(b)).toHaveLength(1)
 
-    // b's change is written against a's base, and a, still running, pauses
+    // b's change is written against a's base, and a, still running, merges
+    // it with its own, tells the windows, and writes the two
     await b.datastores.history.insertAsync(historyEntry('bbbbbbbbbbb', 2))
     await b.keeper.tick()
 
@@ -232,8 +233,12 @@ describe('the keeper', () => {
     await a.datastores.history.insertAsync(historyEntry('ccccccccccc', 3))
     await a.keeper.tick()
 
-    expect(a.keeper.status().pause).toMatchObject({ reason: 'otherMachine', machineName: 'MACHINE-b' })
-    expect(await logOf(a)).toMatch(/paused: otherMachine/)
+    expect(a.keeper.status()).toMatchObject({ pause: null, tookIn: null, mergedFrom: { machineName: 'MACHINE-b', at: expect.any(Number) } })
+    expect(a.dataChanged).toEqual([['history']])
+    expect(await videoIds(a)).toEqual(['aaaaaaaaaaa', 'bbbbbbbbbbb', 'ccccccccccc'])
+    expect(safetyCopies(a)).toHaveLength(1)
+    expect(syncDoc().machineName).toBe('MACHINE-a')
+    expect(await logOf(a)).toMatch(/merged sync file [\da-f]{12} by MACHINE-b against the shared state: history \+1 -0/)
   })
 
   describe('at startup', () => {
@@ -270,11 +275,11 @@ describe('the keeper', () => {
       await a.keeper.start()
 
       expect(a.keeper.status()).toMatchObject({ ready: true, pause: null, tookIn: null, writtenAt: expect.any(Number) })
-      expect(a.jobs).not.toContain('prepareTakeIn')
+      expect(a.jobs).not.toContain('merge')
       expect(safetyCopies(a)).toEqual([])
     })
 
-    it('asks rather than takes in when this machine has changes it never wrote', async () => {
+    it('merges at startup when this machine has changes it never wrote, keeping them', async () => {
       mkdirSync(keptFolder())
       const a = await machine('a')
       const b = await machine('b')
@@ -290,9 +295,16 @@ describe('the keeper', () => {
       b.restart()
       await b.keeper.start()
 
-      expect(b.keeper.status()).toMatchObject({ ready: true, tookIn: null, pause: { reason: 'otherMachine', machineName: 'MACHINE-a' } })
-      expect(await videoIds(b)).toEqual(['bbbbbbbbbbb'])
-      expect(await logOf(b)).toMatch(/changes it never wrote/)
+      expect(b.keeper.status()).toMatchObject({ ready: true, pause: null, tookIn: { key: hashOf(readSyncText()), machineName: 'MACHINE-a' }, mergedFrom: null })
+      expect(await videoIds(b)).toEqual(['aaaaaaaaaaa', 'bbbbbbbbbbb'])
+      expect(b.dataChanged).toEqual([])
+      expect(safetyCopies(b)).toHaveLength(1)
+      expect(await logOf(b)).toMatch(/by MACHINE-a against the shared state/)
+
+      // and its own change goes to the folder on its first tick
+      await b.keeper.tick()
+      expect(syncDoc()).toMatchObject({ machineName: 'MACHINE-b' })
+      expect(syncDoc().changes.history.put.map(entry => entry.videoId)).toEqual(['aaaaaaaaaaa', 'bbbbbbbbbbb'])
     })
 
     it('makes a pending sync file last seen, without pausing', async () => {
@@ -338,7 +350,7 @@ describe('the keeper', () => {
       expect(readSyncText()).toBe(text)
     })
 
-    it('takes in another machine\'s different content with a safety copy, keeping unknown settings and never writing machine-bound ones', async () => {
+    it('merges another machine\'s different content as a union with a safety copy, keeping unknown settings and never writing machine-bound ones', async () => {
       mkdirSync(keptFolder())
       const base = writeBase({
         ...Z_SECTIONS,
@@ -363,7 +375,7 @@ describe('the keeper', () => {
         pause: null,
         tookIn: { key: syncHash, machineName: 'MACHINE-z', writtenAt: expect.any(Number) },
       })
-      expect(await videoIds(b)).toEqual(['zzzzzzzzzz1', 'zzzzzzzzzz2'])
+      expect(await videoIds(b)).toEqual(['bbbbbbbbbbb', 'zzzzzzzzzz1', 'zzzzzzzzzz2'])
 
       const settings = await settingsOf(b)
       expect(settings).toMatchObject({ maxVolume: 500, aSettingFromTheFuture: 42, proxyHostname: '10.0.0.1', backupFolder: keptFolder(), bounds })
@@ -374,7 +386,7 @@ describe('the keeper', () => {
       expect(readFileSync(path.join(b.dataFolder, 'backups', copies[0]), 'utf8')).toContain('bbbbbbbbbbb')
 
       expect(stateOf(b).lastSeen).toBe(syncHash)
-      expect(b.relaunch).not.toHaveBeenCalled()
+      expect(await logOf(b)).toMatch(/with the shared state unknown, as a union/)
     })
 
     it('refuses a sync file that is not JSON after reading it twice more, a second apart, and is ready, paused', async () => {
@@ -413,86 +425,56 @@ describe('the keeper', () => {
       await b.keeper.start()
 
       expect(b.keeper.status()).toMatchObject({ ready: true, pause: { reason: 'newer', formatVersion: 2 } })
-    })
 
-    it('says another machine\'s sync file is still arriving when its base is not here, and is not ready', async () => {
-      const { b } = await baseOnItsWay()
-
-      expect(b.keeper.status()).toMatchObject({
-        ready: false,
-        pause: null,
-        arriving: { machineName: 'MACHINE-z', writtenAt: expect.any(Number), waitingSince: null },
-      })
-      expect(await isSettled(b.keeper.whenReady())).toBe(false)
+      // Overwrite is no answer to it
+      await b.keeper.answer('overwrite')
+      expect(b.keeper.status().pause).toMatchObject({ reason: 'newer' })
+      expect(readSyncText()).toBe(JSON.stringify({ format: 'fjernsyn-sync', formatVersion: 2 }))
     })
   })
 
-  describe('waiting for the base', () => {
-    it('looks again while waiting, and takes in once the base arrives, then is ready', async () => {
-      const { b, looks, arrive } = await baseOnItsWay()
+  describe('a base not yet here', () => {
+    it('is awaited with nothing written, and merged on the next tick once it comes', async () => {
+      const { b, arrive } = await baseOnItsWay()
+      const text = readSyncText()
 
-      const status = await b.keeper.answer('wait')
-      expect(status.arriving.waitingSince).toEqual(expect.any(Number))
-
-      await looks.wake()
-      await looks.asleep()
-      expect(b.keeper.status().ready).toBe(false)
-
-      arrive()
-      await looks.wake()
-      await b.keeper.whenReady()
-
-      expect(b.keeper.status()).toMatchObject({ ready: true, arriving: null, pause: null, tookIn: { machineName: 'MACHINE-z' } })
-      expect(await videoIds(b)).toEqual(['zzzzzzzzzz1'])
-    })
-
-    it('is ready and paused when Tomas stops waiting', async () => {
-      const { b, looks } = await baseOnItsWay()
-      await b.keeper.answer('wait')
-
-      const status = await b.keeper.answer('stopWaiting')
-
-      expect(status).toMatchObject({ ready: true, arriving: null, pause: { reason: 'baseMissing', machineName: 'MACHINE-z' } })
+      expect(b.keeper.status()).toMatchObject({
+        ready: true,
+        pause: null,
+        tookIn: null,
+        arriving: { machineName: 'MACHINE-z', writtenAt: expect.any(Number), since: expect.any(Number) },
+      })
       expect(await isSettled(b.keeper.whenReady())).toBe(true)
 
-      await looks.wake()
+      await b.datastores.history.insertAsync(historyEntry('bbbbbbbbbbb', 3))
       await b.keeper.tick()
-      expect(await videoIds(b)).toEqual([])
-    })
+      await b.keeper.quit()
 
-    it('after Continue, turns the pause into the question of another machine once the base arrives, writing nothing', async () => {
-      const { b, arrive } = await baseOnItsWay()
-      const before = readSyncText()
-
-      const status = await b.keeper.answer('continue')
-      expect(status).toMatchObject({ ready: true, arriving: null, pause: { reason: 'baseMissing' } })
-
-      await b.keeper.tick()
-      expect(b.keeper.status().pause.reason).toBe('baseMissing')
+      expect(readSyncText()).toBe(text)
+      expect(b.keeper.status().arriving).not.toBeNull()
+      expect(await videoIds(b)).toEqual(['bbbbbbbbbbb'])
 
       arrive()
       await b.keeper.tick()
 
-      expect(b.keeper.status().pause).toMatchObject({ reason: 'otherMachine', machineName: 'MACHINE-z' })
-      expect(readSyncText()).toBe(before)
-      expect(await videoIds(b)).toEqual([])
+      expect(b.keeper.status()).toMatchObject({ arriving: null, pause: null, mergedFrom: { machineName: 'MACHINE-z' } })
+      expect(b.dataChanged).toEqual([['history']])
+      expect(await videoIds(b)).toEqual(['bbbbbbbbbbb', 'zzzzzzzzzz1'])
+      expect(syncDoc().machineName).toBe('MACHINE-b')
     })
 
-    it('reads a newer sync file that arrives while waiting afresh, and takes that one in', async () => {
-      const { b, base, looks, arrive } = await baseOnItsWay()
-      await b.keeper.answer('wait')
+    it('Overwrite while it is awaited writes this machine\'s state on a new base of its own', async () => {
+      const { b, base } = await baseOnItsWay()
+      await b.datastores.history.insertAsync(historyEntry('bbbbbbbbbbb', 3))
 
-      const newer = writeSync(base, Z_CHANGE)
-      await looks.wake()
-      await looks.asleep()
-      expect(await logOf(b)).toContain(`a newer sync file ${newer.slice(0, 12)} arrived while waiting`)
+      const status = await b.keeper.answer('overwrite')
 
-      arrive()
-      await looks.wake()
-      await b.keeper.whenReady()
-
-      expect(b.keeper.status().tookIn.key).toBe(newer)
-      expect(await videoIds(b)).toEqual(['zzzzzzzzzz1', 'zzzzzzzzzz2'])
+      expect(status).toMatchObject({ arriving: null, pause: null, writtenAt: expect.any(Number) })
+      const sync = syncDoc()
+      expect(sync).toMatchObject({ machineName: 'MACHINE-b', changes: {} })
+      expect(sync.base.file).not.toBe(base.file)
+      expect(bases()).toEqual([sync.base.file])
+      expect(await videoIds(b)).toEqual(['bbbbbbbbbbb'])
     })
   })
 
@@ -642,108 +624,148 @@ describe('the keeper', () => {
     })
   })
 
-  describe('leaving a pause', () => {
-    /** a and b on one folder: b took in a's backup and wrote since, and a, changed, has paused */
-    async function pausedPair() {
+  describe('a pause', () => {
+    /** a has written, and the sync file then stops reading: a, changed, pauses on its next tick */
+    async function pausedOnRefusal() {
       mkdirSync(keptFolder())
       const a = await machine('a')
       await a.datastores.history.insertAsync(historyEntry('aaaaaaaaaaa', 1))
       await a.keeper.start()
       await a.keeper.tick()
 
-      const b = await machine('b')
-      await b.keeper.start()
-      await b.datastores.history.insertAsync(historyEntry('bbbbbbbbbbb', 2))
-      await b.keeper.tick()
-
+      writeFileSync(kept(SYNC_FILE_NAME), '{ "format": "fjernsyn-sync", ')
       await a.datastores.history.insertAsync(historyEntry('ccccccccccc', 3))
       await a.keeper.tick()
-      expect(a.keeper.status().pause).toMatchObject({ reason: 'otherMachine', machineName: 'MACHINE-b' })
+      expect(a.keeper.status().pause).toMatchObject({ reason: 'refused', detail: 'notJson' })
 
-      return { a, b }
+      return a
     }
 
-    it('Overwrite writes this machine\'s state at once and resumes', async () => {
-      const { a } = await pausedPair()
+    it('Overwrite writes this machine\'s state at once on a new base, and resumes', async () => {
+      const a = await pausedOnRefusal()
 
       const status = await a.keeper.answer('overwrite')
 
       expect(status).toMatchObject({ pause: null, writtenAt: expect.any(Number) })
       const sync = syncDoc()
-      expect(sync.machineName).toBe('MACHINE-a')
-      expect(sync.changes.history.put.map(entry => entry.videoId)).toEqual(['ccccccccccc'])
+      expect(sync).toMatchObject({ machineName: 'MACHINE-a', changes: {} })
+      // The old base, which the refused file did not name, stays its seven days
+      expect(bases()).toHaveLength(2)
+      expect(bases()).toContain(sync.base.file)
 
       await a.datastores.history.insertAsync(historyEntry('ddddddddddd', 4))
       await a.keeper.tick()
       expect(a.keeper.status().pause).toBeNull()
-      expect(syncDoc().changes.history.put).toHaveLength(2)
+      expect(syncDoc().changes.history.put.map(entry => entry.videoId)).toEqual(['ddddddddddd'])
     })
 
-    it('Overwrite that could not write goes over that file only, never a newer one', async () => {
-      const { a, b } = await pausedPair()
+    it('Overwrite that could not write goes over that file only: a newer one is merged', async () => {
+      const a = await pausedOnRefusal()
       const blocked = kept('fjernsyn-sync.lock')
-      writeFileSync(blocked, JSON.stringify({ token: 'other', machineName: 'MACHINE-b' }))
+      writeFileSync(blocked, JSON.stringify({ token: 'other', machineName: 'MACHINE-z' }))
 
       await a.keeper.answer('overwrite')
-      expect(syncDoc().machineName).toBe('MACHINE-b')
+      expect(readSyncText()).toBe('{ "format": "fjernsyn-sync", ')
 
-      // b writes again before a's next tick
+      // Another machine writes a good file before a's next tick
       rmSync(blocked)
-      await b.datastores.history.insertAsync(historyEntry('eeeeeeeeeee', 5))
-      await b.keeper.tick()
-      const theirs = readSyncText()
+      writeSync(writeBase(Z_SECTIONS), Z_CHANGE)
 
       await a.keeper.tick()
 
-      expect(readSyncText()).toBe(theirs)
-      expect(a.keeper.status().pause).toMatchObject({ reason: 'otherMachine' })
-    })
-
-    it('Overwrite rebases when the base is not in the folder', async () => {
-      const { a } = await pausedPair()
-      const [base] = bases()
-      rmSync(kept(base))
-
-      await a.keeper.answer('overwrite')
-
-      const sync = syncDoc()
-      expect(sync.base.file).not.toBe(base)
-      expect(sync.changes).toEqual({})
-      expect(bases()).toEqual([sync.base.file])
-    })
-
-    it('Restore takes in what is there and relaunches once, writing nothing after', async () => {
-      const { a } = await pausedPair()
-      const text = readSyncText()
-
-      await a.keeper.answer('restore')
-
-      expect(a.relaunch).toHaveBeenCalledTimes(1)
-      expect(await videoIds(a)).toEqual(['aaaaaaaaaaa', 'bbbbbbbbbbb'])
-      expect(safetyCopies(a)).toHaveLength(1)
-
-      await a.datastores.history.insertAsync(historyEntry('eeeeeeeeeee', 5))
-      await a.keeper.tick()
-      await a.keeper.quit()
-
-      expect(readSyncText()).toBe(text)
-      expect(a.relaunch).toHaveBeenCalledTimes(1)
+      expect(a.keeper.status()).toMatchObject({ pause: null, mergedFrom: { machineName: 'MACHINE-z' } })
+      expect(await videoIds(a)).toEqual(['aaaaaaaaaaa', 'ccccccccccc', 'zzzzzzzzzz1', 'zzzzzzzzzz2'])
+      expect(syncDoc().machineName).toBe('MACHINE-a')
     })
 
     it('Not now stays paused, and while paused neither the tick nor the quit writes', async () => {
-      const { a } = await pausedPair()
+      const a = await pausedOnRefusal()
       const text = readSyncText()
 
       const status = await a.keeper.answer('notNow')
-      expect(status.pause.reason).toBe('otherMachine')
+      expect(status.pause.reason).toBe('refused')
 
       await a.datastores.history.insertAsync(historyEntry('eeeeeeeeeee', 5))
       await a.keeper.tick()
       await a.keeper.quit()
 
       expect(readSyncText()).toBe(text)
-      expect(a.keeper.status().pause.reason).toBe('otherMachine')
+      expect(a.keeper.status().pause.reason).toBe('refused')
       expect(await logOf(a)).toMatch(/quit: no write \(paused\)/)
+    })
+
+    it('resumes once the folder reads again, and the next tick merges what is there', async () => {
+      const a = await pausedOnRefusal()
+
+      writeSync(writeBase(Z_SECTIONS))
+      await a.keeper.tick()
+      expect(a.keeper.status().pause).toBeNull()
+      expect(await logOf(a)).toMatch(/reads again: resuming/)
+
+      await a.keeper.tick()
+      expect(a.keeper.status()).toMatchObject({ pause: null, mergedFrom: { machineName: 'MACHINE-z' } })
+      expect(await videoIds(a)).toEqual(['aaaaaaaaaaa', 'ccccccccccc', 'zzzzzzzzzz1'])
+      expect(syncDoc().machineName).toBe('MACHINE-a')
+    })
+  })
+
+  describe('the lineage', () => {
+    it('names the sync files each write builds on, newest first', async () => {
+      mkdirSync(keptFolder())
+      const a = await machine('a')
+      await a.keeper.start()
+
+      const hashes = []
+      for (const videoId of ['aaaaaaaaaa1', 'aaaaaaaaaa2', 'aaaaaaaaaa3']) {
+        await a.datastores.history.insertAsync(historyEntry(videoId, 1))
+        await a.keeper.tick()
+        expect(syncDoc().lineage).toEqual(hashes.map(lineageEntry).reverse())
+        hashes.push(hashOf(readSyncText()))
+      }
+
+      // The shared state is the last written, kept in the data folder
+      const backups = path.join(a.dataFolder, 'backups')
+      expect(readFileSync(path.join(backups, SHARED_SYNC_FILE_NAME), 'utf8')).toBe(readSyncText())
+      expect(hashOf(gunzipSync(readFileSync(path.join(backups, SHARED_BASE_FILE_NAME))).toString('utf8'))).toBe(syncDoc().base.sha256)
+    })
+
+    /** a has written two videos; b took them in and removed one, then wrote */
+    async function removedOnB() {
+      mkdirSync(keptFolder())
+      const a = await machine('a')
+      await a.datastores.history.insertAsync([historyEntry('keep0000001', 1), historyEntry('remove00001', 2)])
+      await a.keeper.start()
+      await a.keeper.tick()
+      const aWrote = hashOf(readSyncText())
+
+      const b = await machine('b')
+      await b.keeper.start()
+      await b.datastores.history.removeAsync({ videoId: 'remove00001' }, {})
+      await b.keeper.tick()
+      expect(syncDoc().lineage[0]).toBe(lineageEntry(aWrote))
+
+      return a
+    }
+
+    it('merges against the shared state when the folder\'s file names the one last seen, so a removal travels', async () => {
+      const a = await removedOnB()
+
+      await a.keeper.tick()
+
+      expect(await videoIds(a)).toEqual(['keep0000001'])
+      expect(await logOf(a)).toMatch(/by MACHINE-b against the shared state: history \+0 -1/)
+    })
+
+    it('merges as a union when the folder\'s file does not name the one last seen, so nothing is removed', async () => {
+      const a = await removedOnB()
+      const document = syncDoc()
+      writeFileSync(kept(SYNC_FILE_NAME), JSON.stringify({ ...document, lineage: [] }, null, 2) + '\n')
+
+      await a.keeper.tick()
+
+      expect(await videoIds(a)).toEqual(['keep0000001', 'remove00001'])
+      expect(a.keeper.status()).toMatchObject({ pause: null })
+      expect(await logOf(a)).toMatch(/by MACHINE-b with the shared state unknown, as a union: nothing to change here/)
     })
   })
 
@@ -765,24 +787,25 @@ describe('the keeper', () => {
       expect(syncDoc().machineName).toBe('MACHINE-c')
     })
 
-    it('asks when the folder holds another machine\'s kept backup, writing and taking in nothing', async () => {
+    it('merges another machine\'s kept backup in the folder with its own data as a union, and writes the two', async () => {
       mkdirSync(keptFolder())
       const a = await machine('a')
       await a.datastores.history.insertAsync(historyEntry('aaaaaaaaaaa', 1))
       await a.keeper.start()
       await a.keeper.tick()
-      const text = readSyncText()
 
       const c = await machine('c', { folder: null })
+      await c.datastores.history.insertAsync(historyEntry('ccccccccccc', 3))
       await c.keeper.start()
       const status = await choose(c, keptFolder())
 
-      expect(status.pause).toMatchObject({ reason: 'otherMachine', machineName: 'MACHINE-a' })
-      expect(readSyncText()).toBe(text)
-      expect(await videoIds(c)).toEqual([])
+      expect(status).toMatchObject({ pause: null, mergedFrom: { machineName: 'MACHINE-a' }, writtenAt: expect.any(Number) })
+      expect(c.dataChanged).toEqual([['history']])
+      expect(await videoIds(c)).toEqual(['aaaaaaaaaaa', 'ccccccccccc'])
+      expect(syncDoc().machineName).toBe('MACHINE-c')
     })
 
-    it('Stop keeping clears the setting and leaves the files; choosing the folder again writes over its own backup', async () => {
+    it('Stop keeping clears the setting and leaves the files; choosing the folder again finds its own backup there, with nothing to write', async () => {
       mkdirSync(keptFolder())
       const a = await machine('a')
       await a.keeper.start()
@@ -796,10 +819,12 @@ describe('the keeper', () => {
       expect(stateOf(a)).toMatchObject({ folder: null, lastSeen: null })
       expect(readdirSync(keptFolder()).sort()).toEqual(files)
 
+      const text = readSyncText()
       const chosen = await choose(a, keptFolder())
 
-      expect(chosen).toMatchObject({ folder: keptFolder(), pause: null, writtenAt: expect.any(Number) })
-      expect(stateOf(a).lastSeen).toBe(hashOf(readSyncText()))
+      expect(chosen).toMatchObject({ folder: keptFolder(), pause: null, mergedFrom: null, writtenAt: expect.any(Number) })
+      expect(readSyncText()).toBe(text)
+      expect(stateOf(a).lastSeen).toBe(hashOf(text))
     })
   })
 
@@ -865,6 +890,7 @@ describe('the keeper', () => {
         contentHash: expect.stringMatching(/^[\da-f]{64}$/),
         pending: null,
         pendingContent: null,
+        sharedBase: syncDoc().base.sha256,
       })
     })
 
@@ -882,7 +908,6 @@ describe('the keeper', () => {
 
       await a.datastores.history.insertAsync(historyEntry('ccccccccccc', 3))
       await a.keeper.tick()
-      await a.keeper.answer('notNow')
 
       const logA = await logOf(a)
       const logB = await logOf(b)
@@ -890,9 +915,8 @@ describe('the keeper', () => {
       expect(logA).toMatch(/^\S+Z startup: folder /m)
       expect(logA).toMatch(/no sync file: the first tick writes one/)
       expect(logA).toMatch(/wrote sync file [\da-f]{12} .*new base base-/)
-      expect(logA).toMatch(/paused: otherMachine, sync file [\da-f]{12} by MACHINE-b/)
-      expect(logA).toMatch(/answer: notNow/)
-      expect(logB).toMatch(/took in sync file [\da-f]{12} by MACHINE-a .*safety copy before-restore-/)
+      expect(logA).toMatch(/merged sync file [\da-f]{12} by MACHINE-b against the shared state: history \+1 -0, 0 conflicts, safety copy before-restore-/)
+      expect(logB).toMatch(/merged sync file [\da-f]{12} by MACHINE-a with the shared state unknown, as a union: history \+1 -0, 0 conflicts, safety copy before-restore-/)
 
       for (const log of [logA, logB]) {
         expect(log).not.toMatch(/Video |Synthetic|aaaaaaaaaaa|bbbbbbbbbbb|ccccccccccc/)
@@ -917,26 +941,6 @@ describe('the keeper', () => {
   })
 })
 
-/**
- * Waits the keeper's ten seconds between looks for a base on command
- */
-function lookAgain() {
-  const sleepers = []
-
-  const asleep = () => vi.waitFor(() => expect(sleepers.length).toBeGreaterThan(0))
-
-  return {
-    sleep: ms => ms === LOOK_AGAIN_MS ? new Promise(resolve => sleepers.push(resolve)) : Promise.resolve(),
-    /** Until the keeper waits to look again */
-    asleep,
-    /** Ends the keeper's wait, once it waits */
-    async wake() {
-      await asleep()
-      sleepers.shift()()
-    },
-  }
-}
-
 /** Another machine's sync file in the folder, its base held back until `arrive()`; b started on it */
 async function baseOnItsWay() {
   mkdirSync(keptFolder())
@@ -946,9 +950,8 @@ async function baseOnItsWay() {
   const base = writeBase(Z_SECTIONS, stash)
   writeSync(base)
 
-  const looks = lookAgain()
-  const b = await machine('b', { sleep: looks.sleep })
+  const b = await machine('b')
   await b.keeper.start()
 
-  return { b, base, looks, arrive: () => renameSync(path.join(stash, base.file), kept(base.file)) }
+  return { b, base, arrive: () => renameSync(path.join(stash, base.file), kept(base.file)) }
 }

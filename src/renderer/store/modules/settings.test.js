@@ -38,3 +38,22 @@ describe('the search page\'s retired switch', () => {
     expect(consoleError).not.toHaveBeenCalled()
   })
 })
+
+describe('the settings the backup keeper changed', () => {
+  it('takes in only those whose stored value differs, each with its side effect', async () => {
+    DBSettingHandlers.find.mockResolvedValueOnce([
+      { _id: 'defaultVolume', value: 1 },
+      { _id: 'maxVolume', value: 300 },
+      { _id: 'searchLatched', value: true },
+      { _id: 'notASetting', value: 1 },
+    ])
+    const state = { ...settings.state, defaultVolume: 1, maxVolume: 100, searchLatched: false }
+    const commit = vi.fn((type, value) => settings.mutations[type](state, value))
+    const dispatch = vi.fn()
+
+    await settings.actions.grabChangedUserSettings({ commit, dispatch, state })
+
+    expect(commit.mock.calls).toEqual([['setMaxVolume', 300], ['setSearchLatched', true]])
+    expect(dispatch.mock.calls).toEqual([['triggerMaxVolumeSideEffects', 300]])
+  })
+})

@@ -1791,7 +1791,7 @@ function runApp() {
 
   registerYtDlpHandlers({ chooseDefaultFolder })
   const { installationId } = registerBackupHandlers({ relaunch })
-  const keeper = registerKeeper({ relaunch, installationId, chooseDefaultFolder })
+  const keeper = registerKeeper({ installationId, chooseDefaultFolder })
   registerPeerTubeDownloadHandlers({ userAgent: peerTubeUserAgent(packageDetails.version) })
 
   ipcMain.handle(IpcChannels.GET_REPLACE_HTTP_CACHE, (event) => {

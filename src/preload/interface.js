@@ -520,6 +520,17 @@ export default {
   },
 
   /**
+   * The keeper took in another machine's changes while the app ran: the
+   * sections it changed in the datastores, for every window to load again
+   * @param {(sections: string[]) => void} handler
+   */
+  handleKeeperDataChanged: (handler) => {
+    ipcRenderer.on(IpcChannels.KEEPER_DATA_CHANGED, (_, sections) => {
+      handler(Array.isArray(sections) ? sections : [])
+    })
+  },
+
+  /**
    * Whether this window is the main one, which checks the Later list
    * @returns {Promise<boolean>}
    */

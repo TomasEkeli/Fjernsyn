@@ -645,6 +645,33 @@ const customActions = {
     }
   },
 
+  // Fjernsyn: the settings the backup keeper changed while the app ran, taken
+  // in as another window's change is: only those whose stored value differs
+  // from what the store holds, each with its side effect. grabUserSettings
+  // runs every side effect again, and the default volume's resets the volume
+  // and mute of the session.
+  grabChangedUserSettings: async ({ commit, dispatch, state }) => {
+    try {
+      const userSettings = await DBSettingHandlers.find()
+
+      const mutationIds = Object.keys(mutations)
+
+      for (const { _id, value } of userSettings) {
+        if (!mutationIds.includes(defaultMutationId(_id)) || JSON.stringify(state[_id]) === JSON.stringify(value)) {
+          continue
+        }
+
+        if (settingsWithSideEffects.includes(_id)) {
+          dispatch(defaultSideEffectsTriggerId(_id), value)
+        }
+
+        commit(defaultMutationId(_id), value)
+      }
+    } catch (errMessage) {
+      console.error(errMessage)
+    }
+  },
+
   // Should be a root action, but we'll tolerate
   setupListenersToSyncWindows: ({ commit, dispatch }) => {
     if (process.env.IS_ELECTRON) {
