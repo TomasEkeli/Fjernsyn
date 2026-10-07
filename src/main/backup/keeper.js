@@ -924,6 +924,12 @@ export function createKeeper({
     state.contentHash = result.theirContentHash
     await saveState()
 
+    // This installation's own file, met with last seen forgotten (the folder
+    // chosen again): it is what this machine last wrote, as at startup
+    if (kept.parsed.header.installationId === installationId) {
+      setStatus({ writtenAt: kept.sync.mtime })
+    }
+
     const sections = Object.keys(result.toApply)
     const counts = sections.map(name => `${name} +${result.toApply[name].put.length} -${result.toApply[name].remove.length}`).join(', ')
 
