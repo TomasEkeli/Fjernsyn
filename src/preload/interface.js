@@ -463,6 +463,63 @@ export default {
   },
 
   /**
+   * This computer's host name, for a backup's header
+   * @returns {Promise<string>}
+   */
+  getMachineName: () => {
+    return ipcRenderer.invoke(IpcChannels.BACKUP_MACHINE_NAME)
+  },
+
+  /**
+   * Resolves once the kept backup's keeper has finished its startup check,
+   * a take in included, so that the data can load. At once when it has.
+   * @returns {Promise<boolean>}
+   */
+  keeperReady: () => {
+    return ipcRenderer.invoke(IpcChannels.KEEPER_READY)
+  },
+
+  /**
+   * @returns {Promise<import('../main/backup/keeper').KeeperStatus>}
+   */
+  getKeeperStatus: () => {
+    return ipcRenderer.invoke(IpcChannels.KEEPER_STATUS)
+  },
+
+  /**
+   * @param {(status: import('../main/backup/keeper').KeeperStatus) => void} handler
+   */
+  handleKeeperStatus: (handler) => {
+    ipcRenderer.on(IpcChannels.KEEPER_STATUS_CHANGED, (_, status) => {
+      handler(status)
+    })
+  },
+
+  /**
+   * Main's folder dialog; the keeper starts on the folder chosen
+   * @returns {Promise<import('../main/backup/keeper').KeeperStatus>}
+   */
+  chooseKeeperFolder: () => {
+    return ipcRenderer.invoke(IpcChannels.KEEPER_CHOOSE_FOLDER)
+  },
+
+  /**
+   * Stop keeping: the setting cleared, the files left where they are
+   * @returns {Promise<import('../main/backup/keeper').KeeperStatus>}
+   */
+  stopKeeping: () => {
+    return ipcRenderer.invoke(IpcChannels.KEEPER_STOP)
+  },
+
+  /**
+   * @param {import('../main/backup/keeper').KeeperAnswer} answer
+   * @returns {Promise<import('../main/backup/keeper').KeeperStatus>}
+   */
+  answerKeeper: (answer) => {
+    return ipcRenderer.invoke(IpcChannels.KEEPER_ANSWER, answer)
+  },
+
+  /**
    * Whether this window is the main one, which checks the Later list
    * @returns {Promise<boolean>}
    */

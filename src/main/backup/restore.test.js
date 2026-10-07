@@ -229,6 +229,23 @@ describe('restoreBackup', () => {
     expect(settings.maxVolume).toBe(500)
   })
 
+  it('refuses the backup folder, which only main\'s folder dialog sets', async () => {
+    const datastores = await openDatastores()
+    await populate(datastores)
+    await datastores.settings.insertAsync({ _id: 'backupFolder', value: '/home/me/Sync/fjernsyn' })
+    const { restore } = setup(datastores)
+
+    const result = await restore({
+      safetyCopy: SAFETY_COPY,
+      sections: { settings: [{ _id: 'backupFolder', value: '/tmp/evil' }] },
+    })
+
+    expect(result.ok).toBe(true)
+
+    const settings = Object.fromEntries((await onDisk('settings')).map(({ _id, value }) => [_id, value]))
+    expect(settings.backupFolder).toBe('/home/me/Sync/fjernsyn')
+  })
+
   it('compacts what it wrote, so the files hold only the new records', async () => {
     const datastores = await openDatastores()
     await populate(datastores)

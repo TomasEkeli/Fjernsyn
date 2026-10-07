@@ -438,6 +438,9 @@ const state = {
   ytDlpExecutablePath: '',
   // A JSON array of strings, like the external player's
   ytDlpCustomArgs: '[]',
+  // The folder the kept backup is kept in, empty when it is not kept. Only
+  // main's folder picker may set it; Stop keeping clears it through main.
+  backupFolder: '',
   // A random id made once per data folder by main (src/main/backup/), which
   // goes in every backup's header so a backup says which installation wrote
   // it. Nothing in the renderer writes it, and no backup carries it as a
@@ -596,6 +599,7 @@ export const NON_TRANSFERABLE_SETTINGS = new Set([
   'ytDlpCustomArgs',
   // Backup
   'installationId',
+  'backupFolder',
 
   /* Depends on process.env.SUPPORTS_LOCAL_API */
   'backendFallback',

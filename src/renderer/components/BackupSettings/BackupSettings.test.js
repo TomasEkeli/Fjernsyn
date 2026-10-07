@@ -1,4 +1,5 @@
 import { flushPromises } from '@vue/test-utils'
+import { gzipSync, strToU8 } from 'fflate'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -14,7 +15,7 @@ import {
 import packageDetails from '../../../../package.json'
 import store from '../../store/index'
 import { listAllDownloads } from '../../helpers/downloads'
-import { readFileWithPicker, showToast, writeFileWithPicker } from '../../helpers/utils'
+import { showToast, writeFileWithPicker } from '../../helpers/utils'
 import { mountWithApp } from '../../testing/mount'
 import BackupSettings from './BackupSettings.vue'
 
@@ -67,7 +68,6 @@ vi.mock('../../helpers/downloads', () => ({
 vi.mock('../../helpers/utils', async (importOriginal) => ({
   ...(await importOriginal()),
   showToast: vi.fn(),
-  readFileWithPicker: vi.fn(),
   writeFileWithPicker: vi.fn(async () => true),
   getTodayDateStrLocalTimezone: () => '2026-10-04',
 }))
@@ -88,22 +88,30 @@ const STORED_SETTINGS = [
 
 const BACKUP_FOLDER = '/home/me/.config/Fjernsyn/backups'
 
+const MACHINE_NAME = 'synthetic-desktop'
+
+const KEPT_FOLDER = '/home/me/Sync/fjernsyn'
+
+/** @type {import('../../../main/backup/keeper').KeeperStatus} */
+const NOT_KEEPING = { folder: null, ready: true, writtenAt: null, failure: null, pause: null, arriving: null, tookIn: null }
+
+/** The keeper keeping KEPT_FOLDER, with what the test gives it */
+const keeping = (fields = {}) => ({ ...NOT_KEEPING, folder: KEPT_FOLDER, ...fields })
+
 /**
+ * A backup file's text, written by another installation on another machine
+ * unless the header says otherwise
  * @param {Record<string, any>} sections
  * @param {Record<string, any>} [header]
  */
 function backupFile(sections, header = {}) {
-  return {
-    filename: 'fjernsyn-backup-2026-10-01.json',
-    content: JSON.stringify({ format: 'fjernsyn-backup', formatVersion: 1, appVersion: '0.1.200', installationId: 'other-installation', ...header, sections }),
-  }
+  return JSON.stringify({ format: 'fjernsyn-backup', formatVersion: 1, appVersion: '0.1.200', installationId: 'other-installation', machineName: 'synthetic-laptop', ...header, sections })
 }
 
 beforeEach(() => {
   document.body.innerHTML = '<div class="app"></div>'
   vi.mocked(showToast).mockClear()
   vi.mocked(writeFileWithPicker).mockClear()
-  vi.mocked(readFileWithPicker).mockReset()
   vi.mocked(listAllDownloads).mockResolvedValue({ downloads: [], finished: {} })
 
   DBProfileHandlers.find.mockResolvedValue([MAIN_PROFILE])
@@ -117,13 +125,41 @@ beforeEach(() => {
 
   window.ftElectron = {
     getBackupFolder: vi.fn(async () => BACKUP_FOLDER),
+    getMachineName: vi.fn(async () => MACHINE_NAME),
     restoreBackup: vi.fn(async () => ({ ok: true, safetyCopyPath: `${BACKUP_FOLDER}/before-restore-2026-10-04-163005.json` })),
+    getKeeperStatus: vi.fn(async () => NOT_KEEPING),
+    handleKeeperStatus: vi.fn(),
+    chooseKeeperFolder: vi.fn(async () => NOT_KEEPING),
+    stopKeeping: vi.fn(async () => NOT_KEEPING),
+    answerKeeper: vi.fn(async () => NOT_KEEPING),
   }
 })
 
 afterEach(() => {
   delete window.ftElectron
+  delete window.showOpenFilePicker
 })
+
+/**
+ * Stands in for the open file picker, with the file the user chooses in it
+ * @param {string | Uint8Array | null} file the file's text or bytes; null cancels the picker
+ */
+function pickFile(file) {
+  window.showOpenFilePicker = vi.fn(async () => {
+    if (file === null) {
+      throw new DOMException('The user aborted a request.', 'AbortError')
+    }
+
+    const bytes = typeof file === 'string' ? strToU8(file) : file
+
+    return [{
+      getFile: async () => ({
+        name: 'fjernsyn-backup-2026-10-01.json',
+        arrayBuffer: async () => bytes.slice().buffer,
+      }),
+    }]
+  })
+}
 
 function mountBackup() {
   return mountWithApp(BackupSettings, { store })
@@ -161,7 +197,7 @@ async function exportBackup() {
 }
 
 async function chooseBackup(file) {
-  vi.mocked(readFileWithPicker).mockResolvedValue(file)
+  pickFile(file)
   const wrapper = mountBackup()
   await button(wrapper, 'Restore backup').trigger('click')
   await flushPromises()
@@ -187,6 +223,7 @@ describe('the Backup group', () => {
       expect(document.format).toBe('fjernsyn-backup')
       expect(document.appVersion).toBe(packageDetails.version)
       expect(document.installationId).toBe('this-installation')
+      expect(document.machineName).toBe(MACHINE_NAME)
       expect(document.sections.profiles).toEqual([MAIN_PROFILE])
       expect(document.sections.history).toEqual([HISTORY])
       expect(document.sections.channels).toEqual([CHANNEL])
@@ -212,6 +249,18 @@ describe('the Backup group', () => {
       expect(Object.keys(document.sections)).toEqual(['profiles', 'history', 'playlists', 'later', 'searchHistory', 'settings', 'channels', 'aiVerdicts'])
     })
 
+    it('still writes the backup when main cannot say the machine name, without one', async () => {
+      window.ftElectron.getMachineName.mockRejectedValue(new Error('no handler'))
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      const { document } = await exportBackup()
+
+      expect(document.machineName).toBeNull()
+      expect(document.sections.profiles).toEqual([MAIN_PROFILE])
+      expect(toasts()).toEqual(['The backup has been written'])
+      consoleError.mockRestore()
+    })
+
     it('says nothing when the save is cancelled', async () => {
       vi.mocked(writeFileWithPicker).mockResolvedValueOnce(false)
 
@@ -224,8 +273,8 @@ describe('the Backup group', () => {
   describe('Restore backup', () => {
     it('shows a refusal with its reason, and sends nothing', async () => {
       const refusals = [
-        [{ filename: 'x.json', content: 'not json' }, 'This file is not a backup: it is not JSON'],
-        [{ filename: 'x.json', content: '{"_id":"maxVolume","value":1}' }, 'This file is not a Fjernsyn backup'],
+        ['not json', 'This file is not a backup: it is not JSON'],
+        ['{"_id":"maxVolume","value":1}', 'This file is not a Fjernsyn backup'],
         [backupFile({}, { formatVersion: 7 }), 'This backup was written by a newer version of Fjernsyn (backup format 7), which this version cannot read'],
         [backupFile({ profiles: {} }), 'This backup cannot be read: its section "profiles" is not a list'],
         [backupFile({ bookmarks: [] }), 'This backup holds nothing this version of Fjernsyn can restore'],
@@ -261,7 +310,7 @@ describe('the Backup group', () => {
 
       const text = confirmation().textContent
       expect(text).toContain('Restore this backup?')
-      expect(text).toContain('Written by Fjernsyn 0.1.200 on another installation.')
+      expect(text).toContain('Written by Fjernsyn 0.1.200 on synthetic-laptop.')
       expect(text).toContain('Each section below replaces what is here now.')
       expect(text).toContain('Profiles and subscriptions: 1')
       expect(text).toContain('Watch history: 1')
@@ -276,10 +325,60 @@ describe('the Backup group', () => {
       expect(text).not.toContain('downloads are running')
     })
 
-    it('says when the backup is from this installation', async () => {
-      await chooseBackup(backupFile({ profiles: [MAIN_PROFILE] }, { installationId: 'this-installation' }))
+    it('says when the backup is from this installation, and on which machine', async () => {
+      await chooseBackup(backupFile({ profiles: [MAIN_PROFILE] }, { installationId: 'this-installation', machineName: MACHINE_NAME }))
+
+      expect(confirmation().textContent).toContain(`Written by Fjernsyn 0.1.200 on ${MACHINE_NAME}, this installation.`)
+    })
+
+    it('says this installation alone for an older backup from here, which does not name the machine', async () => {
+      await chooseBackup(backupFile({ profiles: [MAIN_PROFILE] }, { installationId: 'this-installation', machineName: undefined }))
 
       expect(confirmation().textContent).toContain('Written by Fjernsyn 0.1.200 on this installation.')
+    })
+
+    it('says another machine for a backup from elsewhere that does not name one', async () => {
+      await chooseBackup(backupFile({ profiles: [MAIN_PROFILE] }, { machineName: undefined }))
+
+      expect(confirmation().textContent).toContain('Written by Fjernsyn 0.1.200 on another machine.')
+    })
+
+    it('offers backups and gzipped backups in the picker', async () => {
+      await chooseBackup(null)
+
+      const [options] = window.showOpenFilePicker.mock.calls[0]
+      expect(options.types).toEqual([{
+        description: 'Fjernsyn backup',
+        accept: { 'application/json': ['.json'], 'application/gzip': ['.gz'] },
+      }])
+    })
+
+    it('reads a gzipped backup as it reads a plain one, by its first two bytes whatever its name', async () => {
+      const text = backupFile({ profiles: [MAIN_PROFILE], history: [HISTORY] })
+      const gzipped = gzipSync(strToU8(text))
+      expect([...gzipped.subarray(0, 2)]).toEqual([0x1f, 0x8b])
+
+      await chooseBackup(gzipped)
+
+      const shown = confirmation().textContent
+      expect(shown).toContain('Written by Fjernsyn 0.1.200 on synthetic-laptop.')
+      expect(shown).toContain('Profiles and subscriptions: 1')
+      expect(shown).toContain('Watch history: 1')
+
+      confirmationButton('Restore').click()
+      await flushPromises()
+
+      const [request] = window.ftElectron.restoreBackup.mock.calls[0]
+      expect(request.sections).toEqual({ profiles: [MAIN_PROFILE], history: [HISTORY] })
+    })
+
+    it('says it cannot read a file that begins as gzip and is not', async () => {
+      await chooseBackup(new Uint8Array([0x1f, 0x8b, 0x00, 0x01, 0x02]))
+
+      expect(confirmation()).toBeNull()
+      expect(toasts()).toHaveLength(1)
+      expect(toasts()[0]).toMatch(/^Unable to read file: /)
+      expect(window.ftElectron.restoreBackup).not.toHaveBeenCalled()
     })
 
     it('names the downloads that are running, which the relaunch stops', async () => {
@@ -323,6 +422,7 @@ describe('the Backup group', () => {
       expect(window.ftElectron.restoreBackup).toHaveBeenCalledTimes(1)
       const [request] = window.ftElectron.restoreBackup.mock.calls[0]
       expect(request.safetyCopy).toBe(exported)
+      expect(JSON.parse(request.safetyCopy).machineName).toBe(MACHINE_NAME)
       expect(request.sections).toEqual({
         profiles: [MAIN_PROFILE],
         settings: [{ _id: 'maxVolume', value: 300 }],
@@ -365,6 +465,120 @@ describe('the Backup group', () => {
       await flushPromises()
 
       expect(toasts().at(-1)).toBe('The restore failed, and nothing was changed: Error: no handler')
+    })
+  })
+
+  describe('the kept backup', () => {
+    // 16:30 on 7 October 2026, local time
+    const NOW = new Date(2026, 9, 7, 16, 30)
+    const AT_1402 = new Date(2026, 9, 7, 14, 2).getTime()
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(NOW)
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    /** Main pushing a status, as it does on every change */
+    async function push(status) {
+      const [[handler]] = window.ftElectron.handleKeeperStatus.mock.calls
+      handler(status)
+      await flushPromises()
+    }
+
+    async function mountKeeping(status) {
+      window.ftElectron.getKeeperStatus.mockResolvedValue(status)
+      const wrapper = mountBackup()
+      await flushPromises()
+      return wrapper
+    }
+
+    const folderRow = wrapper => wrapper.findAll('.keeperRow')[0]
+
+    /** The status line's text and its buttons, or null when there is none */
+    function statusLine(wrapper) {
+      const row = wrapper.findAll('.keeperRow')[1]
+      return row === undefined
+        ? null
+        : { text: row.find('.keeperStatus').text(), buttons: row.findAll('button').map(found => found.text()) }
+    }
+
+    it('says Not set and offers Choose folder alone when nothing is kept', async () => {
+      const wrapper = await mountKeeping(NOT_KEEPING)
+
+      expect(folderRow(wrapper).text()).toContain('Keep a backup in')
+      expect(folderRow(wrapper).text()).toContain('Not set')
+      expect(folderRow(wrapper).findAll('button').map(found => found.text())).toEqual(['Choose folder'])
+      expect(statusLine(wrapper)).toBeNull()
+    })
+
+    it('shows the folder chosen in main\'s dialog, and Stop keeping', async () => {
+      window.ftElectron.chooseKeeperFolder.mockResolvedValue(keeping())
+      const wrapper = await mountKeeping(NOT_KEEPING)
+
+      await button(wrapper, 'Choose folder').trigger('click')
+      await flushPromises()
+
+      expect(window.ftElectron.chooseKeeperFolder).toHaveBeenCalledTimes(1)
+      expect(folderRow(wrapper).text()).toContain(KEPT_FOLDER)
+      expect(folderRow(wrapper).findAll('button').map(found => found.text())).toEqual(['Choose folder', 'Stop keeping'])
+      expect(statusLine(wrapper)).toEqual({ text: 'Not written yet', buttons: [] })
+    })
+
+    it('goes back to Not set on Stop keeping', async () => {
+      const wrapper = await mountKeeping(keeping({ writtenAt: AT_1402 }))
+
+      await button(wrapper, 'Stop keeping').trigger('click')
+      await flushPromises()
+
+      expect(window.ftElectron.stopKeeping).toHaveBeenCalledTimes(1)
+      expect(folderRow(wrapper).text()).toContain('Not set')
+      expect(statusLine(wrapper)).toBeNull()
+    })
+
+    it('follows the status main pushes, with the date when the write was not today', async () => {
+      const wrapper = await mountKeeping(keeping())
+
+      await push(keeping({ writtenAt: AT_1402 }))
+      expect(statusLine(wrapper)).toEqual({ text: 'Written 14:02', buttons: [] })
+
+      await push(keeping({ writtenAt: new Date(2026, 9, 6, 9, 5).getTime() }))
+      expect(statusLine(wrapper)).toEqual({ text: 'Written 2026-10-06 09:05', buttons: [] })
+    })
+
+    it('shows every state with its buttons', async () => {
+      const pause = { key: 'k', machineName: 'synthetic-laptop', writtenAt: AT_1402, detail: null, formatVersion: null }
+      const states = [
+        [{ failure: { message: 'ENOSPC: no space left on device', since: AT_1402 } }, 'Couldn\'t write: ENOSPC: no space left on device', []],
+        [{ pause: { ...pause, reason: 'otherMachine' } }, 'Paused: synthetic-laptop wrote the backup at 14:02.', ['Restore (relaunches)', 'Overwrite with this machine\'s data']],
+        [{ pause: { ...pause, reason: 'otherMachine', machineName: null } }, 'Paused: another machine wrote the backup at 14:02.', ['Restore (relaunches)', 'Overwrite with this machine\'s data']],
+        [{ pause: { ...pause, reason: 'refused', detail: 'baseMismatch' } }, 'Paused: the backup in the folder can\'t be read (its base file does not match it).', ['Overwrite with this machine\'s data']],
+        [{ pause: { ...pause, reason: 'refused' } }, 'Paused: the backup in the folder can\'t be read.', ['Overwrite with this machine\'s data']],
+        [{ pause: { ...pause, reason: 'newer', formatVersion: 2 } }, 'Paused: the backup was written by a newer Fjernsyn. Update Fjernsyn to keep it.', []],
+        [{ pause: { ...pause, reason: 'baseMissing' } }, 'Paused: the backup synthetic-laptop wrote at 14:02 is still arriving.', ['Overwrite with this machine\'s data']],
+      ]
+
+      const wrapper = await mountKeeping(keeping())
+
+      for (const [fields, text, buttons] of states) {
+        await push(keeping({ writtenAt: AT_1402, ...fields }))
+        expect(statusLine(wrapper)).toEqual({ text, buttons })
+      }
+    })
+
+    it('sends the answer a pause\'s button gives', async () => {
+      const pause = { reason: 'otherMachine', key: 'k', machineName: 'synthetic-laptop', writtenAt: AT_1402, detail: null, formatVersion: null }
+      const wrapper = await mountKeeping(keeping({ pause }))
+      window.ftElectron.answerKeeper.mockResolvedValue(keeping({ pause }))
+
+      await button(wrapper, 'Restore (relaunches)').trigger('click')
+      await button(wrapper, 'Overwrite with this machine\'s data').trigger('click')
+      await flushPromises()
+
+      expect(window.ftElectron.answerKeeper.mock.calls).toEqual([['restore'], ['overwrite']])
     })
   })
 })

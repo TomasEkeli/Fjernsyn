@@ -1,0 +1,16 @@
+/*
+ * Over the start screen (200), at the prompts' height, so that the time
+ * waited and Stop waiting show at the foot of the test card
+ */
+.keeperWaiting {
+  align-items: center;
+  color: var(--primary-text-color);
+  column-gap: 1rem;
+  display: flex;
+  inset-block-end: 24px;
+  inset-inline: 0;
+  margin-inline: auto;
+  inline-size: fit-content;
+  position: fixed;
+  z-index: 201;
+}

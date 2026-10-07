@@ -128,7 +128,7 @@ const KNOWN_SETTINGS = ['maxVolume', 'profilePictures', 'aiChannels', 'proxyHost
 const MACHINE_BOUND = ['proxyHostname', 'installationId']
 const SETTINGS_CONTEXT = { knownSettings: KNOWN_SETTINGS, machineBoundSettings: MACHINE_BOUND }
 
-const HEADER = { appVersion: '0.1.214', installationId: '9b0c6c8e-5d1f-4a2b-9e3d-7f6a5b4c3d2e' }
+const HEADER = { appVersion: '0.1.214', installationId: '9b0c6c8e-5d1f-4a2b-9e3d-7f6a5b4c3d2e', machineName: 'DESKTOP-TEST' }
 
 /**
  * @param {Record<string, any>} sections
@@ -169,7 +169,7 @@ describe('the backup format', () => {
       const reversedSections = Object.fromEntries(Object.entries(SECTIONS).reverse())
       const document = JSON.parse(writeBackup({ ...HEADER, sections: reversedSections }))
 
-      expect(Object.keys(document)).toEqual(['format', 'formatVersion', 'appVersion', 'installationId', 'sections'])
+      expect(Object.keys(document)).toEqual(['format', 'formatVersion', 'appVersion', 'installationId', 'machineName', 'sections'])
       expect(document.format).toBe('fjernsyn-backup')
       expect(document.formatVersion).toBe(1)
       expect(document.appVersion).toBe('0.1.214')
@@ -192,6 +192,7 @@ describe('the backup format', () => {
   "formatVersion": 1,
   "appVersion": "0.1.214",
   "installationId": "${HEADER.installationId}",
+  "machineName": "DESKTOP-TEST",
   "sections": {
     "searchHistory": [
       {
@@ -316,7 +317,41 @@ describe('the backup format', () => {
     it('reads a header without an app version or installation id as unknown', () => {
       const text = JSON.stringify({ format: BACKUP_FORMAT, formatVersion: 1, sections: {} })
 
-      expect(readBackup(text, SETTINGS_CONTEXT).header).toEqual({ formatVersion: 1, appVersion: null, installationId: null })
+      expect(readBackup(text, SETTINGS_CONTEXT).header).toEqual({ formatVersion: 1, appVersion: null, installationId: null, machineName: null })
+    })
+
+    describe('the machine name', () => {
+      it('round trips through writing and reading', () => {
+        const result = readBackup(writeBackup({ ...HEADER, machineName: 'synthetic-laptop', sections: {} }), SETTINGS_CONTEXT)
+
+        expect(result.header.machineName).toBe('synthetic-laptop')
+      })
+
+      it('reads as null in a backup without one, as an older one is, which is still read', () => {
+        const text = JSON.stringify({ format: BACKUP_FORMAT, formatVersion: 1, appVersion: HEADER.appVersion, installationId: HEADER.installationId, sections: { profiles: [MAIN_PROFILE] } })
+        const result = readBackup(text, SETTINGS_CONTEXT)
+
+        expect(text).not.toContain('machineName')
+        expect(result.ok).toBe(true)
+        expect(result.header).toEqual({ formatVersion: 1, appVersion: HEADER.appVersion, installationId: HEADER.installationId, machineName: null })
+        expect(result.sections.profiles).toEqual([MAIN_PROFILE])
+      })
+
+      it('reads as null when empty or not a string', () => {
+        expect(readBackup(backupText({}, { machineName: '' }), SETTINGS_CONTEXT).header.machineName).toBeNull()
+        expect(readBackup(backupText({}, { machineName: 42 }), SETTINGS_CONTEXT).header.machineName).toBeNull()
+      })
+
+      it('is written as null when not given', () => {
+        const text = writeBackup({ appVersion: HEADER.appVersion, installationId: HEADER.installationId, sections: {} })
+
+        expect(JSON.parse(text).machineName).toBeNull()
+      })
+
+      it('leaves the format version at 1, as a reader ignores header fields it does not know', () => {
+        expect(BACKUP_FORMAT_VERSION).toBe(1)
+        expect(JSON.parse(writeBackup({ ...HEADER, sections: {} })).formatVersion).toBe(1)
+      })
     })
 
     describe('settings', () => {
@@ -344,6 +379,42 @@ describe('the backup format', () => {
         const settings = [{ _id: 'maxVolume', value: null }, { _id: 'aiChannels', value: false }]
 
         expect(readBackup(backupText({ settings }), SETTINGS_CONTEXT).sections.settings).toEqual(settings)
+      })
+
+      describe('kept when unknown, on request', () => {
+        const settings = [
+          ...SETTINGS,
+          { _id: 'aSettingFromLater', value: { nested: true } },
+          { _id: 'proxyHostname', value: '10.0.0.1' },
+          { _id: 'installationId', value: 'someone else' },
+        ]
+
+        it('keeps a setting this app does not know', () => {
+          const result = readBackup(backupText({ settings }), { ...SETTINGS_CONTEXT, keepUnknownSettings: true })
+
+          expect(result.sections.settings).toEqual([...SETTINGS, { _id: 'aSettingFromLater', value: { nested: true } }])
+          expect(result.counts.settings).toEqual({ kept: 4, leftOut: { machineBound: 2 } })
+        })
+
+        it('keeps one even without a list of the settings the app knows, as main has none', () => {
+          const result = readBackup(backupText({ settings }), { machineBoundSettings: MACHINE_BOUND, keepUnknownSettings: true })
+
+          expect(result.sections.settings.map(setting => setting._id)).toEqual(['maxVolume', 'profilePictures', 'aiChannels', 'aSettingFromLater'])
+        })
+
+        it('still leaves out the machine-bound ones', () => {
+          const result = readBackup(backupText({ settings }), { machineBoundSettings: MACHINE_BOUND, keepUnknownSettings: true })
+
+          expect(result.sections.settings.map(setting => setting._id)).not.toContain('proxyHostname')
+          expect(result.sections.settings.map(setting => setting._id)).not.toContain('installationId')
+        })
+
+        it('leaves it out by default', () => {
+          const result = readBackup(backupText({ settings }), SETTINGS_CONTEXT)
+
+          expect(result.sections.settings).toEqual(SETTINGS)
+          expect(result.counts.settings.leftOut).toEqual({ machineBound: 2, unknownSetting: 1 })
+        })
       })
     })
 

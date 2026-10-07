@@ -55,6 +55,7 @@ export const BACKUP_SECTIONS = Object.freeze(['profiles', 'history', 'playlists'
  * @property {number} formatVersion
  * @property {string | null} appVersion
  * @property {string | null} installationId
+ * @property {string | null} machineName the host name of the computer that wrote it; null when the backup does not say, as older ones do not
  */
 
 /**
@@ -82,15 +83,14 @@ export function backupFileName(date) {
 }
 
 /**
- * A backup's text, in the stable order.
+ * The sections in the stable order: the sections in their fixed order, the
+ * records within each sorted by their key, the keys of every object sorted.
+ * A section that is not a list is left out.
  *
- * @param {object} backup
- * @param {string} backup.appVersion
- * @param {string} backup.installationId
- * @param {Partial<Record<BackupSection, Record<string, any>[]>>} backup.sections each section's records, as the datastore holds them; a section left out is not written
- * @returns {string}
+ * @param {Partial<Record<BackupSection, Record<string, any>[]>>} sections
+ * @returns {Partial<Record<BackupSection, Record<string, any>[]>>}
  */
-export function writeBackup({ appVersion, installationId, sections }) {
+export function orderSections(sections) {
   const ordered = {}
 
   for (const section of BACKUP_SECTIONS) {
@@ -103,12 +103,27 @@ export function writeBackup({ appVersion, installationId, sections }) {
       .sort((a, b) => compareStrings(key(a), key(b)) || compareStrings(String(a._id ?? ''), String(b._id ?? '')))
   }
 
+  return ordered
+}
+
+/**
+ * A backup's text, in the stable order.
+ *
+ * @param {object} backup
+ * @param {string} backup.appVersion
+ * @param {string} backup.installationId
+ * @param {string | null} [backup.machineName] the host name of the computer writing it
+ * @param {Partial<Record<BackupSection, Record<string, any>[]>>} backup.sections each section's records, as the datastore holds them; a section left out is not written
+ * @returns {string}
+ */
+export function writeBackup({ appVersion, installationId, machineName = null, sections }) {
   const document = {
     format: BACKUP_FORMAT,
     formatVersion: BACKUP_FORMAT_VERSION,
     appVersion,
     installationId,
-    sections: ordered,
+    machineName,
+    sections: orderSections(sections),
   }
 
   return JSON.stringify(document, null, 2) + '\n'
@@ -120,11 +135,12 @@ export function writeBackup({ appVersion, installationId, sections }) {
  *
  * @param {string} text
  * @param {object} settings what is needed to judge the settings section
- * @param {Iterable<string>} settings.knownSettings the names of every setting this app knows
+ * @param {Iterable<string>} [settings.knownSettings] the names of every setting this app knows
  * @param {Iterable<string>} settings.machineBoundSettings the settings that belong to the machine, never in a backup
+ * @param {boolean} [settings.keepUnknownSettings] keep a setting this app does not know, rather than leave it out: the kept backup's take in, in main, which does not know which settings exist
  * @returns {BackupRefusal | BackupContents}
  */
-export function readBackup(text, { knownSettings, machineBoundSettings }) {
+export function readBackup(text, { knownSettings = [], machineBoundSettings, keepUnknownSettings = false }) {
   let document
   try {
     document = JSON.parse(text)
@@ -150,6 +166,7 @@ export function readBackup(text, { knownSettings, machineBoundSettings }) {
   const context = {
     knownSettings: new Set(knownSettings),
     machineBoundSettings: new Set(machineBoundSettings),
+    keepUnknownSettings,
   }
 
   const sections = {}
@@ -177,6 +194,7 @@ export function readBackup(text, { knownSettings, machineBoundSettings }) {
       formatVersion: document.formatVersion,
       appVersion: typeof document.appVersion === 'string' ? document.appVersion : null,
       installationId: typeof document.installationId === 'string' ? document.installationId : null,
+      machineName: typeof document.machineName === 'string' && document.machineName !== '' ? document.machineName : null,
     },
     sections,
     counts,
@@ -213,7 +231,9 @@ const PLAYLIST_VIDEO_REQUIRED_KEYS = ['videoId', 'title', 'lengthSeconds', 'time
  * @typedef {{ record: Record<string, any>, videosLeftOut?: number } | { leftOut: LeftOutReason }} Checked
  */
 
-/** @type {Record<BackupSection, (record: Record<string, any>, context: { knownSettings: Set<string>, machineBoundSettings: Set<string> }) => Checked>} */
+/** @typedef {{ knownSettings: Set<string>, machineBoundSettings: Set<string>, keepUnknownSettings: boolean }} CheckContext */
+
+/** @type {Record<BackupSection, (record: Record<string, any>, context: CheckContext) => Checked>} */
 const CHECKS = {
   profiles(record) {
     if (!hasKeys(record, PROFILE_REQUIRED_KEYS) || !isNonEmptyString(record._id) || !Array.isArray(record.subscriptions)) {
@@ -286,7 +306,7 @@ const CHECKS = {
     return { record }
   },
 
-  settings(record, { knownSettings, machineBoundSettings }) {
+  settings(record, { knownSettings, machineBoundSettings, keepUnknownSettings }) {
     if (typeof record._id !== 'string' || !Object.hasOwn(record, 'value')) {
       return { leftOut: 'missingFields' }
     }
@@ -295,7 +315,7 @@ const CHECKS = {
       return { leftOut: 'machineBound' }
     }
 
-    if (!knownSettings.has(record._id)) {
+    if (!keepUnknownSettings && !knownSettings.has(record._id)) {
       return { leftOut: 'unknownSetting' }
     }
 
@@ -322,7 +342,7 @@ const CHECKS = {
 /**
  * @param {BackupSection} section
  * @param {unknown[]} input
- * @param {{ knownSettings: Set<string>, machineBoundSettings: Set<string> }} context
+ * @param {CheckContext} context
  * @returns {{ records: Record<string, any>[], count: SectionCount }}
  */
 function readSection(section, input, context) {
@@ -461,7 +481,7 @@ function hasKeys(record, keys) {
  * @param {string} a
  * @param {string} b
  */
-function compareStrings(a, b) {
+export function compareStrings(a, b) {
   if (a < b) { return -1 }
   if (a > b) { return 1 }
   return 0
@@ -473,7 +493,7 @@ function compareStrings(a, b) {
  * @param {unknown} value
  * @returns {any}
  */
-function sortKeys(value) {
+export function sortKeys(value) {
   if (Array.isArray(value)) {
     return value.map(sortKeys)
   }

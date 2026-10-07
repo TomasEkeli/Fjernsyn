@@ -38,6 +38,14 @@ const IpcChannels = {
   // The fork's backup, see src/main/backup/: where the safety copies go, and the restore
   BACKUP_FOLDER: 'backup-folder',
   BACKUP_RESTORE: 'backup-restore',
+  BACKUP_MACHINE_NAME: 'backup-machine-name',
+  // The kept backup, see src/main/backup/keeper.js
+  KEEPER_READY: 'keeper-ready',
+  KEEPER_STATUS: 'keeper-status',
+  KEEPER_STATUS_CHANGED: 'keeper-status-changed',
+  KEEPER_CHOOSE_FOLDER: 'keeper-choose-folder',
+  KEEPER_STOP: 'keeper-stop',
+  KEEPER_ANSWER: 'keeper-answer',
 
   SYNC_SETTINGS: 'sync-settings',
   SYNC_HISTORY: 'sync-history',

@@ -54,6 +54,7 @@ async function register() {
   return {
     relaunch,
     folder: event => electron.handlers.get(IpcChannels.BACKUP_FOLDER)(event),
+    machineName: event => electron.handlers.get(IpcChannels.BACKUP_MACHINE_NAME)(event),
     restore: (event, request) => electron.handlers.get(IpcChannels.BACKUP_RESTORE)(event, request),
   }
 }
@@ -71,6 +72,13 @@ describe('the backup handlers', () => {
 
     expect(folder(APP)).toBe(path.join(electron.dataFolder, 'backups'))
     expect(folder(ELSEWHERE)).toBeNull()
+  })
+
+  it('give the host name, for the header, to the app only', async () => {
+    const { machineName } = await register()
+
+    expect(machineName(APP)).toBe(os.hostname())
+    expect(machineName(ELSEWHERE)).toBeNull()
   })
 
   it('restore for the app only', async () => {
