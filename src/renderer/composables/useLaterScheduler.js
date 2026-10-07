@@ -380,7 +380,8 @@ export function useLaterScheduler(store, router, isMainWindow) {
 
 /**
  * The video a route's watch page is for: a YouTube id, or the PeerTube
- * video's host and uuid, which no Later item can match; null off a watch page
+ * video's host and uuid, which no armed item can match (a PeerTube item is
+ * never armed); null off a watch page
  * @param {import('vue-router').RouteLocationNormalizedLoaded} route
  * @returns {string | null}
  */

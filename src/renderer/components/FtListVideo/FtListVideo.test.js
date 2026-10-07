@@ -664,10 +664,36 @@ describe('FtListVideo, the Later buttons', () => {
     expect(button(queuedRow, 'armIcon')).toBeDefined()
   })
 
-  it('shows neither on a PeerTube card', async () => {
+  it('shows the clock on a PeerTube card, and adds the video with what it needs to render and route', async () => {
     const { wrapper } = await mountCard(PEERTUBE_VIDEO)
+
+    button(wrapper, 'laterIcon').vm.$emit('click')
+
+    expect(store.dispatched).toEqual([{
+      type: 'addToLater',
+      payload: expect.objectContaining({ videoId: UUID, title: 'Sprite Fright', authorId: HANDLE, platform: 'peertube', host: HOST, thumbnail: THUMBNAIL }),
+    }])
+  })
+
+  it('removes a PeerTube video already there, by its uuid', async () => {
+    store.setGetter('getIsInLater', id => id === UUID)
+    const { wrapper } = await mountCard(PEERTUBE_VIDEO)
+
+    button(wrapper, 'laterIcon').vm.$emit('click')
+
+    expect(store.dispatched).toEqual([{ type: 'removeFromLater', payload: UUID }])
+  })
+
+  it('never offers to arm a PeerTube card, upcoming or not', async () => {
+    const upcoming = { ...PEERTUBE_VIDEO, isUpcoming: true, premiereDate: new Date(NOW + 60 * 60 * 1000) }
+    expect(button((await mountCard(upcoming)).wrapper, 'armIcon')).toBeUndefined()
+  })
+
+  it('links a PeerTube row of the Later page to its own watch page', async () => {
+    const { wrapper } = await mountCard(PEERTUBE_VIDEO, { laterRow: true, canRemoveFromPlaylist: true, playlistItemId: UUID })
+
     expect(button(wrapper, 'laterIcon')).toBeUndefined()
-    expect(button(wrapper, 'armIcon')).toBeUndefined()
+    expect(wrapper.find('a.thumbnailLink').attributes('href')).toBe(`/peertube/watch/${HOST}/${UUID}`)
   })
 
   it('gives the Later page its move and remove buttons, with no playlist in the link', async () => {

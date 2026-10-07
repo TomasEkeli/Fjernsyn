@@ -483,6 +483,31 @@ describe('the backup format', () => {
       ])
     })
 
+    it('checks a PeerTube Later item as the other PeerTube records are, and never keeps it armed', () => {
+      const peertube = {
+        _id: PEERTUBE_UUID,
+        videoId: PEERTUBE_UUID,
+        title: 'Sprite Fright',
+        author: 'Blender Studio',
+        authorId: 'blender@video.blender.org',
+        addedAt: 1759400000000,
+        position: -2,
+        alarm: null,
+        platform: 'peertube',
+        host: 'video.blender.org',
+        thumbnail: 'https://video.blender.org/lazy-static/thumbnails/sprite.jpg',
+      }
+      const armed = { ...peertube, alarm: { at: 5, armedAt: 1 } }
+      const invalid = { ...peertube, _id: 'not-a-uuid', videoId: 'not-a-uuid' }
+
+      expect(readBackup(backupText({ later: [peertube] }), SETTINGS_CONTEXT).sections.later).toEqual([peertube])
+      expect(readBackup(backupText({ later: [armed] }), SETTINGS_CONTEXT).sections.later).toEqual([peertube])
+
+      const result = readBackup(backupText({ later: [invalid] }), SETTINGS_CONTEXT)
+      expect(result.sections.later).toEqual([])
+      expect(result.counts.later.leftOut).toEqual({ invalidPeerTube: 1 })
+    })
+
     describe('refusals', () => {
       it('refuses what is not JSON', () => {
         expect(readBackup('_id,value\nmaxVolume,1000', SETTINGS_CONTEXT)).toEqual({ ok: false, reason: 'notJson' })

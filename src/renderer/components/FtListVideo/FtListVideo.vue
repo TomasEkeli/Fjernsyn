@@ -1565,11 +1565,12 @@ function removeFromQuickBookmarkPlaylist() {
   showToast(t('Video.Video has been removed from your saved list'))
 }
 
-// The Later list: YouTube only, and not on the Later page's own rows
+// The Later list: every platform's videos, but not on the Later page's own
+// rows; arming is YouTube's only, since a check is a YouTube request
 const isInLater = computed(() => store.getters.getIsInLater(id.value))
 const isArmed = computed(() => store.getters.getIsArmed(id.value))
 
-const showLaterButton = computed(() => !props.laterRow && !platformCard.value)
+const showLaterButton = computed(() => !props.laterRow)
 
 /** The stated start, when the card is upcoming and it is still ahead */
 const armableAt = computed(() => {
@@ -1599,6 +1600,7 @@ function laterVideoData() {
     isUpcoming: isUpcoming.value === true,
     premiereDate: props.data.premiereDate,
     premiereTimestamp: props.data.premiereTimestamp,
+    ...platformRecordFields(props.data), // Fjernsyn: as in markAsWatched
   }
 }
 

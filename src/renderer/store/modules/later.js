@@ -3,6 +3,7 @@ import i18n from '../../i18n/index'
 import { showToast } from '../../helpers/utils'
 import {
   armedInOrder,
+  isArmable,
   laterItemFromVideo,
   moveTo,
   needsRenumbering,
@@ -205,11 +206,13 @@ const actions = {
 
   /**
    * Arms an upcoming video for its stated time, adding it to the list first
-   * when it is not there.
+   * when it is not there. A PeerTube video is never armed: nothing checks it.
    * @param {any} context
    * @param {{ video: any, at: number }} payload
    */
   async arm({ commit, state }, { video, at }) {
+    if (!isArmable(video)) { return }
+
     const now = Date.now()
     const alarm = { at, armedAt: now }
     const existing = state.laterItems[video.videoId]

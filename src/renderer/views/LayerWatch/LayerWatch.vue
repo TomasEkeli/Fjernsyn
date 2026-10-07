@@ -161,9 +161,8 @@
             <LayerSubscribeButton :channel="video.channel" />
           </template>
           <template #actions>
-            <!-- The Later list's buttons, as on a card: YouTube only -->
+            <!-- The Later list's buttons, as on a card: the clock for every video, arming YouTube's only -->
             <FtIconButton
-              v-if="isYouTube"
               :title="isInLater ? t('Later.Remove from Later') : t('Later.Add to Later')"
               :icon="isInLater ? ['fas', 'clock'] : ['far', 'clock']"
               :theme="isInLater ? 'secondary' : 'base'"
@@ -1551,7 +1550,7 @@ const armableAt = computed(() => {
 function laterVideoData() {
   const details = video.value
 
-  return {
+  const data = {
     videoId: details.videoId,
     title: details.title,
     author: details.author,
@@ -1562,6 +1561,15 @@ function laterVideoData() {
     isUpcoming: details.isUpcoming === true,
     premiereDate: details.premiereDate,
   }
+
+  // As the history entry: what the Later page needs to render and route it
+  if (!isYouTube.value) {
+    data.platform = details.platform
+    data.host = details.host
+    data.thumbnail = details.thumbnail
+  }
+
+  return data
 }
 
 function toggleLater() {

@@ -216,8 +216,48 @@ describe('the Later list helpers', () => {
     it('reads a premiere timestamp in seconds', () => {
       expect(laterItemFromVideo({ videoId: 'x', premiereTimestamp: 10 }, 0).premiereDate).toBe(10000)
     })
+
+    it('keeps a PeerTube video\'s platform, host and thumbnail, keyed by its uuid', () => {
+      const item = laterItemFromVideo({ ...PEERTUBE_VIDEO, description: 'left out', authorThumbnail: 'https://example.org/a.jpg' }, 42)
+
+      expect(item).toEqual({
+        _id: PEERTUBE_UUID,
+        videoId: PEERTUBE_UUID,
+        title: 'Sprite Fright',
+        author: 'Blender',
+        authorId: 'blender@video.blender.org',
+        lengthSeconds: 629,
+        platform: 'peertube',
+        host: 'video.blender.org',
+        thumbnail: PEERTUBE_THUMBNAIL,
+        addedAt: 42,
+        position: 0,
+        alarm: null,
+      })
+    })
+
+    it('adds nothing of a platform to a YouTube video', () => {
+      const item = laterItemFromVideo({ videoId: 'abc', title: 'T', thumbnail: 'https://i.ytimg.com/x.jpg', host: 'www.youtube.com' }, 0)
+
+      expect(item).not.toHaveProperty('platform')
+      expect(item).not.toHaveProperty('host')
+      expect(item).not.toHaveProperty('thumbnail')
+    })
   })
 })
+
+const PEERTUBE_UUID = 'b29290cc-dc51-4a12-bcb2-2aa5fece7605'
+const PEERTUBE_THUMBNAIL = 'https://video.blender.org/lazy-static/previews/sprite-fright.jpg'
+const PEERTUBE_VIDEO = {
+  videoId: PEERTUBE_UUID,
+  platform: 'peertube',
+  host: 'video.blender.org',
+  thumbnail: PEERTUBE_THUMBNAIL,
+  title: 'Sprite Fright',
+  author: 'Blender',
+  authorId: 'blender@video.blender.org',
+  lengthSeconds: 629,
+}
 
 describe('the Later list export', () => {
   const items = [
@@ -249,5 +289,25 @@ describe('the Later list export', () => {
     ].join('\n')
 
     expect(laterFromExport(text)).toEqual([expect.objectContaining({ _id: 'ok', alarm: null })])
+  })
+
+  it('reads back a PeerTube item with its platform fields', () => {
+    const peertube = laterItemFromVideo(PEERTUBE_VIDEO, 7)
+
+    expect(laterFromExport(laterToExport([peertube]))).toEqual([{ ...peertube, position: 0 }])
+  })
+
+  it('checks a PeerTube item as the other imports do: its uuid in lower case, a thumbnail only over https, no alarm', () => {
+    const text = [
+      JSON.stringify({ ...PEERTUBE_VIDEO, videoId: PEERTUBE_UUID.toUpperCase(), thumbnail: 'http://video.blender.org/x.jpg', alarm: { at: 99, armedAt: 50 } }),
+      JSON.stringify({ ...PEERTUBE_VIDEO, videoId: 'not-a-uuid' }),
+      JSON.stringify({ ...PEERTUBE_VIDEO, host: undefined }),
+    ].join('\n')
+
+    const read = laterFromExport(text)
+
+    expect(read).toHaveLength(1)
+    expect(read[0]).toMatchObject({ _id: PEERTUBE_UUID, videoId: PEERTUBE_UUID, platform: 'peertube', host: 'video.blender.org', alarm: null })
+    expect(read[0]).not.toHaveProperty('thumbnail')
   })
 })
