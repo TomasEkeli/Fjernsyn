@@ -38,6 +38,24 @@ export const SYNC_FILE_NAME = 'fjernsyn-sync.json'
  */
 export const REBASE_THRESHOLD = 2 * 1024 * 1024
 
+/**
+ * How many earlier sync files a sync file names as the ones its state builds
+ * on, newest first, each by the first 16 hex digits of its hash. A machine
+ * whose last seen file is among them knows that file's state is shared by
+ * both, and merges against it.
+ */
+export const LINEAGE_LENGTH = 100
+
+const LINEAGE_ENTRY = /^[0-9a-f]{16}$/
+
+/**
+ * A sync file as its lineage names it
+ * @param {string} sha256Hex the hash of its text
+ */
+export function lineageEntry(sha256Hex) {
+  return sha256Hex.slice(0, 16)
+}
+
 /** @typedef {import('./backup').BackupSection} BackupSection */
 
 /** @typedef {Partial<Record<BackupSection, Record<string, any>[]>>} Sections */
@@ -66,6 +84,7 @@ export const REBASE_THRESHOLD = 2 * 1024 * 1024
  * @property {string | null} appVersion
  * @property {string | null} installationId
  * @property {string | null} machineName the host name of the computer that wrote it; null when the file does not say
+ * @property {string[]} lineage the sync files this one's state builds on, newest first, by the first 16 hex digits of their hashes; empty when the file does not say
  */
 
 /**
@@ -207,11 +226,12 @@ export function applyChanges(baseSections, changes) {
  * @param {string} syncFile.appVersion
  * @param {string} syncFile.installationId
  * @param {string | null} [syncFile.machineName] the host name of the computer writing it
+ * @param {string[]} [syncFile.lineage] the sync files its state builds on, newest first
  * @param {BaseReference} syncFile.base
  * @param {Changes} syncFile.changes
  * @returns {string}
  */
-export function writeSyncFile({ appVersion, installationId, machineName = null, base: { file, sha256 }, changes }) {
+export function writeSyncFile({ appVersion, installationId, machineName = null, lineage = [], base: { file, sha256 }, changes }) {
   const ordered = {}
 
   for (const section of BACKUP_SECTIONS) {
@@ -234,6 +254,7 @@ export function writeSyncFile({ appVersion, installationId, machineName = null, 
     appVersion,
     installationId,
     machineName,
+    lineage: lineage.slice(0, LINEAGE_LENGTH),
     base: { file, sha256 },
     changes: ordered,
   }
@@ -295,6 +316,9 @@ export function readSyncFile(text) {
       appVersion: typeof document.appVersion === 'string' ? document.appVersion : null,
       installationId: typeof document.installationId === 'string' ? document.installationId : null,
       machineName: typeof document.machineName === 'string' && document.machineName !== '' ? document.machineName : null,
+      // Written by this version, never needed: a file without it is merged as
+      // one whose shared state is not known
+      lineage: Array.isArray(document.lineage) ? document.lineage.filter(entry => typeof entry === 'string' && LINEAGE_ENTRY.test(entry)) : [],
     },
     base: { file: base.file, sha256: base.sha256 },
     changes,

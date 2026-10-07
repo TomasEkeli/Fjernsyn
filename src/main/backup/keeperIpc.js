@@ -21,7 +21,7 @@ import { runKeeperJob } from './keeperWorker'
  */
 
 /** @type {ReadonlySet<import('./keeper').KeeperAnswer>} */
-const ANSWERS = new Set(['restore', 'overwrite', 'notNow', 'wait', 'continue', 'stopWaiting'])
+const ANSWERS = new Set(['overwrite', 'notNow'])
 
 /**
  * The keeper's jobs in a worker thread, started on the first job and again
@@ -111,12 +111,11 @@ function sendToAllWindows(channel, payload) {
 
 /**
  * @param {object} deps
- * @param {() => void} deps.relaunch
  * @param {Promise<string>} deps.installationId
  * @param {(webContents: import('electron').WebContents, currentPath: string | undefined, options: object) => Promise<string | undefined>} deps.chooseDefaultFolder main's folder dialog, which writes the setting it is given
  * @returns {{ quit: () => Promise<void> }} the last write, for the quit path
  */
-export function registerKeeper({ relaunch, installationId, chooseDefaultFolder }) {
+export function registerKeeper({ installationId, chooseDefaultFolder }) {
   const keeper = createKeeper({
     datastores,
     dataFolder: app.getPath('userData'),
@@ -124,8 +123,9 @@ export function registerKeeper({ relaunch, installationId, chooseDefaultFolder }
     installationId: () => installationId,
     machineName: os.hostname(),
     runJob: createWorkerRunner(),
-    relaunch,
     onStatus: status => sendToAllWindows(IpcChannels.KEEPER_STATUS_CHANGED, status),
+    // Every window loads the merged sections again, as it loads them at startup
+    onDataChanged: sections => sendToAllWindows(IpcChannels.KEEPER_DATA_CHANGED, sections),
   })
 
   watchDatastores(datastores, () => keeper.markChanged())

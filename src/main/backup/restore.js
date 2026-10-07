@@ -44,7 +44,7 @@ const SECTION_DATASTORES = Object.freeze([
  * @param {string} id
  * @param {unknown} value
  */
-function isRestorableSetting(id, value) {
+export function isRestorableSetting(id, value) {
   return id !== 'screenshotFolderPath' &&
     id !== 'backupFolder' &&
     id !== 'installationId' &&
@@ -234,7 +234,7 @@ function isStorable(value) {
  * @param {string} folder
  * @param {Pick<typeof fs, 'readdir' | 'rm'>} fileSystem
  */
-async function removeOldSafetyCopies(folder, fileSystem) {
+export async function removeOldSafetyCopies(folder, fileSystem) {
   try {
     const copies = (await fileSystem.readdir(folder))
       .filter(name => SAFETY_COPY_PATTERN.test(name))
