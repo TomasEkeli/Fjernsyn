@@ -440,7 +440,7 @@ const showSearchBar = computed(() => isYouTube.value && channel.value?.hasSearch
  * the tab row, as in the old view, and is shown while the route holds one.
  */
 const tabs = computed(() => [
-  { name: 'videos', label: t('Channel.Videos.Videos'), empty: t('Channel.Videos.This channel does not currently have any videos') },
+  { name: 'videos', label: t('Channel.Videos.Videos'), empty: t('Layer Channel.No Videos') },
   { name: 'shorts', label: t('Global.Shorts'), empty: t('Channel.Shorts.This channel does not currently have any shorts'), named: true, hidden: hideChannelShorts.value },
   { name: 'live', label: t('Channel.Live.Live'), empty: t('Channel.Live.This channel does not currently have any live streams'), named: true, hidden: hideLiveStreams.value },
   { name: 'releases', label: t('Channel.Releases.Releases'), empty: t('Channel.Releases.This channel does not currently have any releases'), named: true, hidden: hideChannelReleases.value, playlists: true },

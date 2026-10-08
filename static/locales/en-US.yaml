@@ -1184,8 +1184,7 @@ Channel:
   View All: View All
   Videos:
     Videos: Videos
-    This channel does not currently have any videos: This channel does not currently
-      have any videos
+    This channel has videos but none could be displayed, try fetching more: This channel has videos but none could be displayed, try fetching more
     Sort Types:
       Newest: Newest
       Oldest: Oldest
@@ -1718,6 +1717,11 @@ Layer Surfaces:
     Enable layer surfaces Tooltip: Shows the new versions of the YouTube pages that have moved to Fjernsyn's platform
       layer, in place of the old ones. So far those are the channel page and the watch page. Pages that have not moved
       yet are unchanged. Switch it off to go back to the old pages.
+
+# The fork's own, for the same reason as above: the channel page on the
+# platform layer, whose empty videos tab upstream no longer has a key for
+Layer Channel:
+  No Videos: This channel does not currently have any videos
 
 Mini Player: Mini Player
 Comments:
