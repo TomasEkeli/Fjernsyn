@@ -1718,6 +1718,11 @@ Layer Surfaces:
       layer, in place of the old ones. So far those are the channel page and the watch page. Pages that have not moved
       yet are unchanged. Switch it off to go back to the old pages.
 
+# The fork's own, for the same reason as above: the channel page on the
+# platform layer, whose empty videos tab upstream no longer has a key for
+Layer Channel:
+  No Videos: This channel does not currently have any videos
+
 Mini Player: Mini Player
 Comments:
   Comments: Comments
