@@ -33,7 +33,7 @@ import {
 import { injectedFetchFailure } from './subscriptionFailureInjection'
 import {
   cancelSubscriptionRecovery,
-  recoverUnresolvedChannels,
+  queueSubscriptionRecovery,
   NO_RETRY_ATTEMPTS
 } from './subscriptionRecovery'
 import {
@@ -129,14 +129,6 @@ const running = new Map()
 let profileGeneration = 0
 
 /**
- * Recoveries run one after another rather than all at once: the recovery is a
- * single global escalation, and three feeds calling it together would mean two
- * of them silently doing nothing.
- * @type {Promise<void>}
- */
-let recoveryChain = Promise.resolve()
-
-/**
  * Refresh every feed there is, whatever the user has switched on.
  *
  * A refresh cycle is not asked what is on screen. Which kinds are shown is the
@@ -201,7 +193,8 @@ function startFeedRefresh(feed, reason) {
     return Promise.resolve()
   }
 
-  // A refresh supersedes any recovery still working through the last one
+  // A refresh supersedes any recovery still working through the last one, and
+  // any still waiting to
   cancelSubscriptionRecovery()
 
   // Read once, so that changing the setting midway cannot split one refresh
@@ -467,37 +460,40 @@ function startRecoveryIfNeeded(feed, context, collector) {
   const descriptor = subscriptionFeedDescriptor(feed)
   const subscriptionUpdates = []
 
-  recoveryChain = recoveryChain
-    .then(() => recoverUnresolvedChannels({
-      feed,
-      channels: state.unresolvedChannels.value.slice(),
-      // Injected failures apply here too, or a simulated outage would clear the
-      // moment recovery started and the later steps would never be reached.
-      // Retries suppressed: sending more requests because requests are being
-      // refused is exactly the wrong response to being refused.
-      fetchChannel: channel => injectedFetchFailure() ??
-        descriptor.fetchChannel(channel, { useRss: context.useRss, failedAttempts: NO_RETRY_ATTEMPTS }),
-      onRecovered: async (results) => {
-        for (const { channel, result } of results) {
-          await cacheChannelResult(descriptor, channel, result, subscriptionUpdates)
+  queueSubscriptionRecovery(feed, () => ({
+    channels: state.unresolvedChannels.value.slice(),
+    // Injected failures apply here too, or a simulated outage would clear the
+    // moment recovery started and the later steps would never be reached.
+    // Retries suppressed: sending more requests because requests are being
+    // refused is exactly the wrong response to being refused.
+    fetchChannel: channel => injectedFetchFailure() ??
+      descriptor.fetchChannel(channel, { useRss: context.useRss, failedAttempts: NO_RETRY_ATTEMPTS }),
+    onRecovered: async (results) => {
+      for (const { channel, result } of results) {
+        await cacheChannelResult(descriptor, channel, result, subscriptionUpdates)
 
-          state.unresolvedChannels.value = state.unresolvedChannels.value
-            .filter(unresolved => unresolved.id !== channel.id)
-        }
-
-        if (subscriptionUpdates.length > 0) {
-          store.dispatch('batchUpdateSubscriptionDetails', subscriptionUpdates.splice(0))
-        }
-
-        // Recovered channels are in the cache now, so the same signal that
-        // commits a refresh puts them on screen
-        state.revision.value++
+        state.unresolvedChannels.value = state.unresolvedChannels.value
+          .filter(unresolved => unresolved.id !== channel.id)
       }
-    }))
-    .then(() => {
+
+      if (subscriptionUpdates.length > 0) {
+        store.dispatch('batchUpdateSubscriptionDetails', subscriptionUpdates.splice(0))
+      }
+
+      // Recovered channels are in the cache now, so the same signal that
+      // commits a refresh puts them on screen
+      state.revision.value++
+    }
+  }))
+    .then((ran) => {
       // Now that nothing further will be attempted, whatever is still missing is
-      // worth mentioning. A recovery that got everything back says nothing.
-      showFetchErrorSummary(feed, collector, state.unresolvedChannels.value)
+      // worth mentioning. A recovery that got everything back says nothing, and
+      // one cancelled before it started never tried: what it would have
+      // reported belongs to the refresh that cancelled it, or to a Stop that
+      // already said enough
+      if (ran) {
+        showFetchErrorSummary(feed, collector, state.unresolvedChannels.value)
+      }
     })
     .catch((error) => {
       console.error(error)

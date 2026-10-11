@@ -60,7 +60,25 @@ const progress = reactive({
 /** Progress for the interface to read. Mutated only in here. */
 export const subscriptionRecoveryProgress = readonly(progress)
 
-let cancelled = false
+/**
+ * Bumped by every cancel. A recovery notes it when it is queued and stops as
+ * soon as it has moved on, so one cancel ends the recovery running and every
+ * recovery waiting behind it.
+ *
+ * A flag cleared by whichever recovery started next could not do that: the
+ * next one in line cleared it and carried on with the list of a refresh that
+ * had just been superseded or stopped.
+ */
+let cancellations = 0
+
+/**
+ * The recoveries, one after another. Each feed's refresh queues its own when
+ * it finishes, so a refresh of four feeds can line up four of them, and they
+ * must not run at once: the recovery is one escalation, sharing one progress.
+ * @type {Promise<unknown>}
+ */
+let line = Promise.resolve()
+
 let running = false
 
 /**
@@ -89,17 +107,52 @@ function resetProgress() {
  */
 
 /**
+ * Queue a recovery behind any already waiting, to run unless a cancel comes
+ * first. The options are asked for when its turn comes, so that it works on
+ * the channels still missing then.
+ *
+ * @param {string} feed
+ * @param {() => Omit<RecoveryOptions, 'feed'>} options
+ * @returns {Promise<boolean>} whether it started, so that the caller can tell
+ *   a recovery that ran, to its end or to a cancel, from one that never did
+ */
+export function queueSubscriptionRecovery(feed, options) {
+  const queuedAt = cancellations
+
+  const turn = line.then(async () => {
+    if (cancellations !== queuedAt) {
+      traceRecovery(feed, 'skipped')
+      return false
+    }
+
+    await recoverUnresolvedChannels({ ...options(), feed }, queuedAt)
+
+    return true
+  })
+
+  // One that throws must not stop the ones behind it
+  line = turn.catch(() => {})
+
+  return turn
+}
+
+/**
  * Work through the channels a refresh could not reach, by profile group and
  * then one at a time. Resolves when there is nothing left to try, or when
  * cancelled.
  *
  * @param {RecoveryOptions} options
+ * @param {number} [queuedAt] the cancel count when it was queued; a cancel
+ *   since then means it does not start
  */
-export async function recoverUnresolvedChannels({ feed, channels, fetchChannel, onRecovered }) {
+export async function recoverUnresolvedChannels({ feed, channels, fetchChannel, onRecovered }, queuedAt = cancellations) {
   if (running || channels.length === 0) { return }
 
+  const cancelled = () => cancellations !== queuedAt
+
+  if (cancelled()) { return }
+
   running = true
-  cancelled = false
   recovered.clear()
 
   progress.active = true
@@ -136,7 +189,7 @@ export async function recoverUnresolvedChannels({ feed, channels, fetchChannel, 
     traceRecovery(feed, 'begin', { channels: channels.length, groups: groups.length })
 
     for (const group of groups) {
-      if (cancelled) { return }
+      if (cancelled()) { return }
 
       progress.label = group.label
 
@@ -164,7 +217,7 @@ export async function recoverUnresolvedChannels({ feed, channels, fetchChannel, 
       remaining: stillMissing.length
     })
 
-    if (stillMissing.length === 0 || cancelled) { return }
+    if (stillMissing.length === 0 || cancelled()) { return }
 
     // Whatever survived a batch of twenty five is asked for entirely on its
     // own, which is as gentle as this can be made
@@ -173,7 +226,7 @@ export async function recoverUnresolvedChannels({ feed, channels, fetchChannel, 
     traceRecovery(feed, 'one-at-a-time', { channels: stillMissing.length })
 
     for (const channel of stillMissing) {
-      if (cancelled) { return }
+      if (cancelled()) { return }
 
       progress.label = channel.name ?? channel.id
 
@@ -184,7 +237,7 @@ export async function recoverUnresolvedChannels({ feed, channels, fetchChannel, 
       })
     }
   } finally {
-    traceRecovery(feed, cancelled ? 'cancelled' : 'end', {
+    traceRecovery(feed, cancelled() ? 'cancelled' : 'end', {
       recovered: progress.recovered,
       remaining: progress.remaining
     })
@@ -196,17 +249,20 @@ export async function recoverUnresolvedChannels({ feed, channels, fetchChannel, 
 }
 
 /**
- * Stop the current run. Anything queued is dropped, and the request in flight is
- * left to finish because there is nothing here to abort one with.
+ * Stop the current run, and every recovery queued behind it. Anything queued
+ * on the lane is dropped, and the request in flight is left to finish because
+ * there is nothing here to abort one with.
  */
 export function cancelSubscriptionRecovery() {
-  cancelled = true
+  cancellations++
   cancelSubscriptionLane(LANE_RECOVERY)
 }
 
 /** Test seam. */
 export function resetSubscriptionRecoveryForTests() {
-  cancelled = false
+  // Moved on, so nothing a previous test left queued or running carries on
+  cancellations++
+  line = Promise.resolve()
   running = false
   recovered.clear()
   resetProgress()
