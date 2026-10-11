@@ -61,15 +61,50 @@ const progress = reactive({
 export const subscriptionRecoveryProgress = readonly(progress)
 
 /**
- * Bumped by every cancel. A recovery notes it when it is queued and stops as
- * soon as it has moved on, so one cancel ends the recovery running and every
- * recovery waiting behind it.
+ * Bumped by every cancel of the lot. A recovery notes it when it is queued and
+ * stops as soon as it has moved on, so one cancel ends the recovery running
+ * and every recovery waiting behind it.
  *
  * A flag cleared by whichever recovery started next could not do that: the
  * next one in line cleared it and carried on with the list of a refresh that
  * had just been superseded or stopped.
  */
 let cancellations = 0
+
+/**
+ * The same, per feed, for a refresh of one feed: it supersedes that feed's
+ * recoveries and has nothing to say about the others'. Coming back to the
+ * subscriptions page refreshes only the feeds the cache cannot supply in full,
+ * and cancelling every feed's recovery for that left the rest of the failed
+ * channels waiting for the next full refresh.
+ * @type {Map<string, number>}
+ */
+const feedCancellations = new Map()
+
+/**
+ * @typedef {object} CancelPoint
+ * @property {number} all the count of cancels of the lot
+ * @property {number} feed the count of cancels of this feed's recoveries
+ */
+
+/**
+ * Where the cancels stand for one feed, to tell later whether one has come.
+ * @param {string} feed
+ * @returns {CancelPoint}
+ */
+function cancelPoint(feed) {
+  return { all: cancellations, feed: feedCancellations.get(feed) ?? 0 }
+}
+
+/**
+ * @param {string} feed
+ * @param {CancelPoint} since
+ */
+function cancelledSince(feed, since) {
+  const now = cancelPoint(feed)
+
+  return now.all !== since.all || now.feed !== since.feed
+}
 
 /**
  * The recoveries, one after another. Each feed's refresh queues its own when
@@ -80,6 +115,14 @@ let cancellations = 0
 let line = Promise.resolve()
 
 let running = false
+
+/**
+ * The feed of the recovery running, if one is. Its jobs are the only ones on
+ * the recovery lane, which is how a cancel of one feed knows whether the lane
+ * is its to empty.
+ * @type {string | null}
+ */
+let runningFeed = null
 
 /**
  * Channel ids settled during the current run, which are not asked for again:
@@ -117,10 +160,10 @@ function resetProgress() {
  *   a recovery that ran, to its end or to a cancel, from one that never did
  */
 export function queueSubscriptionRecovery(feed, options) {
-  const queuedAt = cancellations
+  const queuedAt = cancelPoint(feed)
 
   const turn = line.then(async () => {
-    if (cancellations !== queuedAt) {
+    if (cancelledSince(feed, queuedAt)) {
       traceRecovery(feed, 'skipped')
       return false
     }
@@ -142,17 +185,18 @@ export function queueSubscriptionRecovery(feed, options) {
  * cancelled.
  *
  * @param {RecoveryOptions} options
- * @param {number} [queuedAt] the cancel count when it was queued; a cancel
- *   since then means it does not start
+ * @param {CancelPoint} [queuedAt] where the cancels stood when it was queued;
+ *   a cancel since then, of the lot or of its feed, means it does not start
  */
-export async function recoverUnresolvedChannels({ feed, channels, fetchChannel, onRecovered }, queuedAt = cancellations) {
+export async function recoverUnresolvedChannels({ feed, channels, fetchChannel, onRecovered }, queuedAt = cancelPoint(feed)) {
   if (running || channels.length === 0) { return }
 
-  const cancelled = () => cancellations !== queuedAt
+  const cancelled = () => cancelledSince(feed, queuedAt)
 
   if (cancelled()) { return }
 
   running = true
+  runningFeed = feed
   recovered.clear()
 
   progress.active = true
@@ -243,19 +287,39 @@ export async function recoverUnresolvedChannels({ feed, channels, fetchChannel, 
     })
 
     running = false
+    runningFeed = null
     recovered.clear()
     resetProgress()
   }
 }
 
 /**
- * Stop the current run, and every recovery queued behind it. Anything queued
- * on the lane is dropped, and the request in flight is left to finish because
- * there is nothing here to abort one with.
+ * Stop the current run, and every recovery queued behind it, whatever its
+ * feed: what Stop and a profile switch mean. Anything queued on the lane is
+ * dropped, and the request in flight is left to finish because there is
+ * nothing here to abort one with.
+ *
+ * Takes no arguments on purpose: Stop binds it to a click, and the click's
+ * event must not be able to narrow it.
  */
 export function cancelSubscriptionRecovery() {
   cancellations++
   cancelSubscriptionLane(LANE_RECOVERY)
+}
+
+/**
+ * Stop one feed's recoveries, running or queued, and leave the others' alone:
+ * what a refresh of that feed means, since it is about to fetch the same
+ * channels and will queue a recovery of its own for what it cannot get.
+ *
+ * @param {string} feed
+ */
+export function cancelSubscriptionRecoveryFor(feed) {
+  feedCancellations.set(feed, (feedCancellations.get(feed) ?? 0) + 1)
+
+  if (runningFeed === feed) {
+    cancelSubscriptionLane(LANE_RECOVERY)
+  }
 }
 
 /** Test seam. */
@@ -264,6 +328,7 @@ export function resetSubscriptionRecoveryForTests() {
   cancellations++
   line = Promise.resolve()
   running = false
+  runningFeed = null
   recovered.clear()
   resetProgress()
 }

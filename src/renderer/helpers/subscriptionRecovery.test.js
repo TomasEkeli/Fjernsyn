@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   cancelSubscriptionRecovery,
+  cancelSubscriptionRecoveryFor,
   queueSubscriptionRecovery,
   recoverUnresolvedChannels,
   resetSubscriptionRecoveryForTests,
@@ -178,6 +179,56 @@ describe('queueSubscriptionRecovery', () => {
     expect(await Promise.all(turns)).toEqual([true, false, false])
     expect([videos, live, posts]).toEqual([[], [], []])
     expect(subscriptionRecoveryProgress.active).toBe(false)
+  })
+
+  it('leaves the other feeds\' recoveries, running or queued, when one feed\'s are cancelled', async () => {
+    const release = holdTheBudget()
+    const videos = []
+    const live = []
+    const posts = []
+
+    const turns = [
+      queueSubscriptionRecovery('videos', askingInto(videos)),
+      queueSubscriptionRecovery('live', askingInto(live)),
+      queueSubscriptionRecovery('posts', askingInto(posts))
+    ]
+
+    await vi.waitFor(() => expect(subscriptionRecoveryProgress.active).toBe(true))
+
+    // What a refresh of live alone does
+    cancelSubscriptionRecoveryFor('live')
+    release()
+
+    expect(await Promise.all(turns)).toEqual([true, false, true])
+    expect([videos, live, posts]).toEqual([['a'], [], ['a']])
+  })
+
+  it('ends the running recovery of the feed cancelled, and goes on to the next', async () => {
+    const release = holdTheBudget()
+    const videos = []
+    const live = []
+
+    const turns = [
+      queueSubscriptionRecovery('videos', askingInto(videos)),
+      queueSubscriptionRecovery('live', askingInto(live))
+    ]
+
+    await vi.waitFor(() => expect(subscriptionRecoveryProgress.active).toBe(true))
+
+    cancelSubscriptionRecoveryFor('videos')
+    release()
+
+    expect(await Promise.all(turns)).toEqual([true, true])
+    expect([videos, live]).toEqual([[], ['a']])
+  })
+
+  it('runs a recovery of a feed queued after that feed was cancelled', async () => {
+    cancelSubscriptionRecoveryFor('videos')
+
+    const videos = []
+
+    expect(await queueSubscriptionRecovery('videos', askingInto(videos))).toBe(true)
+    expect(videos).toEqual(['a'])
   })
 
   it('runs a recovery queued after a cancel', async () => {

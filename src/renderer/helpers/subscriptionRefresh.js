@@ -33,6 +33,7 @@ import {
 import { injectedFetchFailure } from './subscriptionFailureInjection'
 import {
   cancelSubscriptionRecovery,
+  cancelSubscriptionRecoveryFor,
   queueSubscriptionRecovery,
   NO_RETRY_ATTEMPTS
 } from './subscriptionRecovery'
@@ -193,9 +194,11 @@ function startFeedRefresh(feed, reason) {
     return Promise.resolve()
   }
 
-  // A refresh supersedes any recovery still working through the last one, and
-  // any still waiting to
-  cancelSubscriptionRecovery()
+  // A refresh supersedes this feed's recovery still working through the last
+  // one, and any still waiting to. Other feeds' recoveries carry on: a refresh
+  // of only the feeds the cache is short of is not a reason to give up on the
+  // channels the others are missing.
+  cancelSubscriptionRecoveryFor(feed)
 
   // Read once, so that changing the setting midway cannot split one refresh
   // across both strategies
