@@ -1,6 +1,6 @@
 <template>
   <FtCard
-    v-if="hasDescription"
+    v-if="hasDescription || hasDisclosures"
     class="videoDescription"
     :class="{ short: !showFullDescription }"
   >
@@ -16,6 +16,7 @@
     </span>
     <!-- eslint-disable-next-line vuejs-accessibility/click-events-have-key-events -->
     <div
+      v-if="hasDescription"
       ref="descriptionContainer"
       class="description"
       @click="expandWithClick"
@@ -39,6 +40,41 @@
       >
         {{ description }}
       </p>
+    </div>
+    <!-- As WatchVideoDescription's: YouTube's "How this was made", in its own words -->
+    <div
+      v-if="hasDisclosures && showFullDescription"
+      class="contentDisclosureSection"
+    >
+      <div class="contentDisclosureTitle">
+        {{ t('Video.How this was made') }}
+      </div>
+      <div
+        v-for="(item, index) in contentDisclosures"
+        :key="index"
+        class="contentDisclosureItem"
+      >
+        <div
+          class="contentDisclosureHeader"
+          dir="auto"
+        >
+          {{ item.label }}
+        </div>
+        <div
+          v-if="item.description"
+          class="contentDisclosureBody"
+          dir="auto"
+        >
+          {{ item.description }}
+        </div>
+        <div
+          v-if="item.attribution"
+          class="contentDisclosureAttribution"
+          dir="auto"
+        >
+          {{ item.attribution }}
+        </div>
+      </div>
     </div>
     <span
       v-if="showControls && showFullDescription"
@@ -81,6 +117,15 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  /**
+   * YouTube's "How this was made" items, shown under the description when it
+   * is expanded; `null` for none, and for every other platform
+   * @type {import('vue').PropType<import('../../platform/shapes').ContentDisclosure[] | null>}
+   */
+  contentDisclosures: {
+    type: Array,
+    default: null
+  },
 })
 
 const emit = defineEmits(['timestamp-event'])
@@ -92,6 +137,8 @@ const showFullDescription = ref(false)
 const showControls = ref(false)
 
 const hasDescription = computed(() => props.description.trim() !== '')
+
+const hasDisclosures = computed(() => (props.contentDisclosures?.length ?? 0) > 0)
 
 /**
  * @param {MouseEvent} event

@@ -312,6 +312,7 @@
  *   chaptersKind?: 'chapters' | 'keyMoments',
  *   liveChat?: unknown,
  *   aiVerdict?: 'ai' | 'not-ai' | null,
+ *   contentDisclosures?: ContentDisclosure[] | null,
  * }} VideoDetails
  *
  * - `url`: the canonical URL on the origin, to share and open
@@ -344,6 +345,18 @@
  *   AI" (`helpers/aiMarker/label.js`), read from the `/next` response the
  *   details came from, for the watch view to record. Local only; `null`
  *   from Invidious, which does not carry the label; absent for PeerTube
+ * - `contentDisclosures`: YouTube only: the items of the video's "How this
+ *   was made" section, in YouTube's words, which the description shows. For
+ *   display only: whether the video was made with AI is `aiVerdict`, never
+ *   these words, which are in the interface language and include "Auto-dubbed".
+ *   Local only, `null` when there are none; `null` from Invidious; absent for PeerTube
+ */
+
+/**
+ * One item of a YouTube video's "How this was made" section, as
+ * `extractLocalContentDisclosures` reads it; each part `''` when YouTube gives none.
+ *
+ * @typedef {{ label: string, description: string, attribution: string }} ContentDisclosure
  */
 
 // ---------------------------------------------------------------------------

@@ -116,3 +116,37 @@ describe('LayerVideoInfo, the external player button', () => {
     expect(wrapper.emitted('opened-in-external-player')).toHaveLength(1)
   })
 })
+
+describe('LayerVideoInfo, the AI badge', () => {
+  const { platform: _, host: __, ...YOUTUBE_VIDEO } = { ...VIDEO, videoId: 'dQw4w9WgXcQ' }
+
+  it('is there for a video YouTube labels "Made with AI"', () => {
+    const badge = mountInfo({ video: { ...YOUTUBE_VIDEO, aiVerdict: 'ai' } }).find('.aiBadge')
+
+    expect(badge.exists()).toBe(true)
+    expect(badge.text()).toBe('AI')
+    expect(badge.attributes('title')).toBe('AI: Content was made with AI')
+  })
+
+  // The label decides, never the disclosure's words: "Auto-dubbed" is a disclosure too
+  it('is not there for a video with a disclosure but no AI label', () => {
+    const video = {
+      ...YOUTUBE_VIDEO,
+      aiVerdict: 'not-ai',
+      contentDisclosures: [{ label: 'Auto-dubbed', description: 'Audio tracks for some languages were automatically generated.', attribution: '' }],
+    }
+
+    expect(mountInfo({ video }).find('.aiBadge').exists()).toBe(false)
+  })
+
+  it('is not there for a video not asked about, nor for PeerTube\'s', () => {
+    expect(mountInfo({ video: { ...YOUTUBE_VIDEO, aiVerdict: null } }).find('.aiBadge').exists()).toBe(false)
+    expect(mountInfo().find('.aiBadge').exists()).toBe(false)
+  })
+
+  it('sits beside the unlisted badge', () => {
+    const wrapper = mountInfo({ video: { ...YOUTUBE_VIDEO, isUnlisted: true, aiVerdict: 'ai' } })
+
+    expect(wrapper.findAll('.videoBadges > div').map(badge => badge.classes()[0])).toEqual(['unlistedBadge', 'aiBadge'])
+  })
+})

@@ -203,6 +203,7 @@
           :description="video.description"
           :kind="video.descriptionKind"
           :base-url="video.host ? `https://${video.host}` : ''"
+          :content-disclosures="video.contentDisclosures ?? null"
           class="watchVideo"
           @timestamp-event="changeTimestamp"
         />

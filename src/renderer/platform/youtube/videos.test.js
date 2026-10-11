@@ -24,8 +24,9 @@ const YOUTUBE = {
   downloadOptions: [],
   // None of the fixtures has a chat: those are below
   liveChat: null,
-  // Nor an AI label: those are below too
+  // Nor an AI label, nor a "How this was made" section: those are below too
   aiVerdict: null,
+  contentDisclosures: null,
 }
 
 const next = videoId => ({ type: 'video', videoId, title: `Next ${videoId}` })
@@ -426,6 +427,33 @@ describe('a YouTube video\'s AI label', () => {
     const { layer } = setUp({ answers: { invidiousGetVideoInformation: invidiousOrdinary }, config: { backendPreference: 'invidious' } })
 
     expect((await layer.getVideo('dQw4w9WgXcQ')).aiVerdict).toBeNull()
+  })
+})
+
+describe('a YouTube video\'s "How this was made" section', () => {
+  const DISCLOSURE = {
+    label: 'Made with AI',
+    description: 'Sounds or visuals were altered or fully generated.',
+    attribution: '',
+  }
+
+  /** @param {unknown} contentDisclosures */
+  function disclosing(contentDisclosures) {
+    const copy = structuredClone(localOrdinary)
+    copy.answer.contentDisclosures = contentDisclosures
+    return localInstance(copy)
+  }
+
+  it('is what Local read from the /next it had anyway', async () => {
+    const { layer } = setUp({ answers: { getLocalVideoInfo: disclosing([DISCLOSURE]) } })
+
+    expect((await layer.getVideo('dQw4w9WgXcQ')).contentDisclosures).toEqual([DISCLOSURE])
+  })
+
+  it('is none when Local read an empty one', async () => {
+    const { layer } = setUp({ answers: { getLocalVideoInfo: disclosing([]) } })
+
+    expect((await layer.getVideo('dQw4w9WgXcQ')).contentDisclosures).toBeNull()
   })
 })
 
