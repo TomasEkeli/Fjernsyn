@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   cancelSubscriptionLane,
+  enqueueSubscriptionJob,
   enqueueSubscriptionJobs,
   LANE_ENRICHMENT,
   removeSubscriptionJobs,
@@ -41,6 +42,29 @@ describe('the request manager, cancelling a lane', () => {
     expect(queued.job.dropped).toHaveBeenCalledTimes(1)
     expect(queued.job.run).not.toHaveBeenCalled()
     expect(running.job.dropped).not.toHaveBeenCalled()
+
+    running.finish()
+  })
+
+  it('ends the wait of a job queued to be awaited, and tells the job, when it is dropped', async () => {
+    setSubscriptionWorkerDelayForTests(0)
+    setSubscriptionBudgetForTests(1)
+
+    const running = heldJob('running')
+    const queued = heldJob('queued')
+
+    enqueueSubscriptionJobs(LANE_ENRICHMENT, [running.job])
+    await vi.waitFor(() => expect(running.job.run).toHaveBeenCalled())
+
+    let waited = false
+    const wait = enqueueSubscriptionJob(LANE_ENRICHMENT, queued.job).then(() => { waited = true })
+
+    cancelSubscriptionLane(LANE_ENRICHMENT)
+    await wait
+
+    expect(waited).toBe(true)
+    expect(queued.job.dropped).toHaveBeenCalledTimes(1)
+    expect(queued.job.run).not.toHaveBeenCalled()
 
     running.finish()
   })

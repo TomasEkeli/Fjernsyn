@@ -307,6 +307,13 @@ export function enqueueSubscriptionJobs(lane, jobs) {
  * resolves immediately: the work is already accounted for either way, and a
  * caller waiting forever on a job that will never run would be worse.
  *
+ * So does a job taken out of its lane before its turn, by a cancel or a
+ * removal. It will never run, and the caller has to be told so: the recovery
+ * awaits each of its jobs in turn, and a cancel that caught one still queued
+ * left it waiting for good, its status line up until the app was restarted and
+ * every later recovery stuck behind it. The caller finds out it was cancelled
+ * from its own state, as it would after a job that did run.
+ *
  * @param {string} lane
  * @param {WorkerJob} job
  * @returns {Promise<void>}
@@ -318,6 +325,13 @@ export function enqueueSubscriptionJob(lane, job) {
       run: async () => {
         try {
           await job.run()
+        } finally {
+          resolve()
+        }
+      },
+      dropped: () => {
+        try {
+          job.dropped?.()
         } finally {
           resolve()
         }

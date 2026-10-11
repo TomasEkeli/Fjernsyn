@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { recoverUnresolvedChannels, resetSubscriptionRecoveryForTests, subscriptionRecoveryProgress } from './subscriptionRecovery'
-import { resetSubscriptionWorkerForTests, setSubscriptionWorkerDelayForTests } from './subscriptionWorker'
+import { cancelSubscriptionRecovery, recoverUnresolvedChannels, resetSubscriptionRecoveryForTests, subscriptionRecoveryProgress } from './subscriptionRecovery'
+import { enqueueSubscriptionJobs, resetSubscriptionWorkerForTests, setSubscriptionBudgetForTests, setSubscriptionWorkerDelayForTests, LANE_REFRESH } from './subscriptionWorker'
 import { FETCH_FAILED, FETCH_OK, FETCH_SKIPPED, FETCH_UNAVAILABLE } from './subscriptionFetchStatus'
 
 // The recovery's own bookkeeping: what it counts as got back, what it hands on
@@ -80,5 +80,36 @@ describe('recoverUnresolvedChannels', () => {
     const { asked } = await recover({ a: FETCH_OK, failing: FETCH_FAILED })
 
     expect(asked).toEqual(['a', 'failing', 'failing'])
+  })
+
+  it('ends when cancelled while its job is still waiting for the budget', async () => {
+    // A refresh holding the whole budget, so the recovery's first group queues
+    setSubscriptionBudgetForTests(1)
+
+    let releaseRefresh
+    enqueueSubscriptionJobs(LANE_REFRESH, [{
+      key: 'refresh-videos-busy',
+      run: () => new Promise((resolve) => { releaseRefresh = resolve })
+    }])
+
+    let settled = false
+    const recovery = recoverUnresolvedChannels({
+      feed: 'videos',
+      channels: [channel('a')],
+      fetchChannel: async () => ({ status: FETCH_OK, entries: [] }),
+      onRecovered: () => {}
+    }).then(() => { settled = true })
+
+    await new Promise(resolve => setTimeout(resolve, 10))
+    expect(subscriptionRecoveryProgress.active).toBe(true)
+
+    // What a refresh starting, a profile switch or the Stop button does
+    cancelSubscriptionRecovery()
+    releaseRefresh()
+
+    await Promise.race([recovery, new Promise(resolve => setTimeout(resolve, 200))])
+
+    expect(settled).toBe(true)
+    expect(subscriptionRecoveryProgress.active).toBe(false)
   })
 })
