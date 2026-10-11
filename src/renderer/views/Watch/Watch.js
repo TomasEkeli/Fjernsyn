@@ -45,7 +45,7 @@ import { selectLiveManifest } from '../../helpers/player/liveManifest'
 import { classifyPlayabilityError, getPlayabilityExplanation } from '../../helpers/player/playability'
 import { getLocalVideoTitle } from '../../helpers/player/watchMetadata'
 import { traceWatch } from '../../helpers/watchTrace'
-import { VERDICT_AI } from '../../helpers/aiMarker/label'
+import { VERDICT_AI, VERDICT_NOT_AI } from '../../helpers/aiMarker/label'
 import { buildFormatId, MANIFEST_TYPE_SABR } from '../../helpers/player/SabrManifestParser'
 import { createSabrRegulator, SabrGiveUpError } from '../../helpers/player/SabrRegulator'
 import { useI18n } from 'vue-i18n'
@@ -602,6 +602,13 @@ export default defineComponent({
         const { info: result, poToken, clientInfo, adEndTimeUnixMs, aiVerdict, contentDisclosures } = videoInfo
         this.contentDisclosures = contentDisclosures || null
         this.madeWithAi = aiVerdict === VERDICT_AI
+
+        // Fjernsyn: kept, as LayerWatch keeps it, so that this video's tile on
+        // any list is marked without asking again (helpers/aiMarker). `null`
+        // is a response with no description to read it from, and is not kept
+        if (aiVerdict === VERDICT_AI || aiVerdict === VERDICT_NOT_AI) {
+          this.recordAiVerdict({ videoId: this.videoId, verdict: aiVerdict })
+        }
 
         const playabilityStatus = result.playability_status
         this.playabilityStatus = playabilityStatus.status
@@ -2451,6 +2458,7 @@ export default defineComponent({
       'updateLastViewedPlaylist',
       'updatePlaylistLastPlayedAt',
       'updateSubscriptionDetails',
+      'recordAiVerdict',
     ]),
 
     ...mapMutations([
