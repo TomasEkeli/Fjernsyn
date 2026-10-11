@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { Parser, YTNodes } from 'youtubei.js'
 
-import { parseLocalPlaylistVideo, parseLocalPlaylistVideos } from './local'
+import { extractLocalContentDisclosures, parseLocalPlaylistVideo, parseLocalPlaylistVideos } from './local'
+
+import madeWithAi from '../aiMarker/fixtures/local--next-made-with-ai.json'
+import autoDubbed from '../aiMarker/fixtures/local--next-auto-dubbed.json'
+import ordinary from '../aiMarker/fixtures/local--next-ordinary.json'
 
 // Cut down from what YouTube sent for the uploads playlist of
 // "Trond Granlund - Topic" (UULFW1rQvQViyJJv_dsq7E4xyQ) on 2026-10-01.
@@ -128,5 +132,91 @@ describe('parseLocalPlaylistVideos', () => {
     const videos = parseLocalPlaylistVideos([parseQuietly(untitled), parseQuietly(titled), parseQuietly(untitled)])
 
     expect(videos.map(video => video.videoId)).toEqual(['N-wHLE3HRYQ'])
+  })
+})
+
+// The WEB client's /next, as the watch page has it, from the AI marker's
+// fixtures: only the engagement panels are kept in them, so only they are
+// parsed, into the page `getLocalVideoInfo` gives `VideoInfo` second.
+describe('extractLocalContentDisclosures', () => {
+  /** @param {{ answer: { engagementPanels: unknown[] } }} fixture */
+  function infoOf(fixture) {
+    return { page: [null, Parser.parseResponse({ engagementPanels: fixture.answer.engagementPanels })] }
+  }
+
+  /**
+   * The "How this was made" section's view model in a fixture, to reword
+   * @param {any} node
+   * @returns {any}
+   */
+  function sectionIn(node) {
+    if (node === null || typeof node !== 'object') { return null }
+    if (node.howThisWasMadeSectionViewModel) { return node.howThisWasMadeSectionViewModel }
+
+    for (const child of Object.values(node)) {
+      const found = sectionIn(child)
+      if (found) { return found }
+    }
+
+    return null
+  }
+
+  it('reads the "Made with AI" disclosure, its "Learn more" a link to YouTube\'s help page', () => {
+    expect(extractLocalContentDisclosures(infoOf(madeWithAi))).toEqual([{
+      label: 'Made with AI',
+      description: 'Sounds or visuals were altered or fully generated.',
+      link: { text: 'Learn more', url: 'https://support.google.com/youtube/answer/15447836?hl=en' },
+      attribution: '',
+    }])
+  })
+
+  // The words, and the link's place in them, as YouTube sent them in
+  // Norwegian (aiMarker/fixtures/local--next-made-with-ai-mweb-nb.json, an
+  // MWEB answer, which youtubei.js cannot read this section from), put into
+  // the WEB answer's section
+  it('finds the link by where it is, not by its words, in any interface language', () => {
+    const norwegian = structuredClone(madeWithAi)
+    const section = sectionIn(norwegian.answer.engagementPanels)
+    const helpUrl = '//support.google.com/youtube/answer/15447836?hl=no'
+    section.bodyHeader.content = 'Laget med AI'
+    section.bodyText.content = 'Lyden eller grafikken er modifisert eller generert med AI. Finn ut mer'
+    section.bodyText.commandRuns[0].startIndex = 59
+    section.bodyText.commandRuns[0].length = 11
+    section.bodyText.commandRuns[0].onTap.innertubeCommand.commandMetadata.webCommandMetadata.url = helpUrl
+    section.bodyText.commandRuns[0].onTap.innertubeCommand.urlEndpoint.url = helpUrl
+    section.bodyText.styleRuns = [{ ...section.bodyText.styleRuns[0], startIndex: 59, length: 11 }]
+
+    expect(extractLocalContentDisclosures(infoOf(norwegian))).toEqual([{
+      label: 'Laget med AI',
+      description: 'Lyden eller grafikken er modifisert eller generert med AI.',
+      link: { text: 'Finn ut mer', url: 'https://support.google.com/youtube/answer/15447836?hl=no' },
+      attribution: '',
+    }])
+  })
+
+  it('keeps the whole body as text when it has no link', () => {
+    const unlinked = structuredClone(madeWithAi)
+    const section = sectionIn(unlinked.answer.engagementPanels)
+    delete section.bodyText.commandRuns
+    delete section.bodyText.styleRuns
+
+    expect(extractLocalContentDisclosures(infoOf(unlinked))[0]).toMatchObject({
+      description: 'Sounds or visuals were altered or fully generated. Learn more',
+      link: null,
+    })
+  })
+
+  // Shown as YouTube words it; that it is not an AI video is the AI label's to say
+  it('reads an "Auto-dubbed" disclosure as well', () => {
+    expect(extractLocalContentDisclosures(infoOf(autoDubbed))).toEqual([{
+      label: 'Auto-dubbed',
+      description: 'Audio tracks for some languages were automatically generated.',
+      link: { text: 'Learn more', url: 'https://support.google.com/youtube/answer/15569972?hl=en' },
+      attribution: '',
+    }])
+  })
+
+  it('is none for a video without the section', () => {
+    expect(extractLocalContentDisclosures(infoOf(ordinary))).toBeNull()
   })
 })

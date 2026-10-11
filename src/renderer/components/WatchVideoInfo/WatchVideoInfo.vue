@@ -8,10 +8,24 @@
         {{ title }}
       </h1>
       <div
-        v-if="isUnlisted"
-        class="unlistedBadge"
+        v-if="isUnlisted || showAiBadge"
+        class="videoBadges"
       >
-        {{ t('Video.Unlisted') }}
+        <div
+          v-if="isUnlisted"
+          class="unlistedBadge"
+        >
+          {{ t('Video.Unlisted') }}
+        </div>
+        <div
+          v-if="showAiBadge"
+          class="aiBadge"
+          :title="t('Video.AI: Content was made with AI')"
+          :aria-label="t('Video.AI: Content was made with AI')"
+        >
+          <FontAwesomeIcon :icon="['fas', 'circle-info']" />
+          <span>{{ t('Video.AI') }}</span>
+        </div>
       </div>
     </div>
     <div class="videoMetrics">
@@ -244,6 +258,14 @@ const props = defineProps({
     type: Boolean,
     required: false
   },
+  /**
+   * Whether YouTube labels the video "Made with AI", as helpers/aiMarker/label.js
+   * reads it: by the help answer the label links to, in any interface language
+   */
+  madeWithAi: {
+    type: Boolean,
+    default: false
+  },
   canSaveWatchedProgress: {
     type: Boolean,
     required: true
@@ -259,6 +281,10 @@ const emit = defineEmits([
 const USING_ELECTRON = process.env.IS_ELECTRON
 
 const { locale, t } = useI18n()
+
+// Fjernsyn: upstream reads this from the disclosure header's words, which are in
+// the interface language; the AI label's help answer is the same in all of them
+const showAiBadge = computed(() => props.madeWithAi)
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const hideSharingActions = computed(() => store.getters.getHideSharingActions)

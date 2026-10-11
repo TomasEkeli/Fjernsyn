@@ -7,12 +7,28 @@
       >
         {{ video.title }}
       </h1>
-      <!-- As WatchVideoInfo's; YouTube only, as PeerTube's details carry no `isUnlisted` -->
+      <!-- As WatchVideoInfo's; YouTube only, as PeerTube's details carry neither
+           `isUnlisted` nor `aiVerdict`. The AI badge is YouTube's AI label as
+           helpers/aiMarker/label.js reads it, never the disclosure's words -->
       <div
-        v-if="video.isUnlisted"
-        class="unlistedBadge"
+        v-if="video.isUnlisted || madeWithAi"
+        class="videoBadges"
       >
-        {{ t('Video.Unlisted') }}
+        <div
+          v-if="video.isUnlisted"
+          class="unlistedBadge"
+        >
+          {{ t('Video.Unlisted') }}
+        </div>
+        <div
+          v-if="madeWithAi"
+          class="aiBadge"
+          :title="t('Video.AI: Content was made with AI')"
+          :aria-label="t('Video.AI: Content was made with AI')"
+        >
+          <FontAwesomeIcon :icon="['fas', 'circle-info']" />
+          <span>{{ t('Video.AI') }}</span>
+        </div>
       </div>
     </div>
     <div class="videoMetrics">
@@ -163,6 +179,7 @@ import { toStoredPlainText } from '../LayerMarkdown/plainText'
 
 import store from '../../store/index'
 import { PLATFORM_YOUTUBE, platformOf } from '../../platform/refs'
+import { VERDICT_AI } from '../../helpers/aiMarker/label'
 import { usePlatformLayer } from '../../platform/vue'
 import {
   copyToClipboard,
@@ -213,6 +230,9 @@ const watchedProgressSavingInSemiAutoMode = computed(() => store.getters.getWatc
 /** @type {import('vue').ComputedRef<string>} */
 const externalPlayer = computed(() => store.getters.getExternalPlayer)
 const defaultPlayback = computed(() => store.getters.getDefaultPlayback)
+
+/** Whether YouTube labels the video "Made with AI", by the label's help answer, in any interface language */
+const madeWithAi = computed(() => props.video.aiVerdict === VERDICT_AI)
 
 /** Where the channel's page is, as the layer says for the channel's platform */
 const channelRoute = computed(() => {
