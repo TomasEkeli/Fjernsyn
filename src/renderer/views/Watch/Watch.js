@@ -233,7 +233,7 @@ export default defineComponent({
        * YouTube's "How this was made" disclosures, shown as YouTube words them
        * in the description. Display only: whether the video was made with AI
        * is `madeWithAi`, from the AI label, never from these words.
-       * @type {{ label: string, description: string, attribution: string }[] | null}
+       * @type {import('../../platform/shapes').ContentDisclosure[] | null}
        */
       contentDisclosures: null,
       /** Whether YouTube labels the video "Made with AI" (helpers/aiMarker/label.js) */

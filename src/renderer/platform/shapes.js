@@ -354,9 +354,17 @@
 
 /**
  * One item of a YouTube video's "How this was made" section, as
- * `extractLocalContentDisclosures` reads it; each part `''` when YouTube gives none.
+ * `extractLocalContentDisclosures` reads it; each text `''` when YouTube gives
+ * none. `link` is the link the body ends with, to YouTube's help page on what
+ * the disclosure means, its text in the interface language; `null` when there
+ * is none.
  *
- * @typedef {{ label: string, description: string, attribution: string }} ContentDisclosure
+ * @typedef {{
+ *   label: string,
+ *   description: string,
+ *   link: { text: string, url: string } | null,
+ *   attribution: string,
+ * }} ContentDisclosure
  */
 
 // ---------------------------------------------------------------------------

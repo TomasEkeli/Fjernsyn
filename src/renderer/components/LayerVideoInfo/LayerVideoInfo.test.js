@@ -133,7 +133,7 @@ describe('LayerVideoInfo, the AI badge', () => {
     const video = {
       ...YOUTUBE_VIDEO,
       aiVerdict: 'not-ai',
-      contentDisclosures: [{ label: 'Auto-dubbed', description: 'Audio tracks for some languages were automatically generated.', attribution: '' }],
+      contentDisclosures: [{ label: 'Auto-dubbed', description: 'Audio tracks for some languages were automatically generated.', link: null, attribution: '' }],
     }
 
     expect(mountInfo({ video }).find('.aiBadge').exists()).toBe(false)

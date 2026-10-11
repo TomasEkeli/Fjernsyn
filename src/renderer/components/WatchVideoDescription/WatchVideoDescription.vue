@@ -37,11 +37,18 @@
         <div class="contentDisclosureHeader">
           {{ item.label }}
         </div>
+        <!-- Fjernsyn: with YouTube's link to its help page, which upstream cut off -->
         <div
-          v-if="item.description"
+          v-if="item.description || item.link"
           class="contentDisclosureBody"
         >
           {{ item.description }}
+          <a
+            v-if="item.link"
+            :href="item.link.url"
+            target="_blank"
+            rel="noopener noreferrer"
+          >{{ item.link.text }}</a>
         </div>
         <div
           v-if="item.attribution"

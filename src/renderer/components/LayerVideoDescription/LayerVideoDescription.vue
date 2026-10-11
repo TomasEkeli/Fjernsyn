@@ -60,12 +60,19 @@
         >
           {{ item.label }}
         </div>
+        <!-- With YouTube's link to its help page on what the disclosure means -->
         <div
-          v-if="item.description"
+          v-if="item.description || item.link"
           class="contentDisclosureBody"
           dir="auto"
         >
           {{ item.description }}
+          <a
+            v-if="item.link"
+            :href="item.link.url"
+            target="_blank"
+            rel="noopener noreferrer"
+          >{{ item.link.text }}</a>
         </div>
         <div
           v-if="item.attribution"

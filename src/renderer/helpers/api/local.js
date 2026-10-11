@@ -1133,7 +1133,7 @@ export async function getLocalVideoInfo(id, { reloadPlaybackContext } = {}) {
 /**
  * Extracts content disclosures ('How this was made') from YouTube VideoInfo response
  * @param {import('youtubei.js').YT.VideoInfo} info
- * @returns {{ label: string, description: string, attribution: string }[] | null}
+ * @returns {import('../../platform/shapes').ContentDisclosure[] | null}
  */
 export function extractLocalContentDisclosures(info) {
   if (info?.page?.[1]?.engagement_panels) {
@@ -1142,13 +1142,11 @@ export function extractLocalContentDisclosures(info) {
     )
 
     if (structuredDescPanel?.content?.is(YTNodes.StructuredDescriptionContent)) {
-      const LEARN_MORE_REGEX = /\s*Learn more\.?$/i
-
       const items = structuredDescPanel.content.items
         .filterType(YTNodes.HowThisWasMadeSectionView)
         .map(item => ({
           label: item.body_header?.text ?? '',
-          description: item.body_text?.text?.replace(LEARN_MORE_REGEX, '').trim() ?? '',
+          ...splitDisclosureBody(item.body_text),
           attribution: item.attribution_text?.text ?? '',
         }))
 
@@ -1157,6 +1155,50 @@ export function extractLocalContentDisclosures(info) {
   }
 
   return null
+}
+
+/**
+ * Fjernsyn: a disclosure's body, split into its text and the link YouTube
+ * ends it with ("Learn more", "Finn ut mer"), to its help page on what the
+ * disclosure means. Split by which run of the text is a link, never by the
+ * words, which are in the interface language; upstream cut the English words
+ * off and dropped the link.
+ *
+ * A link is kept only when it is to a web page: the URL comes without a
+ * scheme (`//support.google.com/...`), and is read as YouTube reads it.
+ *
+ * @param {import('youtubei.js').Misc.Text | undefined} bodyText
+ * @returns {{ description: string, link: { text: string, url: string } | null }}
+ */
+function splitDisclosureBody(bodyText) {
+  const runs = Array.isArray(bodyText?.runs) ? bodyText.runs : []
+  const linkRun = runs.find(run => webUrlOf(run.endpoint?.payload?.url ?? run.endpoint?.metadata?.url) !== null)
+
+  if (!linkRun) {
+    return { description: bodyText?.text?.trim() ?? '', link: null }
+  }
+
+  return {
+    description: runs.filter(run => run !== linkRun).map(run => run.text).join('').trim(),
+    link: {
+      text: linkRun.text.trim(),
+      url: webUrlOf(linkRun.endpoint?.payload?.url ?? linkRun.endpoint?.metadata?.url),
+    },
+  }
+}
+
+/**
+ * @param {unknown} url as YouTube gives it, scheme relative or path relative included
+ * @returns {string | null} the absolute URL, when it is an http or https one
+ */
+function webUrlOf(url) {
+  if (typeof url !== 'string' || url === '') {
+    return null
+  }
+
+  const parsed = URL.parse(url, 'https://www.youtube.com')
+
+  return parsed !== null && (parsed.protocol === 'https:' || parsed.protocol === 'http:') ? parsed.href : null
 }
 
 /**

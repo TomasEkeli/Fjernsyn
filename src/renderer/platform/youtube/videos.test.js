@@ -434,6 +434,7 @@ describe('a YouTube video\'s "How this was made" section', () => {
   const DISCLOSURE = {
     label: 'Made with AI',
     description: 'Sounds or visuals were altered or fully generated.',
+    link: { text: 'Learn more', url: 'https://support.google.com/youtube/answer/15447836?hl=en' },
     attribution: '',
   }
 
