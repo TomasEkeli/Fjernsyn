@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { Parser, YTNodes } from 'youtubei.js'
 
-import { parseLocalPlaylistVideo, parseLocalPlaylistVideos } from './local'
+import { extractLocalContentDisclosures, parseLocalPlaylistVideo, parseLocalPlaylistVideos } from './local'
+
+import madeWithAi from '../aiMarker/fixtures/local--next-made-with-ai.json'
+import autoDubbed from '../aiMarker/fixtures/local--next-auto-dubbed.json'
+import ordinary from '../aiMarker/fixtures/local--next-ordinary.json'
 
 // Cut down from what YouTube sent for the uploads playlist of
 // "Trond Granlund - Topic" (UULFW1rQvQViyJJv_dsq7E4xyQ) on 2026-10-01.
@@ -128,5 +132,36 @@ describe('parseLocalPlaylistVideos', () => {
     const videos = parseLocalPlaylistVideos([parseQuietly(untitled), parseQuietly(titled), parseQuietly(untitled)])
 
     expect(videos.map(video => video.videoId)).toEqual(['N-wHLE3HRYQ'])
+  })
+})
+
+// The WEB client's /next, as the watch page has it, from the AI marker's
+// fixtures: only the engagement panels are kept in them, so only they are
+// parsed, into the page `getLocalVideoInfo` gives `VideoInfo` second.
+describe('extractLocalContentDisclosures', () => {
+  /** @param {{ answer: { engagementPanels: unknown[] } }} fixture */
+  function infoOf(fixture) {
+    return { page: [null, Parser.parseResponse({ engagementPanels: fixture.answer.engagementPanels })] }
+  }
+
+  it('reads the "Made with AI" disclosure, without its "Learn more" link', () => {
+    expect(extractLocalContentDisclosures(infoOf(madeWithAi))).toEqual([{
+      label: 'Made with AI',
+      description: 'Sounds or visuals were altered or fully generated.',
+      attribution: '',
+    }])
+  })
+
+  // Shown as YouTube words it; that it is not an AI video is the AI label's to say
+  it('reads an "Auto-dubbed" disclosure as well', () => {
+    expect(extractLocalContentDisclosures(infoOf(autoDubbed))).toEqual([{
+      label: 'Auto-dubbed',
+      description: 'Audio tracks for some languages were automatically generated.',
+      attribution: '',
+    }])
+  })
+
+  it('is none for a video without the section', () => {
+    expect(extractLocalContentDisclosures(infoOf(ordinary))).toBeNull()
   })
 })
