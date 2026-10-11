@@ -258,9 +258,13 @@ const props = defineProps({
     type: Boolean,
     required: false
   },
-  contentDisclosures: {
-    type: Array,
-    default: null
+  /**
+   * Whether YouTube labels the video "Made with AI", as helpers/aiMarker/label.js
+   * reads it: by the help answer the label links to, in any interface language
+   */
+  madeWithAi: {
+    type: Boolean,
+    default: false
   },
   canSaveWatchedProgress: {
     type: Boolean,
@@ -278,11 +282,9 @@ const USING_ELECTRON = process.env.IS_ELECTRON
 
 const { locale, t } = useI18n()
 
-const showAiBadge = computed(() => {
-  const LABEL_REGEX = /\b(ai|artificial intelligence|altered|synthetic)\b/i
-
-  return props.contentDisclosures?.some(item => LABEL_REGEX.test(item.label)) || false
-})
+// Fjernsyn: upstream reads this from the disclosure header's words, which are in
+// the interface language; the AI label's help answer is the same in all of them
+const showAiBadge = computed(() => props.madeWithAi)
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const hideSharingActions = computed(() => store.getters.getHideSharingActions)

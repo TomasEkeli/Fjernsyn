@@ -45,6 +45,7 @@ import { selectLiveManifest } from '../../helpers/player/liveManifest'
 import { classifyPlayabilityError, getPlayabilityExplanation } from '../../helpers/player/playability'
 import { getLocalVideoTitle } from '../../helpers/player/watchMetadata'
 import { traceWatch } from '../../helpers/watchTrace'
+import { VERDICT_AI } from '../../helpers/aiMarker/label'
 import { buildFormatId, MANIFEST_TYPE_SABR } from '../../helpers/player/SabrManifestParser'
 import { createSabrRegulator, SabrGiveUpError } from '../../helpers/player/SabrRegulator'
 import { useI18n } from 'vue-i18n'
@@ -228,7 +229,15 @@ export default defineComponent({
        * Empty when the backend gave none.
        */
       videoCategory: '',
+      /**
+       * YouTube's "How this was made" disclosures, shown as YouTube words them
+       * in the description. Display only: whether the video was made with AI
+       * is `madeWithAi`, from the AI label, never from these words.
+       * @type {{ label: string, description: string, attribution: string }[] | null}
+       */
       contentDisclosures: null,
+      /** Whether YouTube labels the video "Made with AI" (helpers/aiMarker/label.js) */
+      madeWithAi: false,
       /** @type {Date|null} */
       streamingDataExpiryDate: null,
       currentPlaybackRate: null,
@@ -479,6 +488,7 @@ export default defineComponent({
       this.videoDescriptionHtml = ''
       this.license = ''
       this.contentDisclosures = null
+      this.madeWithAi = false
       this.videoViewCount = 0
       this.videoLikeCount = 0
       this.videoDislikeCount = 0
@@ -589,8 +599,9 @@ export default defineComponent({
 
       try {
         const videoInfo = await getLocalVideoInfo(this.videoId)
-        const { info: result, poToken, clientInfo, adEndTimeUnixMs, contentDisclosures } = videoInfo
+        const { info: result, poToken, clientInfo, adEndTimeUnixMs, aiVerdict, contentDisclosures } = videoInfo
         this.contentDisclosures = contentDisclosures || null
+        this.madeWithAi = aiVerdict === VERDICT_AI
 
         const playabilityStatus = result.playability_status
         this.playabilityStatus = playabilityStatus.status
@@ -1212,6 +1223,7 @@ export default defineComponent({
           this.isPostLiveDvr = !!result.isPostLiveDvr
           this.isUnlisted = !result.isListed
           this.contentDisclosures = null
+          this.madeWithAi = false
 
           this.captions = sortCaptions(result.captions.map(caption => {
             return {

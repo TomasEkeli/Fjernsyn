@@ -164,7 +164,7 @@
         :video-thumbnail="thumbnail"
         :in-user-playlist="!!selectedUserPlaylist"
         :is-unlisted="isUnlisted"
-        :content-disclosures="contentDisclosures"
+        :made-with-ai="madeWithAi"
         :can-save-watched-progress="canSaveWatchProgress"
         class="watchVideo"
         :class="{ theatreWatchVideo: useTheatreMode }"
