@@ -289,9 +289,15 @@
       />
       <text
         class="label version"
-        x="340"
-        y="454"
-      >{{ version }}</text>
+        :style="{ fontSize: `${versionLabel.size}px` }"
+      >
+        <tspan
+          v-for="(line, index) in versionLabel.lines"
+          :key="index"
+          :x="line.x"
+          :y="line.y"
+        >{{ line.text }}</tspan>
+      </text>
     </g>
 
     <circle
@@ -378,9 +384,11 @@
  * box at its centre; the grid is drawn far past the view box, so the room the
  * box has to spare on either side is more grid rather than empty.
  */
-import { onBeforeUnmount, onMounted, ref, useId } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 
-defineProps({
+import { fitLabel } from './fitLabel'
+
+const props = defineProps({
   /** Shown in capitals in the box at the top, where the broadcaster's name was */
   name: {
     type: String,
@@ -469,6 +477,47 @@ const GREY_STEPS = [
   { x: 420, width: 80, fill: '#ccc' },
   { x: 500, width: 68, fill: '#fff' },
 ]
+
+/**
+ * The version box's room for text. A version that fits sits at the size and on
+ * the baseline the box was drawn for; a longer one, a branch build's with the
+ * branch in it, shrinks and breaks to stay inside. The lines stay centred on
+ * the disc, so their room runs as far right of the centre as the white line at
+ * the box's left allows to the left of it, less a margin.
+ */
+const VERSION_BOX = { x: 340, baseline: 454, size: 30, width: 170, height: 36 }
+
+/** As `.label` in TestCard.css */
+const LABEL_FONT = 'Helvetica, Arial, sans-serif'
+
+/**
+ * How wide a text is in the labels' font at a size of 1, measured on a canvas,
+ * which picks the same font the SVG text is drawn in. Null where there is no
+ * canvas, as in the tests' simulated DOM, and then the version is set as it
+ * comes.
+ *
+ * @returns {((text: string) => number) | null}
+ */
+function createMeasure() {
+  if (typeof OffscreenCanvas === 'undefined') {
+    return null
+  }
+
+  const context = new OffscreenCanvas(1, 1).getContext('2d')
+
+  if (!context) {
+    return null
+  }
+
+  // Measured large and scaled down, as small sizes are rounded to the pixel
+  context.font = `100px ${LABEL_FONT}`
+
+  return (text) => context.measureText(text).width / 100
+}
+
+const measureText = createMeasure()
+
+const versionLabel = computed(() => fitLabel(props.version, VERSION_BOX, measureText))
 
 /**
  * @param {number} value

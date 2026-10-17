@@ -22,6 +22,51 @@ describe('TestCard', () => {
     expect(wrapper.find('.version').text()).toBe('v0.0.1')
   })
 
+  describe('with a canvas to measure the version on', () => {
+    beforeEach(() => {
+      // Every character half as wide as the font is high
+      vi.stubGlobal('OffscreenCanvas', class {
+        getContext() {
+          return {
+            font: '',
+            measureText: (text) => ({ width: text.length * 50 }),
+          }
+        }
+      })
+    })
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    it('sets a version that fits at full size, on one line where it always sat', () => {
+      const wrapper = mountWithApp(TestCard, {
+        props: { name: 'Fjernsyn', version: 'v0.1.215' },
+      })
+
+      const version = wrapper.find('.version')
+      const lines = version.findAll('tspan')
+      expect(version.attributes('style')).toContain('font-size: 30px')
+      expect(lines.map(line => [line.text(), line.attributes('x'), line.attributes('y')]))
+        .toEqual([['v0.1.215', '340', '454']])
+    })
+
+    it("shrinks and breaks a branch build's long version to keep it inside its box", () => {
+      const version = 'v0.1.215-feature-fit-window-keeps-area'
+      const wrapper = mountWithApp(TestCard, {
+        props: { name: 'Fjernsyn', version },
+      })
+
+      const text = wrapper.find('.version')
+      const lines = text.findAll('tspan')
+      const size = Number.parseFloat(/font-size: ([\d.]+)px/.exec(text.attributes('style'))[1])
+      expect(size).toBeLessThan(30)
+      expect(lines.length).toBeGreaterThan(1)
+      expect(lines.map(line => line.text()).join('')).toBe(version)
+      expect(wrapper.find('svg').attributes('aria-label')).toBe(`Fjernsyn ${version}`)
+    })
+  })
+
   it('links the name to where it points, and the version only when it has somewhere to point', () => {
     const wrapper = mountWithApp(TestCard, {
       props: { name: 'Fjernsyn', version: 'v0.0.1', nameUrl: 'https://example.com/repo' },
