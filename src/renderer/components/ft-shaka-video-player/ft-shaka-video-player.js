@@ -38,6 +38,7 @@ import {
   copyToClipboard,
 } from '../../helpers/utils'
 import { AudioGainStage, loudnessDbToGain } from '../../helpers/player/audioGain'
+import { expectFullscreenSuccessor, holdWindowUnderFullscreen } from '../../helpers/player/fullscreenHold'
 import { HEATMAP_VIEW_BOX, heatmapPath } from '../../helpers/player/heatmap'
 import { MANIFEST_TYPE_SABR } from '../../helpers/player/SabrManifestParser'
 import { sabrWallInjectionEnabled, shouldAbandonRefresh } from '../../helpers/player/sabrWallInjection'
@@ -343,8 +344,9 @@ export default defineComponent({
 
     // Fjernsyn: a player starting in full screen is drawn over the window,
     // as in full window, until full screen has come, so that the page does
-    // not show while the UI is set up. Not full window itself: the button
-    // and leaving full screen are as they were
+    // not show while the UI is set up; any player likewise while the window
+    // goes full screen under it (`holdWindowUnderFullscreen`). Not full
+    // window itself: the button and leaving full screen are as they were
     const awaitingFullscreen = ref(props.startInFullscreen && !!process.env.IS_ELECTRON)
 
     let startInFullscreen = props.startInFullscreen
@@ -3802,6 +3804,17 @@ export default defineComponent({
         vrCanvas.value
       )
 
+      // Fjernsyn: the container is shaka's full screen element; in Electron
+      // the window goes full screen first, and stays so between two videos.
+      // Drawn over the window meanwhile, so the page does not show as it grows
+      holdWindowUnderFullscreen(container.value, (holding) => {
+        if (holding) {
+          awaitingFullscreen.value = true
+        } else if (!document.fullscreenElement) {
+          awaitingFullscreen.value = false
+        }
+      })
+
       // This has to be called after creating the UI, so that the player uses the UI's UITextDisplayer
       // otherwise it uses the browsers native captions which get displayed underneath the UI controls
       await localPlayer.attach(videoElement)
@@ -4396,6 +4409,12 @@ export default defineComponent({
             startNextVideoInFullscreen: controls.isFullScreenEnabled(),
             startNextVideoInFullwindow: fullWindowEnabled.value,
             startNextVideoInPip: controls.isPiPEnabled()
+          }
+
+          // Fjernsyn: the window stays full screen for the next player, which
+          // starts in it
+          if (uiState.startNextVideoInFullscreen) {
+            expectFullscreenSuccessor()
           }
         }
 

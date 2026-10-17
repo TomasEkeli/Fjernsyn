@@ -92,6 +92,12 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
   }
 })
 
+// The window's full screen, held for the player in Electron: the page only
+// says when no player is coming after the one it destroyed
+const fullscreenHold = vi.hoisted(() => ({ noFullscreenSuccessor: vi.fn() }))
+
+vi.mock('../../helpers/player/fullscreenHold', () => fullscreenHold)
+
 // The regulator is the player's to drive, which the stand-in does not; what
 // the page does with it is hand it over, and reset it
 const regulators = vi.hoisted(() => [])
@@ -319,6 +325,7 @@ beforeEach(() => {
 
   Object.assign(player, { hasLoaded: false, currentTime: 0, seekedTo: [], paused: false, events: [], destroyGate: undefined, fullWindow: false })
   regulators.length = 0
+  fullscreenHold.noFullscreenSuccessor.mockReset()
 
   layer.getVideo.mockReset()
   layer.getComments.mockReset()
@@ -3261,5 +3268,49 @@ describe('moving down and up (Ctrl+Down, Ctrl+Up)', () => {
     await press('ArrowDown')
 
     expect(layer.listShortsSequence).not.toHaveBeenCalled()
+  })
+})
+
+describe('the window kept full screen between two videos', () => {
+  beforeEach(() => {
+    fullscreenHold.noFullscreenSuccessor.mockImplementation(() => { player.events.push('no successor') })
+  })
+
+  it('is let go of on leaving the page, once the player is destroyed', async () => {
+    const { router } = await openWatchPage(playableVideo())
+
+    await router.push('/elsewhere')
+    await flushPromises()
+
+    expect(player.events).toEqual(['destroyed', 'no successor', 'unmounted'])
+  })
+
+  it('is let go of when a message takes the player\'s place', async () => {
+    const { wrapper } = await openWatchPage(playableVideo({}, { legacyFormats: [], audio: null }))
+
+    findPlayer(wrapper).vm.$emit('error', new Error('adaptive failed'))
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Fjernsyn cannot play this video.')
+    expect(player.events).toEqual(['destroyed', 'no successor', 'unmounted'])
+  })
+
+  it('is let go of when the next video has nothing to play', async () => {
+    const { router } = await openWatchPage(ref => (ref.videoId === UUID ? playableVideo() : liveVideo('ended', { videoId: ref.videoId })))
+
+    await router.push(`/peertube/watch/${HOST}/${OTHER_UUID}`)
+    await flushPromises()
+
+    expect(fullscreenHold.noFullscreenSuccessor).toHaveBeenCalledTimes(1)
+  })
+
+  it('is kept for the next video\'s player', async () => {
+    const { wrapper, router } = await openWatchPage(ref => playableVideo({ videoId: ref.videoId }))
+
+    await router.push(`/peertube/watch/${HOST}/${OTHER_UUID}`)
+    await flushPromises()
+
+    expect(findPlayer(wrapper).props('videoId')).toBe(OTHER_UUID)
+    expect(fullscreenHold.noFullscreenSuccessor).not.toHaveBeenCalled()
   })
 })

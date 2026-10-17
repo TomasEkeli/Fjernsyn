@@ -18,6 +18,9 @@ const IpcChannels = {
   // The fork's fit of the window to the video in the full window player, likewise
   WINDOW_FIT_TO_VIDEO: 'window-fit-to-video',
   WINDOW_RELEASE_FIT: 'window-release-fit',
+  // The fork's window held in full screen under the player's, see src/main/fullscreenHold.js
+  WINDOW_HOLD_FULLSCREEN: 'window-hold-fullscreen',
+  WINDOW_RELEASE_FULLSCREEN: 'window-release-fullscreen',
 
   SEARCH_INPUT_HANDLING_READY: 'search-input-handling-ready',
   UPDATE_SEARCH_INPUT_TEXT: 'update-search-input-text',

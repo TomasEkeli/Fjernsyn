@@ -32,6 +32,7 @@ import packageDetails from '../../package.json'
 import { registerBackupHandlers } from './backup/ipc'
 import { registerKeeper } from './backup/keeperIpc'
 import { handleOpenInExternalPlayer } from './externalPlayer'
+import { holdFullscreen, isFullscreenHeld, releaseFullscreen } from './fullscreenHold'
 import { registerPeerTubeDownloadHandlers } from './peertubeDownloads/ipc'
 import { createPeerTubeRequestHeaders, peerTubeUserAgent } from './peertubeRequests'
 import { generatePoToken } from './poTokenGenerator'
@@ -1379,6 +1380,8 @@ function runApp() {
     newWindow.once('close', async () => {
       // returns true if the element existed in the set
       const htmlFullscreen = htmlFullscreenWindowIds.delete(newWindow.id)
+      // Fjernsyn: full screen held for the player, not the user's to keep
+      const heldForPlayer = isFullscreenHeld(newWindow)
 
       if (BrowserWindow.getAllWindows().length !== 1) {
         return
@@ -1390,7 +1393,7 @@ function runApp() {
         maximized: newWindow.isMaximized(),
 
         // Don't save the full screen state if it was triggered by an HTML API e.g. the video player
-        fullScreen: newWindow.isFullScreen() && !htmlFullscreen
+        fullScreen: newWindow.isFullScreen() && !htmlFullscreen && !heldForPlayer
       }
 
       await baseHandlers.settings._updateBounds(value)
@@ -1498,6 +1501,22 @@ function runApp() {
     const win = BrowserWindow.fromWebContents(event.sender)
     if (win) {
       releaseWindowFit(win)
+    }
+  })
+
+  ipcMain.handle(IpcChannels.WINDOW_HOLD_FULLSCREEN, (event) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      return false
+    }
+
+    const win = BrowserWindow.fromWebContents(event.sender)
+    return win ? holdFullscreen(win) : false
+  })
+
+  ipcMain.on(IpcChannels.WINDOW_RELEASE_FULLSCREEN, (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) {
+      releaseFullscreen(win)
     }
   })
 
