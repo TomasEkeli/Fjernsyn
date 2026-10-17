@@ -22,3 +22,26 @@ export function neighbourProfile(profiles, activeId, step) {
 
   return profiles[(index + step + profiles.length) % profiles.length]
 }
+
+/**
+ * Which way a key press zaps: Ctrl+Right to the next profile, Ctrl+Left to the
+ * previous one. Ctrl alone, since Ctrl+Shift with an arrow selects by word and
+ * Alt with one moves through the history.
+ * @param {Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey'>} event
+ * @returns {1 | -1 | 0} 0 when the press is not a zap
+ */
+export function zapStepForKey(event) {
+  if (!event.ctrlKey || event.altKey || event.shiftKey || event.metaKey) {
+    return 0
+  }
+
+  if (event.key === 'ArrowRight') {
+    return 1
+  }
+
+  if (event.key === 'ArrowLeft') {
+    return -1
+  }
+
+  return 0
+}

@@ -249,7 +249,9 @@ const KeyboardShortcuts = {
     },
     SITUATIONAL: {
       REFRESH: 'r',
-      FOCUS_SECONDARY_SEARCH: 'ctrl+F'
+      FOCUS_SECONDARY_SEARCH: 'ctrl+F',
+      NEXT_PROFILE: 'ctrl+arrowright',
+      PREVIOUS_PROFILE: 'ctrl+arrowleft'
     },
   },
   VIDEO_PLAYER: {

@@ -86,6 +86,7 @@ import {
 } from '../../helpers/subscriptionFeeds'
 import { setWatchedShown, watchedIsShown } from '../../helpers/watchedShown'
 import { withAiPreference } from '../../helpers/aiShown'
+import { neighbourProfile, zapStepForKey } from '../../helpers/profileZapping'
 
 import { KeyboardShortcuts } from '../../../constants'
 
@@ -152,6 +153,13 @@ function keyboardShortcutHandler(event) {
   if (document.activeElement.classList.contains('ft-input')) {
     return
   }
+
+  const zapStep = zapStepForKey(event)
+  if (zapStep !== 0) {
+    zapProfile(event, zapStep)
+    return
+  }
+
   // Avoid handling events due to user holding a key (not released)
   // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/repeat
   if (event.repeat) { return }
@@ -163,6 +171,38 @@ function keyboardShortcutHandler(event) {
         refresh()
       }
       break
+  }
+}
+
+/**
+ * Ctrl+Right and Ctrl+Left zap to the next and previous profile, as the arrows
+ * either side of the profile square in the top bar do, and quietly like them:
+ * the square's caption says where it landed. Not while typing, where Ctrl with
+ * an arrow moves by word, nor under a prompt. A held key zaps once.
+ *
+ * @param {KeyboardEvent} event
+ * @param {1 | -1} step
+ */
+function zapProfile(event, step) {
+  const target = event.target
+  if (target instanceof HTMLElement &&
+    (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) {
+    return
+  }
+
+  if (store.getters.isAnyPromptOpen) {
+    return
+  }
+
+  event.preventDefault()
+
+  if (event.repeat) {
+    return
+  }
+
+  const profile = neighbourProfile(store.getters.getProfileList, store.getters.getActiveProfile?._id, step)
+  if (profile) {
+    store.commit('setActiveProfile', profile._id)
   }
 }
 
