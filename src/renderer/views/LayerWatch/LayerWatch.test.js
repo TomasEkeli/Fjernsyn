@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import shaka from 'shaka-player'
 import { h } from 'vue'
-import { RouterView } from 'vue-router'
+import { RouterView, createWebHashHistory } from 'vue-router'
 
 import { SabrGiveUpError } from '../../helpers/player/SabrRegulator'
 import { copyToClipboard, formatScheduledTime, openExternalLink, showToast } from '../../helpers/utils'
@@ -21,7 +21,7 @@ import FtIconButton from '../../components/FtIconButton/FtIconButton.vue'
 // is the order in which its position was read, it was destroyed and it was
 // unmounted; `destroyGate`, when a test sets it, holds destruction open until
 // it resolves
-const player = vi.hoisted(() => ({ hasLoaded: false, currentTime: 0, seekedTo: [], paused: false, events: [], destroyGate: undefined }))
+const player = vi.hoisted(() => ({ hasLoaded: false, currentTime: 0, seekedTo: [], paused: false, events: [], destroyGate: undefined, fullWindow: false }))
 
 vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', async () => {
   const { defineComponent, h, onBeforeUnmount } = await import('vue')
@@ -79,7 +79,7 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
           destroyPlayer: async () => {
             await player.destroyGate
             player.events.push('destroyed')
-            return { startNextVideoInFullscreen: false, startNextVideoInFullwindow: false, startNextVideoInPip: false }
+            return { startNextVideoInFullscreen: false, startNextVideoInFullwindow: player.fullWindow, startNextVideoInPip: false }
           },
         })
         onBeforeUnmount(() => { player.events.push('unmounted') })
@@ -311,7 +311,7 @@ beforeEach(() => {
   }
   store.dispatched.length = 0
 
-  Object.assign(player, { hasLoaded: false, currentTime: 0, seekedTo: [], paused: false, events: [], destroyGate: undefined })
+  Object.assign(player, { hasLoaded: false, currentTime: 0, seekedTo: [], paused: false, events: [], destroyGate: undefined, fullWindow: false })
   regulators.length = 0
 
   layer.getVideo.mockReset()
@@ -344,8 +344,10 @@ afterEach(() => {
  * @param {object} [options]
  * @param {import('vue').Component} [options.watchView] what both watch routes
  *   render: this view, or as the app routes them, the surface switch
+ * @param {import('vue-router').RouterHistory} [options.history] the router's
+ *   history, in memory unless a test hands in the app's
  */
-async function openWatchPage(answer, path = WATCH_PATH, { watchView = LayerWatch } = {}) {
+async function openWatchPage(answer, path = WATCH_PATH, { watchView = LayerWatch, history } = {}) {
   layer.getVideo.mockImplementation(async (ref) => {
     const value = typeof answer === 'function' ? answer(ref) : answer
     if (value instanceof Error) {
@@ -364,7 +366,7 @@ async function openWatchPage(answer, path = WATCH_PATH, { watchView = LayerWatch
     // does while PeerTube is off: one rendering this view, one not
     { path: '/refused/watch/:host/:uuid', component: LayerWatch, beforeEnter: () => false },
     { path: '/refused', beforeEnter: () => false },
-  ])
+  ], { history })
   await router.push(path)
 
   const wrapper = mount({ render: () => h(RouterView) }, {
@@ -2922,6 +2924,88 @@ describe('moving down and up (Ctrl+Down, Ctrl+Up)', () => {
     await press('ArrowDown')
 
     expect(pathOf(router)).toBe(`/watch/${SEQUENCE[1]}`)
+  })
+
+  describe('in the browser\'s history', () => {
+    /** The browser's back and forward land after a task, not a microtask */
+    const historySettled = async () => {
+      await new Promise(resolve => setTimeout(resolve, 20))
+      await flushPromises()
+    }
+
+    async function pressAndSettle(key) {
+      await press(key)
+      await historySettled()
+    }
+
+    it('walks back up it rather than piling onto it, so that back from the first short leaves', async () => {
+      useSequence()
+      const history = createWebHashHistory()
+      const { router } = await openWatchPage(anyVideo, '/elsewhere', { history })
+      await router.push(`/watch/${SHORT_ID}`)
+      await flushPromises()
+
+      await pressAndSettle('ArrowDown')
+      await pressAndSettle('ArrowDown')
+      await pressAndSettle('ArrowUp')
+      await pressAndSettle('ArrowUp')
+
+      expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+      expect(history.state.forward).toBe(`/watch/${SEQUENCE[0]}`)
+
+      router.back()
+      await historySettled()
+
+      expect(pathOf(router)).toBe('/elsewhere')
+    })
+
+    it('walks forward along it again moving down after moving up', async () => {
+      useSequence()
+      const history = createWebHashHistory()
+      const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`, { history })
+
+      await pressAndSettle('ArrowDown')
+      await pressAndSettle('ArrowDown')
+      await pressAndSettle('ArrowUp')
+      await pressAndSettle('ArrowDown')
+
+      expect(pathOf(router)).toBe(`/watch/${SEQUENCE[1]}`)
+      expect(history.state.forward).toBeNull()
+
+      // Two entries behind is where it began, not the shorts again
+      router.go(-2)
+      await historySettled()
+
+      expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+    })
+  })
+
+  it('keeps the window covered while the next short loads, after one in full window', async () => {
+    useSequence()
+    let arrive
+    const { wrapper, router } = await openWatchPage(ref => (ref === SHORT_ID ? short(ref) : new Promise((resolve) => { arrive = () => resolve(short(ref)) })), `/watch/${SHORT_ID}`)
+    player.fullWindow = true
+
+    await press('ArrowDown')
+
+    expect(pathOf(router)).toBe(`/watch/${SEQUENCE[0]}`)
+    expect(findPlayer(wrapper).exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'FtLoader' }).classes()).toContain('fullWindowLoading')
+
+    arrive()
+    await flushPromises()
+
+    expect(findPlayer(wrapper).props('startInFullwindow')).toBe(true)
+    expect(wrapper.findComponent({ name: 'FtLoader' }).exists()).toBe(false)
+  })
+
+  it('loads the next video in the page as before when the one left was not in full window', async () => {
+    useSequence()
+    const { wrapper } = await openWatchPage(ref => (ref === SHORT_ID ? short(ref) : new Promise(() => {})), `/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(wrapper.findComponent({ name: 'FtLoader' }).classes()).not.toContain('fullWindowLoading')
   })
 
   it('moves past a short of the sequence that fails to load', async () => {

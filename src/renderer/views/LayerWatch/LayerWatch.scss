@@ -23,6 +23,16 @@
     @include single-column-template;
   }
 
+  // The next video loading after one played in full window: the window stays
+  // covered, as the player covered it (its `.fullWindow`) and the next one
+  // will, rather than the page showing between the two
+  .fullWindowLoading {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background-color: #000;
+  }
+
   .videoArea {
     grid-area: video;
 

@@ -19,11 +19,18 @@ export const RouteStub = defineComponent({
  * navigation is asynchronous, so `await router.push(...)`, or after a click
  * `await flushPromises()` (from `@vue/test-utils`), before asserting.
  *
+ * In memory by default. A test of what a view does with the history entries
+ * on either side (`router.options.history.state`'s `back` and `forward`,
+ * which only the browser's histories keep) hands in the app's own,
+ * `createWebHashHistory()`, which jsdom's `window.history` backs.
+ *
  * @param {import('vue-router').RouteRecordRaw[] | object[]} [routes]
+ * @param {object} [options]
+ * @param {import('vue-router').RouterHistory} [options.history]
  */
-export function createTestRouter(routes = []) {
+export function createTestRouter(routes = [], { history = createMemoryHistory() } = {}) {
   return createRouter({
-    history: createMemoryHistory(),
+    history,
     routes: [
       ...routes.map(route => ({ component: RouteStub, ...route })),
       { path: '/:pathMatch(.*)*', name: 'testCatchAll', component: RouteStub },

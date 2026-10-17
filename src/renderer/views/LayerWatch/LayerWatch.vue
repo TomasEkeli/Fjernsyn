@@ -7,9 +7,11 @@
       noSidebar: !sidebarShown
     }"
   >
+    <!-- Over the whole window while the next video loads in full window or full screen, as its player will be -->
     <FtLoader
       v-if="isLoading"
-      :fullscreen="true"
+      :fullscreen="!loadsCoveringWindow"
+      :class="{ fullWindowLoading: loadsCoveringWindow }"
     />
     <!-- As Watch.vue: nothing of the video but that it is age restricted -->
     <FtAgeRestricted
@@ -395,6 +397,14 @@ const useTheatreMode = ref(false)
 const startInFullscreen = ref(false)
 const startInFullwindow = ref(false)
 const startInPip = ref(false)
+
+/**
+ * Whether the next video's player will cover the window, in full window or
+ * full screen, as the one before did: its loading covers the window too, so
+ * that the page does not show between the two players. Full screen itself
+ * goes with the player that held it, and comes back with the next.
+ */
+const loadsCoveringWindow = computed(() => startInFullwindow.value || startInFullscreen.value)
 
 /** The `timestamp` query the video was opened with */
 let timestamp = null
@@ -1804,7 +1814,7 @@ async function moveDown() {
   const again = swipeTrail.following(fromId)
 
   if (again !== null) {
-    router.push({ path: `/watch/${again}` })
+    openAlongTrail(again)
     return
   }
 
@@ -1843,6 +1853,30 @@ async function passOverHiddenShort(id) {
   }
 }
 
+/**
+ * Opens the video `id` along the trail as the browser would go there: back,
+ * or forward, when that is the history's entry just behind, or just ahead,
+ * so that moving up and down again walks the history rather than piling onto
+ * it, and the browser's back after moving up leaves where the trail began.
+ * Pushed otherwise, which drops whatever was ahead, as the trail does.
+ * Compared by path: the entry keeps whatever query it was opened with.
+ *
+ * @param {string} id
+ */
+function openAlongTrail(id) {
+  const path = `/watch/${id}`
+  const { back, forward } = router.options.history.state ?? {}
+  const pathOf = entry => (typeof entry === 'string' ? entry.split('?')[0] : null)
+
+  if (pathOf(back) === path) {
+    router.back()
+  } else if (pathOf(forward) === path) {
+    router.forward()
+  } else {
+    router.push({ path })
+  }
+}
+
 /** Ctrl+Up: in a playlist, the skip to previous; else back up the trail, or nothing at its start */
 function moveUp() {
   const fromId = routeYouTubeId()
@@ -1855,7 +1889,7 @@ function moveUp() {
   const back = fromId === null ? null : swipeTrail.previous(fromId)
 
   if (back !== null) {
-    router.push({ path: `/watch/${back}` })
+    openAlongTrail(back)
   }
 }
 
