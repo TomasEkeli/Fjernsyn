@@ -5,6 +5,7 @@
   inline-size: 100%;
 }
 
+/* TestCard.vue measures the version in this font (LABEL_FONT) to fit it to its box */
 .label,
 .digits {
   fill: #fff;
@@ -31,6 +32,10 @@
 
 /* The hidden link behind the foot's red square: no pointer to give it away */
 .patternLink {
+  cursor: default;
+}
+
+.dateLink {
   cursor: default;
 }
 

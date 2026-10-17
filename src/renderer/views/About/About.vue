@@ -6,6 +6,7 @@
       :name-url="REPOSITORY_URL"
       :version-url="releaseUrl"
       :build-stamp="buildStamp"
+      :date-url="dateUrl"
     />
   </div>
 </template>
@@ -16,6 +17,8 @@
  * README says where Fjernsyn comes from and credits FreeTube; its version box
  * leads to the release this build is, when it is one.
  */
+import { onMounted, ref } from 'vue'
+
 import TestCard from '../../components/TestCard/TestCard.vue'
 
 import packageDetails from '../../../../package.json'
@@ -42,6 +45,24 @@ const releaseUrl = process.env.RELEASE_TAG
  * could not be worked out, in which case there is no tooltip.
  */
 const buildStamp = process.env.BUILD_STAMP || null
+
+const dateUrl = ref(null)
+
+onMounted(async () => {
+  try {
+    const response = await fetch('https://api.github.com/repos/TomasEkeli/Fjernsyn/releases/latest')
+
+    if (!response.ok) {
+      return
+    }
+
+    const { tag_name: latest } = await response.json()
+
+    if (typeof latest === 'string' && latest !== versionNumber) {
+      dateUrl.value = `${REPOSITORY_URL}/releases/latest`
+    }
+  } catch {}
+})
 </script>
 
 <style scoped src="./About.css" />
