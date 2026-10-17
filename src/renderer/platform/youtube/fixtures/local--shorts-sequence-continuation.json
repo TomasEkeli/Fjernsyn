@@ -1,0 +1,191 @@
+{
+  "recordedAt": "2026-10-17",
+  "source": "recorded",
+  "call": "getLocalShortsSequenceContinuation(sequence)",
+  "notes": "The same ShortFormVideoInfo after getWatchNextContinuation(), which replaces its watch_next_feed in place and answers itself. Trimmed as local--shorts-sequence.json.",
+  "answer": {
+    "watch_next_feed": [
+      {
+        "type": "NavigationEndpoint",
+        "name": "reelWatchEndpoint",
+        "payload": {
+          "videoId": "d8hlb1ByjiE",
+          "overlay": {}
+        },
+        "metadata": {
+          "url": "/shorts/d8hlb1ByjiE",
+          "page_type": "WEB_PAGE_TYPE_SHORTS"
+        }
+      },
+      {
+        "type": "NavigationEndpoint",
+        "name": "reelWatchEndpoint",
+        "payload": {
+          "videoId": "9oqXpjURCQ8",
+          "adClientParams": {}
+        },
+        "metadata": {
+          "url": "/shorts/9oqXpjURCQ8",
+          "page_type": "WEB_PAGE_TYPE_SHORTS"
+        }
+      },
+      {
+        "type": "NavigationEndpoint",
+        "name": "reelWatchEndpoint",
+        "payload": {
+          "videoId": "7kwj0PivZaQ",
+          "overlay": {}
+        },
+        "metadata": {
+          "url": "/shorts/7kwj0PivZaQ",
+          "page_type": "WEB_PAGE_TYPE_SHORTS"
+        }
+      },
+      {
+        "type": "NavigationEndpoint",
+        "name": "reelWatchEndpoint",
+        "payload": {
+          "videoId": "LeOKNY5jdy4",
+          "overlay": {}
+        },
+        "metadata": {
+          "url": "/shorts/LeOKNY5jdy4",
+          "page_type": "WEB_PAGE_TYPE_SHORTS"
+        }
+      },
+      {
+        "type": "NavigationEndpoint",
+        "name": "reelWatchEndpoint",
+        "payload": {
+          "videoId": "VRJDtRdlCpE",
+          "adClientParams": {}
+        },
+        "metadata": {
+          "url": "/shorts/VRJDtRdlCpE",
+          "page_type": "WEB_PAGE_TYPE_SHORTS"
+        }
+      },
+      {
+        "type": "NavigationEndpoint",
+        "name": "reelWatchEndpoint",
+        "payload": {
+          "videoId": "NjZK3PusvH0",
+          "overlay": {}
+        },
+        "metadata": {
+          "url": "/shorts/NjZK3PusvH0",
+          "page_type": "WEB_PAGE_TYPE_SHORTS"
+        }
+      },
+      {
+        "type": "NavigationEndpoint",
+        "name": "reelWatchEndpoint",
+        "payload": {
+          "videoId": "vvmZ1q9RXzg",
+          "overlay": {}
+        },
+        "metadata": {
+          "url": "/shorts/vvmZ1q9RXzg",
+          "page_type": "WEB_PAGE_TYPE_SHORTS"
+        }
+      },
+      {
+        "type": "NavigationEndpoint",
+        "name": "reelWatchEndpoint",
+        "payload": {
+          "videoId": "DgYNaMxmL3o",
+          "adClientParams": {}
+        },
+        "metadata": {
+          "url": "/shorts/DgYNaMxmL3o",
+          "page_type": "WEB_PAGE_TYPE_SHORTS"
+        }
+      },
+      {
+        "type": "NavigationEndpoint",
+        "name": "reelWatchEndpoint",
+        "payload": {
+          "videoId": "E147qAF-ze8",
+          "overlay": {}
+        },
+        "metadata": {
+          "url": "/shorts/E147qAF-ze8",
+          "page_type": "WEB_PAGE_TYPE_SHORTS"
+        }
+      },
+      {
+        "type": "NavigationEndpoint",
+        "name": "reelWatchEndpoint",
+        "payload": {
+          "videoId": "tFm7kCvNRzM",
+          "overlay": {}
+        },
+        "metadata": {
+          "url": "/shorts/tFm7kCvNRzM",
+          "page_type": "WEB_PAGE_TYPE_SHORTS"
+        }
+      },
+      {
+        "type": "NavigationEndpoint",
+        "name": "reelWatchEndpoint",
+        "payload": {
+          "videoId": "C1_-SaxXaas",
+          "adClientParams": {}
+        },
+        "metadata": {
+          "url": "/shorts/C1_-SaxXaas",
+          "page_type": "WEB_PAGE_TYPE_SHORTS"
+        }
+      },
+      {
+        "type": "NavigationEndpoint",
+        "name": "reelWatchEndpoint",
+        "payload": {
+          "videoId": "CjiK_Hrl52g",
+          "overlay": {}
+        },
+        "metadata": {
+          "url": "/shorts/CjiK_Hrl52g",
+          "page_type": "WEB_PAGE_TYPE_SHORTS"
+        }
+      },
+      {
+        "type": "NavigationEndpoint",
+        "name": "reelWatchEndpoint",
+        "payload": {
+          "videoId": "4Wg8z_uTBg8",
+          "overlay": {}
+        },
+        "metadata": {
+          "url": "/shorts/4Wg8z_uTBg8",
+          "page_type": "WEB_PAGE_TYPE_SHORTS"
+        }
+      },
+      {
+        "type": "NavigationEndpoint",
+        "name": "reelWatchEndpoint",
+        "payload": {
+          "videoId": "EHm2p0mfdTo",
+          "adClientParams": {}
+        },
+        "metadata": {
+          "url": "/shorts/EHm2p0mfdTo",
+          "page_type": "WEB_PAGE_TYPE_SHORTS"
+        }
+      },
+      {
+        "type": "NavigationEndpoint",
+        "name": "reelWatchEndpoint",
+        "payload": {
+          "videoId": "kW1DLaAJo9I",
+          "overlay": {}
+        },
+        "metadata": {
+          "url": "/shorts/kW1DLaAJo9I",
+          "page_type": "WEB_PAGE_TYPE_SHORTS"
+        }
+      }
+    ],
+    "wn_has_continuation": true
+  }
+}

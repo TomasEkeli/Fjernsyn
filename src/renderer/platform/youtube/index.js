@@ -8,6 +8,7 @@ import { createYouTubeChannelReader } from './channels'
 import { createYouTubeCommentReader } from './comments'
 import { createBackendPolicy } from './policy'
 import { createYouTubeSearcher } from './search'
+import { createYouTubeShortsReader } from './shorts'
 import { createYouTubeVideoReader } from './videos'
 
 /**
@@ -24,6 +25,7 @@ export function createYouTubeAdapter({ youtube, config }) {
     ...createYouTubeChannelReader(shared),
     ...createYouTubeChannelResolver(shared),
     ...createYouTubeCommentReader(shared),
+    ...createYouTubeShortsReader(shared),
     ...createYouTubeSearcher({ youtube, config }),
   })
 }

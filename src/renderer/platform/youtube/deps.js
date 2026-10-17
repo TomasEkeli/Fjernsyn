@@ -27,6 +27,9 @@
 //   `null` for any failure)
 // - comments: `getLocalComments(id)` (a `YT.Comments`), `parseLocalComment`
 // - search: `getLocalSearchResults`, `getLocalSearchContinuation`
+// - shorts: `getLocalShortsSequence(id, safetyMode)` and
+//   `getLocalShortsSequenceContinuation(sequence)`, YouTube's feed of shorts
+//   after a short (a `YTShorts.ShortFormVideoInfo`)
 //
 // From `src/renderer/helpers/api/invidious.js` (Invidious):
 // - videos: `invidiousGetVideoInformation(id)`, `mapInvidiousLegacyFormat`,
@@ -81,6 +84,8 @@ export const YOUTUBE_DEP_NAMES = Object.freeze({
     'parseLocalComment',
     'getLocalSearchResults',
     'getLocalSearchContinuation',
+    'getLocalShortsSequence',
+    'getLocalShortsSequenceContinuation',
   ]),
   invidious: Object.freeze([
     'invidiousGetVideoInformation',

@@ -65,6 +65,9 @@ of them.
 - `comments.js`: `getComments` (sort `top` or `newest`) and
   `getCommentReplies`. Says when a video's comments are off.
 - `search.js`: YouTube search, from the layer's search query.
+- `shorts.js`: `listShortsSequence`, the shorts YouTube's shorts player moves
+  down through after a short, by id, its ads dropped. Local only; Invidious
+  has no such feed and is `unavailable`.
 - `types.js`: the field-by-field mapping of each backend onto the common
   shapes, kept as the reference table the modules point to.
 

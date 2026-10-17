@@ -196,6 +196,27 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   }
 
   /**
+   * A page of YouTube's shorts sequence after a short: the shorts
+   * youtube.com's shorts player moves down through, by id, the feed's ads
+   * dropped (see `./youtube/shorts.js`). Local only, through the backend
+   * policy: Invidious has no such feed, and answers `unavailable`. Hand the
+   * page's `cursor` back for the next page, which continues the first page's
+   * sequence; `null` is the end. PeerTube has no shorts: any other ref
+   * rejects as `invalid`, without a request.
+   *
+   * @param {import('./shapes').VideoRef} ref
+   * @param {{ cursor?: unknown }} [options]
+   * @returns {Promise<import('./shapes').Page<import('./youtube/shorts').ShortsSequenceItem>>}
+   */
+  async function listShortsSequence(ref, options) {
+    if (!isYouTubeVideoRef(ref)) {
+      throw new PlatformError('invalid', 'Only YouTube has a shorts sequence')
+    }
+
+    return youtubeAdapter.listShortsSequence(ref, options)
+  }
+
+  /**
    * A channel's details: a PeerTube `name@host` handle from its origin (see
    * `./peertube/channels.js`), a YouTube `UC` id through the backend policy
    * (see `./youtube/channels.js`). Anything else rejects as `invalid`,
@@ -463,6 +484,7 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
     describe: describeEntity,
     resolveUrl,
     getVideo,
+    listShortsSequence,
     getChannel,
     resolveChannel,
     listChannelVideos,

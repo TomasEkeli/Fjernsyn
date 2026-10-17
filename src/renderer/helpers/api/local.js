@@ -531,6 +531,43 @@ export async function getLocalSearchContinuation(continuationData) {
 }
 
 /**
+ * YouTube's shorts sequence after the short `id`: the feed youtube.com's
+ * shorts player moves down through (`/reel/reel_watch_sequence`), as
+ * youtubei.js asks for it. youtubei.js asks for the short's own reel response
+ * beside it, which nothing here reads.
+ *
+ * The answer's `watch_next_feed` is a page of `reelWatchEndpoint` navigation
+ * endpoints, each `payload` naming a short by its `videoId`; one whose
+ * payload has `adClientParams` is an ad. Hand the answer to
+ * `getLocalShortsSequenceContinuation` for the next page.
+ *
+ * @param {string} id
+ * @param {boolean} safetyMode
+ * @returns {Promise<import('youtubei.js').YTShorts.ShortFormVideoInfo>}
+ */
+export async function getLocalShortsSequence(id, safetyMode) {
+  const innertube = await createInnertube({ safetyMode })
+  return await innertube.getShortsVideoInfo(id)
+}
+
+/**
+ * The next page of a shorts sequence: the same `ShortFormVideoInfo`, its
+ * `watch_next_feed` replaced, as youtubei.js continues it in place. `null`
+ * at the sequence's end.
+ *
+ * @param {import('youtubei.js').YTShorts.ShortFormVideoInfo} sequence what
+ *   `getLocalShortsSequence` or this answered
+ * @returns {Promise<import('youtubei.js').YTShorts.ShortFormVideoInfo | null>}
+ */
+export async function getLocalShortsSequenceContinuation(sequence) {
+  if (!sequence.wn_has_continuation) {
+    return null
+  }
+
+  return await sequence.getWatchNextContinuation()
+}
+
+/**
  * How long a scraped BotGuard challenge is reused for.
  *
  * The challenge and `ytcfg` are not video specific: `initialAttestationData.R`
