@@ -60,6 +60,9 @@ const HTTP_IN_HEX = 0x68747470
 
 const USE_OVERFLOW_MENU_WIDTH_THRESHOLD = 634
 
+/** How long a player starting in full screen is drawn over the window waiting for it */
+const AWAITING_FULLSCREEN_MS = 2000
+
 /**
  * How much a keyboard shortcut or a scroll over the player changes the volume by,
  * in dB. Two dB is a small but clearly audible step, and crosses the default
@@ -321,8 +324,22 @@ export default defineComponent({
 
     const activeLegacyFormat = shallowRef(null)
 
-    const fullWindowEnabled = ref(false)
     const startInFullwindow = props.startInFullwindow
+    // Fjernsyn: in full window from the first render when it starts in it,
+    // rather than in the page until the UI's setup reaches
+    // `registerFullWindowButton`, which showed the page between two videos
+    const fullWindowEnabled = ref(startInFullwindow)
+
+    if (startInFullwindow) {
+      document.body.classList.add('playerFullWindow')
+    }
+
+    // Fjernsyn: a player starting in full screen is drawn over the window,
+    // as in full window, until full screen has come, so that the page does
+    // not show while the UI is set up. Not full window itself: the button
+    // and leaving full screen are as they were
+    const awaitingFullscreen = ref(props.startInFullscreen && !!process.env.IS_ELECTRON)
+
     let startInFullscreen = props.startInFullscreen
     let startInPip = props.startInPip
 
@@ -3667,6 +3684,7 @@ export default defineComponent({
     }
 
     function fullscreenChangeHandler() {
+      awaitingFullscreen.value = false
       nextTick(showOverlayControls)
     }
 
@@ -3832,6 +3850,8 @@ export default defineComponent({
       // cursor is in the video player area when the video first loads
       container.value.classList.add('no-cursor')
       container.value.addEventListener('mousemove', hideCursorWhenStillWhilePinned)
+
+      enterStartingFullscreen()
 
       await performFirstLoad()
       // Whatever runs after `performFirstLoad` might be after switching to another page due to SABR backoff
@@ -4028,9 +4048,22 @@ export default defineComponent({
 
       createHeatmap()
 
+      // Where the UI was set up before the player could ask, as when it was
+      // destroyed meanwhile and set up again
+      enterStartingFullscreen()
+    }
+
+    /**
+     * Full screen, once, for a player that starts in it. Fjernsyn: asked as
+     * soon as the UI is set up, not after the video has loaded, so that the
+     * page does not show between the video before and this one while it loads.
+     */
+    function enterStartingFullscreen() {
       if (startInFullscreen && process.env.IS_ELECTRON) {
         startInFullscreen = false
         window.ftElectron.requestFullscreen()
+        // Should full screen not come, the player goes back into the page
+        setTimeout(() => { awaitingFullscreen.value = false }, AWAITING_FULLSCREEN_MS)
       }
     }
 
@@ -4381,6 +4414,7 @@ export default defineComponent({
       vrCanvas,
 
       fullWindowEnabled,
+      awaitingFullscreen,
       forceAspectRatio,
 
       showStats,

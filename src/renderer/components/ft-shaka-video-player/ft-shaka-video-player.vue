@@ -3,8 +3,8 @@
     ref="container"
     class="ftVideoPlayer shaka-video-container"
     :class="{
-      fullWindow: fullWindowEnabled,
-      sixteenByNine: forceAspectRatio && !fullWindowEnabled
+      fullWindow: fullWindowEnabled || awaitingFullscreen,
+      sixteenByNine: forceAspectRatio && !fullWindowEnabled && !awaitingFullscreen
     }"
   >
     <!-- eslint-disable-next-line vuejs-accessibility/media-has-caption -->
