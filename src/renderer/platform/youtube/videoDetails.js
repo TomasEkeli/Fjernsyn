@@ -12,7 +12,10 @@
 // Neither backend says whether a video is a short in its details (Local's
 // player and next responses carry no marker, Invidious' `/videos/{id}` none
 // either), so a video's details are always `type: 'video'`; only lists know
-// shorts.
+// shorts. Local's do carry the video's shape, though, and a short has one: a
+// portrait or square frame, three minutes at most. That reading is `isShort`
+// (`localIsShort`), for the watch view to move through shorts by; it is not
+// YouTube's word and does not change `type`.
 //
 // The playback source and the chapters' kind are not read here but in
 // `./playback.js`, which needs the live status read here and, for the
@@ -262,6 +265,62 @@ function localRelated(youtube, info) {
 }
 
 /**
+ * The longest a short can be: three minutes, YouTube's limit since late 2024
+ * (sixty seconds before)
+ */
+const SHORT_MAX_SECONDS = 180
+
+/**
+ * @param {any} frame
+ * @returns {frame is { width: number, height: number }}
+ */
+function hasBothSides(frame) {
+  return isNumber(frame?.width) && isNumber(frame?.height) && frame.width > 0 && frame.height > 0
+}
+
+/**
+ * The video's frame: the player microformat's embed size, which is the
+ * video's aspect at a fixed height (405 by 720 for a short, 1280 by 720 for
+ * a widescreen video), else the first stream format that gives both sides.
+ * `null` when neither does.
+ *
+ * @param {any} info
+ * @returns {{ width: number, height: number } | null}
+ */
+function localFrame(info) {
+  const embed = info.page?.[0]?.microformat?.embed
+
+  if (hasBothSides(embed)) {
+    return embed
+  }
+
+  const streaming = info.streaming_data
+  const formats = [...(streaming?.formats ?? []), ...(streaming?.adaptive_formats ?? [])]
+
+  return formats.find(hasBothSides) ?? null
+}
+
+/**
+ * Whether the video has a short's shape: framed portrait or square, and
+ * known to be no longer than a short can be. A live or upcoming video never
+ * is, whatever its frame, nor one whose length or frame does not read.
+ *
+ * @param {any} info
+ * @param {boolean} liveOrUpcoming
+ */
+function localIsShort(info, liveOrUpcoming) {
+  const duration = info.basic_info?.duration
+
+  if (liveOrUpcoming || !isNumber(duration) || duration <= 0 || duration > SHORT_MAX_SECONDS) {
+    return false
+  }
+
+  const frame = localFrame(info)
+
+  return frame !== null && frame.height >= frame.width
+}
+
+/**
  * @param {string} id
  * @param {{
  *   info: any,
@@ -336,6 +395,10 @@ export function localVideoDetails(id, { info, aiVerdict, contentDisclosures }, {
 
   if (typeof basic.is_family_safe === 'boolean') {
     details.isFamilyFriendly = basic.is_family_safe
+  }
+
+  if (localIsShort(info, live || upcoming)) {
+    details.isShort = true
   }
 
   return details

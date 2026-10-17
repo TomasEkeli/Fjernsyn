@@ -2,7 +2,7 @@
   "recordedAt": "2026-10-02",
   "source": "recorded",
   "call": "getLocalVideoInfo('dQw4w9WgXcQ')",
-  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised; the License row and the watch-next variety (a playlist lockup, a station, a compact video and movie, an unreadable item) synthesised, YouTube answered lockups only. For the playback source, synthesised: adaptive formats, captions with translation languages, storyboards, the player bar's chapter markers, the loudness, the expiry and the ad end time (none of which Node is given without a PO token); for SABR, synthesised: the SABR streaming URL, the ustreamer config, the cpn, the client info and the formats' SABR fields. No PO token, as from Node: a test adds one",
+  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised; the License row and the watch-next variety (a playlist lockup, a station, a compact video and movie, an unreadable item) synthesised, YouTube answered lockups only. For the playback source, synthesised: adaptive formats, captions with translation languages, storyboards, the player bar's chapter markers, the loudness, the expiry and the ad end time (none of which Node is given without a PO token); for SABR, synthesised: the SABR streaming URL, the ustreamer config, the cpn, the client info and the formats' SABR fields. No PO token, as from Node: a test adds one. The microformat's embed recorded on 2026-10-17, and added to the trimmed microformat then",
   "answer": {
     "info": {
       "playability_status": {
@@ -103,7 +103,12 @@
       "page": [
         {
           "microformat": {
-            "publish_date": "2009-10-24T23:57:33-07:00"
+            "publish_date": "2009-10-24T23:57:33-07:00",
+            "embed": {
+              "iframe_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "width": 1280,
+              "height": 720
+            }
           }
         }
       ],

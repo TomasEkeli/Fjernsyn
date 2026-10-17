@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import shaka from 'shaka-player'
 import { h } from 'vue'
-import { RouterView } from 'vue-router'
+import { RouterView, createWebHashHistory } from 'vue-router'
 
 import { SabrGiveUpError } from '../../helpers/player/SabrRegulator'
 import { copyToClipboard, formatScheduledTime, openExternalLink, showToast } from '../../helpers/utils'
@@ -21,7 +21,7 @@ import FtIconButton from '../../components/FtIconButton/FtIconButton.vue'
 // is the order in which its position was read, it was destroyed and it was
 // unmounted; `destroyGate`, when a test sets it, holds destruction open until
 // it resolves
-const player = vi.hoisted(() => ({ hasLoaded: false, currentTime: 0, seekedTo: [], paused: false, events: [], destroyGate: undefined }))
+const player = vi.hoisted(() => ({ hasLoaded: false, currentTime: 0, seekedTo: [], paused: false, events: [], destroyGate: undefined, fullWindow: false }))
 
 vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', async () => {
   const { defineComponent, h, onBeforeUnmount } = await import('vue')
@@ -79,7 +79,7 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
           destroyPlayer: async () => {
             await player.destroyGate
             player.events.push('destroyed')
-            return { startNextVideoInFullscreen: false, startNextVideoInFullwindow: false, startNextVideoInPip: false }
+            return { startNextVideoInFullscreen: false, startNextVideoInFullwindow: player.fullWindow, startNextVideoInPip: false }
           },
         })
         onBeforeUnmount(() => { player.events.push('unmounted') })
@@ -157,6 +157,8 @@ const SETTINGS = vi.hoisted(() => ({
   getIsInLater: () => false,
   getIsArmed: () => false,
   getLaterFiredVideo: null,
+  // The app's, while a prompt is open over the page
+  isAnyPromptOpen: false,
 }))
 
 vi.mock('../../store/index', async () => {
@@ -299,6 +301,7 @@ const layer = {
   getVideo: vi.fn(),
   getComments: vi.fn(),
   getCommentReplies: vi.fn(),
+  listShortsSequence: vi.fn(),
   describe: (entity, options) => describeEntity(entity, {}, options),
 }
 
@@ -308,12 +311,13 @@ beforeEach(() => {
   }
   store.dispatched.length = 0
 
-  Object.assign(player, { hasLoaded: false, currentTime: 0, seekedTo: [], paused: false, events: [], destroyGate: undefined })
+  Object.assign(player, { hasLoaded: false, currentTime: 0, seekedTo: [], paused: false, events: [], destroyGate: undefined, fullWindow: false })
   regulators.length = 0
 
   layer.getVideo.mockReset()
   layer.getComments.mockReset()
   layer.getCommentReplies.mockReset()
+  layer.listShortsSequence.mockReset()
   isPeerTubeEnabled.mockReset().mockReturnValue(true)
   copyToClipboard.mockClear()
   openExternalLink.mockClear()
@@ -340,8 +344,10 @@ afterEach(() => {
  * @param {object} [options]
  * @param {import('vue').Component} [options.watchView] what both watch routes
  *   render: this view, or as the app routes them, the surface switch
+ * @param {import('vue-router').RouterHistory} [options.history] the router's
+ *   history, in memory unless a test hands in the app's
  */
-async function openWatchPage(answer, path = WATCH_PATH, { watchView = LayerWatch } = {}) {
+async function openWatchPage(answer, path = WATCH_PATH, { watchView = LayerWatch, history } = {}) {
   layer.getVideo.mockImplementation(async (ref) => {
     const value = typeof answer === 'function' ? answer(ref) : answer
     if (value instanceof Error) {
@@ -360,7 +366,7 @@ async function openWatchPage(answer, path = WATCH_PATH, { watchView = LayerWatch
     // does while PeerTube is off: one rendering this view, one not
     { path: '/refused/watch/:host/:uuid', component: LayerWatch, beforeEnter: () => false },
     { path: '/refused', beforeEnter: () => false },
-  ])
+  ], { history })
   await router.push(path)
 
   const wrapper = mount({ render: () => h(RouterView) }, {
@@ -2347,6 +2353,22 @@ describe('a playlist', () => {
       vi.mocked(Math.random).mockRestore()
     })
 
+    it('moves down and up (Ctrl+Down, Ctrl+Up) through the playlist, as the player\'s skips', async () => {
+      const { router } = await open(kind, 1)
+      const press = async (key) => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: true, bubbles: true, cancelable: true }))
+        await flushPromises()
+      }
+
+      await press('ArrowDown')
+      expectOn(router, kind, 2)
+
+      await press('ArrowUp')
+      expectOn(router, kind, 1)
+
+      expect(layer.listShortsSequence).not.toHaveBeenCalled()
+    })
+
     it('reverses, playing the video before as the next', async () => {
       const { wrapper, router } = await open(kind, 1)
 
@@ -2824,5 +2846,339 @@ describe('an armed Later item gone live on its own page', () => {
     await flushPromises()
 
     expect(layer.getVideo).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('moving down and up (Ctrl+Down, Ctrl+Up)', () => {
+  const SHORT_ID = '4hDEK_1wPBk'
+  const SEQUENCE = ['Ttz4sPWYuDo', 'pHSFL5cMFn4', '8VN0PS_R0S0']
+  const NEXT_ID = 'pCJ9JGG0GQI'
+
+  /** A short's details, by the shape the layer reads */
+  const short = videoId => youtubeVideo({ videoId, title: `Short ${videoId}`, lengthSeconds: 60, isShort: true })
+
+  /** Answers every short, and the video on YT_PATH as one that is not, with a recommendation */
+  function anyVideo(ref) {
+    if (ref === YT_ID) {
+      return youtubeVideo({ related: [{ type: 'video', videoId: NEXT_ID, title: 'Next', author: 'Someone', authorId: 'UCsomeone', lengthSeconds: 600 }] })
+    }
+
+    return ref === NEXT_ID ? youtubeVideo({ videoId: NEXT_ID, title: 'Next' }) : short(ref)
+  }
+
+  /** The shorts sequence after any short, in one page */
+  function useSequence(ids = SEQUENCE) {
+    layer.listShortsSequence.mockResolvedValue({ items: ids.map(videoId => ({ videoId })), cursor: null })
+  }
+
+  /**
+   * @param {'ArrowDown' | 'ArrowUp'} key
+   * @param {EventTarget} [target]
+   */
+  async function press(key, target = document) {
+    target.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: true, bubbles: true, cancelable: true }))
+    await flushPromises()
+  }
+
+  const pathOf = router => router.currentRoute.value.path
+
+  it('moves down from a short to the next of YouTube\'s shorts sequence after it', async () => {
+    useSequence()
+    const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(layer.listShortsSequence).toHaveBeenCalledWith(SHORT_ID, { cursor: null })
+    expect(pathOf(router)).toBe(`/watch/${SEQUENCE[0]}`)
+    expect(layer.getVideo).toHaveBeenLastCalledWith(SEQUENCE[0])
+
+    await press('ArrowDown')
+
+    expect(pathOf(router)).toBe(`/watch/${SEQUENCE[1]}`)
+    expect(layer.listShortsSequence).toHaveBeenCalledTimes(1)
+  })
+
+  it('moves up the way it came, and down again to the same shorts', async () => {
+    useSequence()
+    const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`)
+    await press('ArrowDown')
+    await press('ArrowDown')
+
+    await press('ArrowUp')
+    expect(pathOf(router)).toBe(`/watch/${SEQUENCE[0]}`)
+    await press('ArrowUp')
+    expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+    await press('ArrowUp')
+    expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+    expect(pathOf(router)).toBe(`/watch/${SEQUENCE[0]}`)
+    expect(layer.listShortsSequence).toHaveBeenCalledTimes(1)
+  })
+
+  it('passes over a short already watched', async () => {
+    useSequence()
+    store.setGetter('getHistoryCacheById', { [SEQUENCE[0]]: { videoId: SEQUENCE[0] } })
+    const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(pathOf(router)).toBe(`/watch/${SEQUENCE[1]}`)
+  })
+
+  describe('in the browser\'s history', () => {
+    /** The browser's back and forward land after a task, not a microtask */
+    const historySettled = async () => {
+      await new Promise(resolve => setTimeout(resolve, 20))
+      await flushPromises()
+    }
+
+    async function pressAndSettle(key) {
+      await press(key)
+      await historySettled()
+    }
+
+    it('walks back up it rather than piling onto it, so that back from the first short leaves', async () => {
+      useSequence()
+      const history = createWebHashHistory()
+      const { router } = await openWatchPage(anyVideo, '/elsewhere', { history })
+      await router.push(`/watch/${SHORT_ID}`)
+      await flushPromises()
+
+      await pressAndSettle('ArrowDown')
+      await pressAndSettle('ArrowDown')
+      await pressAndSettle('ArrowUp')
+      await pressAndSettle('ArrowUp')
+
+      expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+      expect(history.state.forward).toBe(`/watch/${SEQUENCE[0]}`)
+
+      router.back()
+      await historySettled()
+
+      expect(pathOf(router)).toBe('/elsewhere')
+    })
+
+    it('walks forward along it again moving down after moving up', async () => {
+      useSequence()
+      const history = createWebHashHistory()
+      const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`, { history })
+
+      await pressAndSettle('ArrowDown')
+      await pressAndSettle('ArrowDown')
+      await pressAndSettle('ArrowUp')
+      await pressAndSettle('ArrowDown')
+
+      expect(pathOf(router)).toBe(`/watch/${SEQUENCE[1]}`)
+      expect(history.state.forward).toBeNull()
+
+      // Two entries behind is where it began, not the shorts again
+      router.go(-2)
+      await historySettled()
+
+      expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+    })
+  })
+
+  it('keeps the window covered while the next short loads, after one in full window', async () => {
+    useSequence()
+    let arrive
+    const { wrapper, router } = await openWatchPage(ref => (ref === SHORT_ID ? short(ref) : new Promise((resolve) => { arrive = () => resolve(short(ref)) })), `/watch/${SHORT_ID}`)
+    player.fullWindow = true
+
+    await press('ArrowDown')
+
+    expect(pathOf(router)).toBe(`/watch/${SEQUENCE[0]}`)
+    expect(findPlayer(wrapper).exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'FtLoader' }).classes()).toContain('fullWindowLoading')
+
+    arrive()
+    await flushPromises()
+
+    expect(findPlayer(wrapper).props('startInFullwindow')).toBe(true)
+    expect(wrapper.findComponent({ name: 'FtLoader' }).exists()).toBe(false)
+  })
+
+  it('loads the next video in the page as before when the one left was not in full window', async () => {
+    useSequence()
+    const { wrapper } = await openWatchPage(ref => (ref === SHORT_ID ? short(ref) : new Promise(() => {})), `/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(wrapper.findComponent({ name: 'FtLoader' }).classes()).not.toContain('fullWindowLoading')
+  })
+
+  it('moves past a short of the sequence that fails to load', async () => {
+    useSequence()
+    const { router } = await openWatchPage(ref => (ref === SEQUENCE[0] ? new PlatformError('unavailable', 'gone') : anyVideo(ref)), `/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+    expect(pathOf(router)).toBe(`/watch/${SEQUENCE[0]}`)
+
+    await press('ArrowDown')
+    expect(pathOf(router)).toBe(`/watch/${SEQUENCE[1]}`)
+  })
+
+  it('says so, and stays, when the sequence cannot be had', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    layer.listShortsSequence.mockRejectedValue(new PlatformError('unavailable', 'offline'))
+    const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(showToast).toHaveBeenCalledWith('The next short could not be loaded')
+    expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+    vi.mocked(console.error).mockRestore()
+  })
+
+  it('says so at the sequence\'s end', async () => {
+    useSequence([])
+    const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(showToast).toHaveBeenCalledWith('No more shorts to move on to')
+    expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+  })
+
+  it('says so when only shorts already watched came up, and looks further on the next press', async () => {
+    store.setGetter('getHistoryCacheById', Object.fromEntries(SEQUENCE.map(id => [id, { videoId: id }])))
+    // Three pages of shorts all watched, as many as one press asks for, then one not
+    let page = 0
+    layer.listShortsSequence.mockImplementation(async () => {
+      page++
+      return page <= 3
+        ? { items: SEQUENCE.map(videoId => ({ videoId })), cursor: `page-${page + 1}` }
+        : { items: [{ videoId: NEXT_ID }], cursor: null }
+    })
+    const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(showToast).toHaveBeenCalledWith('Only shorts already watched came up. Press again to look further')
+    expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(pathOf(router)).toBe(`/watch/${NEXT_ID}`)
+  })
+
+  it('moves past a short of a hidden channel unseen, and up passes it by', async () => {
+    useSequence()
+    store.setGetter('getChannelsHidden', JSON.stringify([{ name: 'UChidden', preferredName: '', icon: '' }]))
+    const { router } = await openWatchPage(ref => (ref === SEQUENCE[0] ? { ...short(ref), authorId: 'UChidden' } : anyVideo(ref)), `/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(layer.getVideo).toHaveBeenCalledWith(SEQUENCE[0])
+    expect(pathOf(router)).toBe(`/watch/${SEQUENCE[1]}`)
+
+    await press('ArrowUp')
+
+    expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+  })
+
+  it('works from the player\'s seek bar, which keeps focus after a click', async () => {
+    useSequence()
+    const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`)
+    const seekBar = document.createElement('input')
+    seekBar.type = 'range'
+    document.body.appendChild(seekBar)
+
+    await press('ArrowDown', seekBar)
+
+    expect(pathOf(router)).toBe(`/watch/${SEQUENCE[0]}`)
+    seekBar.remove()
+  })
+
+  it('does nothing while a prompt is open over the page', async () => {
+    useSequence()
+    store.setGetter('isAnyPromptOpen', true)
+    const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(layer.listShortsSequence).not.toHaveBeenCalled()
+    expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+  })
+
+  it('does nothing while a video opened some other way loads, not yet known to be a short', async () => {
+    useSequence()
+    const { router } = await openWatchPage(() => new Promise(() => {}), `/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(layer.listShortsSequence).not.toHaveBeenCalled()
+    expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+  })
+
+  it('does nothing upwards on a PeerTube video', async () => {
+    const { router } = await openWatchPage(playableVideo())
+
+    await press('ArrowUp')
+
+    expect(pathOf(router)).toBe(WATCH_PATH)
+  })
+
+  it('moves down from a video that is not a short to the next recommendation, and up back to it', async () => {
+    const { router } = await openWatchPage(anyVideo, YT_PATH)
+
+    await press('ArrowDown')
+
+    expect(layer.listShortsSequence).not.toHaveBeenCalled()
+    expect(pathOf(router)).toBe(`/watch/${NEXT_ID}`)
+    expect(showToast).toHaveBeenCalledWith('Playing Next Video')
+
+    await press('ArrowUp')
+
+    expect(pathOf(router)).toBe(YT_PATH)
+  })
+
+  it('does nothing while typing', async () => {
+    useSequence()
+    const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`)
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+
+    await press('ArrowDown', input)
+
+    expect(layer.listShortsSequence).not.toHaveBeenCalled()
+    expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+    input.remove()
+  })
+
+  it('does nothing without Ctrl, nor with another modifier beside it', async () => {
+    useSequence()
+    const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', ctrlKey: true, shiftKey: true, bubbles: true }))
+    await flushPromises()
+
+    expect(layer.listShortsSequence).not.toHaveBeenCalled()
+    expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+  })
+
+  it('moves once for a held key, not once per repeat', async () => {
+    useSequence()
+    const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`)
+
+    const repeat = new KeyboardEvent('keydown', { key: 'ArrowDown', ctrlKey: true, repeat: true, bubbles: true, cancelable: true })
+    document.dispatchEvent(repeat)
+    await flushPromises()
+
+    expect(repeat.defaultPrevented).toBe(true)
+    expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+  })
+
+  it('stops listening once the page is gone', async () => {
+    useSequence()
+    const { wrapper } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`)
+    wrapper.unmount()
+    openPages.splice(openPages.indexOf(wrapper), 1)
+
+    await press('ArrowDown')
+
+    expect(layer.listShortsSequence).not.toHaveBeenCalled()
   })
 })

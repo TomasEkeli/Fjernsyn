@@ -7,9 +7,11 @@
       noSidebar: !sidebarShown
     }"
   >
+    <!-- Over the whole window while the next video loads in full window or full screen, as its player will be -->
     <FtLoader
       v-if="isLoading"
-      :fullscreen="true"
+      :fullscreen="!loadsCoveringWindow"
+      :class="{ fullWindowLoading: loadsCoveringWindow }"
     />
     <!-- As Watch.vue: nothing of the video but that it is age restricted -->
     <FtAgeRestricted
@@ -285,7 +287,9 @@
 // only). Upstream's Watch view (views/Watch) is the model for
 // everything a viewer sees and for when history and progress are written; it
 // is not edited. A `sabr` source's regulator is hosted by `useSabrHosting`,
-// beside this view (ADR-0006, ADR-0016).
+// beside this view (ADR-0006, ADR-0016). Moving down and up (Ctrl+Down and
+// Ctrl+Up) through shorts, as youtube.com's shorts player does, is this
+// view's own and not upstream's: the trail it moves along is `swipeTrail`.
 
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import shaka from 'shaka-player'
@@ -317,6 +321,7 @@ import { isHiddenAsAi } from '../../helpers/aiShown'
 import { PLATFORM_YOUTUBE, isYouTubeVideoRef, peerTubeVideoRef, platformOf } from '../../platform/refs'
 import { usePlatformLayer } from '../../platform/vue'
 import { useSabrHosting } from './useSabrHosting'
+import { createSwipeTrail } from './swipeTrail'
 import { subscriptionEntryIsUpcoming, subscriptionEntryScheduledAt } from '../../../subscriptionFeedMerge'
 
 /** @typedef {'dash' | 'legacy' | 'audio'} Format */
@@ -392,6 +397,14 @@ const useTheatreMode = ref(false)
 const startInFullscreen = ref(false)
 const startInFullwindow = ref(false)
 const startInPip = ref(false)
+
+/**
+ * Whether the next video's player will cover the window, in full window or
+ * full screen, as the one before did: its loading covers the window too, so
+ * that the page does not show between the two players. Full screen itself
+ * goes with the player that held it, and comes back with the next.
+ */
+const loadsCoveringWindow = computed(() => startInFullwindow.value || startInFullscreen.value)
 
 /** The `timestamp` query the video was opened with */
 let timestamp = null
@@ -609,19 +622,35 @@ const nextRecommendedVideo = computed(() => {
     return null
   }
 
+  const hiddenByUser = userHides()
+
+  return recommendedVideos.value.find((recommended) => {
+    return !(hiddenByUser(recommended) ||
+      // Nor one the AI pill hides: autoplay does not lead where the list does not show
+      isHiddenAsAi(recommended))
+  }) ?? null
+})
+
+/**
+ * What the user's own filters hide, as Watch.js's `nextRecommendedVideo`
+ * reads them: a video of a hidden channel, or whose title or channel name
+ * holds a forbidden text. Read from the settings once, for a list's worth of
+ * videos.
+ *
+ * @returns {(video: { title?: string, author?: string, authorId?: string }) => boolean}
+ */
+function userHides() {
   const channelsHidden = JSON.parse(store.getters.getChannelsHidden).map((channel) => {
     // Legacy support, as Watch.js has it
     return typeof channel === 'string' ? { name: channel } : channel
   })
   const forbiddenTitles = JSON.parse(store.getters.getForbiddenTitles.toLowerCase())
 
-  return recommendedVideos.value.find((recommended) => {
-    return !(channelsHidden.some(channel => channel.name === recommended.authorId || channel.name === recommended.author) ||
-      forbiddenTitles.some(text => recommended.title?.toLowerCase().includes(text) || recommended.author?.toLowerCase().includes(text)) ||
-      // Nor one the AI pill hides: autoplay does not lead where the list does not show
-      isHiddenAsAi(recommended))
-  }) ?? null
-})
+  return (video) => {
+    return channelsHidden.some(channel => channel.name === video.authorId || channel.name === video.author) ||
+      forbiddenTitles.some(text => video.title?.toLowerCase().includes(text) || video.author?.toLowerCase().includes(text))
+  }
+}
 
 /**
  * Whether the end of the video plays the next one, and the player's toggle
@@ -1014,6 +1043,8 @@ async function load() {
   timestamp = readTimestamp()
 
   const ref = routeVideoRef()
+  /** Set when the video is moved past unseen, the loader kept until the next load */
+  let passingOver = false
 
   try {
     if (ref === null) {
@@ -1024,6 +1055,15 @@ async function load() {
     const details = await layer.getVideo(ref)
 
     if (thisLoad !== loadsStarted) {
+      return
+    }
+
+    // A short the shorts sequence led to, which the user's filters hide: the
+    // feed names shorts by id alone, so only their details can say, and they
+    // are moved past before they are shown, as the recommendations are
+    if (swipeTrail.isFromSequence(details.videoId) && swipeTrail.previous(details.videoId) !== null && userHides()(details)) {
+      passingOver = true
+      passOverHiddenShort(details.videoId)
       return
     }
 
@@ -1067,7 +1107,7 @@ async function load() {
 
     loadError.value = error ?? {}
   } finally {
-    if (thisLoad === loadsStarted) {
+    if (thisLoad === loadsStarted && !passingOver) {
       isLoading.value = false
     }
   }
@@ -1530,6 +1570,13 @@ function nextToPlay() {
 
   return {
     play: () => {
+      // On the trail, so that moving up comes back from it
+      const fromId = routeYouTubeId()
+
+      if (fromId !== null && isYouTubeVideoRef(next.videoId)) {
+        swipeTrail.step(fromId, next.videoId)
+      }
+
       router.push({ path: `/watch/${next.videoId}` })
       showToast(t('Playing Next Video'))
     },
@@ -1677,6 +1724,231 @@ function handleSkipToNext() {
 /** As Watch.js's `handleSkipToPrev` from the player: the playlist's previous video */
 function handleSkipToPrev() {
   playlistPanel.value?.playPreviousVideo()
+}
+
+// Moving down and up (Ctrl+Down, Ctrl+Up), as youtube.com's shorts player
+// moves: down from a short is the next short of YouTube's shorts sequence,
+// down from any other video is the skip to next (the next recommendation),
+// and up goes back the way down came (./swipeTrail.js). A playlist keeps its
+// own order: in one they are the skip to next and to previous. YouTube only;
+// on the PeerTube route down is the skip to next, and up does nothing.
+
+const swipeTrail = createSwipeTrail({
+  listShorts: (id, cursor) => layer.listShortsSequence(id, { cursor }),
+  // As the recommendations put them last and the wall hides them: a short
+  // already watched, or one the AI pill hides, is passed over. The feed
+  // names a short by id alone, so the channels hidden and titles forbidden
+  // can only be read from its details: `load` moves past those
+  skip: id => Object.hasOwn(store.getters.getHistoryCacheById, id) || isHiddenAsAi({ videoId: id }),
+})
+
+/** The YouTube id the route names; `null` on the PeerTube route */
+function routeYouTubeId() {
+  const ref = routeVideoRef()
+  return typeof ref === 'string' ? ref : null
+}
+
+/**
+ * Whether the video `id` is a short: its details read a short's shape, or it
+ * came from the shorts sequence, which is said before its details are in, and
+ * when they fail to load, so that it can be moved past
+ *
+ * @param {string} id
+ */
+function isShortShown(id) {
+  return (video.value?.videoId === id && video.value.isShort === true) || swipeTrail.isFromSequence(id)
+}
+
+/**
+ * The sequence's next short after `fromId`, or `null`, with a toast saying
+ * why there is none: the sequence could not be had, has ended, or came up
+ * with only shorts passed over (which another press looks further than).
+ * `null`, silently, once the route has gone elsewhere meanwhile.
+ *
+ * @param {string} fromId
+ * @param {string} [onId] the video the route is to be on still, `fromId`
+ *   unless moving past another
+ * @returns {Promise<string | null>}
+ */
+async function nextShortAfter(fromId, onId = fromId) {
+  let nextId
+
+  try {
+    nextId = await swipeTrail.nextShort(fromId)
+  } catch (error) {
+    console.error(error)
+
+    if (routeYouTubeId() === onId) {
+      showToast(t('Swipe.The next short could not be loaded'))
+    }
+
+    return null
+  }
+
+  if (routeYouTubeId() !== onId) {
+    return null
+  }
+
+  if (nextId === null) {
+    showToast(swipeTrail.hasEnded() ? t('Swipe.No more shorts') : t('Swipe.Only watched shorts came up'))
+  }
+
+  return nextId
+}
+
+/**
+ * Ctrl+Down: in a playlist, or on PeerTube, the skip to next; back down the
+ * trail where up moved from it; from a short, the sequence's next short; from
+ * any other video, the skip to next (the next recommendation). While a video
+ * not from the sequence loads, nothing, since whether it is a short is not
+ * known until it has.
+ */
+async function moveDown() {
+  const fromId = routeYouTubeId()
+
+  if (playlist.value !== null || fromId === null) {
+    handleSkipToNext()
+    return
+  }
+
+  const again = swipeTrail.following(fromId)
+
+  if (again !== null) {
+    openAlongTrail(again)
+    return
+  }
+
+  if (isLoading.value && !swipeTrail.isFromSequence(fromId)) {
+    return
+  }
+
+  if (!isShortShown(fromId)) {
+    handleSkipToNext()
+    return
+  }
+
+  const nextId = await nextShortAfter(fromId)
+
+  if (nextId !== null) {
+    router.push({ path: `/watch/${nextId}` })
+  }
+}
+
+/**
+ * Moves past a short the sequence led to that the user's filters hide, in
+ * its place in the history: to the sequence's next short after the video
+ * before it, or back to that video when there is none. It leaves the trail,
+ * so that up never comes back to it.
+ *
+ * @param {string} id
+ */
+async function passOverHiddenShort(id) {
+  const back = /** @type {string} */ (swipeTrail.previous(id))
+  swipeTrail.forget(id)
+
+  const nextId = await nextShortAfter(back, id)
+
+  if (routeYouTubeId() === id) {
+    router.replace({ path: `/watch/${nextId ?? back}` })
+  }
+}
+
+/**
+ * Opens the video `id` along the trail as the browser would go there: back,
+ * or forward, when that is the history's entry just behind, or just ahead,
+ * so that moving up and down again walks the history rather than piling onto
+ * it, and the browser's back after moving up leaves where the trail began.
+ * Pushed otherwise, which drops whatever was ahead, as the trail does.
+ * Compared by path: the entry keeps whatever query it was opened with.
+ *
+ * @param {string} id
+ */
+function openAlongTrail(id) {
+  const path = `/watch/${id}`
+  const { back, forward } = router.options.history.state ?? {}
+  const pathOf = entry => (typeof entry === 'string' ? entry.split('?')[0] : null)
+
+  if (pathOf(back) === path) {
+    router.back()
+  } else if (pathOf(forward) === path) {
+    router.forward()
+  } else {
+    router.push({ path })
+  }
+}
+
+/** Ctrl+Up: in a playlist, the skip to previous; else back up the trail, or nothing at its start */
+function moveUp() {
+  const fromId = routeYouTubeId()
+
+  if (playlist.value !== null) {
+    handleSkipToPrev()
+    return
+  }
+
+  const back = fromId === null ? null : swipeTrail.previous(fromId)
+
+  if (back !== null) {
+    openAlongTrail(back)
+  }
+}
+
+/** The inputs that are not typed into, which keep focus after a click: the player's seek and volume bars, switches */
+const UNTYPED_INPUTS = new Set(['range', 'checkbox', 'radio', 'button', 'submit', 'reset', 'image', 'color', 'file'])
+
+/**
+ * Whether a key pressed there is typing: a text field, or anything editable.
+ * Not an input that takes no text, as the player's seek and volume bars, so
+ * that a click on either does not stop the keys working, as shaka's own
+ * controls tell them apart.
+ *
+ * @param {EventTarget | null} target
+ */
+function isTyping(target) {
+  if (!(target instanceof HTMLElement)) {
+    return false
+  }
+
+  if (target instanceof HTMLInputElement) {
+    return !UNTYPED_INPUTS.has(target.type)
+  }
+
+  return target.isContentEditable || ['TEXTAREA', 'SELECT'].includes(target.tagName) ||
+    document.activeElement?.classList.contains('ft-input') === true
+}
+
+/**
+ * Ctrl+Down and Ctrl+Up, heard on the document rather than by the player, so
+ * that a short that will not play, and has no player, can be moved past. The
+ * player lets Ctrl with any arrow but left and right by. A held key moves
+ * once, not once per repeat.
+ *
+ * @param {KeyboardEvent} event
+ */
+function handleSwipeKeys(event) {
+  if (!event.ctrlKey || event.altKey || event.shiftKey || event.metaKey) {
+    return
+  }
+
+  if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
+    return
+  }
+
+  if (isTyping(event.target) || store.getters.isAnyPromptOpen || !rendersThisView(route)) {
+    return
+  }
+
+  event.preventDefault()
+
+  if (event.repeat) {
+    return
+  }
+
+  if (event.key === 'ArrowDown') {
+    moveDown()
+  } else {
+    moveUp()
+  }
 }
 
 /**
@@ -1855,12 +2127,14 @@ onMounted(() => {
   window.addEventListener('beforeunload', handleWatchProgressAutoSave)
   document.addEventListener('keydown', resetAutoplayInterruptionTimeout)
   document.addEventListener('click', resetAutoplayInterruptionTimeout)
+  document.addEventListener('keydown', handleSwipeKeys)
   resetAutoplayInterruptionTimeout()
   load()
 })
 
 onBeforeUnmount(() => {
   removeRouteGuard()
+  document.removeEventListener('keydown', handleSwipeKeys)
   window.removeEventListener('beforeunload', handleWatchProgressAutoSave)
   abortAutoplayCountdown(true)
   stopAutoplayInterruptionTimer()
