@@ -39,6 +39,7 @@
             :storyboard-src="storyboardSrc"
             :video-id="video.videoId"
             :channel-id="video.authorId"
+            :channel-name="video.author"
             :title="video.title"
             :thumbnail="video.thumbnail"
             :platform="platformOf(video)"
@@ -198,6 +199,14 @@
               v-else
               :video="video"
             />
+            <!-- SponsorBlock knows only YouTube's videos. The channel is the one the
+                 player is handed, which reads the list on every timeupdate, so a
+                 switch takes effect on the video playing without a reload -->
+            <FtSponsorBlockExcludeChannelButton
+              v-if="isYouTube"
+              :channel-id="video.authorId"
+              :channel-name="video.author"
+            />
           </template>
         </LayerVideoInfo>
         <LayerVideoDescription
@@ -302,6 +311,7 @@ import FtButton from '../../components/FtButton/FtButton.vue'
 import FtIconButton from '../../components/FtIconButton/FtIconButton.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
 import FtShakaVideoPlayer from '../../components/ft-shaka-video-player/ft-shaka-video-player.vue'
+import FtSponsorBlockExcludeChannelButton from '../../components/FtSponsorBlockExcludeChannelButton/FtSponsorBlockExcludeChannelButton.vue'
 import FtYtDlpDownloadButton from '../../components/FtYtDlpDownloadButton/FtYtDlpDownloadButton.vue'
 import LayerComments from '../../components/LayerComments/LayerComments.vue'
 import LayerDownloadButton from '../../components/LayerDownloadButton/LayerDownloadButton.vue'

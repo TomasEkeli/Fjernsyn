@@ -1509,6 +1509,13 @@ SponsorBlock:
     video's menu.
   Never Skip On This Channel: Never skip SponsorBlock segments on this channel
   Resume Skipping On This Channel: Skip SponsorBlock segments on this channel again
+  # The player's overflow menu, beside ON or OFF
+  Skip On This Channel: Skip SponsorBlock segments on this channel
+  # The switch's buttons, under the video and in the player: how things are
+  # now, as autoplay's button says, since an action read as a state and the
+  # other way round
+  Skipped On This Channel: SponsorBlock segments on this channel are skipped
+  Not Skipped On This Channel: SponsorBlock segments on this channel are played, not skipped
   Segments Will Be Marked Only: 'Segments on {channel} are now marked, not skipped'
   Segments Will Be Skipped Again: 'Segments on {channel} are skipped again'
   Excluded Channels Placeholder: Channel name, ID or URL

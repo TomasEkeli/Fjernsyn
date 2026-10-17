@@ -4,6 +4,8 @@ import shaka from 'shaka-player'
 import { h } from 'vue'
 import { RouterView, createWebHashHistory } from 'vue-router'
 
+import { PlayerIcons } from '../../../constants'
+import { shiftMaterialSymbolPath } from '../../helpers/materialSymbolIcon'
 import { SabrGiveUpError } from '../../helpers/player/SabrRegulator'
 import { copyToClipboard, formatScheduledTime, openExternalLink, showToast } from '../../helpers/utils'
 import { describe as describeEntity } from '../../platform/describe'
@@ -42,6 +44,7 @@ vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', asyn
         storyboardSrc: { type: String, default: '' },
         videoId: { type: String, default: '' },
         channelId: { type: String, default: '' },
+        channelName: { type: String, default: '' },
         title: { type: String, default: '' },
         thumbnail: { type: String, default: '' },
         theatrePossible: { type: Boolean, default: false },
@@ -157,6 +160,9 @@ const SETTINGS = vi.hoisted(() => ({
   getIsInLater: () => false,
   getIsArmed: () => false,
   getLaterFiredVideo: null,
+  // SponsorBlock's exclude-channel button's
+  getUseSponsorBlock: false,
+  getSponsorBlockExcludedChannels: '[]',
   // The app's, while a prompt is open over the page
   isAnyPromptOpen: false,
 }))
@@ -1687,6 +1693,81 @@ describe('a YouTube video', () => {
       const { wrapper } = await openWatchPage(youtubeLive(), YT_PATH)
 
       expect(wrapper.find('.ytDlpDownloadButton').exists()).toBe(false)
+    })
+  })
+
+  describe('its SponsorBlock exclude-channel button', () => {
+    const SKIPPED = 'SponsorBlock segments on this channel are skipped'
+    const NOT_SKIPPED = 'SponsorBlock segments on this channel are played, not skipped'
+
+    beforeEach(() => {
+      store.setGetter('getUseSponsorBlock', true)
+    })
+
+    it('excludes the channel the player is told the video is from, by its name', async () => {
+      const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+      await findButton(wrapper, SKIPPED).trigger('click')
+      await flushPromises()
+
+      expect(findPlayer(wrapper).props('channelId')).toBe(YT_CHANNEL)
+      expect(dispatched('updateSponsorBlockExcludedChannels').map(value => JSON.parse(value)))
+        .toEqual([[{ name: YT_CHANNEL, preferredName: 'Rick Astley' }]])
+    })
+
+    it('takes effect on the video playing, without reloading it: the player reads the list as it plays', async () => {
+      const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+      const playerBefore = findPlayer(wrapper).vm.$.uid
+
+      await findButton(wrapper, SKIPPED).trigger('click')
+      store.setGetter('getSponsorBlockExcludedChannels', JSON.stringify([{ name: YT_CHANNEL, preferredName: 'Rick Astley' }]))
+      await flushPromises()
+
+      expect(findButton(wrapper, NOT_SKIPPED).exists()).toBe(true)
+      expect(findPlayer(wrapper).vm.$.uid).toBe(playerBefore)
+      expect(player.events).not.toContain('unmounted')
+      expect(layer.getVideo).toHaveBeenCalledTimes(1)
+    })
+
+    it('draws the player\'s symbols: a slashed dollar while skipped, a dollar while played', async () => {
+      const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+      const iconPath = (title) => findButton(wrapper, title).find('svg path').attributes('d')
+
+      expect(iconPath(SKIPPED)).toBe(shiftMaterialSymbolPath(PlayerIcons.MONEY_OFF_DEFAULT))
+
+      store.setGetter('getSponsorBlockExcludedChannels', JSON.stringify([{ name: YT_CHANNEL, preferredName: 'Rick Astley' }]))
+      await flushPromises()
+
+      expect(iconPath(NOT_SKIPPED)).toBe(shiftMaterialSymbolPath(PlayerIcons.PAID_FILLED))
+    })
+
+    it('has the player told whose channel it is, for the same switch in its controls', async () => {
+      const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+      expect(findPlayer(wrapper).props()).toMatchObject({ channelId: YT_CHANNEL, channelName: 'Rick Astley', platform: 'youtube' })
+    })
+
+    it('resumes skipping on a channel already excluded', async () => {
+      store.setGetter('getSponsorBlockExcludedChannels', JSON.stringify([{ name: YT_CHANNEL, preferredName: 'Rick Astley' }]))
+      const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+      await findButton(wrapper, NOT_SKIPPED).trigger('click')
+      await flushPromises()
+
+      expect(dispatched('updateSponsorBlockExcludedChannels').map(value => JSON.parse(value))).toEqual([[]])
+    })
+
+    it('is not there while SponsorBlock is off', async () => {
+      store.setGetter('getUseSponsorBlock', false)
+      const { wrapper } = await openWatchPage(youtubeVideo(), YT_PATH)
+
+      expect(findButton(wrapper, SKIPPED).exists()).toBe(false)
+    })
+
+    it('is not there for a PeerTube video, which SponsorBlock knows nothing of', async () => {
+      const { wrapper } = await openWatchPage(playableVideo())
+
+      expect(findButton(wrapper, SKIPPED).exists()).toBe(false)
     })
   })
 

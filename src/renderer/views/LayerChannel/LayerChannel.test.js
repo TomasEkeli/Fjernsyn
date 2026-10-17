@@ -1452,7 +1452,7 @@ describe('a YouTube channel', () => {
       store.setGetter('getUseSponsorBlock', true)
       const { wrapper } = await openChannelPage(YT_PATH)
 
-      const button = wrapper.find('button[title="Never skip SponsorBlock segments on this channel"]')
+      const button = wrapper.find('button[title="SponsorBlock segments on this channel are skipped"]')
       await button.trigger('click')
       await flushPromises()
 
@@ -1463,7 +1463,7 @@ describe('a YouTube channel', () => {
     it('has no SponsorBlock button while SponsorBlock is off', async () => {
       const { wrapper } = await openChannelPage(YT_PATH)
 
-      expect(wrapper.find('button[title="Never skip SponsorBlock segments on this channel"]').exists()).toBe(false)
+      expect(wrapper.find('button[title="SponsorBlock segments on this channel are skipped"]').exists()).toBe(false)
     })
   })
 
