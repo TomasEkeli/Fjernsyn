@@ -269,6 +269,7 @@
  * | common           | L (`YT.VideoInfo`)                                     | I (`/api/v1/videos/{id}`)            |
  * | ---------------- | ------------------------------------------------------ | ------------------------------------ |
  * | type             | `'video'`: neither backend marks a short in a video's details | `'video'`                   |
+ * | isShort          | `true` for a short's shape: `page[0].microformat.embed`, else the first `streaming_data` format with both sides, portrait or square, and `basic_info.duration` at most 180 s, not live nor upcoming; absent otherwise | — (absent)  |
  * | title            | `getLocalVideoTitle(info)` (localised, then basic)     | `title`                              |
  * | author, authorId | `basic_info.author`, `basic_info.channel_id` (then `secondary_info.owner.author`) | `author`, `authorId`   |
  * | thumbnail        | by `thumbnailPreference`: `maxres1..3.jpg` on i.ytimg.com, else `basic_info.thumbnail[0].url`, else `maxresdefault.jpg` | by preference on the instance `/vi/`, else `videoThumbnails[0].url`, made absolute on the instance where relative |

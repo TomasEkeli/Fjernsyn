@@ -71,8 +71,9 @@ const LOCAL_CASES = [
     // playlists, and not an item the parser cannot read
     related: [next('pCJ9JGG0GQI'), next('RDdQw4w9WgX'), next('TMpUsykbezI'), next('xr1fSpQadVk')],
   }],
-  ['a short, which the details cannot tell from a video', localShort, {
+  ['a short, which the details do not name but whose shape tells', localShort, {
     videoId: '4hDEK_1wPBk',
+    isShort: true,
     title: 'How To Learn Blender',
     author: 'PixelFire',
     authorId: PIXELFIRE,
@@ -352,6 +353,53 @@ describe('a YouTube video\'s details from Local', () => {
     expect(video.title).toBe('The localised title')
     expect(video.published).toBe(Date.parse('Oct 25, 2009'))
     expect(video.viewCount).toBe(1822420518)
+  })
+})
+
+describe('whether a YouTube video is a short, by its shape on Local', () => {
+  /** The short's fixture, changed */
+  async function isShortWith(change) {
+    const { layer } = setUp({ answers: { getLocalVideoInfo: localInstance(localWith(localShort, change)) } })
+    return (await layer.getVideo('4hDEK_1wPBk')).isShort
+  }
+
+  it('reads the stream formats where the microformat has no embed', async () => {
+    expect(await isShortWith((info) => { delete info.page[0].microformat.embed })).toBe(true)
+  })
+
+  it('is a short framed square', async () => {
+    expect(await isShortWith((info) => { info.page[0].microformat.embed.width = 720 })).toBe(true)
+  })
+
+  it('is a short at three minutes, and not a second longer', async () => {
+    expect(await isShortWith((info) => { info.basic_info.duration = 180 })).toBe(true)
+    expect(await isShortWith((info) => { info.basic_info.duration = 181 })).toBeUndefined()
+  })
+
+  it('is not a widescreen video, however short', async () => {
+    expect(await isShortWith((info) => { info.page[0].microformat.embed.width = 1280 })).toBeUndefined()
+  })
+
+  it('is not a portrait live, nor an upcoming one', async () => {
+    expect(await isShortWith((info) => {
+      info.basic_info.is_live = true
+      info.streaming_data.hls_manifest_url = 'https://manifest.googlevideo.com/api/manifest/hls_variant/live.m3u8'
+    })).toBeUndefined()
+    expect(await isShortWith((info) => { info.basic_info.is_upcoming = true })).toBeUndefined()
+  })
+
+  it('is not a video whose length or frame does not read', async () => {
+    expect(await isShortWith((info) => { delete info.basic_info.duration })).toBeUndefined()
+    expect(await isShortWith((info) => {
+      delete info.page[0].microformat.embed
+      info.streaming_data.formats = [{ itag: 18 }]
+    })).toBeUndefined()
+  })
+
+  it('is never said by Invidious, which has no embed size in the details', async () => {
+    const { layer } = setUp({ answers: { invidiousGetVideoInformation: invidiousShort }, config: { backendPreference: 'invidious' } })
+
+    expect((await layer.getVideo('4hDEK_1wPBk')).isShort).toBeUndefined()
   })
 })
 

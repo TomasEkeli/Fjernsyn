@@ -2,7 +2,7 @@
   "recordedAt": "2026-10-02",
   "source": "recorded",
   "call": "getLocalVideoInfo('4hDEK_1wPBk')",
-  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised. Nothing in the details says it is a short",
+  "notes": "playability_status (Node gets UNPLAYABLE without a PO token) and streaming_data (deciphered URLs) synthesised. Nothing in the details names it a short; its shape does: the microformat's embed (recorded 2026-10-17) is portrait",
   "answer": {
     "info": {
       "playability_status": {
@@ -79,7 +79,12 @@
       "page": [
         {
           "microformat": {
-            "publish_date": "2024-06-27T11:58:26-07:00"
+            "publish_date": "2024-06-27T11:58:26-07:00",
+            "embed": {
+              "iframe_url": "https://www.youtube.com/embed/4hDEK_1wPBk",
+              "width": 405,
+              "height": 720
+            }
           }
         }
       ],

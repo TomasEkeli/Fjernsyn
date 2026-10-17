@@ -103,7 +103,12 @@
       "page": [
         {
           "microformat": {
-            "publish_date": "2009-10-24T23:57:33-07:00"
+            "publish_date": "2009-10-24T23:57:33-07:00",
+            "embed": {
+              "iframe_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "width": 1280,
+              "height": 720
+            }
           }
         }
       ],

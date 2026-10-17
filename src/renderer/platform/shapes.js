@@ -308,6 +308,7 @@
  *   downloadOptions: DownloadOption[],
  *   isFamilyFriendly?: boolean,
  *   isUnlisted?: boolean,
+ *   isShort?: true,
  *   related?: VideoSummary[],
  *   chaptersKind?: 'chapters' | 'keyMoments',
  *   liveChat?: unknown,
@@ -330,6 +331,12 @@
  *   `showFamilyFriendlyOnly`; absent for PeerTube, whose flag is the
  *   summary's `nsfw`
  * - `isUnlisted`: YouTube only, shown on the watch page; absent for PeerTube
+ * - `isShort`: YouTube Local only, and a reading of the video's shape rather
+ *   than YouTube's word, which the details do not carry: present (`true`) for
+ *   a video framed portrait or square and at most three minutes long, not
+ *   live; absent otherwise, and always from Invidious and PeerTube. The
+ *   summary's `type` stays `'video'`: lists say `'shortVideo'` on YouTube's
+ *   word, and this is not that
  * - `chaptersKind`: YouTube only: `'keyMoments'` when the source's chapters
  *   are YouTube's automatic key moments (Local's engagement panel) rather
  *   than the uploader's, which the chapter list names differently
