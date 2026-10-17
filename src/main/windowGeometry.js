@@ -184,6 +184,7 @@ export function createWindowGeometry(dependencies = {}) {
    * @typedef {{ width: number, height: number }} Size
    * @typedef {object} Fit
    * @property {number} ratio the video's, width over height
+   * @property {number} area the content area each fit keeps: the window's at the first fit, or the one a resize by hand while fitted gave it. A fit squeezed into the work area does not change it, so the next video can grow back
    * @property {Size} restore the size to give back: the normal size, or for an untracked window the size at the first fit
    * @property {Size} settled the content size when the window was last still at the ratio
    * @property {Size | null} snappedFrom the size the last snap started from, until the window reaches the ratio
@@ -293,6 +294,18 @@ export function createWindowGeometry(dependencies = {}) {
   }
 
   /**
+   * Sizes within a percent of each other on both sides, or the pixel
+   * tolerance where that is more: what display scaling makes of a size, as
+   * opposed to a resize by hand.
+   * @param {Size} a
+   * @param {Size} b
+   */
+  function nearSize(a, b) {
+    const near = (x, y) => Math.abs(x - y) <= Math.max(SIZE_TOLERANCE_PX, y * RATIO_TOLERANCE)
+    return near(a.width, b.width) && near(a.height, b.height)
+  }
+
+  /**
    * @param {Size} size
    * @param {number} ratio
    */
@@ -310,13 +323,18 @@ export function createWindowGeometry(dependencies = {}) {
   }
 
   /**
-   * Reshapes the window's content to the video's ratio, keeping its area and
-   * its centre, and locks the ratio so resizing by hand keeps it (or, where
-   * the window manager ignores the lock, snaps to it; see snapToRatio). The first
-   * fit remembers the size to return to; later fits, for the next video or
-   * for a video that changes shape, do not replace it. Does nothing for a
-   * window that is gone, maximised, fullscreen or minimised, or without a
-   * usable video size.
+   * Reshapes the window's content to the video's ratio, keeping the fit's
+   * area and the content's centre, and locks the ratio so resizing by hand
+   * keeps it (or, where the window manager ignores the lock, snaps to it; see
+   * snapToRatio). The first fit remembers the size to return to and the area
+   * to keep; later fits, for the next video or for a video that changes
+   * shape, do not replace them. Each fit starts from that area rather than
+   * from the window as it is, since a tall video squeezed into the work area
+   * has less, and the next video would otherwise inherit the loss and never
+   * grow back. A window already near the size it would get is left alone,
+   * and so is a fitted window when the video keeps the fitted shape.
+   * Does nothing for a window that is gone, maximised, fullscreen or
+   * minimised, or without a usable video size.
    * @param {Electron.BrowserWindow} win
    * @param {number} videoWidth
    * @param {number} videoHeight
@@ -328,11 +346,28 @@ export function createWindowGeometry(dependencies = {}) {
       return
     }
 
+    let fit = fits.get(win)
+
+    // A video of the shape already fitted asks nothing of the window. That is
+    // the next video of the same shape, and a quality switch: the player picks
+    // a quality for its size, so a resize by hand changes the video's size
+    // mid drag, and fitting then would undo the resize before the snap could
+    // take it as the area to keep
+    if (fit && hasRatio({ width: videoWidth, height: videoHeight }, fit.ratio)) {
+      return
+    }
+
     const current = contentSize(win)
 
-    let fit = fits.get(win)
     if (!fit) {
-      fit = { ratio, restore: normalSizes.get(win) ?? current, settled: current, snappedFrom: null, dispose: () => {} }
+      fit = {
+        ratio,
+        area: current.width * current.height,
+        restore: normalSizes.get(win) ?? current,
+        settled: current,
+        snappedFrom: null,
+        dispose: () => {},
+      }
       fits.set(win, fit)
       fit.dispose = watchFittedWindow(win)
     }
@@ -340,11 +375,11 @@ export function createWindowGeometry(dependencies = {}) {
     fit.ratio = ratio
     fit.snappedFrom = null
 
-    if (hasRatio(current, ratio)) {
+    const size = fitSize({ area: fit.area, ratio, ...contentLimits(win) })
+
+    if (hasRatio(current, ratio) && nearSize(current, size)) {
       fit.settled = current
     } else {
-      const size = fitSize({ area: current.width * current.height, ratio, ...contentLimits(win) })
-
       placeContent(win, size)
       fit.settled = size
     }
@@ -361,7 +396,7 @@ export function createWindowGeometry(dependencies = {}) {
    * left corner, as a lock would. A window manager that refuses the corrected
    * size is not asked again for the same size, so a tiling one is not fought.
    * Where the lock worked the window already has the ratio and this does
-   * nothing.
+   * nothing to it. Either way, a resize by hand gives the fit its area.
    * @param {Electron.BrowserWindow} win
    */
   function snapToRatio(win) {
@@ -374,6 +409,12 @@ export function createWindowGeometry(dependencies = {}) {
     const current = contentSize(win)
 
     if (hasRatio(current, fit.ratio)) {
+      // Far from the last size at the ratio, this is a resize by hand the
+      // lock kept at the ratio, and the next video keeps its area; near it,
+      // it is a fit or a snap as the display scaling rounded it
+      if (!nearSize(current, fit.settled)) {
+        fit.area = current.width * current.height
+      }
       fit.settled = current
       fit.snappedFrom = null
       return
@@ -393,6 +434,7 @@ export function createWindowGeometry(dependencies = {}) {
 
     fit.snappedFrom = current
     fit.settled = size
+    fit.area = size.width * size.height
     placeContent(win, size, 'topLeft')
   }
 
