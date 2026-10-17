@@ -2,7 +2,7 @@
   <FtIconButton
     v-if="visible"
     :title="title"
-    :icon="['fas', 'eye-slash']"
+    :icon="excluded ? ['fas', PAID_ICON] : ['fas', MONEY_OFF_ICON]"
     :theme="excluded ? 'base' : 'primary'"
     @click="toggle"
   />
@@ -15,12 +15,26 @@ import { useI18n } from 'vue-i18n'
 import FtIconButton from '../FtIconButton/FtIconButton.vue'
 
 import store from '../../store/index'
+import { library } from '../../fontawesome-minimal'
+import { PlayerIcons } from '../../../constants'
 
+import { materialSymbolIcon } from '../../helpers/materialSymbolIcon'
 import {
   isSponsorBlockExcludedChannel,
   toggleSponsorBlockExcludedChannel
 } from '../../helpers/sponsorblock'
 import { showToast } from '../../helpers/utils'
+
+// The player's own button for this switch draws Material Symbols, which Font
+// Awesome does not have; these are the same two, so both buttons look alike.
+// Adding a definition again replaces it with the same, so a remount is harmless
+const PAID_ICON = 'fjernsyn-paid'
+const MONEY_OFF_ICON = 'fjernsyn-money-off'
+
+library.add(
+  materialSymbolIcon(PAID_ICON, PlayerIcons.PAID_FILLED),
+  materialSymbolIcon(MONEY_OFF_ICON, PlayerIcons.MONEY_OFF_DEFAULT)
+)
 
 const props = defineProps({
   channelId: {
@@ -44,11 +58,12 @@ const visible = computed(() => useSponsorBlock.value && props.channelId !== '')
 
 const excluded = computed(() => isSponsorBlockExcludedChannel(props.channelId))
 
-// The same words as the entry in a video's menu, which does the same thing
+// How things are now, as the player's button and autoplay's say: an action
+// ("never skip") read as easily as a state ("never skipped") the other way
 const title = computed(() => {
   return excluded.value
-    ? t('SponsorBlock.Resume Skipping On This Channel')
-    : t('SponsorBlock.Never Skip On This Channel')
+    ? t('SponsorBlock.Not Skipped On This Channel')
+    : t('SponsorBlock.Skipped On This Channel')
 })
 
 async function toggle() {

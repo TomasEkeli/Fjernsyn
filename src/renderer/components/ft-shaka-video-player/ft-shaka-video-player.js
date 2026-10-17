@@ -16,6 +16,7 @@ import { AutoplayToggle } from './player-components/AutoplayToggle'
 import { CopyLinkButton } from './player-components/CopyLinkButton'
 import { LiveChatOverlayButton } from './player-components/LiveChatOverlayButton'
 import { SkipButton } from './player-components/SkipButton'
+import { SponsorBlockExcludeChannelButton } from './player-components/SponsorBlockExcludeChannelButton'
 import { VolumeBar } from './player-components/VolumeBar'
 import LiveChatOverlay from '../LiveChatOverlay/LiveChatOverlay.vue'
 import LaterLiveNotice from '../LaterLiveNotice/LaterLiveNotice.vue'
@@ -41,6 +42,7 @@ import { HEATMAP_VIEW_BOX, heatmapPath } from '../../helpers/player/heatmap'
 import { MANIFEST_TYPE_SABR } from '../../helpers/player/SabrManifestParser'
 import { sabrWallInjectionEnabled, shouldAbandonRefresh } from '../../helpers/player/sabrWallInjection'
 import { isWatchPath } from '../../helpers/watchRoute'
+import { isSponsorBlockExcludedChannel, toggleSponsorBlockExcludedChannel } from '../../helpers/sponsorblock'
 
 /** @typedef {import('../../helpers/sponsorblock').SponsorBlockCategory} SponsorBlockCategory */
 
@@ -180,6 +182,11 @@ export default defineComponent({
       default: ''
     },
     channelId: {
+      type: String,
+      default: ''
+    },
+    /** Stored with the channel when the player's SponsorBlock button excludes it */
+    channelName: {
       type: String,
       default: ''
     },
@@ -674,6 +681,20 @@ export default defineComponent({
       return useSponsorBlock.value && !sponsorBlockExcludedChannels.value.some(c => c.name === props.channelId)
     })
 
+    /**
+     * Whether the video's channel is on SponsorBlock's excluded list, for the
+     * button in the controls, which is told whenever the list changes: from
+     * that button, the one under the video, or the settings
+     * @type {import('vue').ComputedRef<boolean>}
+     */
+    const sponsorBlockChannelExcluded = computed(() => isSponsorBlockExcludedChannel(props.channelId))
+
+    watch(sponsorBlockChannelExcluded, (newValue) => {
+      events.dispatchEvent(new CustomEvent('sponsorBlockExcludedChannelChanged', {
+        detail: newValue
+      }))
+    })
+
     /** @type {import('vue').ComputedRef<boolean>} */
     const sponsorBlockShowSkippedToast = computed(() => {
       return store.getters.getSponsorBlockShowSkippedToast
@@ -1142,6 +1163,7 @@ export default defineComponent({
           'loop',
           'ft_screenshot',
           'ft_copy_link',
+          'ft_sponsor_block_exclude_channel',
           'picture_in_picture',
           'ft_full_window',
           'ft_pin_controls',
@@ -1159,6 +1181,7 @@ export default defineComponent({
           'ft_pin_controls',
           'ft_screenshot',
           'ft_copy_link',
+          'ft_sponsor_block_exclude_channel',
           'ft_autoplay_toggle',
           'ft_live_chat_overlay',
           'overflow_menu',
@@ -1188,6 +1211,12 @@ export default defineComponent({
 
       if (!videoLink.value) {
         removeFromArrayIfExists(elementList, 'ft_copy_link')
+      }
+
+      // As the button under the video: nothing to say while SponsorBlock is
+      // off or the video is another platform's, nor before the channel is known
+      if (!useSponsorBlock.value || !props.channelId) {
+        removeFromArrayIfExists(elementList, 'ft_sponsor_block_exclude_channel')
       }
 
       if (!props.liveChat) {
@@ -2790,6 +2819,35 @@ export default defineComponent({
       shakaOverflowMenu.registerElement('ft_copy_link', new CopyLinkButtonFactory())
     }
 
+    function registerSponsorBlockExcludeChannelButton() {
+      events.addEventListener('toggleSponsorBlockExcludedChannel', async () => {
+        const channelId = props.channelId
+        const nowExcluded = await toggleSponsorBlockExcludedChannel(channelId, props.channelName)
+        const channel = props.channelName || channelId
+
+        // The page's button says this in a toast, which full window and
+        // fullscreen cover; the player says it over the video
+        showValueChange(
+          nowExcluded
+            ? t('SponsorBlock.Segments Will Be Marked Only', { channel })
+            : t('SponsorBlock.Segments Will Be Skipped Again', { channel }),
+          nowExcluded ? 'eye' : 'eye-slash'
+        )
+      })
+
+      /**
+       * @implements {shaka.extern.IUIElement.Factory}
+       */
+      class SponsorBlockExcludeChannelButtonFactory {
+        create(rootElement, controls) {
+          return new SponsorBlockExcludeChannelButton(sponsorBlockChannelExcluded.value, events, rootElement, controls)
+        }
+      }
+
+      shakaControls.registerElement('ft_sponsor_block_exclude_channel', new SponsorBlockExcludeChannelButtonFactory())
+      shakaOverflowMenu.registerElement('ft_sponsor_block_exclude_channel', new SponsorBlockExcludeChannelButtonFactory())
+    }
+
     function registerLiveChatOverlayButton() {
       events.addEventListener('setLiveChatOverlay', (/** @type {CustomEvent} */ event) => {
         store.dispatch('updateLiveChatOverlay', event.detail)
@@ -3157,6 +3215,7 @@ export default defineComponent({
       'theatre-button',
       'screenshot-button',
       'copy-link-button',
+      'sponsor-block-exclude-channel-button',
       'live-chat-overlay-button',
     ]
     function blurTooltipButtons() {
@@ -3784,6 +3843,7 @@ export default defineComponent({
 
       registerScreenshotButton()
       registerCopyLinkButton()
+      registerSponsorBlockExcludeChannelButton()
       registerLiveChatOverlayButton()
       registerAudioTrackSelection()
       registerAutoplayToggle()
