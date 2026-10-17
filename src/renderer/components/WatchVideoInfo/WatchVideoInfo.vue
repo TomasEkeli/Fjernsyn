@@ -144,6 +144,12 @@
             :dropdown-options="formatTypeOptions"
             @click="changeFormat"
           />
+          <FtIconButton
+            :title="t('Video.Reload Page')"
+            :icon="['fas', 'rotate-right']"
+            theme="secondary"
+            @click="reloadPlayer"
+          />
           <FtShareButton
             v-if="!hideSharingActions"
             :id="id"
@@ -276,6 +282,7 @@ const emit = defineEmits([
   'change-format',
   'pause-player',
   'save-watched-progress',
+  'reload-player',
 ])
 
 const USING_ELECTRON = process.env.IS_ELECTRON
@@ -355,6 +362,10 @@ const formatTypeOptions = computed(() => [
  */
 function changeFormat(value) {
   emit('change-format', value)
+}
+
+function reloadPlayer() {
+  emit('reload-player')
 }
 
 const watchedProgressSavingInSemiAutoMode = computed(() => {

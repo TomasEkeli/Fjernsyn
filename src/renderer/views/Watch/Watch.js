@@ -22,6 +22,7 @@ import {
   extractNumberFromString,
   formatDurationAsTimestamp,
   formatNumber,
+  throttle,
   getLocalesWithFallback,
   showToast
 } from '../../helpers/utils'
@@ -2433,6 +2434,17 @@ export default defineComponent({
       console.warn(`[SABR recovery] reloading the page: ${cause}`)
       showToast(`Reloading player: ${cause}`)
 
+      await this.saveWatchProgressForReload()
+      await this.reloadView()
+    },
+
+    /** The info bar's reload button, for when the player has crashed */
+    onManualReloadRequested: throttle(async function () {
+      await this.saveWatchProgressForReload()
+      await this.reloadView()
+    }, 1000),
+
+    async saveWatchProgressForReload() {
       const timestamp = this.getTimestamp()
       if (timestamp > 0) {
         // Reload at the middle should restart at current timestamp
@@ -2449,7 +2461,6 @@ export default defineComponent({
           }
         }
       }
-      await this.reloadView()
     },
 
     ...mapActions([
