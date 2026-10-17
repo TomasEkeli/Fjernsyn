@@ -283,7 +283,10 @@ const KeyboardShortcuts = {
       HOME: 'home',
       END: 'end',
       SKIP_TO_NEXT: 'shift+n',
-      SKIP_TO_PREV: 'shift+p'
+      SKIP_TO_PREV: 'shift+p',
+      // Fjernsyn: heard by the layer's watch view (LayerWatch.vue), not the player
+      SWIPE_DOWN: 'ctrl+arrowdown',
+      SWIPE_UP: 'ctrl+arrowup'
     }
   },
 }

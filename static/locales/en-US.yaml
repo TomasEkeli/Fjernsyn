@@ -1868,6 +1868,9 @@ Playing Next Video: Playing Next Video
 Playing Previous Video: Playing Previous Video
 Playing Next Video Interval: Playing next video in no time. Click to cancel. | Playing next video in {nextVideoInterval} second. Click to cancel. | Playing next video in {nextVideoInterval} seconds. Click to cancel.
 Canceled next video autoplay: Canceled next video autoplay
+Swipe:
+  The next short could not be loaded: The next short could not be loaded
+  No more shorts: No more shorts to move on to
 Autoplay Interruption Timer: Autoplay canceled due to {autoplayInterruptionIntervalHours} hours of inactivity
 
 Default Invidious instance has been set to {instance}: Default Invidious instance has been set to {instance}
@@ -1971,3 +1974,5 @@ KeyboardShortcutPrompt:
   End: Seek to the end of the video
   Skip to Next Video: Skip to the next video in a playlist or next recommended video
   Skip to Previous Video: Skip to the previous video in a playlist
+  Swipe Down: Next short, as YouTube's shorts player moves on; for any other video, as Skip to Next Video
+  Swipe Up: Back to the video before the last Swipe Down or Skip to Next Video, or the previous video in a playlist

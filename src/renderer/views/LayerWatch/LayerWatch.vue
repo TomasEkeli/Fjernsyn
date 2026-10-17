@@ -285,7 +285,9 @@
 // only). Upstream's Watch view (views/Watch) is the model for
 // everything a viewer sees and for when history and progress are written; it
 // is not edited. A `sabr` source's regulator is hosted by `useSabrHosting`,
-// beside this view (ADR-0006, ADR-0016).
+// beside this view (ADR-0006, ADR-0016). Moving down and up (Ctrl+Down and
+// Ctrl+Up) through shorts, as youtube.com's shorts player does, is this
+// view's own and not upstream's: the trail it moves along is `swipeTrail`.
 
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import shaka from 'shaka-player'
@@ -317,6 +319,7 @@ import { isHiddenAsAi } from '../../helpers/aiShown'
 import { PLATFORM_YOUTUBE, isYouTubeVideoRef, peerTubeVideoRef, platformOf } from '../../platform/refs'
 import { usePlatformLayer } from '../../platform/vue'
 import { useSabrHosting } from './useSabrHosting'
+import { createSwipeTrail } from './swipeTrail'
 import { subscriptionEntryIsUpcoming, subscriptionEntryScheduledAt } from '../../../subscriptionFeedMerge'
 
 /** @typedef {'dash' | 'legacy' | 'audio'} Format */
@@ -1530,6 +1533,13 @@ function nextToPlay() {
 
   return {
     play: () => {
+      // On the trail, so that moving up comes back from it
+      const fromId = routeYouTubeId()
+
+      if (fromId !== null && isYouTubeVideoRef(next.videoId)) {
+        swipeTrail.step(fromId, next.videoId)
+      }
+
       router.push({ path: `/watch/${next.videoId}` })
       showToast(t('Playing Next Video'))
     },
@@ -1677,6 +1687,147 @@ function handleSkipToNext() {
 /** As Watch.js's `handleSkipToPrev` from the player: the playlist's previous video */
 function handleSkipToPrev() {
   playlistPanel.value?.playPreviousVideo()
+}
+
+// Moving down and up (Ctrl+Down, Ctrl+Up), as youtube.com's shorts player
+// moves: down from a short is the next short of YouTube's shorts sequence,
+// down from any other video is the skip to next (the next recommendation),
+// and up goes back the way down came (./swipeTrail.js). A playlist keeps its
+// own order: in one they are the skip to next and to previous. YouTube only;
+// on the PeerTube route down is the skip to next, and up does nothing.
+
+const swipeTrail = createSwipeTrail({
+  listShorts: (id, cursor) => layer.listShortsSequence(id, { cursor }),
+  // As the recommendations put them last and the wall hides them: a short
+  // already watched, or one the AI pill hides, is passed over
+  skip: id => Object.hasOwn(store.getters.getHistoryCacheById, id) || isHiddenAsAi({ videoId: id }),
+})
+
+/** The YouTube id the route names; `null` on the PeerTube route */
+function routeYouTubeId() {
+  const ref = routeVideoRef()
+  return typeof ref === 'string' ? ref : null
+}
+
+/**
+ * Whether the video `id` is a short: its details read a short's shape, or it
+ * came from the shorts sequence, which is said before its details are in, and
+ * when they fail to load, so that it can be moved past
+ *
+ * @param {string} id
+ */
+function isShortShown(id) {
+  return (video.value?.videoId === id && video.value.isShort === true) || swipeTrail.isFromSequence(id)
+}
+
+async function moveDown() {
+  const fromId = routeYouTubeId()
+
+  if (playlist.value !== null || fromId === null) {
+    handleSkipToNext()
+    return
+  }
+
+  const again = swipeTrail.following(fromId)
+
+  if (again !== null) {
+    router.push({ path: `/watch/${again}` })
+    return
+  }
+
+  if (!isShortShown(fromId)) {
+    handleSkipToNext()
+    return
+  }
+
+  let nextId
+
+  try {
+    nextId = await swipeTrail.nextShort(fromId)
+  } catch (error) {
+    console.error(error)
+
+    if (routeYouTubeId() === fromId) {
+      showToast(t('Swipe.The next short could not be loaded'))
+    }
+
+    return
+  }
+
+  // Gone elsewhere while the sequence was asked for
+  if (routeYouTubeId() !== fromId) {
+    return
+  }
+
+  if (nextId === null) {
+    showToast(t('Swipe.No more shorts'))
+    return
+  }
+
+  router.push({ path: `/watch/${nextId}` })
+}
+
+function moveUp() {
+  const fromId = routeYouTubeId()
+
+  if (playlist.value !== null) {
+    handleSkipToPrev()
+    return
+  }
+
+  const back = fromId === null ? null : swipeTrail.previous(fromId)
+
+  if (back !== null) {
+    router.push({ path: `/watch/${back}` })
+  }
+}
+
+/**
+ * Whether a key pressed there is typing: a text field, or anything editable
+ *
+ * @param {EventTarget | null} target
+ */
+function isTyping(target) {
+  if (!(target instanceof HTMLElement)) {
+    return false
+  }
+
+  return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) ||
+    document.activeElement?.classList.contains('ft-input') === true
+}
+
+/**
+ * Ctrl+Down and Ctrl+Up, heard on the document rather than by the player, so
+ * that a short that will not play, and has no player, can be moved past. The
+ * player lets Ctrl with any arrow but left and right by. A held key moves
+ * once, not once per repeat.
+ *
+ * @param {KeyboardEvent} event
+ */
+function handleSwipeKeys(event) {
+  if (!event.ctrlKey || event.altKey || event.shiftKey || event.metaKey) {
+    return
+  }
+
+  if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
+    return
+  }
+
+  if (isTyping(event.target) || store.getters.isAnyPromptOpen || !rendersThisView(route)) {
+    return
+  }
+
+  event.preventDefault()
+
+  if (event.repeat) {
+    return
+  }
+
+  if (event.key === 'ArrowDown') {
+    moveDown()
+  } else {
+    moveUp()
+  }
 }
 
 /**
@@ -1855,12 +2006,14 @@ onMounted(() => {
   window.addEventListener('beforeunload', handleWatchProgressAutoSave)
   document.addEventListener('keydown', resetAutoplayInterruptionTimeout)
   document.addEventListener('click', resetAutoplayInterruptionTimeout)
+  document.addEventListener('keydown', handleSwipeKeys)
   resetAutoplayInterruptionTimeout()
   load()
 })
 
 onBeforeUnmount(() => {
   removeRouteGuard()
+  document.removeEventListener('keydown', handleSwipeKeys)
   window.removeEventListener('beforeunload', handleWatchProgressAutoSave)
   abortAutoplayCountdown(true)
   stopAutoplayInterruptionTimer()
