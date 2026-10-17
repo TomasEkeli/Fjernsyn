@@ -91,6 +91,24 @@ describe('TestCard', () => {
     expect(link.text()).toBe('')
   })
 
+  it('links the date only when it has somewhere to point', () => {
+    const unlinked = mountWithApp(TestCard, {
+      props: { name: 'Fjernsyn', version: 'v0.0.1' },
+    })
+    expect(unlinked.find('a.dateLink').exists()).toBe(false)
+
+    const wrapper = mountWithApp(TestCard, {
+      props: { name: 'Fjernsyn', version: 'v0.0.1', dateUrl: 'https://example.com/releases/latest' },
+    })
+
+    const link = wrapper.find('a.dateLink')
+    expect(link.attributes('href')).toBe('https://example.com/releases/latest')
+    expect(link.attributes('tabindex')).toBe('-1')
+    expect(link.attributes('aria-hidden')).toBe('true')
+    expect(link.attributes('title')).toBeUndefined()
+    expect(link.text()).toBe('')
+  })
+
   it('links the version to its release once it has one', () => {
     const wrapper = mountWithApp(TestCard, {
       props: { name: 'Fjernsyn', version: 'v0.0.1', versionUrl: 'https://example.com/releases/v0.0.1' },

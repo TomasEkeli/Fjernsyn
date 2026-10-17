@@ -329,6 +329,21 @@
       />
     </foreignObject>
     <foreignObject
+      v-if="dateUrl"
+      x="148"
+      y="260"
+      width="104"
+      height="46"
+    >
+      <!-- eslint-disable-next-line vuejs-accessibility/anchor-has-content -->
+      <a
+        class="link dateLink"
+        :href="dateUrl"
+        tabindex="-1"
+        aria-hidden="true"
+      />
+    </foreignObject>
+    <foreignObject
       v-if="versionUrl"
       x="227"
       y="424"
@@ -411,6 +426,10 @@ const props = defineProps({
   },
   /** Which build this is, shown as the version box's tooltip when known */
   buildStamp: {
+    type: String,
+    default: null,
+  },
+  dateUrl: {
     type: String,
     default: null,
   },
