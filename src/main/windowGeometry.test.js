@@ -431,6 +431,30 @@ describe('fitting the window to a video', () => {
     expect(win.state.aspectRatio).toBe(0)
   })
 
+  it('gives a wide video after a tall one the area from before the tall one was squeezed into the work area', () => {
+    const { geometry } = createHarness()
+    const win = createStubWindow({ x: 360, y: 70, width: 1200, height: 900 })
+
+    geometry.fitToVideo(win, 1080, 1920)
+    expect(win.getContentBounds()).toMatchObject({ width: 585, height: 1040 })
+
+    geometry.fitToVideo(win, 1920, 1080)
+    expect(win.getContentBounds()).toMatchObject({ width: 1386, height: 780 })
+  })
+
+  it('does not shrink from one video to the next, however often the shape changes', () => {
+    const { geometry } = createHarness()
+    const win = createStubWindow({ x: 360, y: 70, width: 1200, height: 900 })
+
+    for (let i = 0; i < 10; i++) {
+      geometry.fitToVideo(win, 1080, 1920)
+      geometry.fitToVideo(win, 1080, 1350)
+      geometry.fitToVideo(win, 1920, 1080)
+    }
+
+    expect(win.getContentBounds()).toMatchObject({ width: 1386, height: 780 })
+  })
+
   it('restores the size from before even after a resize by hand, which lasts only as long as full window', () => {
     const { geometry } = createHarness()
     const win = createStubWindow({ x: 360, y: 70, width: 1200, height: 900 })
@@ -654,6 +678,59 @@ describe('snapping a resize the window manager did not lock', () => {
     geometry.releaseFit(win)
 
     expect(win.getContentBounds()).toMatchObject({ width: 1200, height: 900 })
+  })
+
+  it('carries a snapped resize to the next video, as its area', () => {
+    const { geometry, win, drag, wait, moveCursor } = fittedWindow()
+    moveCursor(1800, 1000)
+
+    drag(1000, 780)
+    wait(QUIET_TICKS)
+    expect(win.getContentBounds()).toMatchObject({ width: 1000, height: 563 })
+
+    geometry.fitToVideo(win, 1080, 1920)
+    geometry.fitToVideo(win, 1920, 1080)
+
+    expect(win.getContentBounds()).toMatchObject({ width: 1000, height: 563 })
+  })
+
+  it('carries a resize the lock kept at the ratio to the next video, as its area', () => {
+    const { geometry, win, drag, wait, moveCursor } = fittedWindow()
+    moveCursor(1800, 1000)
+
+    drag(1600, 900)
+    wait(QUIET_TICKS)
+    geometry.fitToVideo(win, 1080, 1920)
+    geometry.fitToVideo(win, 1920, 1080)
+
+    expect(win.getContentBounds()).toMatchObject({ width: 1600, height: 900 })
+  })
+
+  it('leaves a resize by hand alone when the video changes quality, not shape, before the resize is over', () => {
+    const { geometry, win, drag } = fittedWindow()
+
+    // The player picks a quality for its size, so a smaller window brings a
+    // smaller video of the same shape, mid drag
+    drag(1000, 563)
+    geometry.fitToVideo(win, 1280, 720)
+    drag(900, 700)
+    geometry.fitToVideo(win, 854, 480)
+
+    expect(win.setContentBounds).not.toHaveBeenCalled()
+    expect(win.getContentBounds()).toMatchObject({ width: 900, height: 700 })
+  })
+
+  it('does not take a fit the window manager rounded a few pixels for a resize by hand', () => {
+    const { geometry, win, drag, wait, moveCursor } = fittedWindow()
+    moveCursor(1800, 1000)
+
+    geometry.fitToVideo(win, 1080, 1920)
+    // Windows scaling leaves the tall fit a few pixels short of 585 by 1040
+    drag(582, 1035)
+    wait(QUIET_TICKS)
+    geometry.fitToVideo(win, 1920, 1080)
+
+    expect(win.getContentBounds()).toMatchObject({ width: 1386, height: 780 })
   })
 
   it('leaves a maximised window alone', () => {
