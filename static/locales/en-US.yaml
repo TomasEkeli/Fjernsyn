@@ -1871,6 +1871,7 @@ Canceled next video autoplay: Canceled next video autoplay
 Swipe:
   The next short could not be loaded: The next short could not be loaded
   No more shorts: No more shorts to move on to
+  Only watched shorts came up: Only shorts already watched came up. Press again to look further
 Autoplay Interruption Timer: Autoplay canceled due to {autoplayInterruptionIntervalHours} hours of inactivity
 
 Default Invidious instance has been set to {instance}: Default Invidious instance has been set to {instance}

@@ -157,6 +157,8 @@ const SETTINGS = vi.hoisted(() => ({
   getIsInLater: () => false,
   getIsArmed: () => false,
   getLaterFiredVideo: null,
+  // The app's, while a prompt is open over the page
+  isAnyPromptOpen: false,
 }))
 
 vi.mock('../../store/index', async () => {
@@ -2349,6 +2351,22 @@ describe('a playlist', () => {
       vi.mocked(Math.random).mockRestore()
     })
 
+    it('moves down and up (Ctrl+Down, Ctrl+Up) through the playlist, as the player\'s skips', async () => {
+      const { router } = await open(kind, 1)
+      const press = async (key) => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: true, bubbles: true, cancelable: true }))
+        await flushPromises()
+      }
+
+      await press('ArrowDown')
+      expectOn(router, kind, 2)
+
+      await press('ArrowUp')
+      expectOn(router, kind, 1)
+
+      expect(layer.listShortsSequence).not.toHaveBeenCalled()
+    })
+
     it('reverses, playing the video before as the next', async () => {
       const { wrapper, router } = await open(kind, 1)
 
@@ -2937,6 +2955,85 @@ describe('moving down and up (Ctrl+Down, Ctrl+Up)', () => {
 
     expect(showToast).toHaveBeenCalledWith('No more shorts to move on to')
     expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+  })
+
+  it('says so when only shorts already watched came up, and looks further on the next press', async () => {
+    store.setGetter('getHistoryCacheById', Object.fromEntries(SEQUENCE.map(id => [id, { videoId: id }])))
+    // Three pages of shorts all watched, as many as one press asks for, then one not
+    let page = 0
+    layer.listShortsSequence.mockImplementation(async () => {
+      page++
+      return page <= 3
+        ? { items: SEQUENCE.map(videoId => ({ videoId })), cursor: `page-${page + 1}` }
+        : { items: [{ videoId: NEXT_ID }], cursor: null }
+    })
+    const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(showToast).toHaveBeenCalledWith('Only shorts already watched came up. Press again to look further')
+    expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(pathOf(router)).toBe(`/watch/${NEXT_ID}`)
+  })
+
+  it('moves past a short of a hidden channel unseen, and up passes it by', async () => {
+    useSequence()
+    store.setGetter('getChannelsHidden', JSON.stringify([{ name: 'UChidden', preferredName: '', icon: '' }]))
+    const { router } = await openWatchPage(ref => (ref === SEQUENCE[0] ? { ...short(ref), authorId: 'UChidden' } : anyVideo(ref)), `/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(layer.getVideo).toHaveBeenCalledWith(SEQUENCE[0])
+    expect(pathOf(router)).toBe(`/watch/${SEQUENCE[1]}`)
+
+    await press('ArrowUp')
+
+    expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+  })
+
+  it('works from the player\'s seek bar, which keeps focus after a click', async () => {
+    useSequence()
+    const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`)
+    const seekBar = document.createElement('input')
+    seekBar.type = 'range'
+    document.body.appendChild(seekBar)
+
+    await press('ArrowDown', seekBar)
+
+    expect(pathOf(router)).toBe(`/watch/${SEQUENCE[0]}`)
+    seekBar.remove()
+  })
+
+  it('does nothing while a prompt is open over the page', async () => {
+    useSequence()
+    store.setGetter('isAnyPromptOpen', true)
+    const { router } = await openWatchPage(anyVideo, `/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(layer.listShortsSequence).not.toHaveBeenCalled()
+    expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+  })
+
+  it('does nothing while a video opened some other way loads, not yet known to be a short', async () => {
+    useSequence()
+    const { router } = await openWatchPage(() => new Promise(() => {}), `/watch/${SHORT_ID}`)
+
+    await press('ArrowDown')
+
+    expect(layer.listShortsSequence).not.toHaveBeenCalled()
+    expect(pathOf(router)).toBe(`/watch/${SHORT_ID}`)
+  })
+
+  it('does nothing upwards on a PeerTube video', async () => {
+    const { router } = await openWatchPage(playableVideo())
+
+    await press('ArrowUp')
+
+    expect(pathOf(router)).toBe(WATCH_PATH)
   })
 
   it('moves down from a video that is not a short to the next recommendation, and up back to it', async () => {

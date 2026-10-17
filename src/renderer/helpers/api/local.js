@@ -534,7 +534,10 @@ export async function getLocalSearchContinuation(continuationData) {
  * YouTube's shorts sequence after the short `id`: the feed youtube.com's
  * shorts player moves down through (`/reel/reel_watch_sequence`), as
  * youtubei.js asks for it. youtubei.js asks for the short's own reel response
- * beside it, which nothing here reads.
+ * beside it, which nothing here reads, and fails the whole when that one
+ * fails: a short YouTube refuses has no sequence here. Asking for the
+ * sequence alone would take encoding its parameters as youtubei.js does
+ * (`ReelSequence`, which it does not export), and following them by hand.
  *
  * The answer's `watch_next_feed` is a page of `reelWatchEndpoint` navigation
  * endpoints, each `payload` naming a short by its `videoId`; one whose

@@ -14,7 +14,9 @@
 //   already watched).
 // - Down from the end on a video that is not a short is the watch view's
 //   choice (its next recommendation); the view records the move with `step`,
-//   so that up comes back.
+//   so that up comes back. A short reached so, still on the trail, goes on
+//   down through the sequence the trail already has, where it has one,
+//   rather than seeding another.
 // - A video not on the trail starts a new one: opened some other way than
 //   down or up, it is where moving begins again, and a short opened so seeds
 //   a new sequence. What was ahead of the old trail is dropped with it.
@@ -118,6 +120,26 @@ export function createSwipeTrail({ listShorts, skip = () => false }) {
    */
   function isFromSequence(id) {
     return fromSequence.has(id)
+  }
+
+  /**
+   * Whether the sequence has said it has no more: a move down that found
+   * nothing found nothing for good, rather than only shorts passed over.
+   */
+  function hasEnded() {
+    return ended
+  }
+
+  /**
+   * Takes a short of the sequence off the trail, never to be offered again:
+   * one the view will not show after all, which it then moves past from the
+   * video before.
+   *
+   * @param {string} id
+   */
+  function forget(id) {
+    trail = trail.filter(onTrail => onTrail !== id)
+    fromSequence.delete(id)
   }
 
   /**
@@ -245,5 +267,5 @@ export function createSwipeTrail({ listShorts, skip = () => false }) {
     }
   }
 
-  return Object.freeze({ previous, following, isFromSequence, step, nextShort })
+  return Object.freeze({ previous, following, isFromSequence, hasEnded, forget, step, nextShort })
 }

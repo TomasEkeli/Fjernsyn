@@ -1,7 +1,8 @@
 // YouTube's shorts sequence: the feed youtube.com's shorts player moves down
 // through after a short, read as pages of the shorts it names. Local only:
 // Invidious has no such feed, so where the policy asks Invidious alone the
-// answer is `unavailable`, and with fallback on Local is asked after it.
+// answer is `unavailable`, and wherever it would ask Local at all (preferred,
+// or with fallback on) Local is asked, alone, its failure the one told.
 //
 // - Local: `getLocalShortsSequence(id, safetyMode)`, with
 //   `showFamilyFriendlyOnly` as the safety mode, as search has it; a later
@@ -98,12 +99,17 @@ export function createYouTubeShortsReader({ youtube, config, policy }) {
       }, classifyYouTubeError)
     }
 
-    return policy.first(
-      backend => backend === 'local'
-        ? fromLocal(id)
-        : Promise.reject(new PlatformError('unavailable', 'YouTube (Invidious) has no shorts sequence')),
-      classifyYouTubeError
-    )
+    // Not `policy.first`: with Local first and fallback on, a failure of
+    // Local's would be followed by Invidious', which can only say it has no
+    // such feed, and that would be the failure thrown. Local is asked where
+    // the policy would ask it at all, and its failure is the one told
+    if (!policy.backendOrder().includes('local')) {
+      return Promise.reject(new PlatformError('unavailable', 'YouTube (Invidious) has no shorts sequence'))
+    }
+
+    return fromLocal(id).catch((error) => {
+      throw error instanceof PlatformError ? error : classifyYouTubeError(error, 'local')
+    })
   }
 
   return Object.freeze({ listShortsSequence })

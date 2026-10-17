@@ -89,6 +89,59 @@ describe('moving down through shorts', () => {
     expect(listShorts).toHaveBeenNthCalledWith(2, 'a', null)
   })
 
+  it('says whether finding nothing was the sequence\'s end, or only shorts passed over', async () => {
+    const passedOver = createSwipeTrail({ listShorts: fakeSequence([['w1'], ['w2'], ['w3'], ['b']]), skip: id => id.startsWith('w') })
+    expect(await passedOver.nextShort('a')).toBeNull()
+    expect(passedOver.hasEnded()).toBe(false)
+
+    const ending = createSwipeTrail({ listShorts: fakeSequence([['b']]) })
+    await ending.nextShort('a')
+    expect(await ending.nextShort('b')).toBeNull()
+    expect(ending.hasEnded()).toBe(true)
+  })
+
+  it('asks again on the next move for a page asked ahead of need that failed, nothing waiting on it', async () => {
+    const listShorts = vi.fn()
+      .mockResolvedValueOnce({ items: [{ videoId: 'b' }], cursor: 'page-2' })
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce({ items: [{ videoId: 'c' }], cursor: null })
+    const trail = createSwipeTrail({ listShorts })
+
+    expect(await trail.nextShort('a')).toBe('b')
+    await settle()
+
+    expect(await trail.nextShort('b')).toBe('c')
+    expect(listShorts).toHaveBeenNthCalledWith(2, 'a', 'page-2')
+    expect(listShorts).toHaveBeenNthCalledWith(3, 'a', 'page-2')
+  })
+
+  it('rejects a move that waited on a page asked ahead of need, which then failed', async () => {
+    let fail
+    const listShorts = vi.fn()
+      .mockResolvedValueOnce({ items: [{ videoId: 'b' }], cursor: 'page-2' })
+      .mockImplementationOnce(() => new Promise((_resolve, reject) => { fail = reject }))
+    const trail = createSwipeTrail({ listShorts })
+
+    expect(await trail.nextShort('a')).toBe('b')
+    const waiting = trail.nextShort('b')
+    fail(new Error('offline'))
+
+    await expect(waiting).rejects.toThrow('offline')
+    expect(listShorts).toHaveBeenCalledTimes(2)
+  })
+
+  it('takes a short it will not show off the trail, never to offer it again', async () => {
+    const trail = createSwipeTrail({ listShorts: fakeSequence([['b', 'c']]) })
+    await trail.nextShort('a')
+
+    trail.forget('b')
+
+    expect(trail.isFromSequence('b')).toBe(false)
+    expect(trail.following('a')).toBeNull()
+    expect(await trail.nextShort('a')).toBe('c')
+    expect(trail.previous('c')).toBe('a')
+  })
+
   it('moves once for two presses before the next short is open', async () => {
     const listShorts = fakeSequence([['b', 'c']])
     const trail = createSwipeTrail({ listShorts })
@@ -138,6 +191,17 @@ describe('moving up, and down again', () => {
 
     expect(trail.following('v1')).toBe('x')
     expect(trail.previous('v3')).toBeNull()
+  })
+
+  it('continues the sequence it has rather than starting another, down from a short reached by a step', async () => {
+    const listShorts = fakeSequence([['b', 'c', 'd', 'e']])
+    const trail = createSwipeTrail({ listShorts })
+    await trail.nextShort('a')
+
+    trail.step('b', 'other-short')
+
+    expect(await trail.nextShort('other-short')).toBe('c')
+    expect(listShorts).toHaveBeenCalledTimes(1)
   })
 
   it('continues the sequence from a short reached by a step', async () => {

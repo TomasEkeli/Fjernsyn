@@ -111,6 +111,22 @@ describe('YouTube\'s shorts sequence', () => {
     expect(error).toBeInstanceOf(PlatformError)
   })
 
+  it('fails with Local\'s failure where fallback is on, rather than Invidious having no feed', async () => {
+    const refused = new PlatformError('rateLimited', 'YouTube asked to slow down')
+    const { layer } = setUp({ config: { backendFallback: true }, answers: { getLocalShortsSequence: refused } })
+
+    expect(await layer.listShortsSequence(SHORT).catch(e => e)).toBe(refused)
+  })
+
+  it('fails as a platform error when a later page fails', async () => {
+    const { layer } = setUp({ answers: { getLocalShortsSequenceContinuation: new TypeError('Failed to fetch') } })
+
+    const first = await layer.listShortsSequence(SHORT)
+    const error = await layer.listShortsSequence(SHORT, { cursor: first.cursor }).catch(e => e)
+
+    expect(error).toBeInstanceOf(PlatformError)
+  })
+
   it('is invalid for a PeerTube video, without a request', async () => {
     const { fake, layer } = setUp()
 
