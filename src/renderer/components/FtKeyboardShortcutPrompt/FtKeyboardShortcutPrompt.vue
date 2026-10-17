@@ -136,6 +136,8 @@ const localizedShortcutNameToShortcutsMappings = computed(() => {
 
     [t('KeyboardShortcutPrompt.Refresh'), ['REFRESH']],
     [t('KeyboardShortcutPrompt.Focus Secondary Search'), ['FOCUS_SECONDARY_SEARCH']],
+    [t('KeyboardShortcutPrompt.Next Profile'), ['NEXT_PROFILE']],
+    [t('KeyboardShortcutPrompt.Previous Profile'), ['PREVIOUS_PROFILE']],
 
     [t('KeyboardShortcutPrompt.Captions'), ['CAPTIONS']],
     [t('KeyboardShortcutPrompt.Theatre Mode'), ['THEATRE_MODE']],

@@ -1941,6 +1941,8 @@ KeyboardShortcutPrompt:
   Navigate to History: Navigate to the History page
   Refresh: Refresh feed with latest content
   Focus Secondary Search: Focus on the secondary search bar (if one is present)
+  Next Profile: Switch to the next profile (on the Subscriptions page)
+  Previous Profile: Switch to the previous profile (on the Subscriptions page)
   Captions: Toggle captions ON/OFF
   Stats: Show video statistics
   Fullscreen: Toggle fullscreen
