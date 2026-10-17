@@ -179,6 +179,20 @@ export default {
   },
 
   /**
+   * Makes the window full screen, unless it already is, so that the player's
+   * full screen goes on top of it and the window stays full screen without it
+   * @returns {Promise<boolean>} whether the window is held
+   */
+  holdWindowFullscreen: () => {
+    return ipcRenderer.invoke(IpcChannels.WINDOW_HOLD_FULLSCREEN)
+  },
+
+  // Takes the window out of a held full screen; a no-op if it is not held
+  releaseWindowFullscreen: () => {
+    ipcRenderer.send(IpcChannels.WINDOW_RELEASE_FULLSCREEN)
+  },
+
+  /**
    * @param {import('../main/externalPlayer').ExternalPlayerPayload} payload
    */
   openInExternalPlayer: (payload) => {

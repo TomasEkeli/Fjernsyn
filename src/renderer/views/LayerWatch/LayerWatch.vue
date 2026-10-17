@@ -328,6 +328,7 @@ import { routeView } from '../../components/LayerSurfaceSwitch/surfaceSwitch'
 import store from '../../store/index'
 import { formatScheduledTime, getLocalesWithFallback, showToast } from '../../helpers/utils'
 import { isHiddenAsAi } from '../../helpers/aiShown'
+import { noFullscreenSuccessor } from '../../helpers/player/fullscreenHold'
 import { PLATFORM_YOUTUBE, isYouTubeVideoRef, peerTubeVideoRef, platformOf } from '../../platform/refs'
 import { usePlatformLayer } from '../../platform/vue'
 import { useSabrHosting } from './useSabrHosting'
@@ -1119,6 +1120,12 @@ async function load() {
   } finally {
     if (thisLoad === loadsStarted && !passingOver) {
       isLoading.value = false
+
+      // No player to take up a window kept full screen from the video before:
+      // an error, a message, an age restricted video
+      if (!showPlayer.value || hiddenAsNotFamilyFriendly.value) {
+        noFullscreenSuccessor()
+      }
     }
   }
 }
@@ -1275,6 +1282,8 @@ async function stopPlaying(failure) {
 
   // Unless another video has started loading meanwhile
   if (thisLoad === loadsStarted) {
+    // The message, not a player, takes the window: out of full screen
+    noFullscreenSuccessor()
     playbackFailure.value = failure
   }
 }
@@ -2108,6 +2117,8 @@ const removeRouteGuard = router.beforeResolve(async (to, from) => {
   window.removeEventListener('beforeunload', handleWatchProgressAutoSave)
   stopAutoplayInterruptionTimer()
   await destroyPlayerLogged()
+  // A player left in full screen has no next one here to keep the window for
+  noFullscreenSuccessor()
 })
 
 watch(
