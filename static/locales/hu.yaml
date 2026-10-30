@@ -200,6 +200,7 @@ User Playlists:
   Export list of URLs: Webcímek listába történő exportálása
   Move Video to the Top: Videó áthelyezése az elejére
   Move Video to the Bottom: Videó áthelyezése a végére
+  This playlist is private or does not exist.: Ez a lejátszási lista privát vagy nem létezik.
 History:
   # On History Page
   History: 'Előzmények'
@@ -386,11 +387,11 @@ Settings:
     Enable Theatre Mode by Default: 'A mozimód bekapcsolása alapértelmezetten'
     Default Volume: 'Alapértelmezett hangerő'
     Default Playback Rate: 'Alapértelmezett lejátszási sebesség'
-    Default Video Format:
-      Default Video Format: 'Alapértelmezett videóformátum'
+    Default Media Format:
       Dash Formats: 'DASH-formátumok'
       Legacy Formats: 'Örökölt formátumok'
       Audio Formats: 'Hangformátumok'
+      Default Media Format: Alapértelmezett médiaformátum
     Default Quality:
       Default Quality: 'Alapértelmezett felbontás'
       Auto: 'Automatikus'
@@ -877,7 +878,7 @@ Video:
     Playback will resume automatically when your connection comes back: A lejátszás automatikusan folytatódik, amikor a kapcsolat helyreáll.
     Autoplay is off: Az automatikus lejátszás ki van kapcsolva
     Autoplay is on: Az automatikus lejátszás be van kapcsolva
-  IP block: A YouTube letiltotta az IP-címét a videók megtekintéséhez. Próbáljon meg másik VPN-re vagy proxyra váltani.
+  IP block: A YouTube letiltotta az IP-címéről történő videómegtekintést, vagy előfordulhat, hogy a videó olyan tartalmat tartalmaz, amelyben kiskorúak szerepelnek, és amelyhez a YouTube korlátozza a hozzáférést a bejelentkezés nélkül használók számára. Ha IP-cím alapú tiltásról van szó, akkor próbáljon meg másik VPN-re vagy proxyra váltani.
   Unlisted: Listázatlan
   AgeRestricted: A FreeTube-on nem lehet korhatáros videókat megtekinteni, mivel ezekhez Google-bejelentkezés és korhatár-ellenőrzött YouTube-fiók használata szükséges.
   MembersOnly: A csak tagoknak szóló videók nem tekinthetők meg a FreeTube-on, mivel ezekhez Google-bejelentkezés és fizetett tagság szükséges a feltöltő csatornájához.
@@ -1009,7 +1010,7 @@ Tooltips:
     Fetch Feeds from RSS: Amikor engedélyezve van, a FreeTube az RSS-t fogja használni az alapértelmezett módszer helyett a feliratkozási hírfolyam lekérdezéséhez. Az RSS gyorsabb és megakadályozza az IP-tiltást, de nem tartalmaz bizonyos információkat, például a videó időtartamát, az élő állapotot vagy a bejegyzéseket
     Fetch Automatically: Ha engedélyezve van, a FreeTube automatikusan lekéri a feliratkozási hírcsatornát indításkor, valamint új ablak megnyitásakor.
   Player Settings:
-    Default Video Format: A videóhoz használt formátumok beállítása. A DASH-formátumok magasabb minőségű lejátszást tesznek lehetővé. A régebbi formátumok legfeljebb 360p felbontásúak, de kevesebb sávszélességet igényelnek. A hangformátumok kizárólag hangadatfolyamokat tartalmaznak.
+    Default Media Format: A videóhoz használt formátumok beállítása. A DASH-formátumok magasabb minőségű lejátszást tesznek lehetővé. A régebbi formátumok legfeljebb 360p felbontásúak, de kevesebb sávszélességet igényelnek. A hangformátumok kizárólag hangadatfolyamokat tartalmaznak.
     Proxy Videos Through Invidious: A videók lejátszásához a YouTube helyett az Invidioust használja.
     Scroll Playback Rate Over Video Player: Amíg a kurzor a videó felett van, nyomja meg és tartsa lenyomva a Control billentyűt (Mac számítógépen a Command billentyű), és görgesse az egér görgőjét előre vagy hátra a lejátszási sebesség szabályozásához. Tartsa lenyomva a Control billentyűt (Mac számítógépen a Command billentyű), majd kattintson az egér bal gombjával az alapértelmezett lejátszási sebesség gyors visszatéréséhez (1x, hacsak nem módosították a beállításokban).
     Skip by Scrolling Over Video Player: Használja az egérgörgőt a videóban való előre- és visszaugráshoz, MPV-stílusban.

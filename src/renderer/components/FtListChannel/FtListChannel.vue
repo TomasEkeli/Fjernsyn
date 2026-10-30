@@ -89,7 +89,7 @@ import { vSaferHtml } from '../../directives/vSaferHtml'
 import store from '../../store/index'
 
 import { youtubeImageUrlToInvidious } from '../../helpers/api/invidious'
-import { formatNumber } from '../../helpers/utils'
+import { formatNumber, formatSubscriberCount } from '../../helpers/utils'
 import { describeCard } from '../../platform/cards'
 
 const props = defineProps({
@@ -150,7 +150,7 @@ const channelLink = platformCard?.channelRoute ?? `/channel/${id}`
 
 const formattedSubscriberCount = computed(() => {
   if (subscriberCount != null) {
-    return formatNumber(subscriberCount)
+    return formatSubscriberCount(subscriberCount)
   }
 
   return ''

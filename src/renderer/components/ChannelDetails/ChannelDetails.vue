@@ -271,7 +271,7 @@ import FtInput from '../FtInput/FtInput.vue'
 
 import store from '../../store/index'
 
-import { ctrlFHandler, formatNumber } from '../../helpers/utils'
+import { ctrlFHandler, formatSubscriberCount } from '../../helpers/utils'
 
 const props = defineProps({
   id: {
@@ -345,7 +345,7 @@ const formattedSubCount = computed(() => {
   if (hideChannelSubscriptions.value) {
     return null
   }
-  return formatNumber(props.subCount)
+  return formatSubscriberCount(props.subCount)
 })
 
 function subscribed() {

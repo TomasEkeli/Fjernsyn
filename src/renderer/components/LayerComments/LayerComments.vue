@@ -96,6 +96,7 @@
 // as upstream's CommentSection does.
 
 import { computed, ref, shallowRef } from 'vue'
+import { ObserveVisibility as vObserveVisibility } from 'vue-observe-visibility'
 import { useI18n } from 'vue-i18n'
 
 import FtButton from '../FtButton/FtButton.vue'

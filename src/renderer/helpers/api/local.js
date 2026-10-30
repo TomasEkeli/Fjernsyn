@@ -670,7 +670,16 @@ async function fetchHtmlPage(url) {
   const response = await fetch(url, {
     headers: {
       // We need to be able to parse the localised strings in the /next response data (e.g. view counts and published dates)
-      'Accept-Language': 'en-US'
+      'Accept-Language': 'en-US',
+      ...(
+        // The "Cookie" header is forbidden by the fetch spec, so we set it as X-Cookie here
+        // and then convert it to the Cookie header in the main process
+        process.env.IS_ELECTRON
+          ? {
+              'X-Cookie': `PREF=tz=${Intl.DateTimeFormat().resolvedOptions().timeZone.replace('/', '.')}`
+            }
+          : {}
+      )
     }
   })
 
@@ -1571,7 +1580,18 @@ export async function getLocalChannelVideos(id) {
  * @param {import('youtubei.js').Helpers.YTNode[]} items
  */
 export function countUntitledLockups(items) {
-  return items.filter(item => item.type === 'LockupView' && item.metadata == null).length
+  return items.filter(item => item.type === 'LockupView' && isUntitledLockup(item)).length
+}
+
+/**
+ * Whether YouTube sent this lockup without a title. youtubei.js before 18.3
+ * dropped the whole of such a lockup's metadata; 18.3 keeps the metadata and
+ * leaves the title out, so both are read as untitled.
+ *
+ * @param {import('youtubei.js').YTNodes.LockupView} lockupView
+ */
+function isUntitledLockup(lockupView) {
+  return lockupView.metadata == null || !lockupView.metadata.title?.text
 }
 
 /**
@@ -2111,7 +2131,7 @@ export function parseChannelHomeTab(homeTab, channelId, channelName) {
   return shelves
 }
 /**
- * @param {import('youtubei.js').YTNodes.PlaylistVideo|import('youtubei.js').YTNodes.ReelItem|import('youtubei.js').YTNodes.ShortsLockupView} video
+ * @param {import('youtubei.js').YTNodes.PlaylistVideo|import('youtubei.js').YTNodes.ReelItem|import('youtubei.js').YTNodes.LockupView|import('youtubei.js').YTNodes.ShortsLockupView} video
  */
 /**
  * A playlist's items, minus the ones that cannot be shown: `parseLocalPlaylistVideo`
@@ -2279,6 +2299,7 @@ export function parseLocalListVideo(item, channelId, channelName) {
       title: video.title.text?.trim(),
       author: video.author?.name ?? channelName,
       authorId: (video.author?.id != null && video.author.id !== 'N/A') ? video.author.id : channelId,
+      collaborators: video.author == null ? [] : parseLocalCollaborators(video.author.collaborators),
       viewCount: video.views.text == null ? null : extractNumberFromString(video.views.text),
       published,
       lengthSeconds: isLive ? '' : Utils.timeToSeconds(video.duration.text),
@@ -2341,6 +2362,7 @@ export function parseLocalListVideo(item, channelId, channelName) {
       title: video.title.text?.trim(),
       author: video.author.name !== 'N/A' ? video.author.name : channelName,
       authorId: video.author.id !== 'N/A' ? video.author.id : channelId,
+      collaborators: parseLocalCollaborators(video.author.collaborators),
       description: video.description,
       viewCount,
       published,
@@ -2349,6 +2371,7 @@ export function parseLocalListVideo(item, channelId, channelName) {
       isUpcoming: video.is_upcoming || video.is_premiere,
       premiereDate: video.upcoming,
       isPremiere: video.is_premiere,
+      isMusic: video.thumbnail_overlays.firstOfType(YTNodes.ThumbnailOverlayTimeStatus)?.icon_type === 'MUSIC',
       is4k: video.is_4k,
       is8k: video.badges.some(badge => badge.label === '8K'),
       isNew: video.badges.some(badge => badge.label === 'New'),
@@ -2360,7 +2383,7 @@ export function parseLocalListVideo(item, channelId, channelName) {
   }
 }
 
-const VIEWS_OR_WATCHING_REGEX = /views?|watching|waiting/i
+const VIEWS_OR_WATCHING_REGEX = /\d+(?:\.\d+)?\s?(?:[bkm]|thousand|[bm]illion)?\s(?:views?|watching|waiting)/i
 const VIEWS_IN_NUMBER_ONLY = /^\d+(\.\d)?[bkm]?$/i
 const PREMIERES_TIME_REGEX = /^(premieres|scheduled for) /i
 // Sometimes got `Streamed N (unit) ago`
@@ -2401,9 +2424,9 @@ function isPublishTimeText(text) {
 function parseLockupView(lockupView, channelId = undefined, channelName = undefined) {
   // YouTube now and then sends a lockup without a title (74 of a Topic
   // channel's 100 uploads at once, titled again on the next request).
-  // youtubei.js cannot parse metadata without a title and drops all of it,
-  // which leaves nothing to show, so skip the item rather than fail the list.
-  if (lockupView.metadata == null) {
+  // Without a title there is nothing to show, so skip the item rather than
+  // fail the list. See `isUntitledLockup` for how youtubei.js reports it.
+  if (isUntitledLockup(lockupView)) {
     return null
   }
 
@@ -2456,6 +2479,7 @@ function parseLockupView(lockupView, channelId = undefined, channelName = undefi
       let liveNow = false
       let isUpcoming = false
       let isPremiere = false
+      let isMusic = false
       let premiereDate
 
       const isMemberOnly = lockupView.metadata.metadata?.metadata_rows.some(row => {
@@ -2484,7 +2508,7 @@ function parseLockupView(lockupView, channelId = undefined, channelName = undefi
             }
           }
         } else {
-          const durationBadge = thumbnailBottomOverlayView.badges.find(badge => /^[\d:]+$/.test(badge.text))
+          const durationBadge = thumbnailBottomOverlayView.badges.find(badge => /^[\d:,]+$/.test(badge.text))
 
           if (durationBadge) {
             lengthSeconds = Utils.timeToSeconds(durationBadge.text)
@@ -2499,6 +2523,10 @@ function parseLockupView(lockupView, channelId = undefined, channelName = undefi
               }
             }
           }
+        }
+
+        if (thumbnailBottomOverlayView.badges.some(badge => badge.icon_name === 'MUSIC')) {
+          isMusic = true
         }
       }
 
@@ -2531,6 +2559,13 @@ function parseLockupView(lockupView, channelId = undefined, channelName = undefi
         author = lockupView.metadata?.metadata?.metadata_rows?.[0]?.metadata_parts?.[0]?.avatar_stack?.text?.text
       }
 
+      let collaborators = []
+      const maybeCollaborators = lockupView.metadata.image?.renderer_context?.command_context?.on_tap?.command?.inline_content?.custom_content?.items
+        .filter(item => item.renderer_context?.command_context?.on_tap?.metadata?.page_type === 'WEB_PAGE_TYPE_CHANNEL')
+      if (maybeCollaborators) {
+        collaborators = parseLocalCollaborators(maybeCollaborators)
+      }
+
       return {
         // Shorts and videos are read the same way but are not the same thing:
         // saying which one this is lets the card mark it. See `parseShort`.
@@ -2539,6 +2574,7 @@ function parseLockupView(lockupView, channelId = undefined, channelName = undefi
         title: lockupView.metadata?.title?.text?.trim(),
         author,
         authorId: lockupView.metadata.image?.renderer_context?.command_context?.on_tap?.payload.browseId ?? channelId,
+        collaborators,
         viewCount,
         published: calculatePublishedDate(publishedText, liveNow, isUpcoming, premiereDate),
         lengthSeconds,
@@ -2546,6 +2582,7 @@ function parseLockupView(lockupView, channelId = undefined, channelName = undefi
         isUpcoming,
         isStation,
         isPremiere,
+        isMusic,
         premiereDate
       }
     }
@@ -2708,6 +2745,7 @@ function parseWatchNextVideo(video) {
       title: video.title?.text?.trim(),
       author: video.author.name,
       authorId: video.author.id,
+      collaborators: parseLocalCollaborators(video.author.collaborators),
       lengthSeconds: video.duration.seconds
     }
   } else if (video.is(YTNodes.LockupView)) {
@@ -2727,6 +2765,7 @@ function parseWatchNextVideo(video) {
       title: video.title.text?.trim(),
       author: video.author.name,
       authorId: video.author.id,
+      collaborators: parseLocalCollaborators(video.author.collaborators),
       viewCount: video.view_count == null ? null : extractNumberFromString(video.view_count.text),
       published,
       lengthSeconds: isNaN(video.duration.seconds) ? '' : video.duration.seconds,
@@ -2939,10 +2978,14 @@ export function parseLocalComment(comment, commentThread = undefined) {
   const replyToken = commentThread ?? null
   let hasOwnerReplied = false
   let hasReplyToken = false
+  let numReplies = 0
 
   if (commentThread?.has_replies) {
     hasOwnerReplied = !!commentThread.comment_replies_data?.has_channel_owner_replied
     hasReplyToken = true
+    // YouTube's own approximate "View N replies" text where the thread has it,
+    // the exact count where it does not (a reply's thread need not have one)
+    numReplies = parseLocalSubscriberCount(commentThread.comment_replies_data?.view_replies?.text || comment.reply_count_a11y || '0')
   }
 
   const commentTextRuns = comment.voice_reply_container?.transcript_text?.runs ?? comment.content?.runs ?? []
@@ -2965,7 +3008,7 @@ export function parseLocalComment(comment, commentThread = undefined) {
     memberIconUrl: comment.member_badge?.url ?? '',
     time: getRelativeTimeFromDate(calculatePublishedDate((comment.published_time ?? '').replace('(edited)', '').trim()) ?? 0, false),
     likes: parseLocalSubscriberCount(comment.like_count?.trim() || '0'),
-    numReplies: hasReplyToken ? parseLocalSubscriberCount(comment.reply_count_a11y ?? '0') : 0
+    numReplies
   }
 }
 
@@ -3121,6 +3164,16 @@ function parseLocalAttachment(attachment) {
     console.error(`Unknown Local community post type: ${attachment.type}`)
     console.error(attachment)
   }
+}
+
+/**
+ * @param {import('youtubei.js').YTNodes.ListItemView[]} collaborators
+ */
+function parseLocalCollaborators(collaborators) {
+  return collaborators.map(collaborator => ({
+    id: collaborator.renderer_context?.command_context?.on_tap?.payload?.browseId,
+    name: collaborator.title?.text,
+  }))
 }
 
 export async function getHashtagLocal(hashtag) {

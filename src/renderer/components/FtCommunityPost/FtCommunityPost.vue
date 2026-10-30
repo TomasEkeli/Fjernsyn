@@ -2,7 +2,6 @@
   <div
     class="ft-list-post ft-list-item outside"
     :appearance="appearance"
-    :class="{ list: listType === 'list', grid: listType === 'grid' }"
   >
     <div
       class="author-div"
@@ -20,9 +19,8 @@
       <template
         v-if="authorThumbnail"
       >
-        <component
-          :is="enableChannelLinks ? 'router-link' : 'div'"
-          v-if="authorId"
+        <router-link
+          v-if="enableChannelLinks && authorId"
           :to="`/channel/${authorId}`"
           tabindex="-1"
           aria-hidden="true"
@@ -32,7 +30,7 @@
             class="communityThumbnail"
             alt=""
           >
-        </component>
+        </router-link>
         <img
           v-else
           :src="authorThumbnail"
@@ -103,6 +101,7 @@
         v-if="!hideVideo"
         :data="data.postContent.content"
         appearance=""
+        force-list-type="grid"
       />
       <p
         v-else
@@ -201,6 +200,7 @@ import store from '../../store/index'
 import {
   formatNumber,
   getRelativeTimeFromDate,
+  isNumberRounded,
 } from '../../helpers/utils'
 import { youtubeImageUrlToInvidious } from '../../helpers/api/invidious'
 
@@ -221,11 +221,6 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-})
-
-/** @type {import('vue').ComputedRef<'grid' | 'list'>} */
-const listType = computed(() => {
-  return store.getters.getListType
 })
 
 /** @type {import('vue').ComputedRef<string[]>} */
@@ -265,15 +260,13 @@ let commentCount = null
 parseCommunityData()
 
 const formattedCommentCount = computed(() => {
-  if (commentCount != null) {
-    return formatNumber(commentCount)
-  }
-
-  return ''
+  if (commentCount == null) return ''
+  if (props.singlePost) return formatNumber(commentCount)
+  return formatNumber(commentCount, isNumberRounded(commentCount) ? { notation: 'compact' } : undefined)
 })
 
 const formattedVoteCount = computed(() => {
-  return formatNumber(voteCount)
+  return formatNumber(voteCount, voteCount != null && isNumberRounded(voteCount) ? { notation: 'compact' } : undefined)
 })
 
 const publishedText = computed(() => {
@@ -349,7 +342,9 @@ if (postType === 'multiImage' && postContent.content.length > 0) {
         enabled: true,
         clickable: true
       },
-      slidesPerView: 1
+      slidesPerView: 1,
+      // prevents slides from bleeding over due to rounding errors
+      spaceBetween: 10
     }
 
     Object.assign(swiperContainerRef.value, swiperOptions)

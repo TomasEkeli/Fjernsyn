@@ -151,6 +151,7 @@
 
 <script setup>
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
+import { ObserveVisibility as vObserveVisibility } from 'vue-observe-visibility'
 
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { useI18n } from 'vue-i18n'

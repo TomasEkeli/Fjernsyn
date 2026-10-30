@@ -120,8 +120,8 @@ describe('parseLocalPlaylistVideo', () => {
   it('skips a lockup that came without a title, rather than failing the whole list', () => {
     const lockup = parseQuietly(untitled)
 
-    // youtubei.js gives up on the metadata of a lockup with no title
-    expect(lockup.metadata).toBeNull()
+    // youtubei.js 18.3 keeps the metadata of a lockup with no title, without the title
+    expect(lockup.metadata?.title?.text).toBeFalsy()
 
     expect(parseLocalPlaylistVideo(lockup)).toBeNull()
   })

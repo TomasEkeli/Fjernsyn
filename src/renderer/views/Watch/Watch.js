@@ -1,4 +1,4 @@
-import { defineComponent, markRaw } from 'vue'
+import { defineComponent, markRaw, shallowRef } from 'vue'
 import { isNavigationFailure, NavigationFailureType } from 'vue-router'
 import { mapActions, mapMutations } from 'vuex'
 import shaka from 'shaka-player'
@@ -22,6 +22,7 @@ import {
   extractNumberFromString,
   formatDurationAsTimestamp,
   formatNumber,
+  formatSubscriberCount,
   throttle,
   getLocalesWithFallback,
   showToast
@@ -109,7 +110,9 @@ export default defineComponent({
   setup: function () {
     const { t, locale } = useI18n()
 
-    return { t, currentLocale: locale }
+    const liveChat = shallowRef(null)
+
+    return { t, currentLocale: locale, liveChat }
   },
   data: function () {
     return {
@@ -122,7 +125,6 @@ export default defineComponent({
       videoPlayerLoaded: false,
       isFamilyFriendly: false,
       isLive: false,
-      liveChat: null,
       isLiveContent: false,
       isUpcoming: false,
       isPostLiveDvr: false,
@@ -760,7 +762,7 @@ export default defineComponent({
           const subCount = subscriberCount && !subscriberCount.isEmpty() ? parseLocalSubscriberCount(subscriberCount.text) : NaN
 
           if (!isNaN(subCount)) {
-            this.channelSubscriptionCountText = formatNumber(subCount, subCount >= 10000 ? { notation: 'compact' } : undefined)
+            this.channelSubscriptionCountText = subCount >= 10000 ? formatNumber(subCount, { notation: 'compact' }) : formatSubscriberCount(subCount)
           } else {
             this.channelSubscriptionCountText = ''
           }
@@ -1185,7 +1187,7 @@ export default defineComponent({
 
           const subCount = parseLocalSubscriberCount(result.subCountText)
           if (!isNaN(subCount)) {
-            this.channelSubscriptionCountText = formatNumber(subCount, subCount >= 10000 ? { notation: 'compact' } : undefined)
+            this.channelSubscriptionCountText = subCount >= 10000 ? formatNumber(subCount, { notation: 'compact' }) : formatSubscriberCount(subCount)
           } else {
             this.channelSubscriptionCountText = ''
           }
@@ -2289,7 +2291,7 @@ export default defineComponent({
     },
 
     isHiddenVideo: function (forbiddenTitles, channelsHidden, video) {
-      return channelsHidden.some(ch => ch.name === video.authorId) ||
+      return channelsHidden.some(ch => ch.name === video.authorId || (video.collaborators?.length > 0 && ch.name === video.collaborators[0].id)) ||
         channelsHidden.some(ch => ch.name === video.author) ||
         forbiddenTitles.some((text) => video.title?.toLowerCase().includes(text)) ||
         forbiddenTitles.some((text) => video.author?.toLowerCase().includes(text))

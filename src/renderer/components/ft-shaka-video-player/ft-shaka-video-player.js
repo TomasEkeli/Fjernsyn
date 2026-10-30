@@ -551,6 +551,12 @@ export default defineComponent({
       return parseFloat(store.getters.getVideoPlaybackRateInterval)
     })
 
+    watch(videoPlaybackRateInterval, (newValue) => {
+      ui.configure({
+        playbackRateSliderStep: newValue
+      })
+    })
+
     /** @type {import('vue').ComputedRef<number>} */
     const maxVolume = computed(() => {
       return store.getters.getMaxVolume
@@ -1158,7 +1164,9 @@ export default defineComponent({
           'ft_autoplay_toggle',
           props.format === 'legacy' ? 'ft_legacy_quality' : 'quality',
           'playback_rate',
-          'captions',
+          // shaka 5.3's group of the caption language picker and the caption
+          // style settings, in place of the picker alone
+          'captions-settings',
           'ft_live_chat_overlay',
           'ft_audio_tracks',
           'chapter',
@@ -1195,7 +1203,7 @@ export default defineComponent({
 
         uiConfig.overflowMenuButtons.push(
           'ft_audio_tracks',
-          'captions',
+          'captions-settings',
           'playback_rate',
           props.format === 'legacy' ? 'ft_legacy_quality' : 'quality',
           'chapter',
@@ -1310,8 +1318,12 @@ export default defineComponent({
           // the slider's lower bound is left at shaka's own default of 0.5,
           // which is where the presets start too
           playbackRates: playbackRates.value,
+          // the slider and its buttons step as the speed shortcuts do
+          playbackRateSliderStep: videoPlaybackRateInterval.value,
           tapSeekDistance: defaultSkipInterval.value,
           showUIAlways: pinPlayerControls.value,
+
+          showUIOnPaused: false,
 
           // we have our own ones (shaka-player's ones are quite limited)
           enableKeyboardPlaybackControls: false,
