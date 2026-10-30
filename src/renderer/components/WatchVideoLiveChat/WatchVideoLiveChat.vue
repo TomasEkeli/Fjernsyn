@@ -270,8 +270,9 @@ import { getLocalVideoInfo, parseLocalTextRuns } from '../../helpers/api/local'
 import { chatAuthorName, chatTimeAttribute, formatChatTime } from '../../helpers/liveChat'
 
 const props = defineProps({
+  /** @type {import('vue').PropType<import('youtubei.js').YT.LiveChat | null>} */
   liveChat: {
-    type: EventTarget,
+    type: Object,
     default: null
   },
   videoId: {

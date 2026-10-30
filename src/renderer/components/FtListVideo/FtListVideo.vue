@@ -29,7 +29,7 @@
         class="thumbnailLink"
         tabindex="-1"
         :to="watchVideoRouterLink"
-        @click="handleWatchPageLinkClick"
+        @click.capture="handleWatchPageLinkClick"
       >
         <img
           :src="thumbnail"
@@ -66,6 +66,11 @@
           {{ t("Video.Station") }}
         </template>
         <template v-else>
+          <FontAwesomeIcon
+            v-if="isMusic"
+            :icon="['fa', 'music']"
+            class="musicIcon"
+          />
           {{ displayDuration }}
         </template>
       </div>
@@ -200,7 +205,7 @@
         <RouterLink
           class="title"
           :to="watchVideoRouterLink"
-          @click="handleWatchPageLinkClick"
+          @click.capture="handleWatchPageLinkClick"
         >
           <h3
             class="h3Title"
@@ -211,15 +216,14 @@
         </RouterLink>
       </div>
       <div class="infoLine">
-        <component
-          :is="disableChannelLinks ? 'span' : 'router-link'"
-          v-if="channelId !== null"
+        <RouterLink
+          v-if="!disableChannelLinks && channelId !== null"
           class="channelName"
           dir="auto"
           :to="platformCard?.channelRoute ?? `/channel/${channelId}`"
         >
           {{ channelName }}
-        </component>
+        </RouterLink>
         <bdi v-else-if="channelName !== null">
           {{ channelName }}
         </bdi>
@@ -365,6 +369,7 @@ import {
   formatNumber,
   formatScheduledTime,
   getRelativeTimeFromDate,
+  isNumberRounded,
   openExternalLink,
   showToast,
   toDistractionFreeTitle,
@@ -493,6 +498,7 @@ const id = ref('')
 const title = ref('')
 const channelName = ref(null)
 const channelId = ref(null)
+const collaborators = ref([])
 const viewCount = ref(0)
 const parsedViewCount = ref('')
 const uploadedTime = ref('')
@@ -511,6 +517,7 @@ const hasCaptions = ref(false)
 const isUpcoming = ref(false)
 const isStation = ref(false)
 const isPremiere = ref(false)
+const isMusic = ref(false)
 const isPremium = ref(false)
 const hideViews = ref(false)
 const deArrowTogglePinned = ref(false)
@@ -946,12 +953,16 @@ function handleOptionsClick(option) {
     case 'openInvidiousChannel':
       openExternalLink(getInvidiousChannelUrl())
       break
-    case 'hideChannel':
-      hideChannel(channelName.value, channelId.value)
+    case 'hideChannel': {
+      const name = collaborators.value.length > 0 ? collaborators.value[0].name : channelName.value
+      hideChannel(name, channelId.value)
       break
-    case 'unhideChannel':
-      unhideChannel(channelName.value, channelId.value)
+    }
+    case 'unhideChannel': {
+      const name = collaborators.value.length > 0 ? collaborators.value[0].name : channelName.value
+      unhideChannel(name, channelId.value)
       break
+    }
     case 'markChannelAi':
       markChannelAi(channelId.value, channelName.value)
       showToast(t('Channel Marked as AI', { channel: channelName.value }))
@@ -1204,16 +1215,12 @@ const watchPageLinkQuery = computed(() => {
 })
 
 const watchVideoRouterLink = computed(() => {
-  // For `router-link` attribute `to`
-  if (!externalPlayerIsDefaultViewingMode.value) {
-    if (platformCard.value?.route) { return platformCard.value.route }
+  // a video of another platform (PeerTube) routes as the platform layer says
+  if (platformCard.value?.route) { return platformCard.value.route }
 
-    return {
-      path: `/watch/${id.value}`,
-      query: watchPageLinkQuery.value,
-    }
-  } else {
-    return {}
+  return {
+    path: `/watch/${id.value}`,
+    query: watchPageLinkQuery.value,
   }
 })
 
@@ -1239,8 +1246,12 @@ const deArrowCache = computed(() => store.getters.getDeArrowCache[id.value])
 
 const disableChannelLinks = computed(() => store.getters.getDisableChannelLinks)
 
-function handleWatchPageLinkClick() {
+/**
+ * @param {PointerEvent} event
+ */
+function handleWatchPageLinkClick(event) {
   if (externalPlayerIsDefaultViewingMode.value) {
+    event.preventDefault()
     handleExternalPlayer()
   }
 }
@@ -1344,7 +1355,16 @@ function parseVideoData() {
   title.value = props.data.title
 
   channelName.value = props.data.author ?? null
-  channelId.value = props.data.authorId ?? null
+  collaborators.value = props.data.collaborators ?? []
+
+  if (props.data.authorId) {
+    channelId.value = props.data.authorId
+  } else if (collaborators.value.length > 0) {
+    // When video has collaborators, authorId is null and the first element in the collaborator array is the main author
+    channelId.value = collaborators.value[0].id
+  } else {
+    channelId.value = null
+  }
 
   if ((props.data.lengthSeconds === '' || props.data.lengthSeconds === '0:00') && historyEntryExists.value) {
     lengthSeconds.value = historyEntry.value.lengthSeconds
@@ -1359,6 +1379,7 @@ function parseVideoData() {
   isPremiere.value = props.data.isPremiere === true
   isLive.value = !isStation.value && (props.data.liveNow || props.data.lengthSeconds === undefined)
   isUpcoming.value = props.data.isUpcoming || props.data.premiere
+  isMusic.value = props.data.isMusic === true
   is4k.value = props.data.is4k
   is8k.value = props.data.is8k
   isNew.value = props.data.isNew
@@ -1415,26 +1436,6 @@ const formattedViewCount = computed(() => {
     return parsedViewCount.value
   }
 })
-
-function isNumberRounded(number) {
-  switch (number.toString().length) {
-    case 11:
-    case 10:
-      return number % 100000000 === 0
-    case 9:
-    case 8:
-      return number % 1000000 === 0
-    case 7:
-      return number % 100000 === 0
-    case 6:
-    case 5:
-      return number % 1000 === 0
-    case 4:
-      return number % 100 === 0
-    default:
-      return false
-  }
-}
 
 function markAsWatched() {
   const videoData = {

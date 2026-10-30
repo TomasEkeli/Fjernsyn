@@ -192,6 +192,7 @@ User Playlists:
   Export list of URLs: 导出 URL 列表
   Move Video to the Top: 移动视频到顶部
   Move Video to the Bottom: 移动视频到底部
+  This playlist is private or does not exist.: 此播放列表私密或不存在。
 History:
   # On History Page
   History: '历史记录'
@@ -378,11 +379,11 @@ Settings:
     Enable Theatre Mode by Default: '默认允许剧场模式'
     Default Volume: '默认音量'
     Default Playback Rate: '默认回放速率'
-    Default Video Format:
-      Default Video Format: '默认视频格式'
+    Default Media Format:
       Dash Formats: 'Dash格式'
       Legacy Formats: '传统格式'
       Audio Formats: '音频格式'
+      Default Media Format: 默认媒体格式
     Default Quality:
       Default Quality: '默认质量'
       Auto: '自动'
@@ -827,7 +828,7 @@ Video:
     Skipped segment: 跳过了 {segmentCategory} 部分
     Autoplay is off: 自动播放关闭
     Autoplay is on: 自动播放开启
-  IP block: 你的 IP 地址被 Youtube 禁止观看视频。请试着切换到不同的 VPN 或代理。
+  IP block: 你的 IP 地址被 Youtube 禁止观看视频。或者该视频可能包含 YouTube 限制未登录用户访问的主打未成年人的内容。如果这是 IP 封锁，试着切换到不同的 VPN 或代理。
   MembersOnly: 无法用 FreeTube 观看仅供会员的视频，因这些视频需要 Google 登录以及上传者频道的付费会员身份。
   AgeRestricted: 无法用 FreeTube 观看受限年龄的视频，因这些视频需要 Google 登录并使用验证过年龄的 YouTube 账户。
   Unlisted: 不公开列出的视频
@@ -995,7 +996,7 @@ Tooltips:
     Fetch Feeds from RSS: 启用后，FreeTube 将使用 RSS 而非默认方式来取得您的订阅推送。RSS 更快而且可避免 IP 封锁，但不提供某些信息，如视频长度，直播状态或帖子
     Fetch Automatically: 启用后，打开新窗口和开启 FreeTube 时，FreeTube 会自动抓取你的订阅源。
   Player Settings:
-    Default Video Format: 设置播放视频时使用的格式。DASH 格式可以播放更高质量的视频。 传统格式限制为最大 360p，但使用较少的带宽。 音频格式是纯音频流。
+    Default Media Format: 设置播放视频时使用的格式。DASH 格式可以播放更高质量的视频。 传统格式限制为最大 360p，但使用较少的带宽。 音频格式是纯音频流。
     Proxy Videos Through Invidious: 将连接到 Invidious而非直接连接到 YouTube 来提供影片。
     Scroll Playback Rate Over Video Player: 当光标位于视频上方时，按住 Control 键(Mac 上的 Command 键)，前后滚动鼠标滚轮，控制播放速度。按住 Control 键(Mac 上的 Command 键)，左键点击鼠标快速返回到默认播放速率(1x，除非在设置中改变了数值)。
     Skip by Scrolling Over Video Player: 使用滚轮跳过视频，MPV 风格。

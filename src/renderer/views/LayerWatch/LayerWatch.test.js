@@ -2046,7 +2046,7 @@ describe('a refused YouTube video', () => {
     ['membersOnly', 'Members-only videos cannot be watched with Fjernsyn as they require Google login and paid membership to the uploader\'s channel.'],
     ['ageRestricted', 'Age-restricted videos cannot be watched with Fjernsyn as they require Google login and using an age-verified YouTube account.'],
     ['drm', 'DRM protected videos cannot be played in Fjernsyn, as they require proprietary, closed source components.'],
-    ['ipBlock', 'YouTube has blocked your IP address from watching videos. Please try switching to a different VPN or proxy.'],
+    ['ipBlock', 'YouTube has blocked your IP address from watching videos, or this video may contain content featuring minors that YouTube restricts access to for signed-out users. If this is an IP block, try switching to a different VPN or proxy.'],
     ['unexplained', 'YouTube refused playback without giving a reason. If you use a VPN or proxy, try another server or disable it.'],
   ])('refused as %s says so in the old watch page\'s words', async (reason, message) => {
     const { wrapper } = await openWatchPage(new PlatformError('refused', '[UNPLAYABLE] Video unavailable', { reason }), YT_PATH)

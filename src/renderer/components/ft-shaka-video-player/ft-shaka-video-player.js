@@ -1313,6 +1313,8 @@ export default defineComponent({
           tapSeekDistance: defaultSkipInterval.value,
           showUIAlways: pinPlayerControls.value,
 
+          showUIOnPaused: false,
+
           // we have our own ones (shaka-player's ones are quite limited)
           enableKeyboardPlaybackControls: false,
 

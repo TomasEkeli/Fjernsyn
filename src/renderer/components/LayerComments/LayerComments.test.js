@@ -27,6 +27,25 @@ vi.mock('../../i18n/index', async () => {
   return { default: createTestI18n() }
 })
 
+/**
+ * Stands in for vue-observe-visibility, which the component imports itself,
+ * keeping the callbacks it registers so a test can scroll it into view
+ */
+const observeVisibility = vi.hoisted(() => ({
+  mounted(element, { value }) {
+    if (value) {
+      visibilityCallbacks.push(() => value.callback(true))
+    }
+  },
+  updated(element, { value, oldValue }) {
+    if (value && value !== oldValue) {
+      visibilityCallbacks.push(() => value.callback(true))
+    }
+  },
+}))
+
+vi.mock('vue-observe-visibility', () => ({ ObserveVisibility: observeVisibility }))
+
 const HOST = 'framatube.org'
 const UUID = '9c9de5e8-0a1e-484a-b099-e80766180a6d'
 const VIDEO_REF = { platform: 'peertube', host: HOST, videoId: UUID }
@@ -60,19 +79,6 @@ const layer = {
 /** The visibility callbacks the section registered, to scroll it into view */
 let visibilityCallbacks
 
-const observeVisibility = {
-  mounted(element, { value }) {
-    if (value) {
-      visibilityCallbacks.push(() => value.callback(true))
-    }
-  },
-  updated(element, { value, oldValue }) {
-    if (value && value !== oldValue) {
-      visibilityCallbacks.push(() => value.callback(true))
-    }
-  },
-}
-
 const openSections = []
 
 beforeEach(() => {
@@ -98,7 +104,6 @@ async function mountComments(props = {}, { attachTo } = {}) {
     global: {
       plugins: [createTestI18n(), store],
       provide: { [PLATFORM_LAYER_KEY]: layer },
-      directives: { 'observe-visibility': observeVisibility },
     },
   })
   openSections.push(wrapper)

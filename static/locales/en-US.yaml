@@ -158,7 +158,7 @@ Subscriptions:
   # Shown once at the end of a refresh, in place of one toast per failed channel
   Fetch Errors: '{failed} of {total} channels could not be fetched. Click to copy the details.'
   Fetch Errors Rate Limited: '{failed} of {total} channels could not be fetched, {rateLimited} of them because of rate limiting. Click to copy the details.'
-  Empty Channels: Your subscribed channels currently does not have any videos.
+  Empty Channels: Your subscribed channels currently do not have any videos.
   Empty Posts: Your subscribed channels currently do not have any posts.
   Load More Videos: Load More Videos
   Load More Posts: Load More Posts
@@ -347,6 +347,7 @@ User Playlists:
   Search bar placeholder: Search for Playlists
   Playlists with Matching Videos: Playlists with Matching Videos
 
+  This playlist is private or does not exist.: This playlist is private or does not exist.
   This playlist currently has no videos.: This playlist currently has no videos.
 
   Create New Playlist: Create New Playlist
@@ -698,8 +699,8 @@ Settings:
     Default Playback Rate: Default Playback Rate
     Max Video Playback Rate: Max Video Playback Rate
     Video Playback Rate Interval: Video Playback Rate Interval
-    Default Video Format:
-      Default Video Format: Default Video Format
+    Default Media Format:
+      Default Media Format: Default Media Format
       Dash Formats: DASH Formats
       Legacy Formats: Legacy Formats
       Audio Formats: Audio Formats
@@ -1233,7 +1234,7 @@ Channel:
     Hide Answers: Hide Answers
     Video hidden by FreeTube: Video hidden by Fjernsyn
 Video:
-  IP block: 'YouTube has blocked your IP address from watching videos. Please try switching to a different VPN or proxy.'
+  IP block: 'YouTube has blocked your IP address from watching videos, or this video may contain content featuring minors that YouTube restricts access to for signed-out users. If this is an IP block, try switching to a different VPN or proxy.'
   Unexplained playback refusal: YouTube refused playback without giving a reason. If you use a VPN or proxy, try another server or disable it.
   MembersOnly: Members-only videos cannot be watched with Fjernsyn as they require Google login and paid membership to the uploader's channel.
   AgeRestricted: Age-restricted videos cannot be watched with Fjernsyn as they require Google login and using an age-verified YouTube account.
@@ -1790,7 +1791,7 @@ Tooltips:
   Player Settings:
     Proxy Videos Through Invidious: Will connect to Invidious to serve videos instead
       of making a direct connection to YouTube.
-    Default Video Format: Set the formats used when a video plays. DASH formats can
+    Default Media Format: Set the formats used when a video plays. DASH formats can
       play higher qualities. Legacy formats are limited to a max of 360p but use less
       bandwidth. Audio formats are audio only streams.
     Scroll Playback Rate Over Video Player: While the cursor is over the video, press and
