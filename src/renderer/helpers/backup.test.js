@@ -113,6 +113,21 @@ const CHANNEL = {
 
 const VERDICT = { _id: 'dQw4w9WgXcQ', ai: false, checkedAt: 1759572000000 }
 
+const SOURCE = { _id: 'lemmy:videos@lemmy.example', kind: 'lemmy', url: 'https://lemmy.example/c/videos', name: 'videos@lemmy.example', followedAt: 1759000000000 }
+
+const SHARE = {
+  _id: 'lemmy:videos@lemmy.example|dQw4w9WgXcQ',
+  sourceId: 'lemmy:videos@lemmy.example',
+  videoId: 'dQw4w9WgXcQ',
+  title: 'A synthetic post',
+  author: '',
+  votes: 12,
+  why: null,
+  sharedAt: 1759500000000,
+  discussionUrl: 'https://lemmy.example/post/1',
+  seenAt: 1759572000000,
+}
+
 const SECTIONS = {
   profiles: [MAIN_PROFILE, ART_PROFILE],
   history: [YOUTUBE_HISTORY, PEERTUBE_HISTORY],
@@ -122,6 +137,8 @@ const SECTIONS = {
   settings: SETTINGS,
   channels: [CHANNEL],
   aiVerdicts: [VERDICT],
+  collectionSources: [SOURCE],
+  collectionShares: [SHARE],
 }
 
 const KNOWN_SETTINGS = ['maxVolume', 'profilePictures', 'aiChannels', 'proxyHostname', 'installationId']
@@ -461,6 +478,43 @@ describe('the backup format', () => {
 
         expect(result.sections[section]).toEqual([good])
         expect(result.counts[section]).toEqual({ kept: 1, leftOut: { missingFields: bad.length + 3 } })
+      })
+    })
+
+    describe('the followed sources and their shares', () => {
+      it('come after the AI verdicts, in that order', () => {
+        expect(BACKUP_SECTIONS.slice(-3)).toEqual(['aiVerdicts', 'collectionSources', 'collectionShares'])
+      })
+
+      it('leave out a source or a share without its required fields', () => {
+        const sources = [{ ...SOURCE, _id: '' }, { ...SOURCE, _id: 'noKind', kind: undefined }, { ...SOURCE, _id: 'noUrl', url: 5 }, { ...SOURCE, _id: 'noName', name: undefined }]
+        const shares = [
+          { ...SHARE, _id: undefined },
+          { ...SHARE, _id: 'noSource', sourceId: '' },
+          { ...SHARE, _id: 'noVideo', videoId: undefined },
+          { ...SHARE, _id: 'noSeenAt', seenAt: '1759572000000' },
+        ]
+        const result = readBackup(backupText({ collectionSources: [...sources, SOURCE].map(r => JSON.parse(JSON.stringify(r))), collectionShares: [...shares, SHARE].map(r => JSON.parse(JSON.stringify(r))) }), SETTINGS_CONTEXT)
+
+        expect(result.sections.collectionSources).toEqual([SOURCE])
+        expect(result.sections.collectionShares).toEqual([SHARE])
+        expect(result.counts.collectionSources).toEqual({ kept: 1, leftOut: { missingFields: 4 } })
+        expect(result.counts.collectionShares).toEqual({ kept: 1, leftOut: { missingFields: 4 } })
+      })
+
+      it('take a source without this machine\'s refresh times, whatever the file says', () => {
+        const result = readBackup(backupText({ collectionSources: [{ ...SOURCE, checkedAt: 1, attemptedAt: 2, failedAt: 3, dataGenerated: '2026-10-31' }] }), SETTINGS_CONTEXT)
+
+        expect(result.sections.collectionSources).toEqual([SOURCE])
+      })
+
+      it('never replace what is followed with nothing: no source, and the shares are not restored either', () => {
+        for (const sections of [{ collectionSources: [], collectionShares: [SHARE] }, { collectionShares: [SHARE] }, { collectionSources: [{ _id: 'bad' }], collectionShares: [] }]) {
+          const result = readBackup(backupText({ ...sections, searchHistory: [SEARCH] }), SETTINGS_CONTEXT)
+
+          expect(Object.keys(result.sections), JSON.stringify(sections)).toEqual(['searchHistory'])
+          expect(Object.keys(result.counts)).toEqual(['searchHistory'])
+        }
       })
     })
 
