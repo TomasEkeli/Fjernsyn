@@ -22,6 +22,16 @@
   }
 }
 
+/* Once there is a grid the card is full bleed, its 16px padding gone
+   (wall.css), and the row's negative margins (chipRow.css), which mirrored
+   it, would hang 16px past the window: a sideways scroll. wall.css takes them
+   away only from a row that is the card's own child, and this one is the
+   wall's, so the wall does the same for its own */
+.collectionsWall:has(.ft-list-item.grid) > .controlRow {
+  margin-inline: 0;
+  padding-inline: var(--ft-wall-edge);
+}
+
 /* Beside the widget's own words, and as quiet: the wall is still all there */
 .refreshFailed {
   color: var(--tertiary-text-color);

@@ -32,10 +32,15 @@ vi.mock('../../store/index', async () => {
         getCollectionsSort: 'votes',
         getCollectionSource: () => undefined,
         getCollectionShare: () => undefined,
+        getCollectionSourceData: () => undefined,
       },
     }),
   }
 })
+
+vi.mock('../../helpers/collections/hackertubeBundle', () => ({
+  shippedHackerTubeTaxonomy: vi.fn(() => new Promise(() => {})),
+}))
 
 vi.mock('../../helpers/collections/crawlRunner', async () => {
   const { reactive } = await import('vue')
@@ -110,6 +115,27 @@ describe('a source\'s page', () => {
   afterEach(() => {
     store.setGetter('getCollectionSource', () => undefined)
     store.setGetter('getCollectionShare', () => undefined)
+    store.setGetter('getCollectionSourceData', () => undefined)
+  })
+
+  it('has the category select on HackerTube\'s page, whatever its chip on Collections, and not on another source\'s', async () => {
+    const taxonomy = { version: 'v', areas: [{ id: 'sci', name: 'Science', categories: [{ id: 'physics', name: 'Physics' }] }] }
+    store.setGetter('getCollectionSourceData', id => id === HACKERTUBE._id ? { _id: id, generated: 'g', taxonomy } : undefined)
+    store.setGetter('getCollectionsSourcesHidden', [HACKERTUBE._id])
+    store.setGetter('getCollectionShares', [
+      { ...share(HACKERTUBE, 'aaaaaaaaaaa', 20), categories: ['physics'] },
+      share(HACKERTUBE, 'ccccccccccc', 5),
+      share(MEALTIME, 'bbbbbbbbbbb', 3),
+    ])
+
+    const { wrapper } = await openSourcePage(HACKERTUBE._id)
+    await wrapper.find('select.categorySelect').setValue('physics')
+    expect(listed(wrapper).map(video => video.videoId)).toEqual(['aaaaaaaaaaa'])
+    wrapper.unmount()
+
+    const { wrapper: other } = await openSourcePage(MEALTIME._id)
+    expect(other.find('select.categorySelect').exists()).toBe(false)
+    expect(listed(other).map(video => video.videoId)).toEqual(['bbbbbbbbbbb'])
   })
 
   it('gives every card the vote badge of this source\'s share alone: its votes, and on hover its why and its discussion', async () => {

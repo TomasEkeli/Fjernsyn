@@ -46,3 +46,23 @@ export async function fetchHackerTubeBundle() {
 
   return readHackerTubeBundle(await response.arrayBuffer())
 }
+
+/** @type {Promise<import('./hackertube').HackerTubeTaxonomy> | null} */
+let shippedTaxonomy = null
+
+/**
+ * The taxonomy of the bundle shipped with the app, read once per window: for
+ * the category select of an installation whose HackerTube data was loaded
+ * before the taxonomy was kept (`getCollectionSourceData`), until an update
+ * keeps a newer one. Asked again after a failure.
+ *
+ * @returns {Promise<import('./hackertube').HackerTubeTaxonomy>}
+ */
+export function shippedHackerTubeTaxonomy() {
+  shippedTaxonomy ??= fetchHackerTubeBundle().then(bundle => bundle.taxonomy, (error) => {
+    shippedTaxonomy = null
+    throw error
+  })
+
+  return shippedTaxonomy
+}
