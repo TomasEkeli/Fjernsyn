@@ -18,6 +18,13 @@
           <a :href="link.href">{{ link.name }}</a>
         </template>
       </I18nT>
+      <p
+        v-if="crawlCounts !== null"
+        class="crawlProgress"
+        role="status"
+      >
+        {{ crawlPaused ? $t('Collections.Crawl Paused', crawlCounts) : $t('Collections.Crawl Progress', crawlCounts) }}
+      </p>
       <FtLoader
         v-if="!ready || loading"
       />
@@ -62,7 +69,10 @@ import FtLoader from '../../components/FtLoader/FtLoader.vue'
 
 import store from '../../store/index'
 
+import { collectionsCrawlProgress, startCollectionsCrawl } from '../../helpers/collections/crawlRunner'
+import { detailsProgress } from '../../helpers/collections/details'
 import { wallVideos } from '../../helpers/collections/shares'
+import { formatNumber } from '../../helpers/utils'
 
 /**
  * Collections: one wall of the videos the followed sources have shared, as
@@ -74,7 +84,10 @@ import { wallVideos } from '../../helpers/collections/shares'
  * other wall, and a video opens on the ordinary watch page.
  *
  * The first open follows HackerTube and loads the copy of its data the app
- * ships with (store/modules/collections.js); after that the page only reads.
+ * ships with (store/modules/collections.js), and then starts the crawl, which
+ * fetches each video's own details in the background (helpers/collections/
+ * crawl.js); as they come in, the cards show duration, views and date, and
+ * link to their channel. Otherwise the page only reads.
  */
 
 /**
@@ -102,7 +115,24 @@ const loadFailed = computed(() => store.getters.getCollectionsLoadFailed)
  *
  * @type {import('vue').ComputedRef<import('../../helpers/collections/shares').CollectionVideo[]>}
  */
-const videos = computed(() => wallVideos(store.getters.getCollectionShares))
+const videos = computed(() => wallVideos(store.getters.getCollectionShares, store.getters.getCollectionVideos))
+
+/** @type {import('vue').ComputedRef<boolean>} */
+const crawlPaused = computed(() => collectionsCrawlProgress.state === 'paused')
+
+/**
+ * How far the crawl has got, while it is under way, and null otherwise: of
+ * the videos on the wall, how many have their details
+ *
+ * @type {import('vue').ComputedRef<{ done: string, total: string } | null>}
+ */
+const crawlCounts = computed(() => {
+  if (collectionsCrawlProgress.state !== 'running' && !crawlPaused.value) { return null }
+
+  const { done, total } = detailsProgress(store.getters.getCollectionShares, store.getters.getCollectionVideos)
+
+  return { done: formatNumber(done), total: formatNumber(total) }
+})
 
 /*
  * The window onto the wall, as on the subscriptions page: a hundred cards,
@@ -128,10 +158,14 @@ function increaseLimit() {
 }
 
 // Once the datastore has loaded, which on a page opened at startup is a
-// moment after the page is
-watch(ready, (isReady) => {
+// moment after the page is; and once HackerTube's videos are in, the crawl
+watch(ready, async (isReady) => {
   if (isReady) {
-    store.dispatch('openCollections')
+    await store.dispatch('openCollections')
+
+    if (!loadFailed.value) {
+      startCollectionsCrawl()
+    }
   }
 }, { immediate: true })
 </script>

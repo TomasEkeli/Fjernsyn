@@ -19,6 +19,13 @@
   color: inherit;
 }
 
+/* The crawl's progress, while it runs: as quiet as the credit */
+.crawlProgress {
+  color: var(--tertiary-text-color);
+  font-size: 0.8rem;
+  margin-block: 0 12px;
+}
+
 @media only screen and (width <= 680px) {
   .card {
     inline-size: 90%;

@@ -1,7 +1,8 @@
-import { flushPromises } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import store from '../../store/index'
+import { collectionsCrawlProgress, startCollectionsCrawl } from '../../helpers/collections/crawlRunner'
 import { mountWithApp } from '../../testing/mount'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
@@ -16,8 +17,19 @@ vi.mock('../../store/index', async () => {
         getCollectionsLoading: false,
         getCollectionsLoadFailed: false,
         getCollectionShares: [],
+        getCollectionVideos: {},
       },
     }),
+  }
+})
+
+// The crawl itself is tested in helpers/collections; here, only whether the
+// page starts it and shows how far it has got
+vi.mock('../../helpers/collections/crawlRunner', async () => {
+  const { reactive } = await import('vue')
+  return {
+    collectionsCrawlProgress: reactive({ state: 'idle', requests: 0 }),
+    startCollectionsCrawl: vi.fn(),
   }
 })
 
@@ -45,6 +57,8 @@ function listed(wrapper) {
   return wrapper.findComponent(FtElementList).props('data')
 }
 
+enableAutoUnmount(afterEach)
+
 describe('Collections', () => {
   beforeEach(() => {
     sessionStorage.clear()
@@ -53,6 +67,9 @@ describe('Collections', () => {
     store.setGetter('getCollectionsLoading', false)
     store.setGetter('getCollectionsLoadFailed', false)
     store.setGetter('getCollectionShares', [])
+    store.setGetter('getCollectionVideos', {})
+    collectionsCrawlProgress.state = 'idle'
+    vi.mocked(startCollectionsCrawl).mockClear()
   })
 
   it('opens Collections once the datastore has loaded, and not before', async () => {
@@ -134,5 +151,60 @@ describe('Collections', () => {
     await flushPromises()
 
     expect(wrapper.find('.message').text()).toContain('could not be loaded')
+  })
+
+  it('starts the crawl once Collections is open', async () => {
+    mountCollections()
+    await flushPromises()
+    expect(startCollectionsCrawl).not.toHaveBeenCalled()
+
+    store.setGetter('getCollectionsReady', true)
+    await flushPromises()
+
+    expect(startCollectionsCrawl).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not start the crawl when the videos could not be loaded', async () => {
+    store.setGetter('getCollectionsReady', true)
+    store.setGetter('getCollectionsLoadFailed', true)
+
+    mountCollections()
+    await flushPromises()
+
+    expect(startCollectionsCrawl).not.toHaveBeenCalled()
+  })
+
+  it('shows how many videos have their details while the crawl runs, and nothing once it is done', async () => {
+    store.setGetter('getCollectionsReady', true)
+    store.setGetter('getCollectionShares', Array.from({ length: 3 }, (_, index) => share(index, index)))
+    store.setGetter('getCollectionVideos', { video000001: { _id: 'video000001', videoId: 'video000001', fetchedAt: 1 } })
+    collectionsCrawlProgress.state = 'running'
+
+    const wrapper = mountCollections()
+    await flushPromises()
+
+    expect(wrapper.find('.crawlProgress').text()).toBe('Fetching video details: 1 of 3')
+
+    collectionsCrawlProgress.state = 'paused'
+    await flushPromises()
+    expect(wrapper.find('.crawlProgress').text()).toContain('paused')
+
+    collectionsCrawlProgress.state = 'done'
+    await flushPromises()
+    expect(wrapper.find('.crawlProgress').exists()).toBe(false)
+  })
+
+  it('shows a video\'s details on its card once they are in, and leaves an unavailable one off', async () => {
+    store.setGetter('getCollectionsReady', true)
+    store.setGetter('getCollectionShares', [share(1, 2), share(2, 1)])
+    store.setGetter('getCollectionVideos', {
+      video000001: { _id: 'video000001', videoId: 'video000001', fetchedAt: 7, authorId: 'UCaaaaaaaaaaaaaaaaaaaaaa', lengthSeconds: 60, viewCount: 5 },
+      video000002: { _id: 'video000002', videoId: 'video000002', fetchedAt: 7, unavailable: 'private' },
+    })
+
+    const wrapper = mountCollections()
+    await flushPromises()
+
+    expect(listed(wrapper)).toEqual([expect.objectContaining({ videoId: 'video000001', authorId: 'UCaaaaaaaaaaaaaaaaaaaaaa', lengthSeconds: 60, viewCount: 5, lastUpdatedAt: 7 })])
   })
 })

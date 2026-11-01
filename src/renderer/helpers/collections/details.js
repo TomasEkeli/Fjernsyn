@@ -1,5 +1,6 @@
 import { liveStateFromPlayerResponse } from '../api/liveState'
-import { shareVideoKey } from './shares'
+import { isYouTubeVideoRef, platformOf, PLATFORM_YOUTUBE } from '../../platform/refs'
+import { shareVideoKey, wallVideos } from './shares'
 
 /**
  * A collection video's own details, which no source gives: its duration,
@@ -167,4 +168,46 @@ export function videoDetailsRecord(ref, details, fetchedAt) {
  */
 export function unavailableRecord(ref, reason, fetchedAt) {
   return { ...recordOf(ref, fetchedAt), unavailable: reason }
+}
+
+/**
+ * The YouTube videos among the shares, each once, the most voted first: the
+ * order the crawl asks in, so that the top of the wall fills in first.
+ *
+ * @param {import('./hackertube').Share[]} shares
+ * @returns {string[]}
+ */
+function youtubeVideosOf(shares) {
+  return wallVideos(shares)
+    .filter(video => platformOf(video) === PLATFORM_YOUTUBE && isYouTubeVideoRef(video.videoId))
+    .map(video => video.videoId)
+}
+
+/**
+ * The YouTube videos the shares name that have no record yet, the most voted
+ * first. A video found unavailable has one, and is done.
+ *
+ * PeerTube videos are not among them: their details come through the platform
+ * layer, not YouTube.
+ *
+ * @param {import('./hackertube').Share[]} shares
+ * @param {Record<string, VideoDetails>} details by the video's ref as one string
+ * @returns {string[]}
+ */
+export function missingDetails(shares, details) {
+  return youtubeVideosOf(shares).filter(videoId => !Object.hasOwn(details, videoId))
+}
+
+/**
+ * How far the crawl has got: of the YouTube videos the shares name, how many
+ * have a record.
+ *
+ * @param {import('./hackertube').Share[]} shares
+ * @param {Record<string, VideoDetails>} details by the video's ref as one string
+ * @returns {{ done: number, total: number }}
+ */
+export function detailsProgress(shares, details) {
+  const videos = youtubeVideosOf(shares)
+
+  return { done: videos.filter(videoId => Object.hasOwn(details, videoId)).length, total: videos.length }
 }

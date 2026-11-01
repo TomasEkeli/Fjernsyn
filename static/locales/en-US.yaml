@@ -320,6 +320,10 @@ Collections:
   # The credit HackerTube's licence asks for. {hackertube}, {dataset} and
   # {licence} are links named HackerTube, open-index/hacker-news and ODC-By 1.0
   HackerTube Credit: Videos and notes from {hackertube}, built on the {dataset} dataset, under {licence}.
+  # While the crawl fetches each video's own details (duration, views, date,
+  # channel) in the background. {done} and {total} are numbers of videos
+  Crawl Progress: 'Fetching video details: {done} of {total}'
+  Crawl Paused: 'Fetching video details paused after failures, {done} of {total} done; trying again in a few minutes'
 # The chip on the subscriptions and explore pages saying whether videos already
 # watched stay in the stream. It is the "Hide Videos on Watch" setting, the
 # other way round: pressed means watched videos are shown

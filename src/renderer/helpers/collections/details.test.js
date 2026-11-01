@@ -6,7 +6,7 @@ import liveStream from '../api/fixtures/local--player-live-stream.json'
 import finishedStream from '../api/fixtures/local--player-finished-stream.json'
 import privateVideo from '../api/fixtures/local--player-private.json'
 import noSuchVideo from '../api/fixtures/local--player-no-such-video.json'
-import { unavailableRecord, videoDetailsFromPlayerResponse, videoDetailsRecord } from './details'
+import { detailsProgress, missingDetails, unavailableRecord, videoDetailsFromPlayerResponse, videoDetailsRecord } from './details'
 
 describe('reading a video\'s details from a plain /player answer', () => {
   it('reads an ordinary video: duration, views, publish date, channel, and its title', () => {
@@ -119,5 +119,37 @@ describe('the record kept for a video', () => {
       fetchedAt: 5,
       unavailable: 'gone',
     })
+  })
+})
+
+describe('which videos still need details', () => {
+  const share = (videoId, votes, extra = {}) => ({ _id: `s|${videoId}`, sourceId: 's', videoId, title: '', author: '', votes, sharedAt: null, seenAt: 0, ...extra })
+  const uuid = '9c9de5e8-0a1e-484a-b099-e80766180a6d'
+
+  const shares = [
+    share('aaaaaaaaaaa', 3),
+    share('bbbbbbbbbbb', 30),
+    share('ccccccccccc', 10),
+    { ...share('aaaaaaaaaaa', 5), _id: 't|aaaaaaaaaaa', sourceId: 't' },
+    share(uuid, 99, { platform: 'peertube', host: 'framatube.org' }),
+    share('not-an-id', 50),
+  ]
+
+  it('is every YouTube video with no record, the most voted first, each once', () => {
+    expect(missingDetails(shares, { ccccccccccc: { _id: 'ccccccccccc', videoId: 'ccccccccccc', fetchedAt: 1 } }))
+      .toEqual(['bbbbbbbbbbb', 'aaaaaaaaaaa'])
+  })
+
+  it('counts a video found unavailable as done', () => {
+    expect(missingDetails(shares, { bbbbbbbbbbb: { _id: 'bbbbbbbbbbb', videoId: 'bbbbbbbbbbb', fetchedAt: 1, unavailable: 'gone' } }))
+      .toEqual(['ccccccccccc', 'aaaaaaaaaaa'])
+  })
+
+  it('counts how many of the YouTube videos are done', () => {
+    expect(detailsProgress(shares, {
+      bbbbbbbbbbb: { _id: 'bbbbbbbbbbb', videoId: 'bbbbbbbbbbb', fetchedAt: 1, unavailable: 'gone' },
+      ccccccccccc: { _id: 'ccccccccccc', videoId: 'ccccccccccc', fetchedAt: 1 },
+      unrelated00: { _id: 'unrelated00', videoId: 'unrelated00', fetchedAt: 1 },
+    })).toEqual({ done: 2, total: 3 })
   })
 })
