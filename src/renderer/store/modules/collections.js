@@ -1,13 +1,13 @@
 import { DBCollectionHandlers } from '../../../datastores/handlers/index'
 import { SyncEvents } from '../../../constants'
-import { HACKERTUBE_SOURCE_ID, hackerTubeShare, hackerTubeSource } from '../../helpers/collections/hackertube'
+import { HACKERTUBE_SOURCE_ID, hackerTubeShare } from '../../helpers/collections/hackertube'
 import { fetchHackerTubeBundle } from '../../helpers/collections/hackertubeBundle'
 import { isNewerExport } from '../../helpers/collections/kinds/hackertube'
 import { SOURCE_KINDS_BY_KIND } from '../../helpers/collections/kinds/index'
 import { trySource } from '../../helpers/collections/follow'
 import { keepSourceFetch, lastAttemptOf, lastRefreshOf, refreshCollectionSources, refreshIsDue } from '../../helpers/collections/refresh'
 import { sharesToPut } from '../../helpers/collections/shares'
-import { starterSources } from '../../helpers/collections/starterSet'
+import { starterSources, starterSourcesToFollow } from '../../helpers/collections/starterSet'
 
 /**
  * Collections: the sources followed and the shares they made, from
@@ -30,6 +30,12 @@ import { starterSources } from '../../helpers/collections/starterSet'
  * (`helpers/collections/refresh.js`), and keeps on each source's record
  * when a refresh last worked for it (`checkedAt`), when one last asked it
  * (`attemptedAt`), and `failedAt` while its last refresh failed.
+ *
+ * The first open of Collections or a source's page (`openCollections`), or
+ * the first visit to the Sources page, follows the starter set once per
+ * installation (`applyCollectionsStarterSet`), marked done in the
+ * `collectionsStarterSetDone` setting. Only a wall's open loads HackerTube's
+ * bundle.
  *
  * A source is followed by a URL pasted on the Sources page, once asking it
  * has shown it can be (`helpers/collections/follow.js`), and unfollowed
@@ -92,6 +98,9 @@ let opening = null
 
 /** The one refresh in flight in this window, which a second refresh joins */
 let refreshing = null
+
+/** The starter set being followed, which a second call joins */
+let applyingStarterSet = null
 
 const actions = {
   /**
@@ -275,17 +284,33 @@ const actions = {
   },
 
   /**
-   * What opening Collections does first, once the datastore has loaded:
-   * HackerTube is followed if it is not, and with it the other sources the
-   * first open follows (`helpers/collections/starterSet.js`) that are not
-   * followed yet; and while HackerTube is followed its shares
-   * are loaded from the bundle shipped with the app if they are not there,
-   * which is the first open of all, or the first after a restore that brought
-   * the source without its shares. Loaded means shares are there and the
-   * source says which export they came from. Anything that fails is tried
-   * again on the next open; putting shares twice duplicates nothing. After a
-   * failed read of the datastore it is read again first, and nothing more is
-   * done while it still cannot be read.
+   * Follows the starter set (`helpers/collections/starterSet.js`), once per
+   * installation: each starter source not followed already, and then the
+   * `collectionsStarterSetDone` setting says it is done, so that nothing of
+   * it is followed again and a starter source unfollowed stays unfollowed.
+   * Nothing is asked of the sources: the refresh that opening a wall makes
+   * brings their videos. A follow that fails leaves the set unmarked, for the
+   * next open to follow the rest. Nothing before the datastore has been read,
+   * or over one that could not be. One at a time: a second call joins it.
+   *
+   * @param {any} context
+   * @returns {Promise<void>}
+   */
+  applyCollectionsStarterSet(context) {
+    applyingStarterSet ??= applyStarterSetOnce(context).finally(() => { applyingStarterSet = null })
+    return applyingStarterSet
+  },
+
+  /**
+   * What opening Collections does first, once the datastore has loaded: the
+   * starter set is followed, if it never has been; and while HackerTube is
+   * followed its shares are loaded from the bundle shipped with the app if
+   * they are not there, which is the first open of all, or the first after a
+   * restore that brought the source without its shares. Loaded means shares
+   * are there and the source says which export they came from. Anything that
+   * fails is tried again on the next open; putting shares twice duplicates
+   * nothing. After a failed read of the datastore it is read again first, and
+   * nothing more is done while it still cannot be read.
    *
    * @param {any} context
    * @returns {Promise<void>}
@@ -364,31 +389,23 @@ async function openCollectionsOnce({ state, commit, dispatch }) {
     await dispatch('grabCollections')
   }
 
-  // What is held may be empty only because it could not be read: following
-  // HackerTube then would overwrite its record, and load the bundle again
+  // What is held may be empty only because it could not be read: taking it
+  // for unfollowed would apply the starter set over it, and load the bundle
+  // again
   if (state.collectionsGrabFailed) {
     commit('setCollectionsLoadFailed', true)
     return
   }
 
-  let source = state.collectionSources[HACKERTUBE_SOURCE_ID]
-
   try {
     commit('setCollectionsLoading', true)
     commit('setCollectionsLoadFailed', false)
 
-    if (source == null) {
-      source = hackerTubeSource(Date.now())
-      await dispatch('followCollectionSource', source)
+    await dispatch('applyCollectionsStarterSet')
 
-      // The rest of what the first open follows, by the same rule, until
-      // the starter set has a rule of its own (`starterSet.js`)
-      for (const starter of starterSources(Date.now())) {
-        if (!Object.hasOwn(state.collectionSources, starter._id)) {
-          await dispatch('followCollectionSource', starter)
-        }
-      }
-    }
+    // Not followed, as after an unfollow: nothing of its to load
+    const source = state.collectionSources[HACKERTUBE_SOURCE_ID]
+    if (source == null) { return }
 
     const loaded = source.dataGenerated != null &&
       Object.values(state.collectionShares).some(share => share.sourceId === HACKERTUBE_SOURCE_ID)
@@ -420,6 +437,43 @@ async function openCollectionsOnce({ state, commit, dispatch }) {
     commit('setCollectionsLoadFailed', true)
   } finally {
     commit('setCollectionsLoading', false)
+  }
+}
+
+/**
+ * @param {any} context
+ */
+async function applyStarterSetOnce({ state, rootGetters, dispatch }) {
+  // What is held says nothing yet of what is followed
+  if (!state.collectionsReady || state.collectionsGrabFailed) { return }
+
+  // Applied: not even the mark is written again
+  const applied = rootGetters.getCollectionsStarterSetDone === true
+  if (applied) { return }
+
+  const toFollow = starterSourcesToFollow(starterSources(Date.now()), {
+    applied,
+    isFollowed: sourceId => Object.hasOwn(state.collectionSources, sourceId),
+  })
+
+  try {
+    for (const source of toFollow) {
+      // Followed meanwhile, from another window
+      if (Object.hasOwn(state.collectionSources, source._id)) { continue }
+      await dispatch('followCollectionSource', source)
+    }
+  } catch (error) {
+    // Unmarked, the next open follows what is still not followed
+    console.error('Collections: could not follow the starter set', error)
+    return
+  }
+
+  try {
+    await dispatch('updateCollectionsStarterSetDone', true)
+  } catch (error) {
+    // Unmarked, the next open applies it again, which follows nothing twice,
+    // but follows again any of it unfollowed meanwhile
+    console.error('Collections: followed the starter set, but could not mark it done', error)
   }
 }
 

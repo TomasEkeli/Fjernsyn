@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { DBCollectionHandlers } from '../../../datastores/handlers/index'
 import { fetchHackerTubeBundle } from '../../helpers/collections/hackertubeBundle'
-import { hackerTubeShare } from '../../helpers/collections/hackertube'
+import { hackerTubeShare, hackerTubeSource } from '../../helpers/collections/hackertube'
 import { lemmySource } from '../../helpers/collections/kinds/lemmy'
 import { wallVideos } from '../../helpers/collections/shares'
 import { starterSources } from '../../helpers/collections/starterSet'
@@ -32,10 +32,15 @@ vi.mock('../../helpers/collections/hackertubeBundle', () => ({
   fetchHackerTubeBundle: vi.fn(),
 }))
 
-// HackerTube alone, but where a test follows more on the first open
-vi.mock('../../helpers/collections/starterSet', () => ({
-  starterSources: vi.fn(() => []),
-}))
+// The starter set is HackerTube alone, but where a test follows more
+vi.mock('../../helpers/collections/starterSet', async (importOriginal) => {
+  const actual = await importOriginal()
+  const { hackerTubeSource } = await import('../../helpers/collections/hackertube')
+  return { ...actual, starterSources: vi.fn(now => [hackerTubeSource(now)]) }
+})
+
+/** @param {number} now */
+const onlyHackerTube = now => [hackerTubeSource(now)]
 
 const NOW = Date.parse('2026-11-01T12:00:00Z')
 
@@ -49,16 +54,42 @@ const BUNDLE = {
   ],
 }
 
+/** As once the datastore has been read at startup, empty */
 function freshState() {
-  return { collectionSources: {}, collectionShares: {}, collectionVideos: {}, collectionsReady: false, collectionsGrabFailed: false, collectionsSyncBuffer: null, collectionsLoading: false, collectionsLoadFailed: false, collectionsRefreshing: false, collectionsRefreshProgress: { done: 0, total: 0 }, collectionSourceData: {} }
+  return { collectionSources: {}, collectionShares: {}, collectionVideos: {}, collectionsReady: true, collectionsGrabFailed: false, collectionsSyncBuffer: null, collectionsLoading: false, collectionsLoadFailed: false, collectionsRefreshing: false, collectionsRefreshProgress: { done: 0, total: 0 }, collectionSourceData: {} }
 }
 
+/**
+ * The settings module's part, one per state, as one installation has one:
+ * whether the starter set has been applied
+ *
+ * @type {WeakMap<object, { collectionsStarterSetDone: boolean }>}
+ */
+const settingsOf = new WeakMap()
+
+/** @param {object} state */
+function settingsFor(state) {
+  if (!settingsOf.has(state)) {
+    settingsOf.set(state, { collectionsStarterSetDone: false })
+  }
+  return settingsOf.get(state)
+}
+
+/** The settings module's updater, which a test may make fail */
+const updateStarterSetDone = vi.fn(async (settings, value) => { settings.collectionsStarterSetDone = value })
+
 function contextFor(state) {
+  const settings = settingsFor(state)
   const context = {
     state,
     getters: {},
+    rootGetters: {
+      get getCollectionsStarterSetDone() { return settings.collectionsStarterSetDone },
+    },
     commit: (type, payload) => collections.mutations[type](state, payload),
-    dispatch: (type, payload) => collections.actions[type](context, payload),
+    dispatch: (type, payload) => type === 'updateCollectionsStarterSetDone'
+      ? updateStarterSetDone(settings, payload)
+      : collections.actions[type](context, payload),
   }
   return context
 }
@@ -98,7 +129,6 @@ const pathsAsked = fetch => fetch.mock.calls.map(([url]) => new URL(url).pathnam
 /** A state with HackerTube followed and the bundle's two videos loaded, as after the first open */
 async function loadedState() {
   const state = freshState()
-  state.collectionsReady = true
   await collections.actions.openCollections(contextFor(state))
   vi.clearAllMocks()
   return state
@@ -402,6 +432,176 @@ describe('the Collections store', () => {
     })
   })
 
+  describe('the starter set', () => {
+    const MEALTIME = lemmySource({ name: 'mealtimevideos', host: 'lemmy.cafe' }, NOW)
+    const TALKS = lemmySource({ name: 'talks', host: 'programming.dev' }, NOW)
+    const STARTERS = [hackerTubeSource(NOW), MEALTIME, TALKS]
+
+    beforeEach(() => {
+      starterSources.mockReset()
+      starterSources.mockImplementation(() => STARTERS)
+    })
+
+    afterEach(() => {
+      starterSources.mockReset()
+      starterSources.mockImplementation(onlyHackerTube)
+    })
+
+    const followed = () => DBCollectionHandlers.upsertSource.mock.calls.map(([source]) => source._id)
+
+    it('is followed whole on the first open of a fresh installation, and then marked applied', async () => {
+      const state = freshState()
+      const order = []
+      DBCollectionHandlers.upsertSource.mockImplementation(async (source) => { order.push(source._id) })
+      updateStarterSetDone.mockImplementationOnce(async (settings, value) => { order.push('marked'); settings.collectionsStarterSetDone = value })
+
+      await collections.actions.openCollections(contextFor(state))
+
+      expect(Object.keys(state.collectionSources).sort()).toEqual(['hackertube', MEALTIME._id, TALKS._id].sort())
+      // Marked only once every one is followed, so a follow that fails is tried again
+      expect(order).toEqual(['hackertube', MEALTIME._id, TALKS._id, 'marked'])
+      expect(settingsFor(state).collectionsStarterSetDone).toBe(true)
+      // HackerTube's videos from the bundle, the communities' left to the refresh
+      expect(shareIds(state)).toEqual(['hackertube|aaaaaaaaaaa', 'hackertube|bbbbbbbbbbb'])
+      DBCollectionHandlers.upsertSource.mockImplementation(async () => {})
+    })
+
+    it('adds the rest, once, to an installation that followed some of it before the set, and nothing twice', async () => {
+      // HackerTube alone, as an installation from before the starter set, and a community followed since
+      starterSources.mockImplementationOnce(onlyHackerTube)
+      const state = await loadedState()
+      settingsFor(state).collectionsStarterSetDone = false
+      state.collectionSources[MEALTIME._id] = Object.freeze({ ...MEALTIME, followedAt: 1, checkedAt: 2 })
+
+      await collections.actions.openCollections(contextFor(state))
+
+      expect(followed()).toEqual([TALKS._id])
+      expect(state.collectionSources.hackertube.dataGenerated).toBe('2026-10-31')
+      expect(state.collectionSources[MEALTIME._id]).toMatchObject({ followedAt: 1, checkedAt: 2 })
+      expect(fetchHackerTubeBundle).not.toHaveBeenCalled()
+      expect(settingsFor(state).collectionsStarterSetDone).toBe(true)
+
+      vi.clearAllMocks()
+      await collections.actions.openCollections(contextFor(state))
+      expect(followed()).toEqual([])
+    })
+
+    it('follows nothing once it has been applied, though none of it is followed', async () => {
+      const state = freshState()
+      settingsFor(state).collectionsStarterSetDone = true
+
+      await collections.actions.openCollections(contextFor(state))
+
+      expect(state.collectionSources).toEqual({})
+      expect(DBCollectionHandlers.upsertSource).not.toHaveBeenCalled()
+      expect(updateStarterSetDone).not.toHaveBeenCalled()
+      // HackerTube not followed: no bundle to load, and nothing failed
+      expect(fetchHackerTubeBundle).not.toHaveBeenCalled()
+      expect(state.collectionsLoadFailed).toBe(false)
+      expect(state.collectionsLoading).toBe(false)
+    })
+
+    it('does not follow again a starter source unfollowed, HackerTube included, on a later open', async () => {
+      const state = freshState()
+      await collections.actions.openCollections(contextFor(state))
+      await collections.actions.unfollowCollectionSource(contextFor(state), MEALTIME._id)
+      await collections.actions.unfollowCollectionSource(contextFor(state), 'hackertube')
+      vi.clearAllMocks()
+
+      await collections.actions.openCollections(contextFor(state))
+
+      expect(Object.keys(state.collectionSources)).toEqual([TALKS._id])
+      expect(DBCollectionHandlers.upsertSource).not.toHaveBeenCalled()
+      expect(fetchHackerTubeBundle).not.toHaveBeenCalled()
+    })
+
+    it('is not marked applied when a follow fails, and the next open follows the rest', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      const state = freshState()
+      DBCollectionHandlers.upsertSource.mockImplementation(async (source) => {
+        if (source._id === MEALTIME._id) { throw new Error('locked') }
+      })
+
+      await collections.actions.openCollections(contextFor(state))
+
+      expect(settingsFor(state).collectionsStarterSetDone).toBe(false)
+      expect(Object.keys(state.collectionSources)).toEqual(['hackertube'])
+      // HackerTube's videos are loaded all the same
+      expect(state.collectionSources.hackertube.dataGenerated).toBe('2026-10-31')
+
+      DBCollectionHandlers.upsertSource.mockImplementation(async () => {})
+      vi.clearAllMocks()
+      await collections.actions.openCollections(contextFor(state))
+
+      expect(followed()).toEqual([MEALTIME._id, TALKS._id])
+      expect(settingsFor(state).collectionsStarterSetDone).toBe(true)
+    })
+
+    it('loads HackerTube all the same when the mark cannot be written, and the next open follows nothing twice', async () => {
+      const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const state = freshState()
+      const locked = new Error('locked')
+      updateStarterSetDone.mockRejectedValueOnce(locked)
+
+      await collections.actions.openCollections(contextFor(state))
+
+      // Told apart from a follow that failed
+      expect(logged).toHaveBeenCalledWith('Collections: followed the starter set, but could not mark it done', locked)
+      expect(state.collectionsLoadFailed).toBe(false)
+      expect(state.collectionSources.hackertube.dataGenerated).toBe('2026-10-31')
+
+      vi.clearAllMocks()
+      await collections.actions.openCollections(contextFor(state))
+
+      expect(followed()).toEqual([])
+      expect(settingsFor(state).collectionsStarterSetDone).toBe(true)
+    })
+
+    it('follows each one once when two pages apply it at the same time, however slow the datastore', async () => {
+      const state = freshState()
+      const context = contextFor(state)
+      // Each follow held in main for a while, so both would ask before either is held
+      DBCollectionHandlers.upsertSource.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 5)))
+
+      await Promise.all([
+        collections.actions.applyCollectionsStarterSet(context),
+        collections.actions.applyCollectionsStarterSet(context),
+      ])
+
+      expect(followed()).toEqual(['hackertube', MEALTIME._id, TALKS._id])
+      expect(updateStarterSetDone).toHaveBeenCalledOnce()
+      DBCollectionHandlers.upsertSource.mockImplementation(async () => {})
+    })
+
+    it('does not follow over one another window followed while the set was being followed', async () => {
+      const state = freshState()
+      const elsewhere = Object.freeze({ ...MEALTIME, followedAt: 1, checkedAt: 2 })
+      DBCollectionHandlers.upsertSource.mockImplementationOnce(async () => {
+        // While HackerTube is being followed here
+        collections.mutations.applyCollectionsSync(state, { event: SyncEvents.COLLECTIONS.UPSERT_SOURCE, data: elsewhere })
+      })
+
+      await collections.actions.applyCollectionsStarterSet(contextFor(state))
+
+      expect(followed()).toEqual(['hackertube', TALKS._id])
+      expect(state.collectionSources[MEALTIME._id]).toMatchObject({ followedAt: 1, checkedAt: 2 })
+      expect(settingsFor(state).collectionsStarterSetDone).toBe(true)
+    })
+
+    it('is not applied before the datastore is read, or over one that could not be', async () => {
+      for (const fields of [{ collectionsReady: false }, { collectionsGrabFailed: true }]) {
+        const state = { ...freshState(), ...fields }
+
+        await collections.actions.applyCollectionsStarterSet(contextFor(state))
+
+        expect(state.collectionSources, JSON.stringify(fields)).toEqual({})
+        expect(settingsFor(state).collectionsStarterSetDone).toBe(false)
+      }
+
+      expect(DBCollectionHandlers.upsertSource).not.toHaveBeenCalled()
+    })
+  })
+
   describe('refreshing', () => {
     afterEach(() => {
       vi.unstubAllGlobals()
@@ -698,7 +898,7 @@ describe('the Collections store', () => {
     /** As after the first open, with the community followed too */
     async function followedState() {
       const state = freshState()
-      starterSources.mockReturnValueOnce([MEALTIME])
+      starterSources.mockReturnValueOnce([hackerTubeSource(NOW), MEALTIME])
       await collections.actions.openCollections(contextFor(state))
       vi.clearAllMocks()
       return state
@@ -710,16 +910,18 @@ describe('the Collections store', () => {
       expect(collections.getters.getCollectionSources(state).map(source => source._id)).toEqual(['hackertube', 'lemmy:mealtimevideos@lemmy.cafe'])
       expect(state.collectionSources[MEALTIME._id]).toEqual(MEALTIME)
 
-      starterSources.mockReturnValueOnce([MEALTIME])
+      starterSources.mockReturnValueOnce([hackerTubeSource(NOW), MEALTIME])
       await collections.actions.openCollections(contextFor(state))
 
       expect(DBCollectionHandlers.upsertSource).not.toHaveBeenCalled()
+      starterSources.mockReset()
+      starterSources.mockImplementation(onlyHackerTube)
     })
 
     it('is not followed over itself when it is already followed', async () => {
       const state = freshState()
       state.collectionSources[MEALTIME._id] = { ...MEALTIME, followedAt: 1, checkedAt: 2 }
-      starterSources.mockReturnValueOnce([MEALTIME])
+      starterSources.mockReturnValueOnce([hackerTubeSource(NOW), MEALTIME])
 
       await collections.actions.openCollections(contextFor(state))
 
@@ -821,7 +1023,7 @@ describe('the Collections store', () => {
     beforeEach(() => {
       // HackerTube alone on the first open, whatever an earlier test left queued
       starterSources.mockReset()
-      starterSources.mockReturnValue([])
+      starterSources.mockImplementation(onlyHackerTube)
     })
 
     afterEach(() => {
@@ -960,7 +1162,7 @@ describe('the Collections store', () => {
 
     beforeEach(() => {
       starterSources.mockReset()
-      starterSources.mockReturnValue([])
+      starterSources.mockImplementation(onlyHackerTube)
     })
 
     /** HackerTube loaded, and the community with a share of a video HackerTube shares too */

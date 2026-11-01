@@ -78,7 +78,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref, useTemplateRef } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import FtButton from '../../components/FtButton/FtButton.vue'
@@ -106,12 +106,27 @@ import { showToast } from '../../helpers/utils'
  * not bring the older ones back.
  *
  * Each source opens its own page (`views/CollectionSource`).
+ *
+ * Visiting it follows the starter set on a first run, and nothing more: the
+ * list is what Collections will follow from the start, and a starter source
+ * can be unfollowed before any wall is opened. Their videos come with the
+ * first wall opened (HackerTube's from the bundle, the communities' from its
+ * refresh), so until then each shows none here.
  */
 
 const { t } = useI18n()
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const ready = computed(() => store.getters.getCollectionsReady)
+
+// Once the datastore is read: before, what is held says nothing of what is followed
+let applied = false
+watch(ready, (isReady) => {
+  if (!isReady || applied) { return }
+
+  applied = true
+  store.dispatch('applyCollectionsStarterSet').catch(error => console.error('Sources: could not follow the starter set', error))
+}, { immediate: true })
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const grabFailed = computed(() => store.getters.getCollectionsGrabFailed)
