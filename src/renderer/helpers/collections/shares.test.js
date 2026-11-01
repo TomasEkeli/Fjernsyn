@@ -1,3 +1,4 @@
+import { computed, reactive } from 'vue'
 import { describe, expect, it } from 'vitest'
 
 import { shareId, shareVideoKey, wallVideos } from './shares'
@@ -191,6 +192,17 @@ describe('the wall\'s videos, with their details', () => {
     expect(live.liveNow).toBe(true)
     expect(upcoming.isUpcoming).toBe(true)
     expect(upcoming.premiereDate).toEqual(new Date(Date.UTC(2030, 0, 1)))
+  })
+
+  it('is worked out again when details arrive in a reactive map it had no key for, as the store adds them', () => {
+    const kept = reactive({})
+    const wall = computed(() => wallVideos([share('hackertube', 'aaaaaaaaaaa')], kept))
+
+    expect(wall.value[0].lengthSeconds).toBe('')
+
+    kept.aaaaaaaaaaa = Object.freeze({ ...details })
+
+    expect(wall.value[0].lengthSeconds).toBe(213)
   })
 
   it('leaves a video YouTube said is unavailable off the wall', () => {

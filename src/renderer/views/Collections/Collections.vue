@@ -129,7 +129,8 @@ const crawlPaused = computed(() => collectionsCrawlProgress.state === 'paused')
 const crawlCounts = computed(() => {
   if (collectionsCrawlProgress.state !== 'running' && !crawlPaused.value) { return null }
 
-  const { done, total } = detailsProgress(store.getters.getCollectionShares, store.getters.getCollectionVideos)
+  // Counted over the shares, without building the wall again
+  const { done, total } = detailsProgress(store.getters.getCollectionShares, store.getters.getCollectionVideos, Date.now())
 
   return { done: formatNumber(done), total: formatNumber(total) }
 })

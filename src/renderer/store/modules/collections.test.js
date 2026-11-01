@@ -98,6 +98,16 @@ describe('the Collections store', () => {
     expect(state.collectionVideos.aaaaaaaaaaa).toEqual(record)
   })
 
+  it('adds details to the map it holds rather than copying thousands of records for each one', () => {
+    const state = freshState()
+    const held = state.collectionVideos
+
+    collections.mutations.putCollectionVideos(state, [{ _id: 'aaaaaaaaaaa', videoId: 'aaaaaaaaaaa', fetchedAt: 1 }])
+
+    expect(state.collectionVideos).toBe(held)
+    expect(Object.isFrozen(held.aaaaaaaaaaa)).toBe(true)
+  })
+
   it('takes another window\'s details', () => {
     const state = freshState()
     const record = { _id: 'aaaaaaaaaaa', videoId: 'aaaaaaaaaaa', fetchedAt: 2, lengthSeconds: 9 }

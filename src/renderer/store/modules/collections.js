@@ -211,19 +211,18 @@ function withShares(kept, shares) {
 }
 
 /**
+ * Into the map held, not a copy of it: the crawl puts one record at a time,
+ * twice a second, into a map of thousands. Whatever reads a record by its key
+ * hears of it, as `detailsFor` reads before it looks.
+ *
  * @param {Record<string, VideoDetails>} kept
  * @param {VideoDetails[]} videos
- * @returns {Record<string, VideoDetails>}
  */
-function withVideos(kept, videos) {
-  const next = { ...kept }
-
+function putVideos(kept, videos) {
   for (const video of videos) {
     // As main's put: the record given replaces the one kept
-    next[video._id] = Object.freeze({ ...video })
+    kept[video._id] = Object.freeze({ ...video })
   }
-
-  return next
 }
 
 const mutations = {
@@ -255,7 +254,9 @@ const mutations = {
     if (read !== null) {
       state.collectionSources = Object.fromEntries(read.sources.map(source => [source._id, source]))
       state.collectionShares = withShares({}, read.shares)
-      state.collectionVideos = withVideos({}, read.videos)
+      const videos = {}
+      putVideos(videos, read.videos)
+      state.collectionVideos = videos
     }
 
     const buffered = state.collectionsSyncBuffer ?? []
@@ -275,7 +276,7 @@ const mutations = {
   },
 
   putCollectionVideos(state, videos) {
-    state.collectionVideos = withVideos(state.collectionVideos, videos)
+    putVideos(state.collectionVideos, videos)
   },
 
   /**

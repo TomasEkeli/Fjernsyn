@@ -163,7 +163,10 @@ export function wallVideos(shares, details = {}) {
   const videos = []
 
   for (const [key, video] of byVideo) {
-    const known = Object.hasOwn(details, key) ? details[key] : undefined
+    // Read before it is looked for, so that a reactive map tells the wall
+    // when a video's details arrive
+    const kept = details[key]
+    const known = Object.hasOwn(details, key) ? kept : undefined
 
     if (known === undefined) {
       videos.push(video)
