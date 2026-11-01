@@ -311,6 +311,15 @@ Explore:
   No Categories Shown: Switch on a category to see what is trending in it.
   Nothing to Explore: YouTube is not offering anything to explore in this region.
   Load More: Load More
+# The wall of videos the followed sources (HackerTube, communities) have shared
+Collections:
+  Collections: Collections
+  Load More: Load More
+  Nothing Shared: Nothing has been shared here yet.
+  Load Failed: The videos that come with Fjernsyn could not be loaded. Open Collections again to try once more.
+  # The credit HackerTube's licence asks for. {hackertube}, {dataset} and
+  # {licence} are links named HackerTube, open-index/hacker-news and ODC-By 1.0
+  HackerTube Credit: Videos and notes from {hackertube}, built on the {dataset} dataset, under {licence}.
 # The chip on the subscriptions and explore pages saying whether videos already
 # watched stay in the stream. It is the "Hide Videos on Watch" setting, the
 # other way round: pressed means watched videos are shown
