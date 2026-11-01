@@ -159,15 +159,7 @@ You can change region on the page, and the last four you looked at stay a click 
 
 ### Communities
 
-YouTube's recommendations find the next thing you will click. People find the things worth watching, and leave links to them lying around. Communities gathers those links into one wall.
-
-A source is a place that shares videos: [HackerTube](https://hackertube.org), Andrej Karpathy's index of the videos Hacker News has recommended over the years, or a Lemmy community. The Communities page merges every source you follow, and each source has a page of its own. Follow one by pasting its address on the Sources page, such as `https://lemmy.cafe/c/mealtimevideos` or `!mealtimevideos@lemmy.cafe`. The first run follows HackerTube and five Lemmy communities; unfollow what you don't want and it stays gone. Communities whose instance serves no RSS feed cannot be followed yet.
-
-The cards are the same as on every other wall, and a video opens on the usual watch page. A small badge on the thumbnail shows the votes it got. Hover it to see who shared it, and on a source's page why. Sort by votes, when it was shared, when it was published or by views, either way round. Chips choose which sources show, and HackerTube's page filters by its categories. PeerTube links play when PeerTube is switched on.
-
-What a source has shared stays, even after it drops out of the feed. Sources refresh when you open the page, at most once an hour. Fjernsyn fetches each video's length, views and channel once, in the background; for HackerTube's six and a half thousand videos the first pass takes about an hour.
-
-The followed sources and what they shared are part of the backup, and the Sources page exports and imports them as OPML.
+YouTube's recommendations find the next thing you will click. A better source of good videos are what people share and "upvote" on different communities, like lemmy or hacker-news. The "communities" section gathers such links. To get users started a few communities are included by default: [HackerTube](https://hackertube.org), Andrej Karpathy's index of the videos Hacker News has recommended over the years, and some larger Lemmy communities. You can add your own sources on the "sources" -section (only Lemmy supported for now).
 
 HackerTube's data is from [HackerTube](https://hackertube.org) and the [open-index/hacker-news](https://huggingface.co/datasets/open-index/hacker-news) dataset, under the [Open Data Commons Attribution License (ODC-By) 1.0](https://opendatacommons.org/licenses/by/1-0/).
 
