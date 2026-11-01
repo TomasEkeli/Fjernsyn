@@ -4,6 +4,25 @@
       <h2 class="visuallyHidden">
         {{ $t('Collections.Collections') }}
       </h2>
+      <div class="controlRow">
+        <div class="refreshCell">
+          <FtRefreshWidget
+            :disable-refresh="!canRefresh"
+            :last-refresh-at="lastRefreshAt"
+            :title="$t('Collections.Collections')"
+            :activity-label="activityLabel"
+            :activity-progress="activityProgress"
+            @click="refresh"
+          />
+          <p
+            v-if="failedSourceNames !== ''"
+            class="refreshFailed"
+            role="status"
+          >
+            {{ $t('Collections.Refresh Failed', { sources: failedSourceNames }) }}
+          </p>
+        </div>
+      </div>
       <I18nT
         keypath="Collections.HackerTube Credit"
         tag="p"
@@ -18,13 +37,6 @@
           <a :href="link.href">{{ link.name }}</a>
         </template>
       </I18nT>
-      <p
-        v-if="crawlCounts !== null"
-        class="crawlProgress"
-        role="status"
-      >
-        {{ crawlPaused ? $t('Collections.Crawl Paused', crawlCounts) : $t('Collections.Crawl Progress', crawlCounts) }}
-      </p>
       <FtLoader
         v-if="!ready || loading"
       />
@@ -57,8 +69,8 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { Translation as I18nT } from 'vue-i18n'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { Translation as I18nT, useI18n } from 'vue-i18n'
 
 import FtAutoLoadNextPageWrapper from '../../components/FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
@@ -66,13 +78,14 @@ import FtCard from '../../components/ft-card/ft-card.vue'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
 import FtFlexBox from '../../components/ft-flex-box/ft-flex-box.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
+import FtRefreshWidget from '../../components/FtRefreshWidget/FtRefreshWidget.vue'
 
 import store from '../../store/index'
 
 import { collectionsCrawlProgress, startCollectionsCrawl } from '../../helpers/collections/crawlRunner'
 import { detailsProgress } from '../../helpers/collections/details'
 import { wallVideos } from '../../helpers/collections/shares'
-import { formatNumber } from '../../helpers/utils'
+import { KeyboardShortcuts } from '../../../constants'
 
 /**
  * Collections: one wall of the videos the followed sources have shared, as
@@ -84,11 +97,20 @@ import { formatNumber } from '../../helpers/utils'
  * other wall, and a video opens on the ordinary watch page.
  *
  * The first open follows HackerTube and loads the copy of its data the app
- * ships with (store/modules/collections.js), and then starts the crawl, which
- * fetches each video's own details in the background (helpers/collections/
- * crawl.js); as they come in, the cards show duration, views and date, and
- * link to their channel. Otherwise the page only reads.
+ * ships with (store/modules/collections.js). Every open then refreshes, when
+ * the last refresh was more than an hour ago, asking each followed source
+ * what it shares now (helpers/collections/refresh.js); the refresh button and
+ * R or F5 refresh at any time. Then the crawl starts, which fetches each
+ * video's own details in the background (helpers/collections/crawl.js); as
+ * they come in, the cards show duration, views and date, and link to their
+ * channel.
+ *
+ * The control row is the subscriptions page's and Explore's: the refresh
+ * widget says how fresh the wall is, or what is being done to it, the refresh
+ * or the crawl, with how far along it is.
  */
+
+const { t } = useI18n()
 
 /**
  * What HackerTube's licence (ODC-By 1.0) asks to be credited, by the names
@@ -118,21 +140,106 @@ const loadFailed = computed(() => store.getters.getCollectionsLoadFailed)
 const videos = computed(() => wallVideos(store.getters.getCollectionShares, store.getters.getCollectionVideos))
 
 /** @type {import('vue').ComputedRef<boolean>} */
-const crawlPaused = computed(() => collectionsCrawlProgress.state === 'paused')
+const refreshing = computed(() => store.getters.getCollectionsRefreshing)
+
+/** @type {import('vue').ComputedRef<boolean>} */
+const canRefresh = computed(() => {
+  return ready.value && !loading.value && !refreshing.value && !store.getters.getCollectionsGrabFailed
+})
 
 /**
- * How far the crawl has got, while it is under way, and null otherwise: of
- * the videos on the wall, how many have their details
+ * When every followed source was last refreshed by, kept on their records,
+ * so it holds across restarts
  *
- * @type {import('vue').ComputedRef<{ done: string, total: string } | null>}
+ * @type {import('vue').ComputedRef<number | null>}
  */
-const crawlCounts = computed(() => {
-  if (collectionsCrawlProgress.state !== 'running' && !crawlPaused.value) { return null }
+const lastRefreshAt = computed(() => store.getters.getCollectionsLastRefreshAt)
 
-  // Counted over the shares, without building the wall again
-  const { done, total } = detailsProgress(store.getters.getCollectionShares, store.getters.getCollectionVideos, Date.now())
+/**
+ * The sources whose last refresh failed, by name, which kept everything they
+ * had; empty when none did
+ *
+ * @type {import('vue').ComputedRef<string>}
+ */
+const failedSourceNames = computed(() => {
+  return store.getters.getCollectionsRefreshFailures.map(source => source.name).join(', ')
+})
 
-  return { done: formatNumber(done), total: formatNumber(total) }
+/** @type {import('vue').ComputedRef<'running' | 'paused' | null>} */
+const crawlShown = computed(() => {
+  const state = collectionsCrawlProgress.state
+  return state === 'running' || state === 'paused' ? state : null
+})
+
+/**
+ * What is being done to the wall, in the widget in place of its age: the
+ * refresh, or else the crawl while it is under way. Without figures, as on
+ * the subscriptions page: the bar says how far along.
+ *
+ * @type {import('vue').ComputedRef<string>}
+ */
+const activityLabel = computed(() => {
+  if (refreshing.value) { return t('Collections.Refreshing') }
+  if (crawlShown.value === 'running') { return t('Collections.Crawl Progress') }
+  if (crawlShown.value === 'paused') { return t('Collections.Crawl Paused') }
+  return ''
+})
+
+/**
+ * How far along that is, from 0 to 1: of the sources being asked, or of the
+ * videos on the wall, how many have their details. Null when there is no
+ * honest answer, as for a refresh of a single source.
+ *
+ * @type {import('vue').ComputedRef<number | null>}
+ */
+const activityProgress = computed(() => {
+  if (refreshing.value) {
+    const { done, total } = store.getters.getCollectionsRefreshProgress
+    return total > 1 ? done / total : null
+  }
+
+  if (crawlShown.value !== null) {
+    // Counted over the shares, without building the wall again
+    const { done, total } = detailsProgress(store.getters.getCollectionShares, store.getters.getCollectionVideos, Date.now())
+    return total > 0 ? done / total : null
+  }
+
+  return null
+})
+
+function refresh() {
+  if (canRefresh.value) {
+    store.dispatch('refreshCollections')
+  }
+}
+
+/**
+ * R and F5 refresh, as on the subscriptions page and Explore
+ *
+ * @param {KeyboardEvent} event
+ */
+function keyboardShortcutHandler(event) {
+  if (document.activeElement?.classList.contains('ft-input')) {
+    return
+  }
+
+  // Avoid handling events due to user holding a key (not released)
+  if (event.repeat) { return }
+
+  switch (event.key.toLowerCase()) {
+    case 'f5':
+    case KeyboardShortcuts.APP.SITUATIONAL.REFRESH:
+      refresh()
+      break
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', keyboardShortcutHandler)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', keyboardShortcutHandler)
 })
 
 /*
@@ -159,10 +266,17 @@ function increaseLimit() {
 }
 
 // Once the datastore has loaded, which on a page opened at startup is a
-// moment after the page is; and once HackerTube's videos are in, the crawl
+// moment after the page is; then a refresh, if one is due, so that a newer
+// HackerTube export is in; and then the crawl
 watch(ready, async (isReady) => {
   if (isReady) {
     await store.dispatch('openCollections')
+
+    try {
+      await store.dispatch('refreshCollectionsIfDue')
+    } catch (error) {
+      console.error('Collections: the refresh on open failed', error)
+    }
 
     if (!loadFailed.value) {
       startCollectionsCrawl()
@@ -171,4 +285,5 @@ watch(ready, async (isReady) => {
 }, { immediate: true })
 </script>
 
+<style scoped src="../../components/FtToggleChip/chipRow.css" />
 <style scoped src="./Collections.css" />
