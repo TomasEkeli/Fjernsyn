@@ -389,8 +389,9 @@ async function openCollectionsOnce({ state, commit, dispatch }) {
     await dispatch('grabCollections')
   }
 
-  // What is held may be empty only because it could not be read: following
-  // HackerTube then would overwrite its record, and load the bundle again
+  // What is held may be empty only because it could not be read: taking it
+  // for unfollowed would apply the starter set over it, and load the bundle
+  // again
   if (state.collectionsGrabFailed) {
     commit('setCollectionsLoadFailed', true)
     return
