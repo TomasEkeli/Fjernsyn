@@ -111,8 +111,12 @@ export function videoRefFromLink(link) {
 /** A uuid, any version, as a PeerTube URL may carry it */
 const UUID = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i
 
-/** A version 4 uuid, which is what PeerTube makes for every video */
-const UUID_V4 = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/
+/**
+ * A uuid of one of RFC 9562's versions, 1 to 8, with its variant bits: what
+ * PeerTube makes (version 4) and what it keeps for a video imported with a
+ * uuid of its own
+ */
+const RFC_UUID = /^[\da-f]{8}-[\da-f]{4}-[1-8][\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/
 
 /**
  * The alphabet of PeerTube's short uuids: `short-uuid`'s default, Flickr's
@@ -131,9 +135,11 @@ const UUID_LIMIT = 1n << 128n
 /**
  * The uuid a PeerTube short uuid stands for, worked out rather than asked:
  * the inverse of `short-uuid`'s `fromUUID`. Nothing for what is not one, and
- * for anything that is not a version 4 uuid, which every video PeerTube makes
- * has: so that a word or a page name of the right length on another site's
- * `/w/` path is not taken for a video.
+ * for anything that does not decode to an RFC uuid (a version from 1 to 8,
+ * the RFC's variant bits), so that a word or a page name of the right length
+ * on another site's `/w/` path is seldom taken for a video: a random string
+ * of the right length and alphabet passes about once in eight, and the host
+ * is then asked whether it is PeerTube before anything is kept.
  *
  * @param {string} short
  * @returns {string | null} lower case
@@ -151,7 +157,7 @@ export function uuidFromShortUuid(short) {
   const hex = value.toString(16).padStart(32, '0')
   const uuid = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 
-  return UUID_V4.test(uuid) ? uuid : null
+  return RFC_UUID.test(uuid) ? uuid : null
 }
 
 /**

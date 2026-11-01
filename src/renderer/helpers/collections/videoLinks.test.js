@@ -133,8 +133,8 @@ const NOT_PEERTUBE = [
   'https://example.org/w/about',
   'https://example.org/w/12345',
   'https://example.org/w/',
-  // Twenty-two characters that are base 58 but no uuid PeerTube makes (not a
-  // version 4 uuid), and others that are not base 58 at all
+  // Twenty-two characters that are base 58 but no RFC uuid (all zeros, too
+  // large), and others that are not base 58 at all
   'https://example.org/w/1111111111111111111111',
   'https://example.org/w/zzzzzzzzzzzzzzzzzzzzzz',
   'https://example.org/w/0OIl0OIl0OIl0OIl0OIl0O',
@@ -187,6 +187,23 @@ describe('a short uuid', () => {
     ['1GcddTf1uzhyXscJ4ymdEG', '059ca8df-3049-44a3-93a9-d603327f2e74'],
   ])('%s is the uuid %s', (short, uuid) => {
     expect(uuidFromShortUuid(short)).toBe(uuid)
+  })
+
+  // Worked out with short-uuid's own algorithm: PeerTube imports videos from
+  // other software keeping their uuids, so any RFC version may turn up
+  it.each([
+    ['1bZLJsfkhvwWHrj4Y3h5Hv', '01890a5d-ac96-774b-bcce-b302099a8057', 'a version 7'],
+    ['pYS2jSFSajW9yjUPN76fcG', 'c232ab00-9414-11ec-b3c8-9f6bdeced846', 'a version 1'],
+  ])('%s is the uuid %s, %s', (short, uuid) => {
+    expect(uuidFromShortUuid(short)).toBe(uuid)
+  })
+
+  it.each([
+    ['1bZLJsfkbdzr7xfm583Nve', 'version 0'],
+    ['1bZLJsfkjiNNAQtqdSCrVi', 'version 9'],
+    ['1bZLJsfkhvwL1ygbiCHaAp', 'not the RFC variant'],
+  ])('%s is none: %s', (short) => {
+    expect(uuidFromShortUuid(short)).toBe(null)
   })
 
   it.each(['', 'about', '0OIl', 'zzzzzzzzzzzzzzzzzzzzzzzz', '1111111111111111111111'])('%j is none', (short) => {
