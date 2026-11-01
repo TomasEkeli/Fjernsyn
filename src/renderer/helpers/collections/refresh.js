@@ -156,7 +156,22 @@ async function refreshSource(deps, source) {
     throw new Error(`no source kind ${source.kind}`)
   }
 
-  const { items, sourceFields, sourceData } = await kind.fetch(source, { fetch: deps.fetch })
+  return keepSourceFetch(deps, source, await kind.fetch(source, { fetch: deps.fetch }))
+}
+
+/**
+ * Keeps what a source answered, as a refresh does: the shares that are new or
+ * changed, then its own data, then the fields for its record, with when it
+ * was refreshed. Nothing for a source no longer followed. Following a source
+ * keeps what its trial fetched through this (`follow.js`).
+ *
+ * @param {Pick<RefreshDependencies, 'kinds' | 'now' | 'keptShares' | 'isFollowed' | 'putShares' | 'putSourceData' | 'updateSource'>} deps
+ * @param {import('./shares.js').Source} source
+ * @param {import('./kinds/index.js').SourceFetch} fetched
+ * @returns {Promise<number>} how many shares were put
+ */
+export async function keepSourceFetch(deps, source, { items, sourceFields, sourceData }) {
+  const kind = deps.kinds[source.kind]
   const kept = deps.keptShares()
   const shares = sharesToPut(kept, kind.toShares(items, source, deps.now(), kept))
 

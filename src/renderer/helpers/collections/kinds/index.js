@@ -42,6 +42,9 @@ import { lemmyKind } from './lemmy.js'
  * @property {(url: string, now: number) => import('../shares.js').Source | null} recognise
  * @property {(source: import('../shares.js').Source, deps: { fetch: typeof fetch }) => Promise<SourceFetch>} fetch
  * @property {(items: any[], source: import('../shares.js').Source, seenAt: number, kept: Record<string, import('../shares.js').Share>) => import('../shares.js').Share[]} toShares
+ * @property {boolean} [shipped] whether its videos come with the app, so
+ *   that following it by URL asks it nothing first (`../follow.js`), and the
+ *   first open of Collections loads them (HackerTube)
  */
 
 /**
