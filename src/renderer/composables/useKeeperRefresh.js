@@ -33,7 +33,7 @@ import { DBPlaylistHandlers } from '../../datastores/handlers/index'
 
 /**
  * The sections a sync file holds, as the keeper names them
- * @typedef {'profiles' | 'history' | 'playlists' | 'later' | 'searchHistory' | 'settings' | 'channels' | 'aiVerdicts'} KeeperSection
+ * @typedef {'profiles' | 'history' | 'playlists' | 'later' | 'searchHistory' | 'settings' | 'channels' | 'aiVerdicts' | 'collectionSources' | 'collectionShares'} KeeperSection
  */
 
 /** Each section but settings and profiles, which go first, and its action */
@@ -128,6 +128,11 @@ async function reload(store, sections, defaultProfileName, historyChanges = null
     } else {
       loads.push(store.dispatch(action))
     }
+  }
+
+  // The followed sources and their shares are read together, as one load
+  if (sections.has('collectionSources') || sections.has('collectionShares')) {
+    loads.push(store.dispatch('grabCollections'))
   }
 
   await Promise.all(loads)
