@@ -611,6 +611,9 @@ async function putCollectionShares(shares) {
     await db.collectionShares.insertAsync(fresh)
   }
 
+  // One update, and one appended line, per share already kept: a refresh that
+  // sees the whole bundle again writes thousands. The update check (ticket 03)
+  // is to put only the shares that changed
   for (const id of known) {
     const { _id, ...fields } = byId.get(id)
     await db.collectionShares.updateAsync({ _id }, { $set: fields })
