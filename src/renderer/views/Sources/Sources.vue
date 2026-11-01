@@ -78,7 +78,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref, useTemplateRef } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import FtButton from '../../components/FtButton/FtButton.vue'
@@ -106,12 +106,26 @@ import { showToast } from '../../helpers/utils'
  * not bring the older ones back.
  *
  * Each source opens its own page (`views/CollectionSource`).
+ *
+ * Visiting it opens Collections as a wall does, without the refresh: on a
+ * first run that follows the starter set and loads HackerTube's videos, so
+ * the list is what Collections will show from the start, and a starter
+ * source can be unfollowed before any wall is opened.
  */
 
 const { t } = useI18n()
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const ready = computed(() => store.getters.getCollectionsReady)
+
+// Once the datastore is read: before, what is held says nothing of what is followed
+let opened = false
+watch(ready, (isReady) => {
+  if (!isReady || opened) { return }
+
+  opened = true
+  store.dispatch('openCollections').catch(error => console.error('Sources: could not open Collections', error))
+}, { immediate: true })
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const grabFailed = computed(() => store.getters.getCollectionsGrabFailed)
