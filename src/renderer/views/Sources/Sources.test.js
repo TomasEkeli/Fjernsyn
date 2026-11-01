@@ -80,7 +80,7 @@ async function paste(wrapper, text) {
   await flushPromises()
 }
 
-/** What the page dispatched to follow by address, apart from opening Collections */
+/** What the page dispatched to follow by address, apart from following the starter set */
 const follows = () => store.dispatched.filter(({ type }) => type === 'followCollectionSourceByUrl')
 
 enableAutoUnmount(afterEach)
@@ -205,10 +205,10 @@ describe('the Sources page', () => {
     }
   })
 
-  it('opens Collections once the datastore is read, which follows the starter set on a first run and loads HackerTube\'s videos', async () => {
+  it('follows the starter set once the datastore is read, and loads nothing, as a first run does on a wall', async () => {
     store.setGetter('getCollectionsReady', false)
     const wrapper = await mountSources()
-    const opens = () => store.dispatched.filter(({ type }) => type === 'openCollections')
+    const opens = () => store.dispatched.filter(({ type }) => type === 'applyCollectionsStarterSet')
 
     expect(opens()).toEqual([])
 
@@ -220,6 +220,8 @@ describe('the Sources page', () => {
     store.setGetter('getCollectionSources', [HACKERTUBE])
     await flushPromises()
     expect(opens()).toHaveLength(1)
+    // No bundle load from here: HackerTube's videos come with the first wall
+    expect(store.dispatched.filter(({ type }) => type === 'openCollections')).toEqual([])
     wrapper.unmount()
   })
 

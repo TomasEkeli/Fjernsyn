@@ -107,10 +107,11 @@ import { showToast } from '../../helpers/utils'
  *
  * Each source opens its own page (`views/CollectionSource`).
  *
- * Visiting it opens Collections as a wall does, without the refresh: on a
- * first run that follows the starter set and loads HackerTube's videos, so
- * the list is what Collections will show from the start, and a starter
- * source can be unfollowed before any wall is opened.
+ * Visiting it follows the starter set on a first run, and nothing more: the
+ * list is what Collections will follow from the start, and a starter source
+ * can be unfollowed before any wall is opened. Their videos come with the
+ * first wall opened (HackerTube's from the bundle, the communities' from its
+ * refresh), so until then each shows none here.
  */
 
 const { t } = useI18n()
@@ -119,12 +120,12 @@ const { t } = useI18n()
 const ready = computed(() => store.getters.getCollectionsReady)
 
 // Once the datastore is read: before, what is held says nothing of what is followed
-let opened = false
+let applied = false
 watch(ready, (isReady) => {
-  if (!isReady || opened) { return }
+  if (!isReady || applied) { return }
 
-  opened = true
-  store.dispatch('openCollections').catch(error => console.error('Sources: could not open Collections', error))
+  applied = true
+  store.dispatch('applyCollectionsStarterSet').catch(error => console.error('Sources: could not follow the starter set', error))
 }, { immediate: true })
 
 /** @type {import('vue').ComputedRef<boolean>} */
