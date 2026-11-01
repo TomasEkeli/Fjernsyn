@@ -421,6 +421,12 @@ const state = {
   // list (composables/useLaterTakeover.js), so that a playlist named Watch
   // Later made afterwards, which upstream gives the same id, stays a playlist
   laterTakeoverDone: false,
+  // Set once Collections' starter set has been followed
+  // (helpers/collections/starterSet.js), so that it is never followed again
+  // and a starter source unfollowed stays unfollowed. Goes in a backup with
+  // the followed sources, so a machine restoring one does not follow again
+  // what the other machine unfollowed.
+  collectionsStarterSetDone: false,
   generalAutoLoadMorePaginatedItemsEnabled: false,
   commentAutoLoadEnabled: true,
   hideToTrayOnMinimize: false,
