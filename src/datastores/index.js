@@ -58,3 +58,7 @@ export const collectionShares = createDatastore('collection-shares')
 // the crawl fetched them; kept apart from the shares, which stay what their
 // sources said
 export const collectionVideos = createDatastore('collection-videos')
+// Collections: what a source has of its own besides its shares and too large
+// to rewrite with its record on every refresh (HackerTube's taxonomy), one
+// record per source; rebuilt from the bundle and the update, never backed up
+export const collectionSourceData = createDatastore('collection-source-data')

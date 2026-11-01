@@ -2613,6 +2613,18 @@ function runApp() {
           syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, { event: SyncEvents.COLLECTIONS.PUT_VIDEOS, data })
           return null
 
+        case DBActions.COLLECTIONS.FIND_SOURCE_DATA:
+          return await baseHandlers.collections.findSourceData()
+
+        case DBActions.COLLECTIONS.PUT_SOURCE_DATA:
+          if (!isStorableCollectionRecord(data)) {
+            // eslint-disable-next-line no-throw-literal
+            throw 'invalid collections data'
+          }
+          await baseHandlers.collections.putSourceData(data)
+          syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, { event: SyncEvents.COLLECTIONS.PUT_SOURCE_DATA, data })
+          return null
+
         default:
           // eslint-disable-next-line no-throw-literal
           throw 'invalid collections db action'

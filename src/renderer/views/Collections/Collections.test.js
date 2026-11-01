@@ -6,6 +6,7 @@ import { collectionsCrawlProgress, startCollectionsCrawl } from '../../helpers/c
 import { mountWithApp } from '../../testing/mount'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
+import FtRefreshWidget from '../../components/FtRefreshWidget/FtRefreshWidget.vue'
 import Collections from './Collections.vue'
 
 vi.mock('../../store/index', async () => {
@@ -18,6 +19,11 @@ vi.mock('../../store/index', async () => {
         getCollectionsLoadFailed: false,
         getCollectionShares: [],
         getCollectionVideos: {},
+        getCollectionsGrabFailed: false,
+        getCollectionsRefreshing: false,
+        getCollectionsRefreshProgress: { done: 0, total: 0 },
+        getCollectionsLastRefreshAt: null,
+        getCollectionsRefreshFailures: [],
       },
     }),
   }
@@ -68,6 +74,11 @@ describe('Collections', () => {
     store.setGetter('getCollectionsLoadFailed', false)
     store.setGetter('getCollectionShares', [])
     store.setGetter('getCollectionVideos', {})
+    store.setGetter('getCollectionsGrabFailed', false)
+    store.setGetter('getCollectionsRefreshing', false)
+    store.setGetter('getCollectionsRefreshProgress', { done: 0, total: 0 })
+    store.setGetter('getCollectionsLastRefreshAt', null)
+    store.setGetter('getCollectionsRefreshFailures', [])
     collectionsCrawlProgress.state = 'idle'
     vi.mocked(startCollectionsCrawl).mockClear()
   })
@@ -82,7 +93,7 @@ describe('Collections', () => {
     store.setGetter('getCollectionsReady', true)
     await flushPromises()
 
-    expect(store.dispatched.map(({ type }) => type)).toEqual(['openCollections'])
+    expect(store.dispatched.map(({ type }) => type)).toEqual(['openCollections', 'refreshCollectionsIfDue'])
   })
 
   it('shows a loader while the bundle loads', async () => {
@@ -109,7 +120,8 @@ describe('Collections', () => {
     expect(data[99].videoId).toBe('video000050')
     expect(wrapper.findComponent(FtElementList).props('aiWall')).toBe(true)
 
-    await wrapper.find('button').trigger('click')
+    // Load more, after the refresh button
+    await wrapper.findAll('button').at(-1).trigger('click')
 
     expect(listed(wrapper)).toHaveLength(150)
   })
@@ -153,7 +165,8 @@ describe('Collections', () => {
     expect(wrapper.find('.message').text()).toContain('could not be loaded')
   })
 
-  it('starts the crawl once Collections is open', async () => {
+  it('starts the crawl once Collections is open and has videos', async () => {
+    store.setGetter('getCollectionShares', [share(1, 1)])
     mountCollections()
     await flushPromises()
     expect(startCollectionsCrawl).not.toHaveBeenCalled()
@@ -162,6 +175,33 @@ describe('Collections', () => {
     await flushPromises()
 
     expect(startCollectionsCrawl).toHaveBeenCalledTimes(1)
+  })
+
+  it('starts the crawl without waiting for the refresh, but after the bundle is in', async () => {
+    store.setGetter('getCollectionShares', [share(1, 1)])
+    const dispatch = store.dispatch
+    let finishOpen
+    store.dispatch = (type, payload) => {
+      dispatch(type, payload)
+      if (type === 'openCollections') { return new Promise((resolve) => { finishOpen = resolve }) }
+      // A refresh that never ends
+      return new Promise(() => {})
+    }
+
+    try {
+      store.setGetter('getCollectionsReady', true)
+      mountCollections()
+      await flushPromises()
+      expect(startCollectionsCrawl).not.toHaveBeenCalled()
+
+      finishOpen()
+      await flushPromises()
+
+      expect(store.dispatched.map(({ type }) => type)).toEqual(['openCollections', 'refreshCollectionsIfDue'])
+      expect(startCollectionsCrawl).toHaveBeenCalledTimes(1)
+    } finally {
+      store.dispatch = dispatch
+    }
   })
 
   it('does not start the crawl when the videos could not be loaded', async () => {
@@ -174,24 +214,131 @@ describe('Collections', () => {
     expect(startCollectionsCrawl).not.toHaveBeenCalled()
   })
 
-  it('shows how many videos have their details while the crawl runs, and nothing once it is done', async () => {
+  it('starts the crawl once a refresh brings the videos the bundle could not', async () => {
     store.setGetter('getCollectionsReady', true)
-    store.setGetter('getCollectionShares', Array.from({ length: 3 }, (_, index) => share(index, index)))
+    store.setGetter('getCollectionsLoadFailed', true)
+    mountCollections()
+    await flushPromises()
+
+    store.setGetter('getCollectionsLoadFailed', false)
+    store.setGetter('getCollectionShares', [share(1, 1)])
+    await flushPromises()
+
+    expect(startCollectionsCrawl).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows the crawl in the refresh widget while it runs, with how many videos have their details, and nothing once it is done', async () => {
+    store.setGetter('getCollectionsReady', true)
+    store.setGetter('getCollectionShares', Array.from({ length: 4 }, (_, index) => share(index, index)))
     store.setGetter('getCollectionVideos', { video000001: { _id: 'video000001', videoId: 'video000001', fetchedAt: 1 } })
     collectionsCrawlProgress.state = 'running'
 
     const wrapper = mountCollections()
     await flushPromises()
 
-    expect(wrapper.find('.crawlProgress').text()).toBe('Fetching video details: 1 of 3')
+    const widget = () => wrapper.findComponent(FtRefreshWidget)
+    expect(widget().props('activityLabel')).toBe('Fetching video details')
+    expect(widget().props('activityProgress')).toBe(0.25)
 
     collectionsCrawlProgress.state = 'paused'
     await flushPromises()
-    expect(wrapper.find('.crawlProgress').text()).toContain('paused')
+    expect(widget().props('activityLabel')).toBe('Video details paused')
 
     collectionsCrawlProgress.state = 'done'
     await flushPromises()
-    expect(wrapper.find('.crawlProgress').exists()).toBe(false)
+    expect(widget().props('activityLabel')).toBe('')
+    expect(widget().props('activityProgress')).toBe(null)
+  })
+
+  describe('the refresh widget', () => {
+    it('says when every source was last refreshed', async () => {
+      store.setGetter('getCollectionsReady', true)
+      store.setGetter('getCollectionsLastRefreshAt', 1_700_000_000_000)
+
+      const wrapper = mountCollections()
+      await flushPromises()
+
+      expect(wrapper.findComponent(FtRefreshWidget).props('lastRefreshAt')).toBe(1_700_000_000_000)
+    })
+
+    it('refreshes from its button', async () => {
+      store.setGetter('getCollectionsReady', true)
+      const wrapper = mountCollections()
+      await flushPromises()
+      store.dispatched.length = 0
+
+      wrapper.findComponent(FtRefreshWidget).vm.$emit('click')
+
+      expect(store.dispatched.map(({ type }) => type)).toEqual(['refreshCollections'])
+    })
+
+    it('refreshes on R and F5, and not on a key held down or while typing', async () => {
+      store.setGetter('getCollectionsReady', true)
+      mountCollections()
+      await flushPromises()
+      store.dispatched.length = 0
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'r' }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F5' }))
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', repeat: true }))
+
+      const input = document.createElement('input')
+      input.classList.add('ft-input')
+      document.body.appendChild(input)
+      input.focus()
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'r' }))
+      input.remove()
+
+      expect(store.dispatched.map(({ type }) => type)).toEqual(['refreshCollections', 'refreshCollections'])
+    })
+
+    it('does not refresh while a refresh runs, while the bundle loads, or before the datastore is read', async () => {
+      for (const [getter, value] of [['getCollectionsRefreshing', true], ['getCollectionsLoading', true], ['getCollectionsReady', false], ['getCollectionsGrabFailed', true]]) {
+        store.setGetter('getCollectionsReady', true)
+        store.setGetter(getter, value)
+        const wrapper = mountCollections()
+        await flushPromises()
+        store.dispatched.length = 0
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'r' }))
+
+        expect(wrapper.findComponent(FtRefreshWidget).props('disableRefresh'), getter).toBe(true)
+        expect(store.dispatched, getter).toEqual([])
+        wrapper.unmount()
+        store.setGetter(getter, getter === 'getCollectionsReady')
+      }
+    })
+
+    it('says it is refreshing in place of the crawl, with how many sources are done when there is more than one', async () => {
+      store.setGetter('getCollectionsReady', true)
+      store.setGetter('getCollectionsRefreshing', true)
+      store.setGetter('getCollectionsRefreshProgress', { done: 0, total: 1 })
+      collectionsCrawlProgress.state = 'running'
+
+      const wrapper = mountCollections()
+      await flushPromises()
+
+      const widget = wrapper.findComponent(FtRefreshWidget)
+      expect(widget.props('activityLabel')).toBe('Asking the sources for new videos')
+      expect(widget.props('activityProgress')).toBe(null)
+
+      store.setGetter('getCollectionsRefreshProgress', { done: 1, total: 4 })
+      await flushPromises()
+      expect(widget.props('activityProgress')).toBe(0.25)
+    })
+
+    it('says which sources could not be refreshed, and nothing when all could', async () => {
+      store.setGetter('getCollectionsReady', true)
+      const wrapper = mountCollections()
+      await flushPromises()
+
+      expect(wrapper.find('.refreshFailed').exists()).toBe(false)
+
+      store.setGetter('getCollectionsRefreshFailures', [{ _id: 'hackertube', name: 'HackerTube', failedAt: 1 }])
+      await flushPromises()
+
+      expect(wrapper.find('.refreshFailed').text()).toBe('Could not refresh HackerTube')
+    })
   })
 
   it('shows a video\'s details on its card once they are in, and leaves an unavailable one off', async () => {

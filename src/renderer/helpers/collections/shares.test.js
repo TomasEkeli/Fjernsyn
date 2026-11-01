@@ -1,7 +1,7 @@
 import { computed, reactive } from 'vue'
 import { describe, expect, it } from 'vitest'
 
-import { shareId, shareVideoKey, wallVideos } from './shares'
+import { shareId, sharesToPut, shareVideoKey, wallVideos } from './shares'
 
 /**
  * @param {string} sourceId
@@ -220,5 +220,78 @@ describe('the wall\'s videos, with their details', () => {
     })
 
     expect(video.lengthSeconds).toBe(213)
+  })
+})
+
+describe('which shares a fetch puts', () => {
+  const kept = {
+    [shareId('hackertube', { videoId: 'aaaaaaaaaaa' })]: share('hackertube', 'aaaaaaaaaaa', { votes: 5, why: 'old why', categories: ['x', 'y'], seenAt: 1 }),
+    [shareId('hackertube', { videoId: 'bbbbbbbbbbb' })]: share('hackertube', 'bbbbbbbbbbb', { votes: 3, seenAt: 1 }),
+  }
+
+  it('puts a video new to the source as a new share', () => {
+    const fresh = share('hackertube', 'ccccccccccc', { seenAt: 9 })
+
+    expect(sharesToPut(kept, [fresh])).toEqual([fresh])
+  })
+
+  it('puts nothing for a share the source gives again unchanged, however long ago it was last put', () => {
+    const again = share('hackertube', 'bbbbbbbbbbb', { votes: 3, seenAt: 9 })
+
+    expect(sharesToPut(kept, [again])).toEqual([])
+  })
+
+  it('puts a kept share whose votes, why or categories changed, as the source now gives it', () => {
+    const votes = share('hackertube', 'aaaaaaaaaaa', { votes: 6, why: 'old why', categories: ['x', 'y'], seenAt: 9 })
+    const why = share('hackertube', 'aaaaaaaaaaa', { votes: 5, why: 'new why', categories: ['x', 'y'], seenAt: 9 })
+    const categories = share('hackertube', 'aaaaaaaaaaa', { votes: 5, why: 'old why', categories: ['x'], seenAt: 9 })
+    const reordered = share('hackertube', 'aaaaaaaaaaa', { votes: 5, why: 'old why', categories: ['y', 'x'], seenAt: 9 })
+    const title = share('hackertube', 'aaaaaaaaaaa', { votes: 5, why: 'old why', categories: ['x', 'y'], title: 'Renamed', seenAt: 9 })
+
+    for (const changed of [votes, why, categories, reordered, title]) {
+      expect(sharesToPut(kept, [changed])).toEqual([changed])
+    }
+  })
+
+  it('puts nothing for categories given again as a new array with the same ids', () => {
+    const again = share('hackertube', 'aaaaaaaaaaa', { votes: 5, why: 'old why', categories: ['x', 'y'].slice(), seenAt: 9 })
+
+    expect(again.categories).not.toBe(kept[shareId('hackertube', { videoId: 'aaaaaaaaaaa' })].categories)
+    expect(sharesToPut(kept, [again])).toEqual([])
+  })
+
+  it('puts a kept share whose why the source has since taken away', () => {
+    const cleared = share('hackertube', 'aaaaaaaaaaa', { votes: 5, why: null, categories: ['x', 'y'], seenAt: 9 })
+
+    expect(sharesToPut(kept, [cleared])).toEqual([cleared])
+  })
+
+  it('leaves a field the source does not give as it was kept, as the put does', () => {
+    const { categories: _, ...withoutCategories } = share('hackertube', 'aaaaaaaaaaa', { votes: 5, why: 'old why', seenAt: 9 })
+
+    expect(sharesToPut(kept, [withoutCategories])).toEqual([])
+  })
+
+  it('never removes a kept share the source no longer gives', () => {
+    const fresh = share('hackertube', 'ccccccccccc', { seenAt: 9 })
+
+    const put = sharesToPut(kept, [fresh])
+
+    expect(put.map(item => item._id)).toEqual([fresh._id])
+    expect(put.some(item => item._id === shareId('hackertube', { videoId: 'aaaaaaaaaaa' }))).toBe(false)
+  })
+
+  it('puts a share given twice once, as the last of them', () => {
+    const first = share('hackertube', 'ccccccccccc', { votes: 1, seenAt: 9 })
+    const last = share('hackertube', 'ccccccccccc', { votes: 2, seenAt: 9 })
+
+    expect(sharesToPut(kept, [first, last])).toEqual([last])
+  })
+
+  it('takes a kept map whose shares are frozen, as the store holds them', () => {
+    const frozen = Object.freeze({ ...kept })
+    Object.values(frozen).forEach(Object.freeze)
+
+    expect(sharesToPut(frozen, [share('hackertube', 'bbbbbbbbbbb', { votes: 4, seenAt: 9 })])).toHaveLength(1)
   })
 })

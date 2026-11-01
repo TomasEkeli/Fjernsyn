@@ -1,13 +1,48 @@
 /**
- * Shares, and the wall made of them.
+ * Sources and shares, the shapes every source kind makes, and the wall made
+ * of them.
  *
- * A share is one occurrence of a video in a source (see `hackertube.js` for
- * its shape). A video shared by three sources has three shares and is one
+ * A share is one occurrence of a video in a source (`Share` below). A video shared by three sources has three shares and is one
  * card on a wall: shares are keyed by source and video ref, and the wall
  * groups them by the video ref alone.
  *
  * Framework-free and import-free, so that the build script can run it in
  * Node as it is.
+ */
+
+/**
+ * @typedef {object} Share one occurrence of a video in a source
+ * @property {string} _id the source id and the video's ref, see `shareId`
+ * @property {string} sourceId
+ * @property {string} videoId a YouTube video id, or a PeerTube video's uuid
+ * @property {'peertube'} [platform] PeerTube only, as on every stored video
+ * @property {string} [host] PeerTube only: the video's origin
+ * @property {string} title what the source calls it, until the video's own details are known
+ * @property {string} author the channel name the source gives, likewise
+ * @property {number | null} votes the source's votes for it; null where the source has none
+ * @property {string | null} why the source's reason for it
+ * @property {number | null} sharedAt when it was shared, in ms
+ * @property {string | null} discussionUrl where the source discusses it
+ * @property {string[]} [categories] HackerTube's category ids
+ * @property {number} seenAt when the source was first seen to carry it, or
+ *   last seen to change it, in ms (see `sharesToPut`)
+ */
+
+/**
+ * @typedef {object} Source one followed place that shares videos
+ * @property {string} _id
+ * @property {string} kind
+ * @property {string} url
+ * @property {string} name
+ * @property {number} followedAt
+ * @property {string | null} [dataGenerated] HackerTube only: the `generated`
+ *   of the data loaded into this installation's shares, null before any is
+ * @property {number} [checkedAt] when a refresh last worked for it, in ms;
+ *   absent before the first that did. The age the page shows
+ * @property {number} [attemptedAt] when a refresh last asked it, in ms,
+ *   worked or not; what the hour before opening refreshes again counts from
+ * @property {number | null} [failedAt] when its last refresh failed, in ms,
+ *   while that is its last refresh; null once one works
  */
 
 /**
@@ -36,6 +71,56 @@ export function shareVideoKey(ref) {
  */
 export function shareId(sourceId, ref) {
   return `${sourceId}|${shareVideoKey(ref)}`
+}
+
+/**
+ * @param {unknown} a
+ * @param {unknown} b
+ * Shallow: right for a share's fields, which are strings, numbers, null and
+ * arrays of strings (HackerTube's categories), and wrong for anything
+ * nested deeper, which no share holds.
+ *
+ * @returns {boolean} whether two field values are the same, arrays element
+ *   by element and in order
+ */
+function sameValue(a, b) {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length === b.length && a.every((item, index) => item === b[index])
+  }
+
+  return a === b
+}
+
+/**
+ * Of the shares a source gave on a fetch, the ones worth putting: those new
+ * to the datastore, and those it keeps whose fields the source now gives
+ * differently (votes, why, categories, title and the rest). Nothing is
+ * removed: a kept share the source no longer gives is not among them, and
+ * stays. A field a share is given without is left as kept, as the put does.
+ *
+ * When it was seen (`seenAt`) is not compared, or every share would change
+ * on every fetch: a share is put with the time it was first seen, or last
+ * seen changed. Given twice, the last of them counts.
+ *
+ * @param {Record<string, Share>} kept the shares kept, by `_id`
+ * @param {Share[]} shares the shares the source gave
+ * @returns {Share[]}
+ */
+export function sharesToPut(kept, shares) {
+  /** @type {Map<string, Share>} */
+  const given = new Map()
+
+  for (const share of shares) {
+    given.delete(share._id)
+    given.set(share._id, share)
+  }
+
+  return [...given.values()].filter((share) => {
+    const known = Object.hasOwn(kept, share._id) ? kept[share._id] : undefined
+    if (known === undefined) { return true }
+
+    return Object.keys(share).some(field => field !== 'seenAt' && !sameValue(share[field], known[field]))
+  })
 }
 
 /**
@@ -110,7 +195,7 @@ function mostFirst(a, b) {
  * its own title, its channel, duration, views and date. A video YouTube said
  * is unavailable is left off.
  *
- * @param {import('./hackertube').Share[]} shares
+ * @param {Share[]} shares
  * @param {Record<string, any>} [details] the details kept, by the video's ref
  *   as one string (`shareVideoKey`)
  * @returns {CollectionVideo[]}

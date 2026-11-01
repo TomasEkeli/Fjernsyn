@@ -1,7 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { reactive } from 'vue'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { DBCollectionHandlers } from '../../../datastores/handlers/index'
 import { fetchHackerTubeBundle } from '../../helpers/collections/hackertubeBundle'
+import { hackerTubeShare } from '../../helpers/collections/hackertube'
 import { SyncEvents } from '../../../constants'
 import collections from './collections'
 
@@ -13,6 +15,8 @@ vi.mock('../../../datastores/handlers/index', () => ({
     putShares: vi.fn(async () => ({ added: 0, updated: 0 })),
     findVideos: vi.fn(async () => []),
     putVideos: vi.fn(async () => {}),
+    findSourceData: vi.fn(async () => []),
+    putSourceData: vi.fn(async () => {}),
   },
 }))
 
@@ -33,7 +37,7 @@ const BUNDLE = {
 }
 
 function freshState() {
-  return { collectionSources: {}, collectionShares: {}, collectionVideos: {}, collectionsReady: false, collectionsGrabFailed: false, collectionsSyncBuffer: null, collectionsLoading: false, collectionsLoadFailed: false }
+  return { collectionSources: {}, collectionShares: {}, collectionVideos: {}, collectionsReady: false, collectionsGrabFailed: false, collectionsSyncBuffer: null, collectionsLoading: false, collectionsLoadFailed: false, collectionsRefreshing: false, collectionsRefreshProgress: { done: 0, total: 0 }, collectionSourceData: {} }
 }
 
 function contextFor(state) {
@@ -47,6 +51,44 @@ function contextFor(state) {
 }
 
 const shareIds = state => Object.keys(state.collectionShares).sort()
+
+/**
+ * hackertube.org as the update check asks it, answering the manifest with the
+ * date given and the two files with the rows given; every other path is a 404
+ *
+ * @param {{ generated?: string, rows?: object[], down?: boolean }} [options]
+ */
+function stubHackerTube({ generated = '2026-10-31', rows = BUNDLE.videos, down = false } = {}) {
+  const fetch = vi.fn(async (url) => {
+    if (down) { throw new TypeError('Failed to fetch') }
+
+    const { pathname } = new URL(url)
+    switch (pathname) {
+      case '/api/export':
+        return new Response(JSON.stringify({ generated, videos: rows.length }))
+      case '/download/videos.jsonl':
+        return new Response(rows.map(row => JSON.stringify(row)).join('\n'))
+      case '/download/taxonomy.json':
+        return new Response(JSON.stringify({ version: 'v2', areas: [{ id: 'a', name: 'A', categories: [{ id: 'x', name: 'X' }] }] }))
+      default:
+        return new Response('not found', { status: 404 })
+    }
+  })
+
+  vi.stubGlobal('fetch', fetch)
+  return fetch
+}
+
+/** @param {import('vitest').Mock} fetch */
+const pathsAsked = fetch => fetch.mock.calls.map(([url]) => new URL(url).pathname)
+
+/** A state with HackerTube followed and the bundle's two videos loaded, as after the first open */
+async function loadedState() {
+  const state = freshState()
+  await collections.actions.openCollections(contextFor(state))
+  vi.clearAllMocks()
+  return state
+}
 
 describe('the Collections store', () => {
   beforeEach(() => {
@@ -75,6 +117,23 @@ describe('the Collections store', () => {
 
     expect(collections.getters.getCollectionVideos(state)).toEqual({ aaaaaaaaaaa: { _id: 'aaaaaaaaaaa', videoId: 'aaaaaaaaaaa', fetchedAt: 1, lengthSeconds: 60 } })
     expect(Object.isFrozen(state.collectionVideos.aaaaaaaaaaa)).toBe(true)
+  })
+
+  it('loads each source\'s own data the datastore holds, by source', async () => {
+    DBCollectionHandlers.findSourceData.mockResolvedValueOnce([{ _id: 'hackertube', generated: '2026-10-31', taxonomy: { version: 'v', areas: [] } }])
+    const state = freshState()
+
+    await collections.actions.grabCollections(contextFor(state))
+
+    expect(collections.getters.getCollectionSourceData(state)('hackertube')).toEqual({ _id: 'hackertube', generated: '2026-10-31', taxonomy: { version: 'v', areas: [] } })
+  })
+
+  it('takes another window\'s source data', () => {
+    const state = freshState()
+
+    collections.mutations.applyCollectionsSync(state, { event: SyncEvents.COLLECTIONS.PUT_SOURCE_DATA, data: { _id: 'hackertube', generated: 'g', taxonomy: { areas: [] } } })
+
+    expect(state.collectionSourceData.hackertube.generated).toBe('g')
   })
 
   it('says the read failed when the details cannot be read, so the crawl does not take every video for missing', async () => {
@@ -201,6 +260,10 @@ describe('the Collections store', () => {
 
       expect(shareIds(state)).toEqual(['hackertube|aaaaaaaaaaa', 'hackertube|bbbbbbbbbbb'])
       expect(state.collectionSources.hackertube).toMatchObject({ kind: 'hackertube', followedAt: NOW, dataGenerated: '2026-10-31' })
+      // The taxonomy apart from the source's record, which is written on every refresh
+      expect(state.collectionSources.hackertube).not.toHaveProperty('taxonomy')
+      expect(DBCollectionHandlers.putSourceData).toHaveBeenCalledWith({ _id: 'hackertube', generated: '2026-10-31', taxonomy: { version: 'v', areas: [] } })
+      expect(collections.getters.getCollectionSourceData(state)('hackertube')).toMatchObject({ generated: '2026-10-31', taxonomy: { version: 'v' } })
       // Followed first, then marked loaded once the shares are written
       expect(DBCollectionHandlers.upsertSource.mock.calls.map(([source]) => source.dataGenerated)).toEqual([null, '2026-10-31'])
     })
@@ -272,6 +335,38 @@ describe('the Collections store', () => {
       expect(DBCollectionHandlers.putShares).toHaveBeenCalledTimes(1)
     })
 
+    it('puts again only the shares of the bundle that are not already kept as it has them', async () => {
+      const state = freshState()
+      const [kept] = BUNDLE.videos.map(video => hackerTubeShare(video, 1))
+      state.collectionSources.hackertube = { _id: 'hackertube', kind: 'hackertube', followedAt: 1, dataGenerated: null }
+      state.collectionShares[kept._id] = kept
+
+      await collections.actions.openCollections(contextFor(state))
+
+      expect(DBCollectionHandlers.putShares.mock.calls[0][0].map(share => share._id)).toEqual(['hackertube|bbbbbbbbbbb'])
+      expect(state.collectionSources.hackertube.dataGenerated).toBe('2026-10-31')
+    })
+
+    it('does not put the bundle over a newer export a refresh brought in while it was loading', async () => {
+      const state = freshState()
+      state.collectionSources.hackertube = { _id: 'hackertube', kind: 'hackertube', followedAt: 1, dataGenerated: null }
+      fetchHackerTubeBundle.mockImplementationOnce(async () => {
+        // As a refresh would, from an open whose bundle load had failed
+        collections.mutations.upsertCollectionSource(state, { ...state.collectionSources.hackertube, dataGenerated: '2026-11-07' })
+        collections.mutations.putCollectionShares(state, [{ _id: 'hackertube|aaaaaaaaaaa', sourceId: 'hackertube', videoId: 'aaaaaaaaaaa', votes: 30 }])
+        return BUNDLE
+      })
+
+      await collections.actions.openCollections(contextFor(state))
+
+      expect(DBCollectionHandlers.putShares).not.toHaveBeenCalled()
+      expect(DBCollectionHandlers.upsertSource).not.toHaveBeenCalled()
+      expect(state.collectionSources.hackertube.dataGenerated).toBe('2026-11-07')
+      expect(state.collectionShares['hackertube|aaaaaaaaaaa'].votes).toBe(30)
+      expect(state.collectionsLoading).toBe(false)
+      expect(state.collectionsLoadFailed).toBe(false)
+    })
+
     it('keeps what it has and says so when the bundle cannot be read, and tries again next time', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {})
       fetchHackerTubeBundle.mockRejectedValueOnce(new Error('gone'))
@@ -287,6 +382,250 @@ describe('the Collections store', () => {
 
       expect(state.collectionsLoadFailed).toBe(false)
       expect(state.collectionSources.hackertube.dataGenerated).toBe('2026-10-31')
+    })
+  })
+
+  describe('refreshing', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    it('asks HackerTube only for its manifest when its export is the one loaded, and marks it refreshed', async () => {
+      const state = await loadedState()
+      const fetch = stubHackerTube({ generated: '2026-10-31' })
+
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(pathsAsked(fetch)).toEqual(['/api/export'])
+      expect(DBCollectionHandlers.putShares).not.toHaveBeenCalled()
+      expect(DBCollectionHandlers.putSourceData).not.toHaveBeenCalled()
+      expect(state.collectionSources.hackertube).toMatchObject({ dataGenerated: '2026-10-31', checkedAt: NOW, failedAt: null })
+      expect(state.collectionSources.hackertube).not.toHaveProperty('taxonomy')
+      expect(collections.getters.getCollectionsLastRefreshAt(state)).toBe(NOW)
+    })
+
+    it('loads a newer export: new videos become shares, changed ones are updated, and nothing is removed', async () => {
+      const state = await loadedState()
+      const [a, b] = BUNDLE.videos
+      const fetch = stubHackerTube({
+        generated: '2026-11-07',
+        rows: [
+          { ...a, score: 26, why_hn: 'a better why', categories: ['x', 'z'] },
+          { vid: 'ccccccccccc', title: 'C', channel: 'Cc', why_hn: 'new', categories: ['x'], score: 9, hn: { recommenders: 2, first_year: 2026, last_year: 2026 }, quote: null },
+        ],
+      })
+
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(pathsAsked(fetch)).toEqual(['/api/export', '/download/videos.jsonl', '/download/taxonomy.json'])
+      const [put] = DBCollectionHandlers.putShares.mock.calls[0]
+      expect(put.map(share => share._id)).toEqual(['hackertube|aaaaaaaaaaa', 'hackertube|ccccccccccc'])
+      expect(state.collectionShares['hackertube|aaaaaaaaaaa']).toMatchObject({ votes: 26, why: 'a better why', categories: ['x', 'z'] })
+      expect(state.collectionShares['hackertube|ccccccccccc']).toMatchObject({ votes: 9, title: 'C' })
+      // Not in the new export, and kept as it was
+      expect(state.collectionShares[`hackertube|${b.vid}`]).toMatchObject({ votes: 3 })
+      expect(state.collectionSources.hackertube).toMatchObject({ dataGenerated: '2026-11-07', checkedAt: NOW, failedAt: null })
+      expect(state.collectionSourceData.hackertube).toMatchObject({ generated: '2026-11-07', taxonomy: { version: 'v2' } })
+    })
+
+    it('puts only the shares whose numbers changed when a newer export gives the same videos again', async () => {
+      const state = await loadedState()
+      const [a, b] = BUNDLE.videos
+      stubHackerTube({ generated: '2026-11-07', rows: [{ ...a }, { ...b, score: 4, hn: { ...b.hn, last_year: 2025 } }] })
+
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(DBCollectionHandlers.putShares).toHaveBeenCalledTimes(1)
+      expect(DBCollectionHandlers.putShares.mock.calls[0][0].map(share => share._id)).toEqual(['hackertube|bbbbbbbbbbb'])
+      expect(state.collectionShares['hackertube|bbbbbbbbbbb']).toMatchObject({ votes: 4, sharedAt: Date.UTC(2025, 0, 1) })
+    })
+
+    it('keeps what is loaded and marks HackerTube failed when hackertube.org cannot be reached', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const state = await loadedState()
+      const before = { ...state.collectionShares }
+      stubHackerTube({ down: true })
+
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(DBCollectionHandlers.putShares).not.toHaveBeenCalled()
+      expect(state.collectionShares).toEqual(before)
+      expect(state.collectionSources.hackertube).toMatchObject({ dataGenerated: '2026-10-31', attemptedAt: NOW, failedAt: NOW })
+      // Never refreshed successfully, so the widget has no age to give
+      expect(state.collectionSources.hackertube.checkedAt).toBeUndefined()
+      expect(collections.getters.getCollectionsLastRefreshAt(state)).toBe(null)
+      expect(collections.getters.getCollectionsRefreshFailures(state).map(source => source._id)).toEqual(['hackertube'])
+      expect(state.collectionsRefreshing).toBe(false)
+    })
+
+    it('keeps what is loaded when hackertube.org answers with something it cannot read', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const state = await loadedState()
+      vi.stubGlobal('fetch', vi.fn(async () => new Response('<html>maintenance</html>')))
+
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(DBCollectionHandlers.putShares).not.toHaveBeenCalled()
+      expect(state.collectionSources.hackertube).toMatchObject({ dataGenerated: '2026-10-31', failedAt: NOW })
+    })
+
+    it('sends main a source it can copy, from state Vue has made reactive, as the store\'s is', async () => {
+      const state = reactive(freshState())
+      await collections.actions.openCollections(contextFor(state))
+      vi.clearAllMocks()
+      // What the IPC does to a source on its way to main
+      DBCollectionHandlers.upsertSource.mockImplementation(async (source) => { structuredClone(source) })
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      stubHackerTube({ generated: '2026-10-31' })
+
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(console.warn).not.toHaveBeenCalled()
+      expect(state.collectionSources.hackertube).toMatchObject({ checkedAt: NOW, failedAt: null })
+    })
+
+    it('keeps when HackerTube last refreshed when a later refresh fails, and does not ask again on open within the hour', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const state = await loadedState()
+      stubHackerTube()
+      await collections.actions.refreshCollections(contextFor(state))
+      const worked = state.collectionSources.hackertube.checkedAt
+      Date.now.mockReturnValue(NOW + 2 * 60 * 60_000)
+
+      const down = stubHackerTube({ down: true })
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(state.collectionSources.hackertube).toMatchObject({ checkedAt: worked, attemptedAt: NOW + 2 * 60 * 60_000, failedAt: NOW + 2 * 60 * 60_000 })
+      expect(collections.getters.getCollectionsLastRefreshAt(state)).toBe(worked)
+
+      await collections.actions.refreshCollectionsIfDue(contextFor(state))
+      expect(down).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not refresh on open with nothing followed', async () => {
+      const state = freshState()
+      const dispatched = []
+      const context = contextFor(state)
+      context.dispatch = (type, payload) => {
+        dispatched.push(type)
+        return collections.actions[type](context, payload)
+      }
+
+      await collections.actions.refreshCollectionsIfDue(context)
+
+      expect(dispatched).toEqual([])
+    })
+
+    it('stops saying the videos could not be loaded once a refresh brings HackerTube\'s export', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      fetchHackerTubeBundle.mockRejectedValueOnce(new Error('gone'))
+      const state = freshState()
+      await collections.actions.openCollections(contextFor(state))
+      expect(state.collectionsLoadFailed).toBe(true)
+      stubHackerTube({ generated: '2026-10-31' })
+
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(state.collectionSources.hackertube.dataGenerated).toBe('2026-10-31')
+      expect(shareIds(state)).toEqual(['hackertube|aaaaaaaaaaa', 'hackertube|bbbbbbbbbbb'])
+      expect(state.collectionsLoadFailed).toBe(false)
+    })
+
+    it('still says the videos could not be loaded when the refresh failed too', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      fetchHackerTubeBundle.mockRejectedValueOnce(new Error('gone'))
+      const state = freshState()
+      await collections.actions.openCollections(contextFor(state))
+      stubHackerTube({ down: true })
+
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(state.collectionsLoadFailed).toBe(true)
+    })
+
+    it('stops saying it failed once a refresh works', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const state = await loadedState()
+      stubHackerTube({ down: true })
+      await collections.actions.refreshCollections(contextFor(state))
+
+      stubHackerTube()
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(collections.getters.getCollectionsRefreshFailures(state)).toEqual([])
+    })
+
+    it('says it is refreshing while it is, and how far it has got', async () => {
+      const state = await loadedState()
+      const seen = []
+      vi.stubGlobal('fetch', vi.fn(async () => {
+        seen.push({ refreshing: state.collectionsRefreshing, progress: { ...state.collectionsRefreshProgress } })
+        return new Response(JSON.stringify({ generated: '2026-10-31' }))
+      }))
+
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(seen).toEqual([{ refreshing: true, progress: { done: 0, total: 1 } }])
+      expect(state.collectionsRefreshing).toBe(false)
+      expect(state.collectionsRefreshProgress).toEqual({ done: 1, total: 1 })
+    })
+
+    it('runs once when asked twice at the same time', async () => {
+      const state = await loadedState()
+      const fetch = stubHackerTube()
+      const context = contextFor(state)
+
+      await Promise.all([collections.actions.refreshCollections(context), collections.actions.refreshCollections(context)])
+
+      expect(fetch).toHaveBeenCalledTimes(1)
+    })
+
+    it('does nothing over a datastore it could not read', async () => {
+      const state = await loadedState()
+      state.collectionsGrabFailed = true
+      const fetch = stubHackerTube()
+
+      await collections.actions.refreshCollections(contextFor(state))
+      await collections.actions.refreshCollectionsIfDue(contextFor(state))
+
+      expect(fetch).not.toHaveBeenCalled()
+    })
+
+    it('refreshes on open when it never has, or last did more than an hour ago', async () => {
+      const state = await loadedState()
+      const fetch = stubHackerTube()
+
+      await collections.actions.refreshCollectionsIfDue(contextFor(state))
+      expect(fetch).toHaveBeenCalledTimes(1)
+
+      state.collectionSources.hackertube = { ...state.collectionSources.hackertube, attemptedAt: NOW - 61 * 60_000 }
+      await collections.actions.refreshCollectionsIfDue(contextFor(state))
+      expect(fetch).toHaveBeenCalledTimes(2)
+    })
+
+    it('does not refresh on open when the last refresh was within the hour, as one kept from before a restart', async () => {
+      const state = await loadedState()
+      state.collectionSources.hackertube = { ...state.collectionSources.hackertube, checkedAt: NOW - 5 * 60 * 60_000, attemptedAt: NOW - 59 * 60_000 }
+      const fetch = stubHackerTube()
+
+      await collections.actions.refreshCollectionsIfDue(contextFor(state))
+
+      expect(fetch).not.toHaveBeenCalled()
+    })
+
+    it('waits for a first open under way before it refreshes, so the bundle is in first', async () => {
+      const state = freshState()
+      const fetch = stubHackerTube()
+      const context = contextFor(state)
+
+      const opened = collections.actions.openCollections(context)
+      await collections.actions.refreshCollections(context)
+      await opened
+
+      expect(fetchHackerTubeBundle).toHaveBeenCalledTimes(1)
+      expect(pathsAsked(fetch)).toEqual(['/api/export'])
+      expect(state.collectionSources.hackertube).toMatchObject({ dataGenerated: '2026-10-31', checkedAt: NOW })
     })
   })
 
