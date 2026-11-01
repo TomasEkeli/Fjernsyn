@@ -103,6 +103,9 @@ let opening = null
 /** The one refresh in flight in this window, which a second refresh joins */
 let refreshing = null
 
+/** How many new sources one imported file may follow */
+const IMPORT_FOLLOWS_AT_MOST = 100
+
 /** The starter set being followed, which a second call joins */
 let applyingStarterSet = null
 
@@ -248,6 +251,9 @@ const actions = {
    * A follow that cannot be written stops the import and rejects; what was
    * followed before it stays followed.
    *
+   * At most `IMPORT_FOLLOWS_AT_MOST` new sources are followed from one file,
+   * as each is asked on every refresh; the rest are counted refused.
+   *
    * @param {any} context
    * @param {string[]} urls the file's feed URLs, in its order
    * @returns {Promise<{ outcome: 'imported', followed: number, followedAlready: number, refused: number } | { outcome: 'unavailable' }>}
@@ -270,6 +276,8 @@ const actions = {
         counts.refused++
       } else if (Object.hasOwn(state.collectionSources, source._id)) {
         counts.followedAlready++
+      } else if (counts.followed >= IMPORT_FOLLOWS_AT_MOST) {
+        counts.refused++
       } else {
         await dispatch('followCollectionSource', source)
         counts.followed++

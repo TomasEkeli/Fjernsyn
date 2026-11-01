@@ -1557,6 +1557,22 @@ describe('the Collections store', () => {
       expect(fetch).not.toHaveBeenCalled()
     })
 
+    it('follows at most 100 new sources from one file, and counts the rest refused', async () => {
+      const state = await loadedState()
+      const urls = [
+        'https://hackertube.org/api/export',
+        ...Array.from({ length: 105 }, (_, i) => `https://lemmy.cafe/c/community${i}`),
+        'https://www.youtube.com/feeds/videos.xml?channel_id=UC1',
+      ]
+
+      const imported = await collections.actions.importCollectionSources(contextFor(state), urls)
+
+      expect(imported).toEqual({ outcome: 'imported', followed: 100, followedAlready: 1, refused: 6 })
+      expect(Object.keys(state.collectionSources)).toHaveLength(101)
+      expect(state.collectionSources['lemmy:community99@lemmy.cafe']).toBeDefined()
+      expect(state.collectionSources['lemmy:community100@lemmy.cafe']).toBeUndefined()
+    })
+
     it('imports nothing before the datastore is read, or after it could not be', async () => {
       for (const field of ['collectionsReady', 'collectionsGrabFailed']) {
         const state = freshState()
