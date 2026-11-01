@@ -49,6 +49,9 @@ import { lemmyKind } from './lemmy.js'
  * @typedef {object} SourceKind
  * @property {string} kind the `kind` on a source's record
  * @property {(url: string, now: number) => import('../shares.js').Source | null} recognise
+ * @property {(source: import('../shares.js').Source) => string} [feedUrl]
+ *   the URL an OPML export lists the source as (`../opml.js`), which
+ *   `recognise` must take back as the same source; its `url` when absent
  * @property {(source: import('../shares.js').Source, deps: { fetch: typeof fetch, peertube?: PeerTubeLinks }) => Promise<SourceFetch>} fetch
  *   `peertube` confirms PeerTube links; without it, a kind takes none
  * @property {(items: any[], source: import('../shares.js').Source, seenAt: number, kept: Record<string, import('../shares.js').Share>) => import('../shares.js').Share[]} toShares

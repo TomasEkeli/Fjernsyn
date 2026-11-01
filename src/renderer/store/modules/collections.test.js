@@ -5,6 +5,7 @@ import { DBCollectionHandlers } from '../../../datastores/handlers/index'
 import { fetchHackerTubeBundle } from '../../helpers/collections/hackertubeBundle'
 import { hackerTubeShare, hackerTubeSource } from '../../helpers/collections/hackertube'
 import { lemmySource } from '../../helpers/collections/kinds/lemmy'
+import { opmlFeedUrls, sourcesOpml } from '../../helpers/collections/opml'
 import { wallVideos } from '../../helpers/collections/shares'
 import { starterSources } from '../../helpers/collections/starterSet'
 import { SyncEvents } from '../../../constants'
@@ -1521,6 +1522,87 @@ describe('the Collections store', () => {
 
       expect(Object.keys(reading.collectionSources)).toEqual(['hackertube'])
       expect(shareIds(reading)).toEqual([])
+    })
+  })
+
+  describe('importing sources from an OPML file', () => {
+    const MEALTIME = lemmySource({ name: 'mealtimevideos', host: 'lemmy.cafe' }, NOW)
+    const TALKS = lemmySource({ name: 'talks', host: 'programming.dev' }, NOW)
+
+    beforeEach(() => {
+      starterSources.mockReset()
+      starterSources.mockImplementation(onlyHackerTube)
+    })
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    it('follows every recognised source not followed, asks none of them anything, and counts what it did', async () => {
+      const state = await loadedState()
+      const fetch = vi.fn()
+      vi.stubGlobal('fetch', fetch)
+
+      const imported = await collections.actions.importCollectionSources(contextFor(state), [
+        'https://hackertube.org/api/export',
+        'https://lemmy.cafe/feeds/c/mealtimevideos.xml?sort=New&limit=50',
+        'https://www.youtube.com/feeds/videos.xml?channel_id=UC1',
+        // Twice in the file: followed by the first
+        'https://lemmy.cafe/feeds/c/mealtimevideos.xml?sort=New&limit=50',
+      ])
+
+      expect(imported).toEqual({ outcome: 'imported', followed: 1, followedAlready: 2, refused: 1 })
+      expect(Object.keys(state.collectionSources).sort()).toEqual(['hackertube', MEALTIME._id])
+      expect(DBCollectionHandlers.upsertSource).toHaveBeenCalledTimes(1)
+      expect(fetch).not.toHaveBeenCalled()
+    })
+
+    it('follows at most 100 new sources from one file, and counts the rest refused', async () => {
+      const state = await loadedState()
+      const urls = [
+        'https://hackertube.org/api/export',
+        ...Array.from({ length: 105 }, (_, i) => `https://lemmy.cafe/c/community${i}`),
+        'https://www.youtube.com/feeds/videos.xml?channel_id=UC1',
+      ]
+
+      const imported = await collections.actions.importCollectionSources(contextFor(state), urls)
+
+      expect(imported).toEqual({ outcome: 'imported', followed: 100, followedAlready: 1, refused: 6 })
+      expect(Object.keys(state.collectionSources)).toHaveLength(101)
+      expect(state.collectionSources['lemmy:community99@lemmy.cafe']).toBeDefined()
+      expect(state.collectionSources['lemmy:community100@lemmy.cafe']).toBeUndefined()
+    })
+
+    it('imports nothing before the datastore is read, or after it could not be', async () => {
+      for (const field of ['collectionsReady', 'collectionsGrabFailed']) {
+        const state = freshState()
+        state[field] = field === 'collectionsGrabFailed'
+
+        const imported = await collections.actions.importCollectionSources(contextFor(state), ['https://hackertube.org'])
+
+        expect(imported, field).toEqual({ outcome: 'unavailable' })
+        expect(DBCollectionHandlers.upsertSource).not.toHaveBeenCalled()
+      }
+    })
+
+    it('round-trips: exported, every source unfollowed, and imported again, the same sources are followed', async () => {
+      const state = await loadedState()
+      const context = contextFor(state)
+      await collections.actions.followCollectionSource(context, MEALTIME)
+      await collections.actions.followCollectionSource(context, TALKS)
+      const before = collections.getters.getCollectionSources(state)
+      const followed = sources => sources.map(({ _id, kind, url, name }) => ({ _id, kind, url, name })).sort((a, b) => a._id.localeCompare(b._id))
+
+      const file = sourcesOpml(before)
+      for (const source of before) {
+        await collections.actions.unfollowCollectionSource(context, source._id)
+      }
+      expect(collections.getters.getCollectionSources(state)).toEqual([])
+
+      const imported = await collections.actions.importCollectionSources(context, opmlFeedUrls(file))
+
+      expect(imported).toEqual({ outcome: 'imported', followed: 3, followedAlready: 0, refused: 0 })
+      expect(followed(collections.getters.getCollectionSources(state))).toEqual(followed(before))
     })
   })
 })

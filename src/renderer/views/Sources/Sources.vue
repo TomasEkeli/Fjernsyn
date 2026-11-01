@@ -25,6 +25,22 @@
           {{ status.text }}
         </p>
       </div>
+      <div class="exchange">
+        <FtButton
+          class="exportButton"
+          :label="$t('Sources.Export')"
+          :title="$t('Sources.Export Title')"
+          :disabled="!canExport"
+          @click="exportSources"
+        />
+        <FtButton
+          class="importButton"
+          :label="$t('Sources.Import')"
+          :title="$t('Sources.Import Title')"
+          :disabled="!canImport"
+          @click="importSources"
+        />
+      </div>
       <FtLoader
         v-if="!ready"
       />
@@ -89,9 +105,10 @@ import FtPrompt from '../../components/FtPrompt/FtPrompt.vue'
 
 import store from '../../store/index'
 
+import { opmlFeedUrls, sourcesOpml } from '../../helpers/collections/opml'
 import { sourceInstance, sourceKindLabel } from '../../helpers/collections/sourceLabels'
 import { sourcesByName } from '../../helpers/collections/sourceChips'
-import { showToast } from '../../helpers/utils'
+import { getTodayDateStrLocalTimezone, readFileWithPicker, showToast, writeFileWithPicker } from '../../helpers/utils'
 
 /**
  * Sources: the places Collections follows, as the Channels page lists the
@@ -107,6 +124,11 @@ import { showToast } from '../../helpers/utils'
  * not bring the older ones back.
  *
  * Each source opens its own page (`views/CollectionSource`).
+ *
+ * The followed sources export as an OPML file, and an OPML file imports,
+ * following every source in it a kind recognises and is not followed
+ * already, without asking any of them first (`helpers/collections/opml.js`,
+ * the store's `importCollectionSources`).
  *
  * Visiting it follows the starter set on a first run, and nothing more: the
  * list is what Collections will follow from the start, and a starter source
@@ -223,6 +245,82 @@ function statusOf({ outcome, source }) {
       return { text: t('Sources.Read Failed'), refused: true }
     default:
       return { text: t('Sources.Unrecognised'), refused: true }
+  }
+}
+
+/** Where the file dialogs open, and which folder they remember */
+const OPML_DIRECTORY_ID = 'collections-sources'
+const START_IN_DIRECTORY = 'downloads'
+
+/** @type {import('vue').ComputedRef<boolean>} */
+const canExport = computed(() => ready.value && !grabFailed.value && sources.value.length > 0)
+
+/** Whether an import is under way */
+const importing = ref(false)
+
+/** @type {import('vue').ComputedRef<boolean>} */
+const canImport = computed(() => canFollow.value && !importing.value)
+
+async function exportSources() {
+  if (!canExport.value) { return }
+
+  try {
+    const written = await writeFileWithPicker(
+      `fjernsyn-sources-${getTodayDateStrLocalTimezone()}.opml`,
+      sourcesOpml(store.getters.getCollectionSources),
+      t('Sources.Sources File'),
+      'application/xml',
+      '.opml',
+      OPML_DIRECTORY_ID,
+      START_IN_DIRECTORY
+    )
+
+    if (written) {
+      showToast(t('Sources.Exported'))
+    }
+  } catch (error) {
+    console.error('Sources: could not export', error)
+    showToast(t('Sources.Export Failed'))
+  }
+}
+
+async function importSources() {
+  if (!canImport.value) { return }
+
+  importing.value = true
+
+  try {
+    const file = await readFileWithPicker(
+      t('Sources.Sources File'),
+      { 'application/xml': ['.opml', '.xml'] },
+      OPML_DIRECTORY_ID,
+      START_IN_DIRECTORY
+    )
+
+    if (file === null) { return }
+
+    let urls
+    try {
+      urls = opmlFeedUrls(file.content)
+    } catch (error) {
+      console.error('Sources: not an OPML file', error)
+      showToast(t('Sources.Import Not OPML'))
+      return
+    }
+
+    const imported = await store.dispatch('importCollectionSources', urls)
+
+    if (imported.outcome === 'imported') {
+      const { followed, followedAlready, refused } = imported
+      showToast(t('Sources.Imported', { followed, followedAlready, refused }))
+    } else {
+      showToast(t('Sources.Read Failed'))
+    }
+  } catch (error) {
+    console.error('Sources: could not import', error)
+    showToast(t('Sources.Import Failed'))
+  } finally {
+    importing.value = false
   }
 }
 

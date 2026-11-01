@@ -68,6 +68,33 @@ const COMMUNITY_NAME = /^\w+$/
 const HOST = /^(?=[^:]{1,253}(?::|$))[a-z\d](?:[a-z\d-]*[a-z\d])?(?:\.[a-z\d](?:[a-z\d-]*[a-z\d])?)+(?::\d{1,5})?$/
 
 /**
+ * Whether a host is this machine or its own network, which no community
+ * followed (by a paste, or by an imported file) may make the app ask:
+ * `localhost` and its subdomains; IPv4 loopback (127/8, and 0/8, which
+ * reaches it on Linux), private (10/8, 172.16/12, 192.168/16) and link-local
+ * (169.254/16). IPv6 literals never get this far, as `HOST` takes no
+ * brackets, so loopback, link-local (fe80::/10) and unique-local (fc00::/7)
+ * are refused with every other.
+ *
+ * @param {string} hostname as the URL parser writes it, without a port
+ * @returns {boolean}
+ */
+function isLocalHost(hostname) {
+  if (hostname === 'localhost' || hostname.endsWith('.localhost')) { return true }
+
+  const ipv4 = /^(\d+)\.(\d+)\.\d+\.\d+$/.exec(hostname)
+  if (ipv4 === null) { return false }
+
+  const a = Number(ipv4[1])
+  const b = Number(ipv4[2])
+
+  return a === 127 || a === 0 || a === 10 ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 169 && b === 254)
+}
+
+/**
  * The `N points |` of a description's header. Lemmy's wording, and so the one
  * thing here that a new Lemmy version could break without failing a request.
  */
@@ -84,6 +111,15 @@ function community(name, host) {
   if (!COMMUNITY_NAME.test(name) || !HOST.test(lowerHost)) { return null }
   // youtube.com/c/<name> is a channel
   if (isYouTubeHost(lowerHost.replace(/:\d+$/, ''))) { return null }
+
+  // As it would be asked: `127.1` and `0x7f.0.0.1` are 127.0.0.1
+  let hostname
+  try {
+    hostname = new URL(`https://${lowerHost}`).hostname
+  } catch {
+    return null
+  }
+  if (isLocalHost(hostname)) { return null }
 
   return { name, host: lowerHost }
 }
@@ -508,6 +544,11 @@ export const lemmyKind = {
   recognise: (url, now) => {
     const where = lemmyCommunity(url)
     return where === null ? null : lemmySource(where, now)
+  },
+  // Its newest posts' feed, on its home instance
+  feedUrl: (source) => {
+    const where = lemmyCommunity(source.url)
+    return where === null ? source.url : lemmyFeedUrl(where, 'New')
   },
   fetch: fetchItems,
   toShares: (items, source, seenAt, kept) => lemmyShares(items, source._id, seenAt, kept),
