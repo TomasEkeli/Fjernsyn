@@ -15,11 +15,11 @@
     },
     {
       "path": "src/constants.js",
-      "reason": "the PeerTube download IPC channels (PEERTUBE_DOWNLOAD, _CANCEL, _REVEAL, _DISMISS, _LIST_DOWNLOADS); Collections' IPC channels (DB_COLLECTIONS, SYNC_COLLECTIONS), DBActions.COLLECTIONS and SyncEvents.COLLECTIONS, the videos' details (FIND_VIDEOS, PUT_VIDEOS) included; the crawl's claim channels (COLLECTIONS_CRAWL_CLAIM, COLLECTIONS_CRAWL_RELEASE)"
+      "reason": "the PeerTube download IPC channels (PEERTUBE_DOWNLOAD, _CANCEL, _REVEAL, _DISMISS, _LIST_DOWNLOADS); Collections' IPC channels (DB_COLLECTIONS, SYNC_COLLECTIONS), DBActions.COLLECTIONS and SyncEvents.COLLECTIONS, the videos' details (FIND_VIDEOS, PUT_VIDEOS) and unfollowing (REMOVE_SOURCE) included; the crawl's claim channels (COLLECTIONS_CRAWL_CLAIM, COLLECTIONS_CRAWL_RELEASE)"
     },
     {
       "path": "src/datastores/handlers/base.js",
-      "reason": "the Collections handler class (sources by id, shares only ever added or updated, videos' details by video ref, each source's own data by source id), and its four datastores loaded and compacted with the others"
+      "reason": "the Collections handler class (sources by id, shares only ever added or updated, videos' details by video ref, each source's own data by source id; unfollowing removes a source with its shares and its own data), and its four datastores loaded and compacted with the others"
     },
     {
       "path": "src/datastores/handlers/electron.js",
@@ -43,7 +43,7 @@
     },
     {
       "path": "src/main/index.js",
-      "reason": "onBeforeSendHeaders hands every request to the PeerTube User-Agent helper (src/main/peertubeRequests.js) first; registers the PeerTube download handlers (src/main/peertubeDownloads/ipc.js) next to the yt-dlp ones; handles DB_COLLECTIONS, Collections' sources, shares and videos' details, beside the Later list's handler, refusing records with `$` fields (src/main/collectionsRecords.js); grants the Collections crawl to one window at a time (src/main/collectionsCrawlClaim.js)"
+      "reason": "onBeforeSendHeaders hands every request to the PeerTube User-Agent helper (src/main/peertubeRequests.js) first; registers the PeerTube download handlers (src/main/peertubeDownloads/ipc.js) next to the yt-dlp ones; handles DB_COLLECTIONS, Collections' sources, shares and videos' details, beside the Later list's handler, by handing it to src/main/collectionsDb.js; grants the Collections crawl to one window at a time (src/main/collectionsCrawlClaim.js)"
     },
     {
       "path": "src/preload/interface.js",
@@ -87,7 +87,7 @@
     },
     {
       "path": "src/renderer/components/TopNav/TopNav.vue",
-      "reason": "the search bar (`goToSearch`, now async) hands its text to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `getYoutubeUrlInfo` only when that hands it back (always, while PeerTube is off); for the layer's search page: the pill (src/renderer/components/LayerSearchPill) in place of the filter button, a plain search goes to the route src/renderer/components/LayerSearchPill/searchBox.js builds instead of one from the store's searchSettings, and an operator's values are the suggestions once its key and colon are typed; the Collections link, after Channels"
+      "reason": "the search bar (`goToSearch`, now async) hands its text to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `getYoutubeUrlInfo` only when that hands it back (always, while PeerTube is off); for the layer's search page: the pill (src/renderer/components/LayerSearchPill) in place of the filter button, a plain search goes to the route src/renderer/components/LayerSearchPill/searchBox.js builds instead of one from the store's searchSettings, and an operator's values are the suggestions once its key and colon are typed; the Collections link, after Channels, and the Sources link after it"
     },
     {
       "path": "src/renderer/components/WatchVideoPlaylist/WatchVideoPlaylist.vue",
@@ -103,7 +103,7 @@
     },
     {
       "path": "src/renderer/helpers/strings.js",
-      "reason": "translateWindowTitle names the Collections route's window title"
+      "reason": "translateWindowTitle names the Collections and Sources routes' window titles"
     },
     {
       "path": "src/renderer/main.js",
@@ -111,7 +111,7 @@
     },
     {
       "path": "src/renderer/router/index.js",
-      "reason": "the PeerTube routes (the layer's watch, channel and search views) spread in from src/renderer/platform/routes.js; `/search/:query` renders the layer's search page (src/renderer/views/LayerSearchPage), imported in place of SearchPage, which stays in the tree unrouted (shadowed); `/channel/:id/:currentTab?` renders `ChannelSurface` from src/renderer/platform/routes.js, upstream's Channel while the surface switch (enableLayerSurfaces) is off and the layer's channel view while it is on, imported in place of Channel; `/watch/:id` likewise renders `WatchSurface`, upstream's Watch or the layer's watch view, imported in place of Watch; the `/collections` route (src/renderer/views/Collections/)"
+      "reason": "the PeerTube routes (the layer's watch, channel and search views) spread in from src/renderer/platform/routes.js; `/search/:query` renders the layer's search page (src/renderer/views/LayerSearchPage), imported in place of SearchPage, which stays in the tree unrouted (shadowed); `/channel/:id/:currentTab?` renders `ChannelSurface` from src/renderer/platform/routes.js, upstream's Channel while the surface switch (enableLayerSurfaces) is off and the layer's channel view while it is on, imported in place of Channel; `/watch/:id` likewise renders `WatchSurface`, upstream's Watch or the layer's watch view, imported in place of Watch; the `/collections` route (src/renderer/views/Collections/), `/sources` (src/renderer/views/Sources/) and a source's own page, `/sources/:sourceId` (src/renderer/views/CollectionSource/)"
     },
     {
       "path": "src/renderer/store/index.js",
@@ -127,7 +127,7 @@
     },
     {
       "path": "static/locales/en-US.yaml",
-      "reason": "the fork-only PeerTube, Layer Search and Layer Surfaces strings; the Collections strings"
+      "reason": "the fork-only PeerTube, Layer Search and Layer Surfaces strings; the Collections and Sources strings"
     }
   ],
   "shadowed": {

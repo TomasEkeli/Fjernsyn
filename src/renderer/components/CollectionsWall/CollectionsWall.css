@@ -1,0 +1,23 @@
+.message {
+  color: var(--tertiary-text-color);
+}
+
+.refreshCell {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+/* The control row is the subscriptions page's (chipRow.css); the refresh
+   stays at its start while nothing else is in the row */
+.controlRow > .refreshCell {
+  justify-self: start;
+}
+
+/* Beside the widget's own words, and as quiet: the wall is still all there */
+.refreshFailed {
+  color: var(--tertiary-text-color);
+  font-size: 0.85rem;
+  margin-block: 0;
+}

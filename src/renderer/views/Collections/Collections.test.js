@@ -17,6 +17,7 @@ vi.mock('../../store/index', async () => {
         getCollectionsReady: false,
         getCollectionsLoading: false,
         getCollectionsLoadFailed: false,
+        getCollectionSources: [],
         getCollectionShares: [],
         getCollectionVideos: {},
         getCollectionsGrabFailed: false,
@@ -41,6 +42,8 @@ vi.mock('../../helpers/collections/crawlRunner', async () => {
 
 // helpers/utils imports the router, which imports every view
 vi.mock('../../router/index', () => ({ default: {} }))
+
+const HACKERTUBE = { _id: 'hackertube', kind: 'hackertube', url: 'https://hackertube.org', name: 'HackerTube' }
 
 /**
  * @param {number} index
@@ -72,6 +75,7 @@ describe('Collections', () => {
     store.setGetter('getCollectionsReady', false)
     store.setGetter('getCollectionsLoading', false)
     store.setGetter('getCollectionsLoadFailed', false)
+    store.setGetter('getCollectionSources', [HACKERTUBE])
     store.setGetter('getCollectionShares', [])
     store.setGetter('getCollectionVideos', {})
     store.setGetter('getCollectionsGrabFailed', false)
@@ -140,19 +144,29 @@ describe('Collections', () => {
     }
   })
 
-  it('credits HackerTube, the dataset and the licence, with links', async () => {
+  it('leaves HackerTube\'s credit to HackerTube\'s own page', async () => {
     store.setGetter('getCollectionsReady', true)
 
     const wrapper = mountCollections()
     await flushPromises()
 
-    const credit = wrapper.find('.credit')
-    expect(credit.text()).toBe('Videos and notes from HackerTube, built on the open-index/hacker-news dataset, under ODC-By 1.0.')
-    expect(credit.findAll('a').map(link => link.attributes('href'))).toEqual([
-      'https://hackertube.org',
-      'https://huggingface.co/datasets/open-index/hacker-news',
-      'https://opendatacommons.org/licenses/by/1-0/',
+    expect(wrapper.find('.credit').exists()).toBe(false)
+  })
+
+  it('is the wall of every followed source, each video once, its votes summed over them', async () => {
+    store.setGetter('getCollectionsReady', true)
+    store.setGetter('getCollectionSources', [HACKERTUBE, { _id: 'lemmy:a@b.example', kind: 'lemmy', name: 'a@b.example' }])
+    store.setGetter('getCollectionShares', [
+      share(1, 5),
+      { ...share(1, 7), _id: 'lemmy:a@b.example|video000001', sourceId: 'lemmy:a@b.example' },
+      // Of a source unfollowed while its shares were being written
+      { ...share(2, 100), _id: 'lemmy:gone@b.example|video000002', sourceId: 'lemmy:gone@b.example' },
     ])
+
+    const wrapper = mountCollections()
+    await flushPromises()
+
+    expect(listed(wrapper)).toEqual([expect.objectContaining({ videoId: 'video000001', collection: expect.objectContaining({ votes: 12 }) })])
   })
 
   it('says so when the bundle could not be loaded and there is nothing to show', async () => {
