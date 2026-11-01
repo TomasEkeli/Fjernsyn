@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { videoRefFromLink } from './videoLinks'
+import { isYouTubeHost, videoRefFromLink } from './videoLinks'
 
 // Every shape of link the spec names, as found in real feeds where it was
 // (lemmy.cafe's mealtimevideos and documentaries, 2026-11-01), and what each
@@ -28,6 +28,10 @@ const YOUTUBE = [
   ['https://WWW.YouTube.com/watch?v=neGgUavFT0w', 'neGgUavFT0w'],
   ['  https://youtu.be/vSHrY5xJsxg  ', 'vSHrY5xJsxg'],
   ['https://www.youtube.com/watch?v=neGgUavFT0w#t=30', 'neGgUavFT0w'],
+  // A trailing slash, as some sites and hand-typed links add
+  ['https://youtu.be/vSHrY5xJsxg/', 'vSHrY5xJsxg'],
+  ['https://www.youtube.com/shorts/aqz-KE-bpKQ/', 'aqz-KE-bpKQ'],
+  ['https://www.youtube.com/live/kvEypYGj2D8/', 'kvEypYGj2D8'],
 ]
 
 const SKIPPED = [
@@ -39,6 +43,9 @@ const SKIPPED = [
   'https://www.youtube.com/',
   'https://www.youtube.com/watch',
   'https://www.youtube.com/watch?list=PL590L5WQmH8fJ54F369BLDSqIwcs-TCfs',
+  // Old shapes for a video, rare in feeds, not recognised
+  'https://www.youtube.com/attribution_link?u=%2Fwatch%3Fv%3DdQw4w9WgXcQ%26feature%3Dshare',
+  'https://www.youtube.com/v/dQw4w9WgXcQ',
   // Not a video id
   'https://www.youtube.com/watch?v=short',
   'https://www.youtube.com/watch?v=neGgUavFT0wX',
@@ -85,5 +92,15 @@ describe('a link as a video', () => {
   it('makes nothing of what is not a string', () => {
     expect(videoRefFromLink(null)).toBe(null)
     expect(videoRefFromLink(undefined)).toBe(null)
+  })
+})
+
+describe('whether a host is YouTube\'s', () => {
+  it.each(['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com', 'gaming.youtube.com', 'youtu.be', 'youtube-nocookie.com', 'www.youtube-nocookie.com', 'WWW.YouTube.com'])('is for %s', (host) => {
+    expect(isYouTubeHost(host)).toBe(true)
+  })
+
+  it.each(['notyoutube.com', 'youtube.com.example.org', 'youtu.be.example.org', 'lemmy.cafe', ''])('is not for %s', (host) => {
+    expect(isYouTubeHost(host)).toBe(false)
   })
 })

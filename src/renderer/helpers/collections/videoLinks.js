@@ -30,6 +30,21 @@ const EMBED_HOSTS = new Set(['youtube.com', 'www.youtube.com', 'youtube-nocookie
 /** The hosts whose `/shorts/<id>` and `/live/<id>` are a YouTube video */
 const PATH_HOSTS = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com'])
 
+/** The domains whose every host is YouTube's */
+const YOUTUBE_DOMAINS = ['youtube.com', 'youtu.be', 'youtube-nocookie.com']
+
+/**
+ * Whether a host is one of YouTube's, any subdomain included: never a Lemmy
+ * instance or any other source, whatever its paths look like.
+ *
+ * @param {string} host a URL's host name
+ * @returns {boolean}
+ */
+export function isYouTubeHost(host) {
+  const lower = host.toLowerCase()
+  return YOUTUBE_DOMAINS.some(domain => lower === domain || lower.endsWith(`.${domain}`))
+}
+
 /**
  * @param {string | null | undefined} id
  * @returns {{ videoId: string } | null}
@@ -46,14 +61,14 @@ function youTubeRef(id) {
  */
 function youTubeLink(url) {
   const host = url.hostname
-  // The path's segments, without the empty one a trailing slash leaves
-  const path = url.pathname.split('/').slice(1)
+  // The path's segments, without the empty ones a trailing or doubled slash leaves
+  const path = url.pathname.split('/').filter(segment => segment !== '')
 
   if (host === 'youtu.be') {
     return path.length === 1 ? youTubeRef(path[0]) : null
   }
 
-  if (WATCH_HOSTS.has(host) && url.pathname === '/watch') {
+  if (WATCH_HOSTS.has(host) && path.length === 1 && path[0] === 'watch') {
     return youTubeRef(url.searchParams.get('v'))
   }
 
