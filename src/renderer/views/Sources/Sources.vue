@@ -6,9 +6,11 @@
       </h2>
       <div class="follow">
         <FtInput
+          ref="followInput"
           class="followInput"
           :placeholder="$t('Sources.Follow Placeholder')"
           :action-button-label="$t('Sources.Follow')"
+          :force-action-button-icon-name="['fas', 'plus']"
           :value="address"
           :disabled="!canFollow"
           :show-label="false"
@@ -55,6 +57,8 @@
           <FtButton
             class="unfollowButton"
             :label="$t('Sources.Unfollow')"
+            :aria-label="$t('Sources.Unfollow Source', { name: source.name })"
+            :title="$t('Sources.Unfollow Source', { name: source.name })"
             :disabled="unfollowing !== null"
             @click="unfollowAsked = source"
           />
@@ -74,7 +78,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import FtButton from '../../components/FtButton/FtButton.vue'
@@ -135,6 +139,8 @@ const sources = computed(() => {
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
 })
 
+const followInput = useTemplateRef('followInput')
+
 /** What is in the field */
 const address = ref('')
 
@@ -174,6 +180,9 @@ async function follow(text) {
     status.value = { text: t('Sources.Follow Failed'), refused: true }
   } finally {
     following.value = false
+    // Back in the field, once it is no longer disabled, for the next address
+    await nextTick()
+    followInput.value?.focus()
   }
 }
 
@@ -193,6 +202,8 @@ function statusOf({ outcome, source }) {
       return { text: t('Sources.No Feed', { name }), refused: true }
     case 'unreachable':
       return { text: t('Sources.Unreachable', { name }), refused: true }
+    case 'unavailable':
+      return { text: t('Sources.Read Failed'), refused: true }
     default:
       return { text: t('Sources.Unrecognised'), refused: true }
   }

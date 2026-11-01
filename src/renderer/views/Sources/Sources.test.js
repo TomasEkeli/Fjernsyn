@@ -45,6 +45,8 @@ function share(source, videoId) {
  */
 function answerFollow(answer) {
   const dispatch = vi.fn(async (type, payload) => {
+    // The field asks the store whether its text is a YouTube link, for its icon
+    if (type === 'getYoutubeUrlInfo') { return { urlType: 'invalid_url' } }
     store.dispatched.push({ type, payload })
     if (type !== 'followCollectionSourceByUrl') { return undefined }
     if (answer instanceof Error) { throw answer }
@@ -145,6 +147,7 @@ describe('the Sources page', () => {
       [{ outcome: 'no-feed', source: { name: 'solarpunk@slrpnk.net' } }, 'solarpunk@slrpnk.net cannot be followed yet: its instance does not serve a feed Fjernsyn can read.'],
       [{ outcome: 'unreachable', source: { name: 'videos@down.example' } }, 'videos@down.example could not be reached. Check the address, or try again later.'],
       [{ outcome: 'unrecognised' }, 'Fjernsyn cannot follow this address yet. It follows HackerTube and Lemmy communities.'],
+      [{ outcome: 'unavailable' }, 'The followed sources could not be read.'],
       [new Error('locked'), 'Something went wrong while following it.'],
     ]
 
@@ -161,6 +164,19 @@ describe('the Sources page', () => {
       expect(wrapper.findComponent(FtInput).props('value')).toBe('https://slrpnk.net/c/solarpunk')
       wrapper.unmount()
     }
+  })
+
+  it('follows what is typed into the field on Enter, and puts the cursor back in the field', async () => {
+    answerFollow({ outcome: 'no-feed', source: { name: 'solarpunk@slrpnk.net' } })
+    const wrapper = await mountSources()
+    const input = wrapper.find('.followInput input')
+
+    await input.setValue('https://slrpnk.net/c/solarpunk')
+    await input.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(store.dispatched).toEqual([{ type: 'followCollectionSourceByUrl', payload: 'https://slrpnk.net/c/solarpunk' }])
+    expect(document.activeElement).toBe(input.element)
   })
 
   it('says a source is followed already', async () => {
@@ -184,6 +200,14 @@ describe('the Sources page', () => {
       wrapper.unmount()
       store.setGetter(getter, getter === 'getCollectionsReady')
     }
+  })
+
+  it('names the source each unfollow button unfollows, for a screen reader and on hover', async () => {
+    const wrapper = await mountSources()
+
+    const button = wrapper.findAll('.source')[1].find('.unfollowButton')
+    expect(button.attributes('aria-label')).toBe('Unfollow mealtimevideos@lemmy.cafe')
+    expect(button.attributes('title')).toBe('Unfollow mealtimevideos@lemmy.cafe')
   })
 
   it('unfollows a source once the prompt is answered, and not when it is cancelled', async () => {

@@ -354,6 +354,8 @@ Sources:
   # How many of the source's videos are kept
   Videos: '{count} video | {count} videos'
   Unfollow: Unfollow
+  # The Unfollow button's name for a screen reader, and its tooltip
+  Unfollow Source: 'Unfollow {name}'
   Unfollow Prompt: 'Unfollow {name}?'
   # In the prompt before unfollowing: its videos go, and a feed only lists its
   # latest posts, so following it again does not bring back the older ones
