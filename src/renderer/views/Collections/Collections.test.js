@@ -306,6 +306,18 @@ describe('Collections', () => {
       expect(store.dispatched.map(({ type }) => type)).toEqual(['refreshCollections', 'refreshCollections'])
     })
 
+    it('stops listening for R once the page is left', async () => {
+      store.setGetter('getCollectionsReady', true)
+      const wrapper = mountCollections()
+      await flushPromises()
+      store.dispatched.length = 0
+
+      wrapper.unmount()
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'r' }))
+
+      expect(store.dispatched).toEqual([])
+    })
+
     it('does not refresh while a refresh runs, while the bundle loads, or before the datastore is read', async () => {
       for (const [getter, value] of [['getCollectionsRefreshing', true], ['getCollectionsLoading', true], ['getCollectionsReady', false], ['getCollectionsGrabFailed', true]]) {
         store.setGetter('getCollectionsReady', true)

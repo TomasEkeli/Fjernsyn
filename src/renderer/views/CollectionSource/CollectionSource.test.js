@@ -88,6 +88,7 @@ describe('a source\'s page', () => {
     store.dispatched.length = 0
     store.setGetter('getCollectionsReady', true)
     store.setGetter('getCollectionsGrabFailed', false)
+    store.setGetter('getCollectionsLoadFailed', false)
     store.setGetter('getCollectionSources', [HACKERTUBE, MEALTIME])
     store.setGetter('getCollectionShares', [
       share(HACKERTUBE, 'aaaaaaaaaaa', 20),
@@ -157,6 +158,17 @@ describe('a source\'s page', () => {
     await flushPromises()
 
     expect(wrapper.find('.message').text()).toContain('not followed')
+  })
+
+  it('says the bundle could not be loaded only on HackerTube\'s page, whose videos it is', async () => {
+    store.setGetter('getCollectionsLoadFailed', true)
+    store.setGetter('getCollectionShares', [])
+
+    const hackerTube = await openSourcePage(HACKERTUBE._id)
+    expect(hackerTube.wrapper.find('.message').text()).toContain('could not be loaded')
+
+    const community = await openSourcePage(MEALTIME._id)
+    expect(community.wrapper.find('.message').text()).toBe('Nothing has been shared here yet.')
   })
 
   it('waits for the datastore before saying anything', async () => {

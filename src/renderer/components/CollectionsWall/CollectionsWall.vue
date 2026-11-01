@@ -27,7 +27,7 @@
       v-else-if="videos.length === 0"
       class="message"
     >
-      {{ loadFailed ? $t('Collections.Load Failed') : $t('Collections.Nothing Shared') }}
+      {{ bundleFailed ? $t('Collections.Load Failed') : $t('Collections.Nothing Shared') }}
     </p>
     <FtElementList
       v-else
@@ -65,6 +65,7 @@ import store from '../../store/index'
 
 import { collectionsCrawlProgress, startCollectionsCrawl } from '../../helpers/collections/crawlRunner'
 import { detailsProgress } from '../../helpers/collections/details'
+import { HACKERTUBE_SOURCE_ID } from '../../helpers/collections/hackertube'
 import { wallVideos } from '../../helpers/collections/shares'
 import { KeyboardShortcuts } from '../../../constants'
 
@@ -120,6 +121,17 @@ const loading = computed(() => store.getters.getCollectionsLoading)
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const loadFailed = computed(() => store.getters.getCollectionsLoadFailed)
+
+/**
+ * Whether to say the bundle could not be loaded: on the walls its videos are
+ * on, Collections' and HackerTube's own, and not on another source's, which
+ * has nothing to do with it
+ *
+ * @type {import('vue').ComputedRef<boolean>}
+ */
+const bundleFailed = computed(() => {
+  return loadFailed.value && (props.sourceId === null || props.sourceId === HACKERTUBE_SOURCE_ID)
+})
 
 /**
  * The shares that count on this wall: the source's own on its page, and on
