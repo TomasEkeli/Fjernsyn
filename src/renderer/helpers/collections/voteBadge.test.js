@@ -78,7 +78,7 @@ describe('the hover on Collections: the sources that shared it, and their votes'
       'lemmy:talks@programming.dev|aKLntZcp27M': { sourceId: 'lemmy:talks@programming.dev', votes: 6, why: 'watch it' },
     }
 
-    expect(votesBySource(video, lookups(shares))).toEqual([
+    expect(votesBySource(video, lookups(shares), EN)).toEqual([
       { sourceId: 'hackertube', name: 'HackerTube', votes: 11.5 },
       { sourceId: 'lemmy:talks@programming.dev', name: 'talks@programming.dev', votes: 6 },
     ])
@@ -90,7 +90,7 @@ describe('the hover on Collections: the sources that shared it, and their votes'
       'hackertube|aKLntZcp27M': { sourceId: 'hackertube', votes: 3, why: 'why', sharedAt: 1, discussionUrl: 'https://news.ycombinator.com/item?id=1' },
     }
 
-    expect(Object.keys(votesBySource(video, lookups(shares))[0]).sort()).toEqual(['name', 'sourceId', 'votes'])
+    expect(Object.keys(votesBySource(video, lookups(shares), EN)[0]).sort()).toEqual(['name', 'sourceId', 'votes'])
   })
 
   it('lists a source without votes for it after those with, and sources tied on votes by name', () => {
@@ -101,11 +101,25 @@ describe('the hover on Collections: the sources that shared it, and their votes'
       'lemmy:talks@programming.dev|aKLntZcp27M': { sourceId: 'lemmy:talks@programming.dev', votes: 4 },
     }
 
-    expect(votesBySource(video, lookups(shares)).map(row => [row.name, row.votes])).toEqual([
+    expect(votesBySource(video, lookups(shares), EN).map(row => [row.name, row.votes])).toEqual([
       ['talks@programming.dev', 4],
       ['videos@lemmy.world', 4],
       ['HackerTube', null],
     ])
+  })
+
+  it('orders sources tied on votes by name in the language asked for', () => {
+    const sources = {
+      a: { _id: 'a', kind: 'lemmy', name: 'ål@lemmy.example' },
+      b: { _id: 'b', kind: 'lemmy', name: 'zed@lemmy.example' },
+    }
+    const video = wallVideo({ votes: 2, sourceIds: ['a', 'b'] })
+    const shares = { 'a|aKLntZcp27M': { votes: 1 }, 'b|aKLntZcp27M': { votes: 1 } }
+    const tied = { sourceFor: id => sources[id], shareFor: id => shares[id] }
+
+    // Norwegian puts å after z; English beside a
+    expect(votesBySource(video, tied, ['nb-NO']).map(row => row.sourceId)).toEqual(['b', 'a'])
+    expect(votesBySource(video, tied, EN).map(row => row.sourceId)).toEqual(['a', 'b'])
   })
 
   it('finds a PeerTube video\'s share by its uuid and origin', () => {
@@ -115,7 +129,7 @@ describe('the hover on Collections: the sources that shared it, and their votes'
       'lemmy:videos@lemmy.world|059ca8df-0000-4000-8000-000000000000@peertube.example': { votes: 9 },
     }
 
-    expect(votesBySource(video, lookups(shares))).toEqual([
+    expect(votesBySource(video, lookups(shares), EN)).toEqual([
       { sourceId: 'lemmy:videos@lemmy.world', name: 'videos@lemmy.world', votes: 9 },
     ])
   })
@@ -123,13 +137,13 @@ describe('the hover on Collections: the sources that shared it, and their votes'
   it('leaves out a source no longer followed, and lists one whose share is not held without votes', () => {
     const video = wallVideo({ votes: 2, sourceIds: ['lemmy:gone@lemmy.example', 'hackertube'] })
 
-    expect(votesBySource(video, lookups({}))).toEqual([
+    expect(votesBySource(video, lookups({}), EN)).toEqual([
       { sourceId: 'hackertube', name: 'HackerTube', votes: null },
     ])
   })
 
   it('is empty for a video with no collection', () => {
-    expect(votesBySource({ type: 'video', videoId: 'x' }, lookups({}))).toEqual([])
+    expect(votesBySource({ type: 'video', videoId: 'x' }, lookups({}), EN)).toEqual([])
   })
 })
 
@@ -200,6 +214,8 @@ describe('the discussion link', () => {
   it('is taken only as a web address', () => {
     expect(discussionLink('https://news.ycombinator.com/item?id=123')).toBe('https://news.ycombinator.com/item?id=123')
     expect(discussionLink('http://lemmy.example/post/1')).toBe('http://lemmy.example/post/1')
+    expect(discussionLink('HTTPS://Lemmy.Example/post/1')).toBe('https://lemmy.example/post/1')
+    expect(discussionLink('https://lemmy.example/post with space')).toBe('https://lemmy.example/post%20with%20space')
     expect(discussionLink('javascript:alert(1)')).toBeNull()
     expect(discussionLink('file:///etc/passwd')).toBeNull()
     expect(discussionLink('not a url')).toBeNull()

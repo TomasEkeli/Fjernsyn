@@ -64,9 +64,10 @@ export function formatVotes(votes, locales) {
  *
  * @param {Partial<CollectionVideo>} video
  * @param {BadgeLookups} lookups
+ * @param {string[]} locales the language whose order ties are put in
  * @returns {{ sourceId: string, name: string, votes: number | null }[]}
  */
-export function votesBySource(video, { sourceFor, shareFor }) {
+export function votesBySource(video, { sourceFor, shareFor }, locales) {
   const sourceIds = video.collection?.sourceIds ?? []
 
   const rows = []
@@ -86,7 +87,7 @@ export function votesBySource(video, { sourceFor, shareFor }) {
       return b.votes - a.votes
     }
 
-    return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+    return a.name.localeCompare(b.name, locales, { sensitivity: 'base' })
   })
 }
 
@@ -146,8 +147,8 @@ export function shareDateText(sharedAt, kind, locales) {
 }
 
 /**
- * The discussion's address, if it is a web address and nothing else: it came
- * from a feed, and is put in a link
+ * The discussion's address, if it is a web address and nothing else, as the
+ * URL parser writes it: it came from a feed, and is put in a link
  *
  * @param {unknown} url
  * @returns {string | null}
@@ -156,5 +157,5 @@ export function discussionLink(url) {
   if (typeof url !== 'string') { return null }
 
   const parsed = URL.parse(url)
-  return parsed !== null && (parsed.protocol === 'https:' || parsed.protocol === 'http:') ? url : null
+  return parsed !== null && (parsed.protocol === 'https:' || parsed.protocol === 'http:') ? parsed.href : null
 }

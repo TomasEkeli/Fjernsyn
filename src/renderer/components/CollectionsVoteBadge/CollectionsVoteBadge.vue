@@ -147,7 +147,7 @@ const lookups = {
 }
 
 /** Collections' hover: each source that shared it, with its votes */
-const sourceRows = computed(() => props.sourceId === null ? votesBySource(props.video, lookups) : [])
+const sourceRows = computed(() => props.sourceId === null ? votesBySource(props.video, lookups, locales.value) : [])
 
 /** A source's page's hover: its share of the video */
 const context = computed(() => props.sourceId === null ? null : shareContext(props.video, props.sourceId, lookups))
