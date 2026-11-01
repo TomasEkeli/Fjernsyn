@@ -9,10 +9,17 @@
   gap: 4px 12px;
 }
 
-/* The control row is the subscriptions page's (chipRow.css); the refresh
-   stays at its start while nothing else is in the row */
-.controlRow > .refreshCell {
-  justify-self: start;
+/* The control row is the subscriptions page's (chipRow.css); on a source's
+   page there are no chips, so the refresh takes the first column and the
+   pills and the sort the rest, to the far end */
+.controlRow.withoutChips {
+  grid-template-columns: auto 1fr;
+}
+
+@media only screen and (width <= 680px) {
+  .controlRow.withoutChips {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Beside the widget's own words, and as quiet: the wall is still all there */
@@ -20,4 +27,37 @@
   color: var(--tertiary-text-color);
   font-size: 0.85rem;
   margin-block: 0;
+}
+
+/* A select in the row's far end, as Explore's region select (Explore.css):
+   the sort, and any later select beside it */
+.picker {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.pickerLabel {
+  color: var(--tertiary-text-color);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.pickerSelect {
+  background-color: var(--card-bg-color);
+  border: 1px solid var(--tertiary-text-color);
+  border-radius: 999px;
+  color: var(--primary-text-color);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  padding-block: 6px;
+  padding-inline: 12px;
+}
+
+.pickerSelect:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
 }

@@ -355,7 +355,7 @@ describe('the wall\'s sorts', () => {
 
   const order = sort => wallVideos(shares, kept, { sort }).map(video => video.videoId)
 
-  it('offers four sorts, upvotes first among them by default', () => {
+  it('offers four sorts, upvotes by default', () => {
     expect([...COLLECTION_SORTS].sort()).toEqual(['published', 'shared', 'views', 'votes'])
     expect(DEFAULT_COLLECTION_SORT).toBe('votes')
   })

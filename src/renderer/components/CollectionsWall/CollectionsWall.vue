@@ -1,7 +1,24 @@
 <template>
   <div>
     <slot name="header" />
-    <div class="controlRow">
+    <div
+      class="controlRow"
+      :class="{ withoutChips: sourceId !== null }"
+    >
+      <div
+        v-if="sourceId === null"
+        class="chipRow"
+        role="group"
+        :aria-label="$t('Collections.Sources Shown')"
+      >
+        <FtToggleChip
+          v-for="source in chips"
+          :key="source._id"
+          :label="source.name"
+          :pressed="shownSources.has(source._id)"
+          @toggle="toggleSource(source._id)"
+        />
+      </div>
       <div class="refreshCell">
         <FtRefreshWidget
           :disable-refresh="!canRefresh"
@@ -19,15 +36,58 @@
           {{ $t('Collections.Refresh Failed', { sources: failedSourceNames }) }}
         </p>
       </div>
+      <div class="pageControls">
+        <FtToggleChip
+          :label="$t('Watched Chip.Watched')"
+          :icon="['fas', 'history']"
+          :pressed="watchedShown"
+          :title="$t('Watched Chip.Hint')"
+          @toggle="toggleWatched"
+        />
+        <AiChip />
+        <div class="picker">
+          <label
+            class="pickerLabel"
+            :for="sortSelectId"
+          >
+            {{ $t('Collections.Sort By') }}
+          </label>
+          <select
+            :id="sortSelectId"
+            v-model="sort"
+            class="pickerSelect sortSelect"
+          >
+            <option
+              v-for="option in sortOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+      </div>
     </div>
     <FtLoader
       v-if="!ready || loading"
     />
     <p
+      v-else-if="noSourceShown"
+      class="message"
+    >
+      {{ $t('Collections.No Sources Shown') }}
+    </p>
+    <p
       v-else-if="videos.length === 0"
       class="message"
     >
       {{ bundleFailed ? $t('Collections.Load Failed') : $t('Collections.Nothing Shared') }}
+    </p>
+    <p
+      v-else-if="shownVideos.length === 0"
+      class="message"
+    >
+      {{ aiHidEverything ? $t('AI Chip.All Hidden') : $t('Watched Chip.All Watched') }}
     </p>
     <FtElementList
       v-else
@@ -35,7 +95,7 @@
       ai-wall
     />
     <FtAutoLoadNextPageWrapper
-      v-if="ready && !loading && videos.length > dataLimit"
+      v-if="ready && !loading && shownVideos.length > dataLimit"
       @load-next-page="increaseLimit"
     >
       <FtFlexBox>
@@ -51,22 +111,27 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import AiChip from '../AiChip/AiChip.vue'
 import FtAutoLoadNextPageWrapper from '../FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../FtButton/FtButton.vue'
 import FtElementList from '../FtElementList/FtElementList.vue'
 import FtFlexBox from '../ft-flex-box/ft-flex-box.vue'
 import FtLoader from '../FtLoader/FtLoader.vue'
 import FtRefreshWidget from '../FtRefreshWidget/FtRefreshWidget.vue'
+import FtToggleChip from '../FtToggleChip/FtToggleChip.vue'
 
 import store from '../../store/index'
 
 import { collectionsCrawlProgress, startCollectionsCrawl } from '../../helpers/collections/crawlRunner'
 import { detailsProgress } from '../../helpers/collections/details'
 import { HACKERTUBE_SOURCE_ID } from '../../helpers/collections/hackertube'
-import { wallVideos } from '../../helpers/collections/shares'
+import { collectionSortOf, wallVideos } from '../../helpers/collections/shares'
+import { chipSources, hiddenSourcesWith, shownSourceIds } from '../../helpers/collections/sourceChips'
+import { aiIsShown, withAiPreference } from '../../helpers/aiShown'
+import { setWatchedShown, watchedIsShown, withWatchedPreference } from '../../helpers/watchedShown'
 import { KeyboardShortcuts } from '../../../constants'
 
 /**
@@ -77,7 +142,8 @@ import { KeyboardShortcuts } from '../../../constants'
  * that source's, so that its votes and its dates are the ones that order it.
  *
  * It is a library rather than a stream: what a source has shared stays, and
- * the wall is in the order of the votes the sources gave, the most first.
+ * the wall is in the order chosen, by default the votes the sources gave,
+ * the most first.
  * The cards are the ordinary ones, so every card action works here as on any
  * other wall, and a video opens on the ordinary watch page.
  *
@@ -93,9 +159,17 @@ import { KeyboardShortcuts } from '../../../constants'
  * they come in, the cards show duration, views and date, and link to their
  * channel.
  *
- * The control row is the subscriptions page's and Explore's: the refresh
- * widget says how fresh the wall is, or what is being done to it, the refresh
- * or the crawl, with how far along it is. The `header` slot comes above it.
+ * The control row is the subscriptions page's and Explore's. On Collections
+ * it starts with a chip per followed source, saying whose videos are on the
+ * wall (helpers/collections/sourceChips.js); a source's page has none, as it
+ * is one source's wall. Then the refresh widget, which says how fresh the
+ * wall is, or what is being done to it, the refresh or the crawl, with how
+ * far along it is. At the far end the Watched and AI pills, the same
+ * settings as on every wall that has them, and the order the wall is in:
+ * upvotes, shared on community, video published or views. Which shares count
+ * for the order is which sources are shown: the chips' on Collections, the
+ * source's own on its page (`collectionValues` in helpers/collections/
+ * shares.js). The `header` slot comes above the row.
  */
 
 const props = defineProps({
@@ -134,26 +208,117 @@ const bundleFailed = computed(() => {
 })
 
 /**
- * The shares that count on this wall: the source's own on its page, and on
- * Collections those of every source followed, which, as unfollowing removes
- * a source's shares, is all of them but any of a source unfollowed while
- * they were being written
+ * The chips: one per source followed, by name
  *
- * @type {import('vue').ComputedRef<import('../../helpers/collections/shares').Share[]>}
+ * @type {import('vue').ComputedRef<import('../../helpers/collections/shares').Source[]>}
  */
-const shares = computed(() => {
-  const all = store.getters.getCollectionShares
+const chips = computed(() => chipSources(store.getters.getCollectionSources))
 
+/**
+ * The sources whose shares count on this wall: the source's own on its page,
+ * whatever its chip on Collections says; and on Collections every source
+ * followed whose chip is on, so that a share of a source unfollowed while it
+ * was being written never shows
+ *
+ * @type {import('vue').ComputedRef<Set<string>>}
+ */
+const shownSources = computed(() => {
   if (props.sourceId !== null) {
-    return all.filter(share => share.sourceId === props.sourceId)
+    return new Set([props.sourceId])
   }
 
-  const followed = new Set(store.getters.getCollectionSources.map(source => source._id))
-  return all.filter(share => followed.has(share.sourceId))
+  return shownSourceIds(store.getters.getCollectionSources, store.getters.getCollectionsSourcesHidden)
 })
 
+/**
+ * @param {string} sourceId
+ */
+function toggleSource(sourceId) {
+  const hidden = store.getters.getCollectionsSourcesHidden
+  store.dispatch('updateCollectionsSourcesHidden', hiddenSourcesWith(hidden, sourceId, !shownSources.value.has(sourceId)))
+}
+
+/**
+ * Whether every chip is off on Collections, with sources followed, which
+ * "nothing shared" would explain wrongly
+ *
+ * @type {import('vue').ComputedRef<boolean>}
+ */
+const noSourceShown = computed(() => {
+  return props.sourceId === null && store.getters.getCollectionSources.length > 0 && shownSources.value.size === 0
+})
+
+/**
+ * The wall's order, kept as a setting, so that it is the same on Collections
+ * and every source's page and outlasts a restart
+ *
+ * @type {import('vue').WritableComputedRef<import('../../helpers/collections/shares').CollectionSort>}
+ */
+const sort = computed({
+  get: () => collectionSortOf(store.getters.getCollectionsSort),
+  set: value => store.dispatch('updateCollectionsSort', value),
+})
+
+const sortSelectId = useId()
+
+/**
+ * The orders on offer, in the order the spec names them. Spelled out, as a
+ * message's key may not be built
+ *
+ * @type {import('vue').ComputedRef<{ value: import('../../helpers/collections/shares').CollectionSort, label: string }[]>}
+ */
+const sortOptions = computed(() => [
+  { value: 'published', label: t('Collections.Sorts.Published') },
+  { value: 'shared', label: t('Collections.Sorts.Shared') },
+  { value: 'views', label: t('Collections.Sorts.Views') },
+  { value: 'votes', label: t('Collections.Sorts.Upvotes') },
+])
+
+/**
+ * The wall of the sources shown, in the order chosen, before the pills
+ *
+ * @type {import('vue').ComputedRef<import('../../helpers/collections/shares').CollectionVideo[]>}
+ */
+const videos = computed(() => {
+  return wallVideos(store.getters.getCollectionShares, store.getters.getCollectionVideos, {
+    shown: shownSources.value,
+    sort: sort.value,
+  })
+})
+
+/**
+ * Whether what has been watched stays on the wall: the same setting, and the
+ * same pill, as on the subscriptions page and Explore
+ * (helpers/watchedShown.js)
+ *
+ * @type {import('vue').ComputedRef<boolean>}
+ */
+const watchedShown = computed(() => watchedIsShown())
+
+function toggleWatched() {
+  setWatchedShown(!watchedIsShown())
+}
+
 /** @type {import('vue').ComputedRef<import('../../helpers/collections/shares').CollectionVideo[]>} */
-const videos = computed(() => wallVideos(shares.value, store.getters.getCollectionVideos))
+const unwatchedVideos = computed(() => withWatchedPreference(videos.value))
+
+/**
+ * The wall as shown: less what has been watched, while the Watched pill is
+ * off, and what is made with AI, while the AI pill is, taken out before the
+ * wall is cut into pages, as on the subscriptions page, so that a page of
+ * them does not stand empty while more is to be had below
+ *
+ * @type {import('vue').ComputedRef<import('../../helpers/collections/shares').CollectionVideo[]>}
+ */
+const shownVideos = computed(() => withAiPreference(unwatchedVideos.value))
+
+/**
+ * Whether the AI pill took out everything the Watched pill left, for the
+ * empty wall to say so
+ *
+ * @type {import('vue').ComputedRef<boolean>}
+ */
+const aiHidEverything = computed(() => !aiIsShown() && unwatchedVideos.value.length > 0)
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const refreshing = computed(() => store.getters.getCollectionsRefreshing)
@@ -276,7 +441,7 @@ const dataLimit = ref(Number.isInteger(savedLimit) && savedLimit > 0 ? savedLimi
 
 /** @type {import('vue').ComputedRef<import('../../helpers/collections/shares').CollectionVideo[]>} */
 const activeVideos = computed(() => {
-  return videos.value.length <= dataLimit.value ? videos.value : videos.value.slice(0, dataLimit.value)
+  return shownVideos.value.length <= dataLimit.value ? shownVideos.value : shownVideos.value.slice(0, dataLimit.value)
 })
 
 function increaseLimit() {

@@ -247,7 +247,7 @@ function isNumber(value) {
  */
 
 /** @type {readonly CollectionSort[]} in the order the sort select offers them */
-export const COLLECTION_SORTS = Object.freeze(['votes', 'shared', 'published', 'views'])
+export const COLLECTION_SORTS = Object.freeze(['published', 'shared', 'views', 'votes'])
 
 /** @type {CollectionSort} */
 export const DEFAULT_COLLECTION_SORT = 'votes'

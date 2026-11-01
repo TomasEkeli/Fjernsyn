@@ -7,6 +7,7 @@ import { mountWithApp } from '../../testing/mount'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
 import FtRefreshWidget from '../../components/FtRefreshWidget/FtRefreshWidget.vue'
+import FtToggleChip from '../../components/FtToggleChip/FtToggleChip.vue'
 import Collections from './Collections.vue'
 
 vi.mock('../../store/index', async () => {
@@ -25,6 +26,13 @@ vi.mock('../../store/index', async () => {
         getCollectionsRefreshProgress: { done: 0, total: 0 },
         getCollectionsLastRefreshAt: null,
         getCollectionsRefreshFailures: [],
+        getCollectionsSourcesHidden: [],
+        getCollectionsSort: 'votes',
+        getHideWatchedSubs: false,
+        getHistoryCacheById: {},
+        getHideAiVideos: false,
+        getAiVerdicts: {},
+        getAiChannels: '[]',
       },
     }),
   }
@@ -83,6 +91,12 @@ describe('Collections', () => {
     store.setGetter('getCollectionsRefreshProgress', { done: 0, total: 0 })
     store.setGetter('getCollectionsLastRefreshAt', null)
     store.setGetter('getCollectionsRefreshFailures', [])
+    store.setGetter('getCollectionsSourcesHidden', [])
+    store.setGetter('getCollectionsSort', 'votes')
+    store.setGetter('getHideWatchedSubs', false)
+    store.setGetter('getHistoryCacheById', {})
+    store.setGetter('getHideAiVideos', false)
+    store.setGetter('getAiVerdicts', {})
     collectionsCrawlProgress.state = 'idle'
     vi.mocked(startCollectionsCrawl).mockClear()
   })
@@ -379,5 +393,189 @@ describe('Collections', () => {
     await flushPromises()
 
     expect(listed(wrapper)).toEqual([expect.objectContaining({ videoId: 'video000001', authorId: 'UCaaaaaaaaaaaaaaaaaaaaaa', lengthSeconds: 60, viewCount: 5, lastUpdatedAt: 7 })])
+  })
+
+  describe('the toolbar', () => {
+    const LEMMY_A = { _id: 'lemmy:a@b.example', kind: 'lemmy', name: 'a@b.example' }
+    const LEMMY_Z = { _id: 'lemmy:z@b.example', kind: 'lemmy', name: 'Z@b.example' }
+
+    /**
+     * @param {{ _id: string }} source
+     * @param {number} index
+     * @param {object} [extra]
+     */
+    const shareOf = (source, index, extra = {}) => ({ ...share(index, 1), _id: `${source._id}|video${String(index).padStart(6, '0')}`, sourceId: source._id, ...extra })
+
+    beforeEach(() => {
+      store.setGetter('getCollectionsReady', true)
+      store.setGetter('getCollectionSources', [LEMMY_Z, HACKERTUBE, LEMMY_A])
+      store.setGetter('getCollectionShares', [
+        shareOf(HACKERTUBE, 1, { votes: 10, sharedAt: 3 }),
+        shareOf(LEMMY_A, 1, { votes: 100, sharedAt: 1 }),
+        shareOf(LEMMY_A, 2, { votes: 50, sharedAt: 2 }),
+        shareOf(LEMMY_Z, 3, { votes: 20, sharedAt: 4 }),
+      ])
+    })
+
+    /** @param {import('@vue/test-utils').VueWrapper} wrapper */
+    const sourceChips = wrapper => wrapper.find('.chipRow').findAllComponents(FtToggleChip)
+
+    /** @param {import('@vue/test-utils').VueWrapper} wrapper */
+    const order = wrapper => listed(wrapper).map(video => video.videoId)
+
+    it('has a chip per followed source, by name, each on until switched off', async () => {
+      store.setGetter('getCollectionsSourcesHidden', [LEMMY_A._id])
+
+      const wrapper = mountCollections()
+      await flushPromises()
+
+      expect(sourceChips(wrapper).map(chip => [chip.props('label'), chip.props('pressed')])).toEqual([
+        ['a@b.example', false],
+        ['HackerTube', true],
+        ['Z@b.example', true],
+      ])
+      expect(wrapper.find('.chipRow').attributes('aria-label')).toBe('Sources shown')
+    })
+
+    it('switches a source off and on through the setting', async () => {
+      store.setGetter('getCollectionsSourcesHidden', [LEMMY_A._id])
+      const wrapper = mountCollections()
+      await flushPromises()
+      store.dispatched.length = 0
+
+      sourceChips(wrapper)[1].vm.$emit('toggle')
+      sourceChips(wrapper)[0].vm.$emit('toggle')
+
+      expect(store.dispatched).toEqual([
+        { type: 'updateCollectionsSourcesHidden', payload: [LEMMY_A._id, HACKERTUBE._id] },
+        { type: 'updateCollectionsSourcesHidden', payload: [] },
+      ])
+    })
+
+    it('leaves off the videos only a source switched off shared, and counts only the shown sources\' votes', async () => {
+      const wrapper = mountCollections()
+      await flushPromises()
+
+      expect(listed(wrapper).map(video => [video.videoId, video.collection.votes])).toEqual([
+        ['video000001', 110],
+        ['video000002', 50],
+        ['video000003', 20],
+      ])
+
+      store.setGetter('getCollectionsSourcesHidden', [LEMMY_A._id])
+      await flushPromises()
+
+      expect(listed(wrapper).map(video => [video.videoId, video.collection.votes])).toEqual([
+        ['video000003', 20],
+        ['video000001', 10],
+      ])
+    })
+
+    it('says so when every source is switched off', async () => {
+      store.setGetter('getCollectionsSourcesHidden', [LEMMY_A._id, LEMMY_Z._id, HACKERTUBE._id])
+
+      const wrapper = mountCollections()
+      await flushPromises()
+
+      expect(wrapper.find('.message').text()).toBe('No source is shown. Switch one on above.')
+      expect(wrapper.findComponent(FtElementList).exists()).toBe(false)
+    })
+
+    it('offers the four orders, upvotes chosen while nothing else is', async () => {
+      store.setGetter('getCollectionsSort', 'nonsense')
+
+      const wrapper = mountCollections()
+      await flushPromises()
+
+      const select = wrapper.find('select.sortSelect')
+      expect(select.findAll('option').map(option => [option.attributes('value'), option.text()])).toEqual([
+        ['published', 'Video published'],
+        ['shared', 'Shared on community'],
+        ['views', 'Views'],
+        ['votes', 'Upvotes'],
+      ])
+      expect(select.element.value).toBe('votes')
+      expect(wrapper.find(`label[for="${select.attributes('id')}"]`).text()).toBe('Sort by')
+    })
+
+    it('keeps the order chosen in the setting, and is in it', async () => {
+      const wrapper = mountCollections()
+      await flushPromises()
+      store.dispatched.length = 0
+
+      await wrapper.find('select.sortSelect').setValue('shared')
+
+      expect(store.dispatched).toEqual([{ type: 'updateCollectionsSort', payload: 'shared' }])
+
+      store.setGetter('getCollectionsSort', 'shared')
+      await flushPromises()
+
+      // The latest shown share first: Z's (4), HackerTube's (3), a's (2)
+      expect(order(wrapper)).toEqual(['video000003', 'video000001', 'video000002'])
+    })
+
+    it('orders by video published and views from the details, a video without them last', async () => {
+      store.setGetter('getCollectionVideos', {
+        video000002: { _id: 'video000002', videoId: 'video000002', fetchedAt: 1, published: 200, viewCount: 5 },
+        video000003: { _id: 'video000003', videoId: 'video000003', fetchedAt: 1, published: 100, viewCount: 9 },
+      })
+      store.setGetter('getCollectionsSort', 'published')
+
+      const wrapper = mountCollections()
+      await flushPromises()
+
+      expect(order(wrapper)).toEqual(['video000002', 'video000003', 'video000001'])
+
+      store.setGetter('getCollectionsSort', 'views')
+      await flushPromises()
+
+      expect(order(wrapper)).toEqual(['video000003', 'video000002', 'video000001'])
+    })
+
+    it('has the Watched pill, which takes what has been watched off the wall before it is paged', async () => {
+      store.setGetter('getHistoryCacheById', { video000001: { videoId: 'video000001' } })
+      const wrapper = mountCollections()
+      await flushPromises()
+
+      const watched = wrapper.find('.pageControls').findAllComponents(FtToggleChip).at(0)
+      expect(watched.props('label')).toBe('Watched')
+      expect(watched.props('pressed')).toBe(true)
+      expect(order(wrapper)).toHaveLength(3)
+
+      store.dispatched.length = 0
+      watched.vm.$emit('toggle')
+      expect(store.dispatched).toEqual([{ type: 'updateHideWatchedSubs', payload: true }])
+
+      store.setGetter('getHideWatchedSubs', true)
+      await flushPromises()
+
+      expect(order(wrapper)).toEqual(['video000002', 'video000003'])
+    })
+
+    it('says everything has been watched when the Watched pill took it all', async () => {
+      store.setGetter('getHideWatchedSubs', true)
+      store.setGetter('getHistoryCacheById', { video000001: {}, video000002: {}, video000003: {} })
+
+      const wrapper = mountCollections()
+      await flushPromises()
+
+      expect(wrapper.find('.message').text()).toContain('You have watched everything here')
+    })
+
+    it('has the AI pill, which takes what is made with AI off the wall before it is paged, and says so when that is everything', async () => {
+      store.setGetter('getHideAiVideos', true)
+      store.setGetter('getAiVerdicts', { video000001: true })
+
+      const wrapper = mountCollections()
+      await flushPromises()
+
+      expect(wrapper.find('.pageControls').findAllComponents(FtToggleChip).at(1).props('label')).toBe('AI')
+      expect(order(wrapper)).toEqual(['video000002', 'video000003'])
+
+      store.setGetter('getAiVerdicts', { video000001: true, video000002: true, video000003: true })
+      await flushPromises()
+
+      expect(wrapper.find('.message').text()).toContain('Everything here is made with AI')
+    })
   })
 })
