@@ -20,6 +20,7 @@
  */
 
 import { MAIN_PROFILE_ID } from '../../constants'
+import { backedUpSource } from './collections/backup.js'
 import { splitImportedPlatformFields } from '../platform/records'
 import { PLATFORM_YOUTUBE, platformOf } from '../platform/refs'
 
@@ -33,9 +34,9 @@ export const BACKUP_FORMAT_VERSION = 1
 
 /**
  * The sections, in the order they are written
- * @type {readonly ['profiles', 'history', 'playlists', 'later', 'searchHistory', 'settings', 'channels', 'aiVerdicts']}
+ * @type {readonly ['profiles', 'history', 'playlists', 'later', 'searchHistory', 'settings', 'channels', 'aiVerdicts', 'collectionSources', 'collectionShares']}
  */
-export const BACKUP_SECTIONS = Object.freeze(['profiles', 'history', 'playlists', 'later', 'searchHistory', 'settings', 'channels', 'aiVerdicts'])
+export const BACKUP_SECTIONS = Object.freeze(['profiles', 'history', 'playlists', 'later', 'searchHistory', 'settings', 'channels', 'aiVerdicts', 'collectionSources', 'collectionShares'])
 
 /** @typedef {typeof BACKUP_SECTIONS[number]} BackupSection */
 
@@ -178,6 +179,16 @@ export function readBackup(text, { knownSettings = [], machineBoundSettings, kee
     const { records, count } = readSection(section, document.sections[section], context)
     sections[section] = records
     counts[section] = count
+  }
+
+  // A backup that follows nothing never replaces what is followed (and the
+  // shares go with the sources): it is far more likely a machine that never
+  // opened Collections than one that unfollowed everything
+  if (!(sections.collectionSources?.length > 0)) {
+    for (const section of ['collectionSources', 'collectionShares']) {
+      delete sections[section]
+      delete counts[section]
+    }
   }
 
   // Profiles without the one that holds every subscription would leave the
@@ -332,6 +343,24 @@ const CHECKS = {
 
   aiVerdicts(record) {
     if (!isNonEmptyString(record._id) || typeof record.ai !== 'boolean' || typeof record.checkedAt !== 'number') {
+      return { leftOut: 'missingFields' }
+    }
+
+    return { record }
+  },
+
+  // A followed source, without what belongs to the machine that wrote it
+  collectionSources(record) {
+    if (!isNonEmptyString(record._id) || !isNonEmptyString(record.kind) || typeof record.url !== 'string' || typeof record.name !== 'string') {
+      return { leftOut: 'missingFields' }
+    }
+
+    return { record: backedUpSource(record) }
+  },
+
+  // One source's share of one video, keyed by both; seenAt is its time
+  collectionShares(record) {
+    if (!isNonEmptyString(record._id) || !isNonEmptyString(record.sourceId) || !isNonEmptyString(record.videoId) || typeof record.seenAt !== 'number') {
       return { leftOut: 'missingFields' }
     }
 

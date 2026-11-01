@@ -19,7 +19,7 @@
     },
     {
       "path": "src/datastores/handlers/base.js",
-      "reason": "the Collections handler class (sources by id, shares only ever added or updated, videos' details by video ref, each source's own data by source id; unfollowing removes a source with its shares and its own data), and its four datastores loaded and compacted with the others"
+      "reason": "the Collections handler class (sources by id, shares only ever added or updated, videos' details by video ref, each source's own data by source id; unfollowing removes a source with its shares and its own data), and its four datastores loaded and compacted with the others; its write queue exported, so that the kept backup's merge writes the sources in turn with it"
     },
     {
       "path": "src/datastores/handlers/electron.js",
@@ -127,7 +127,7 @@
     },
     {
       "path": "static/locales/en-US.yaml",
-      "reason": "the fork-only PeerTube, Layer Search and Layer Surfaces strings; the Collections and Sources strings"
+      "reason": "the fork-only PeerTube, Layer Search and Layer Surfaces strings; the Collections and Sources strings, and the names of their two backup sections"
     }
   ],
   "shadowed": {

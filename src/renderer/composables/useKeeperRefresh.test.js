@@ -114,6 +114,18 @@ describe('loading again what the keeper changed', () => {
     expect(dispatch).not.toHaveBeenCalled()
   })
 
+  it('loads the collections once, whichever of their two sections changed', async () => {
+    for (const sections of [['collectionSources'], ['collectionShares'], ['collectionSources', 'collectionShares']]) {
+      const store = fakeStore()
+      wrapper?.unmount()
+      mountRefresh(store)
+
+      await changed(sections)
+
+      expect(store.dispatched, sections.join()).toEqual(['grabCollections'])
+    }
+  })
+
   it('loads only the sections named', async () => {
     const store = fakeStore()
     mountRefresh(store)

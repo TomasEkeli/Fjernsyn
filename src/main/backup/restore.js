@@ -35,7 +35,16 @@ const SECTION_DATASTORES = Object.freeze([
   ['settings', 'settings'],
   ['channels', 'channels'],
   ['aiVerdicts', 'aiVerdicts'],
+  ['collectionSources', 'collectionSources'],
+  ['collectionShares', 'collectionShares'],
 ])
+
+/**
+ * Written true by a restore that brings a followed source, so that the
+ * Collections starter set is never followed over the unfollows of the
+ * machine the backup came from
+ */
+const STARTER_SET_DONE = 'collectionsStarterSetDone'
 
 /**
  * Settings a restore never writes, whatever the request says. The paths only
@@ -54,7 +63,7 @@ export function isRestorableSetting(id, value) {
 
 /**
  * @typedef {import('@seald-io/nedb').default} Datastore
- * @typedef {Record<'settings' | 'profiles' | 'playlists' | 'history' | 'searchHistory' | 'channels' | 'aiVerdicts' | 'later', Datastore>} Datastores
+ * @typedef {Record<'settings' | 'profiles' | 'playlists' | 'history' | 'searchHistory' | 'channels' | 'aiVerdicts' | 'later' | 'collectionSources' | 'collectionShares', Datastore>} Datastores
  */
 
 /**
@@ -144,6 +153,11 @@ export async function restoreBackup({ datastores, dataFolder, relaunch, now = ()
       }
 
       written.push(datastore)
+    }
+
+    if (request.sections.collectionSources?.length > 0) {
+      await datastores.settings.updateAsync({ _id: STARTER_SET_DONE }, { _id: STARTER_SET_DONE, value: true }, { upsert: true })
+      if (!written.includes(datastores.settings)) { written.push(datastores.settings) }
     }
 
     for (const datastore of written) {

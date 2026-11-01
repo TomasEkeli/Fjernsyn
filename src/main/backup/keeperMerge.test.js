@@ -20,6 +20,9 @@ const DATASTORE_FILES = {
   channels: 'channels',
   aiVerdicts: 'ai-verdicts',
   later: 'later',
+  collectionSources: 'collection-sources',
+  collectionShares: 'collection-shares',
+  collectionSourceData: 'collection-source-data',
 }
 
 const MAIN_PROFILE = { _id: 'allChannels', name: 'All Channels', bgColor: '#000000', textColor: '#FFFFFF', subscriptions: [] }
@@ -52,7 +55,7 @@ function historyEntry(videoId, timeWatched, watchProgress = 30) {
   }
 }
 
-async function machine(name) {
+async function machine(name, deps = {}) {
   const dataFolder = path.join(root, name)
   const datastores = {}
 
@@ -77,6 +80,7 @@ async function machine(name) {
       m.historyChanges = [...(m.historyChanges ?? []), changes.history]
     },
     sleep: async () => {},
+    ...deps,
   })
   watchDatastores(datastores, () => m.keeper.markChanged())
 
@@ -173,5 +177,160 @@ describe('two machines running at once', () => {
 
     expect(await history(laptop)).toEqual(['desktop0001@30', 'laptop00001@30'])
     expect(await history(desktop)).toEqual(['desktop0001@30', 'laptop00001@30'])
+  })
+})
+
+describe('two machines running at once, following sources', () => {
+  const HACKERTUBE = { _id: 'hackertube', kind: 'hackertube', url: 'https://hackertube.org', name: 'HackerTube', followedAt: 1 }
+  const LEMMY = { _id: 'lemmy:videos@lemmy.example', kind: 'lemmy', url: 'https://lemmy.example/c/videos', name: 'videos@lemmy.example', followedAt: 2 }
+
+  function share(sourceId, videoId, votes = 1, seenAt = 10) {
+    return { _id: `${sourceId}|${videoId}`, sourceId, videoId, title: `Video ${videoId}`, author: '', votes, why: null, sharedAt: 1, discussionUrl: null, seenAt }
+  }
+
+  /** A machine that follows HackerTube and the community, refreshed as this machine refreshes */
+  async function following(m, refreshedAt) {
+    await m.datastores.collectionSources.insertAsync([
+      { ...HACKERTUBE, dataGenerated: '2026-10-31', checkedAt: refreshedAt, attemptedAt: refreshedAt, failedAt: null },
+      { ...LEMMY, checkedAt: refreshedAt, attemptedAt: refreshedAt, failedAt: null },
+    ])
+    await m.datastores.collectionShares.insertAsync([share('hackertube', 'hackertube1'), share(LEMMY._id, 'lemmyvideo1')])
+    await m.datastores.collectionSourceData.insertAsync({ _id: 'hackertube', generated: '2026-10-31', taxonomy: { areas: [] } })
+    await m.datastores.settings.insertAsync({ _id: 'collectionsStarterSetDone', value: true })
+  }
+
+  const ids = async datastore => (await datastore.findAsync({})).map(record => record._id).sort()
+
+  it('Desktop follows what Laptop followed, without HackerTube\'s shares or Laptop\'s refresh times, and marks the starter set done', async () => {
+    const desktop = await machine('Desktop')
+    await desktop.keeper.start()
+    await desktop.keeper.tick()
+
+    const laptop = await machine('Laptop')
+    await laptop.keeper.start()
+    await following(laptop, 500)
+    await laptop.keeper.tick()
+
+    await desktop.keeper.tick()
+
+    expect(await desktop.datastores.collectionSources.findAsync({}).sort({ _id: 1 })).toEqual([HACKERTUBE, LEMMY])
+    expect(await ids(desktop.datastores.collectionShares)).toEqual([`${LEMMY._id}|lemmyvideo1`])
+    expect(await desktop.datastores.settings.findOneAsync({ _id: 'collectionsStarterSetDone' })).toMatchObject({ value: true })
+    expect(desktop.dataChanged.map(sections => [...sections].sort())).toEqual([['collectionShares', 'collectionSources', 'settings']])
+  })
+
+  it('a refresh, which only moves this machine\'s refresh times, writes nothing', async () => {
+    const laptop = await machine('Laptop')
+    await following(laptop, 500)
+    await laptop.keeper.start()
+    await laptop.keeper.tick()
+    const writtenAt = laptop.keeper.status().writtenAt
+
+    await laptop.datastores.collectionSources.updateAsync({ _id: LEMMY._id }, { $set: { checkedAt: 900, attemptedAt: 900 } })
+    await laptop.keeper.tick()
+
+    expect(laptop.keeper.status().writtenAt).toBe(writtenAt)
+  })
+
+  it('carries an unfollow to the other machine, with every share of that source and its own data, HackerTube\'s too', async () => {
+    const desktop = await machine('Desktop')
+    await following(desktop, 100)
+    await desktop.keeper.start()
+    await desktop.keeper.tick()
+
+    const laptop = await machine('Laptop')
+    await laptop.keeper.start()
+    await laptop.datastores.collectionShares.insertAsync(share('hackertube', 'hackertube1'))
+    await laptop.datastores.collectionSources.removeAsync({ _id: 'hackertube' }, {})
+    await laptop.datastores.collectionShares.removeAsync({ sourceId: 'hackertube' }, { multi: true })
+    await laptop.keeper.tick()
+
+    await desktop.keeper.tick()
+
+    expect(await ids(desktop.datastores.collectionSources)).toEqual([LEMMY._id])
+    expect(await ids(desktop.datastores.collectionShares)).toEqual([`${LEMMY._id}|lemmyvideo1`])
+    expect(await ids(desktop.datastores.collectionSourceData)).toEqual([])
+    expect(desktop.dataChanged).toEqual([['collectionSources']])
+  })
+
+  it('carries a vote update to the other machine, which keeps its own refresh times', async () => {
+    const desktop = await machine('Desktop')
+    await following(desktop, 100)
+    await desktop.keeper.start()
+    await desktop.keeper.tick()
+
+    const laptop = await machine('Laptop')
+    await laptop.keeper.start()
+    await laptop.datastores.collectionShares.updateAsync({ _id: `${LEMMY._id}|lemmyvideo1` }, { $set: { votes: 40, seenAt: 20 } })
+    await laptop.datastores.collectionSources.updateAsync({ _id: LEMMY._id }, { $set: { name: 'Videos' } })
+    await laptop.keeper.tick()
+
+    await desktop.keeper.tick()
+
+    expect(await desktop.datastores.collectionShares.findOneAsync({ _id: `${LEMMY._id}|lemmyvideo1` })).toMatchObject({ votes: 40, seenAt: 20 })
+    expect(await desktop.datastores.collectionSources.findOneAsync({ _id: LEMMY._id })).toEqual({ ...LEMMY, name: 'Videos', checkedAt: 100, attemptedAt: 100, failedAt: null })
+  })
+
+  it('leaves no share behind of a source one machine unfollowed while the other updated the share', async () => {
+    const desktop = await machine('Desktop')
+    await following(desktop, 100)
+    await desktop.keeper.start()
+    await desktop.keeper.tick()
+
+    const laptop = await machine('Laptop')
+    await laptop.keeper.start()
+
+    // Desktop's vote update reaches the folder first; Laptop unfollowed meanwhile
+    await desktop.datastores.collectionShares.updateAsync({ _id: `${LEMMY._id}|lemmyvideo1` }, { $set: { votes: 40, seenAt: 20 } })
+    await desktop.keeper.tick()
+    await laptop.datastores.collectionSources.removeAsync({ _id: LEMMY._id }, {})
+    await laptop.datastores.collectionShares.removeAsync({ sourceId: LEMMY._id }, { multi: true })
+    await laptop.keeper.tick()
+
+    expect(await ids(laptop.datastores.collectionSources)).toEqual(['hackertube'])
+    expect(await ids(laptop.datastores.collectionShares)).toEqual([])
+
+    await desktop.keeper.tick()
+    expect(await ids(desktop.datastores.collectionSources)).toEqual(['hackertube'])
+    expect(await ids(desktop.datastores.collectionShares)).toEqual(['hackertube|hackertube1'])
+  })
+
+  it('writes the sources it merges in turn with the app\'s own collections writes', async () => {
+    const desktop = await machine('Desktop')
+    await following(desktop, 100)
+    await desktop.keeper.start()
+    await desktop.keeper.tick()
+
+    let inQueue = false
+    const writes = []
+    const inCollectionsQueue = async (write) => {
+      inQueue = true
+      try {
+        return await write()
+      } finally {
+        inQueue = false
+      }
+    }
+    const laptop = await machine('Laptop', { inCollectionsQueue })
+    for (const name of ['collectionSources', 'collectionShares', 'collectionSourceData']) {
+      for (const method of ['updateAsync', 'removeAsync']) {
+        const original = laptop.datastores[name][method]
+        laptop.datastores[name][method] = function (...args) {
+          writes.push(`${name}.${method} ${inQueue ? 'in turn' : 'outside'}`)
+          return original.apply(this, args)
+        }
+      }
+    }
+    await laptop.keeper.start()
+
+    await desktop.datastores.collectionSources.removeAsync({ _id: 'hackertube' }, {})
+    await desktop.datastores.collectionShares.removeAsync({ sourceId: 'hackertube' }, { multi: true })
+    await desktop.keeper.tick()
+    await laptop.keeper.tick()
+
+    const sourceWrites = writes.filter(write => !write.startsWith('collectionShares.updateAsync'))
+    expect(sourceWrites.length).toBeGreaterThan(0)
+    expect(sourceWrites.filter(write => write.endsWith('outside'))).toEqual([])
+    expect(await ids(laptop.datastores.collectionSources)).toEqual([LEMMY._id])
   })
 })
