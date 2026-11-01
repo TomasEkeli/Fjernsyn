@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="collectionsWall">
     <slot name="header" />
     <div
       class="controlRow"
