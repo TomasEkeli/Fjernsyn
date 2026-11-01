@@ -39,6 +39,52 @@ export function shareId(sourceId, ref) {
 }
 
 /**
+ * @param {unknown} a
+ * @param {unknown} b
+ * @returns {boolean} whether two field values are the same, arrays (a
+ *   share's categories) element by element and in order
+ */
+function sameValue(a, b) {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length === b.length && a.every((item, index) => item === b[index])
+  }
+
+  return a === b
+}
+
+/**
+ * Of the shares a source gave on a fetch, the ones worth putting: those new
+ * to the datastore, and those it keeps whose fields the source now gives
+ * differently (votes, why, categories, title and the rest). Nothing is
+ * removed: a kept share the source no longer gives is not among them, and
+ * stays. A field a share is given without is left as kept, as the put does.
+ *
+ * When it was seen (`seenAt`) is not compared, or every share would change
+ * on every fetch: a share is put with the time it was first seen, or last
+ * seen changed. Given twice, the last of them counts.
+ *
+ * @param {Record<string, import('./hackertube').Share>} kept the shares kept, by `_id`
+ * @param {import('./hackertube').Share[]} shares the shares the source gave
+ * @returns {import('./hackertube').Share[]}
+ */
+export function sharesToPut(kept, shares) {
+  /** @type {Map<string, import('./hackertube').Share>} */
+  const given = new Map()
+
+  for (const share of shares) {
+    given.delete(share._id)
+    given.set(share._id, share)
+  }
+
+  return [...given.values()].filter((share) => {
+    const known = Object.hasOwn(kept, share._id) ? kept[share._id] : undefined
+    if (known === undefined) { return true }
+
+    return Object.keys(share).some(field => field !== 'seenAt' && !sameValue(share[field], known[field]))
+  })
+}
+
+/**
  * @typedef {object} CollectionVideo a video on a collections wall: an
  *   ordinary video object, which every card action understands, with what its
  *   shares say about it under `collection`
