@@ -237,11 +237,14 @@ describe('a Lemmy community, as it is written', () => {
     // Seen from another instance: the community is its home instance's
     ['https://lemmy.world/c/mealtimevideos@lemmy.cafe', MEALTIME],
     ['!mealtimevideos@lemmy.cafe', MEALTIME],
-    ['mealtimevideos@lemmy.cafe', MEALTIME],
+    ['!mealtimevideos@Lemmy.Cafe', MEALTIME],
     // Its feed, as an OPML file writes it
     ['https://lemmy.cafe/feeds/c/mealtimevideos.xml?sort=New&limit=50', MEALTIME],
     ['https://lemmy.world/c/Documentary', { name: 'Documentary', host: 'lemmy.world' }],
     ['https://programming.dev/c/talks', { name: 'talks', host: 'programming.dev' }],
+    // An instance on a port of its own keeps it
+    ['https://lemmy.example.org:8536/c/videos', { name: 'videos', host: 'lemmy.example.org:8536' }],
+    ['!videos@lemmy.example.org:8536', { name: 'videos', host: 'lemmy.example.org:8536' }],
   ])('reads %s', (text, community) => {
     expect(lemmyCommunity(text)).toEqual(community)
   })
@@ -261,6 +264,15 @@ describe('a Lemmy community, as it is written', () => {
     'https://www.youtube.com/watch?v=neGgUavFT0w',
     'ftp://lemmy.cafe/c/mealtimevideos',
     'https://localhost/c/mealtimevideos',
+    // YouTube's own /c/ pages are channels
+    'https://www.youtube.com/c/LastWeekTonight',
+    'https://youtube.com/c/LastWeekTonight',
+    'https://m.youtube.com/c/LastWeekTonight',
+    'https://lemmy.cafe/c/videos@youtube.com',
+    '!videos@youtube.com',
+    // Without the !, a handle is an email address, a Mastodon or a PeerTube account as likely
+    'mealtimevideos@lemmy.cafe',
+    'someone@example.org',
   ])('does not read %s', (text) => {
     expect(lemmyCommunity(text)).toBe(null)
   })
@@ -283,6 +295,11 @@ describe('a Lemmy community as a source', () => {
 
   it('has its feed at its home instance, by the sort asked, fifty at a time', () => {
     expect(lemmyFeedUrl(MEALTIME, 'TopWeek')).toBe('https://lemmy.cafe/feeds/c/mealtimevideos.xml?sort=TopWeek&limit=50')
+    expect(lemmyFeedUrl({ name: 'videos', host: 'lemmy.example.org:8536' }, 'New')).toBe('https://lemmy.example.org:8536/feeds/c/videos.xml?sort=New&limit=50')
+  })
+
+  it('keeps the name as written in its link and feed, which Lemmy looks up in any case, and lower-cases it only in its id', () => {
+    expect(lemmySource({ name: 'Documentary', host: 'lemmy.world' }, NOW)).toMatchObject({ url: 'https://lemmy.world/c/Documentary', name: 'Documentary@lemmy.world' })
   })
 })
 

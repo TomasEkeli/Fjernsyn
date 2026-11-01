@@ -21,7 +21,7 @@
  */
 
 import { shareId } from '../shares.js'
-import { videoRefFromLink } from '../videoLinks.js'
+import { isYouTubeHost, videoRefFromLink } from '../videoLinks.js'
 
 /** @import { Share, Source } from '../shares.js' */
 
@@ -52,8 +52,11 @@ const FEED_TIMEOUT_MS = 20_000
 /** A community's name, as Lemmy allows it */
 const COMMUNITY_NAME = /^\w+$/
 
-/** A host name with at least one dot, which keeps `localhost` and bare words out */
-const HOST_NAME = /^(?=.{1,253}$)[a-z\d](?:[a-z\d-]*[a-z\d])?(?:\.[a-z\d](?:[a-z\d-]*[a-z\d])?)+$/
+/**
+ * A host name with at least one dot, which keeps `localhost` and bare words
+ * out, and a port if it has one
+ */
+const HOST = /^(?=[^:]{1,253}(?::|$))[a-z\d](?:[a-z\d-]*[a-z\d])?(?:\.[a-z\d](?:[a-z\d-]*[a-z\d])?)+(?::\d{1,5})?$/
 
 /**
  * The `N points |` of a description's header. Lemmy's wording, and so the one
@@ -63,20 +66,32 @@ const POINTS = /^\s*(-?\d+) points? \|/
 
 /**
  * @param {string} name
- * @param {string} host
+ * @param {string} host the host name, and its port if it has one
  * @returns {LemmyCommunity | null}
  */
 function community(name, host) {
   const lowerHost = host.toLowerCase()
-  return COMMUNITY_NAME.test(name) && HOST_NAME.test(lowerHost) ? { name, host: lowerHost } : null
+
+  if (!COMMUNITY_NAME.test(name) || !HOST.test(lowerHost)) { return null }
+  // youtube.com/c/<name> is a channel
+  if (isYouTubeHost(lowerHost.replace(/:\d+$/, ''))) { return null }
+
+  return { name, host: lowerHost }
 }
 
 /**
  * A Lemmy community, from any of the ways it is written: its page on its home
  * instance or on another (`https://lemmy.world/c/name@home`), with or without
- * `https://`; `!name@home`, and `name@home`; and its feed's URL, as an OPML
- * file writes it. Nothing for anything else. Pure: whether the instance is
- * Lemmy, and serves a feed, only asking it can tell.
+ * `https://`; `!name@home`; and its feed's URL, as an OPML file writes it.
+ * Nothing for anything else: not `name@home` without the `!`, which is as
+ * likely an email address or a Mastodon or PeerTube account, and nothing on
+ * YouTube's hosts, whose `/c/<name>` is a channel. Pure: whether the instance
+ * is Lemmy, and serves a feed, only asking it can tell.
+ *
+ * The name is kept as written: Lemmy looks a community up by its name in any
+ * case (lemmy.cafe, Lemmy 0.19, answered `MealtimeVideos` and
+ * `MEALTIMEVIDEOS` as `mealtimevideos`), so only the source's id lower-cases
+ * it.
  *
  * @param {string} text
  * @returns {LemmyCommunity | null}
@@ -86,7 +101,7 @@ export function lemmyCommunity(text) {
 
   const trimmed = text.trim()
 
-  const handle = /^!?(\w+)@([^@/\s]+)$/.exec(trimmed)
+  const handle = /^!(\w+)@([^@/\s]+)$/.exec(trimmed)
   if (handle !== null) { return community(handle[1], handle[2]) }
 
   let url
@@ -99,10 +114,10 @@ export function lemmyCommunity(text) {
   if (url.protocol !== 'https:' && url.protocol !== 'http:') { return null }
 
   const page = /^\/c\/(\w+)(?:@([^@/]+))?\/?$/.exec(url.pathname)
-  if (page !== null) { return community(page[1], page[2] ?? url.hostname) }
+  if (page !== null) { return community(page[1], page[2] ?? url.host) }
 
   const feed = /^\/feeds\/c\/(\w+)\.xml$/.exec(url.pathname)
-  if (feed !== null) { return community(feed[1], url.hostname) }
+  if (feed !== null) { return community(feed[1], url.host) }
 
   return null
 }
