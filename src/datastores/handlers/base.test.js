@@ -10,6 +10,7 @@ vi.mock('../index', async () => {
   return {
     collectionSources: new Datastore({ inMemoryOnly: true }),
     collectionShares: new Datastore({ inMemoryOnly: true }),
+    collectionVideos: new Datastore({ inMemoryOnly: true }),
   }
 })
 
@@ -77,5 +78,29 @@ describe('putting collection shares', () => {
 
   it('does nothing for no shares', async () => {
     expect(await collections.putShares([])).toEqual({ added: 0, updated: 0 })
+  })
+})
+
+describe('putting collection videos\' details', () => {
+  beforeEach(async () => {
+    await db.collectionVideos.removeAsync({}, { multi: true })
+  })
+
+  const details = (videoId, extra = {}) => ({ _id: videoId, videoId, fetchedAt: 1, lengthSeconds: 60, ...extra })
+
+  it('keeps each video\'s details by its ref, and finds them all', async () => {
+    await collections.putVideos([details('aaaaaaaaaaa'), details('bbbbbbbbbbb', { unavailable: 'gone' })])
+
+    expect((await collections.findVideos()).sort((a, b) => a._id.localeCompare(b._id))).toEqual([
+      details('aaaaaaaaaaa'),
+      details('bbbbbbbbbbb', { unavailable: 'gone' }),
+    ])
+  })
+
+  it('replaces what was kept for a video, once', async () => {
+    await collections.putVideos([details('aaaaaaaaaaa', { viewCount: 5 })])
+    await collections.putVideos([details('aaaaaaaaaaa', { fetchedAt: 2 })])
+
+    expect(await collections.findVideos()).toEqual([details('aaaaaaaaaaa', { fetchedAt: 2 })])
   })
 })

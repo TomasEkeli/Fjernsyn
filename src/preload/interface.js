@@ -459,7 +459,7 @@ export default {
   },
 
   /**
-   * Collections: the followed sources and their shares
+   * Collections: the followed sources, their shares, and the videos' details
    * @param {number} action
    * @param {any} [data]
    */
@@ -556,6 +556,19 @@ export default {
         history: changes?.history ?? null,
       })
     })
+  },
+
+  /**
+   * Asks main for the Collections crawl, which one window runs at a time
+   * @returns {Promise<boolean>} whether this window now runs it
+   */
+  claimCollectionsCrawl: () => {
+    return ipcRenderer.invoke(IpcChannels.COLLECTIONS_CRAWL_CLAIM)
+  },
+
+  /** Gives the Collections crawl back to main, for another window to run */
+  releaseCollectionsCrawl: () => {
+    ipcRenderer.send(IpcChannels.COLLECTIONS_CRAWL_RELEASE)
   },
 
   /**

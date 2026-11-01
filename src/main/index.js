@@ -31,6 +31,8 @@ import contextMenu from 'electron-context-menu'
 import packageDetails from '../../package.json'
 import { registerBackupHandlers } from './backup/ipc'
 import { registerKeeper } from './backup/keeperIpc'
+import { createCollectionsCrawlClaim } from './collectionsCrawlClaim'
+import { isStorableCollectionRecord } from './collectionsRecords'
 import { handleOpenInExternalPlayer } from './externalPlayer'
 import { holdFullscreen, isFullscreenHeld, releaseFullscreen } from './fullscreenHold'
 import { registerPeerTubeDownloadHandlers } from './peertubeDownloads/ipc'
@@ -2566,7 +2568,7 @@ function runApp() {
   })
 
   // *********** //
-  // Collections: the followed sources and their shares
+  // Collections: the followed sources, their shares, and the videos' details
   ipcMain.handle(IpcChannels.DB_COLLECTIONS, async (event, { action, data }) => {
     if (!isFreeTubeUrl(event.senderFrame.url)) {
       return
@@ -2581,7 +2583,7 @@ function runApp() {
           return await baseHandlers.collections.findShares()
 
         case DBActions.COLLECTIONS.UPSERT_SOURCE:
-          if (typeof data?._id !== 'string') {
+          if (!isStorableCollectionRecord(data)) {
             // eslint-disable-next-line no-throw-literal
             throw 'invalid collections data'
           }
@@ -2590,7 +2592,7 @@ function runApp() {
           return null
 
         case DBActions.COLLECTIONS.PUT_SHARES: {
-          if (!Array.isArray(data) || !data.every(share => typeof share?._id === 'string')) {
+          if (!Array.isArray(data) || !data.every(share => isStorableCollectionRecord(share))) {
             // eslint-disable-next-line no-throw-literal
             throw 'invalid collections data'
           }
@@ -2598,6 +2600,18 @@ function runApp() {
           syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, { event: SyncEvents.COLLECTIONS.PUT_SHARES, data })
           return counts
         }
+
+        case DBActions.COLLECTIONS.FIND_VIDEOS:
+          return await baseHandlers.collections.findVideos()
+
+        case DBActions.COLLECTIONS.PUT_VIDEOS:
+          if (!Array.isArray(data) || !data.every(video => isStorableCollectionRecord(video, { videoId: true }))) {
+            // eslint-disable-next-line no-throw-literal
+            throw 'invalid collections data'
+          }
+          await baseHandlers.collections.putVideos(data)
+          syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, { event: SyncEvents.COLLECTIONS.PUT_VIDEOS, data })
+          return null
 
         default:
           // eslint-disable-next-line no-throw-literal
@@ -2607,6 +2621,25 @@ function runApp() {
       if (typeof err === 'string') throw err
       else throw err.toString()
     }
+  })
+
+  // Collections: which window runs the crawl, one at a time
+  const collectionsCrawlClaim = createCollectionsCrawlClaim()
+
+  ipcMain.handle(IpcChannels.COLLECTIONS_CRAWL_CLAIM, (event) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      return false
+    }
+
+    return collectionsCrawlClaim.claim(event.sender)
+  })
+
+  ipcMain.on(IpcChannels.COLLECTIONS_CRAWL_RELEASE, (event) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      return
+    }
+
+    collectionsCrawlClaim.release(event.sender)
   })
 
   // *********** //

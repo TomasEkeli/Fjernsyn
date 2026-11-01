@@ -1,3 +1,4 @@
+import { computed, reactive } from 'vue'
 import { describe, expect, it } from 'vitest'
 
 import { shareId, shareVideoKey, wallVideos } from './shares'
@@ -129,5 +130,95 @@ describe('the wall\'s videos', () => {
 
   it('is empty for no shares', () => {
     expect(wallVideos([])).toEqual([])
+  })
+})
+
+describe('the wall\'s videos, with their details', () => {
+  const details = {
+    _id: 'aaaaaaaaaaa',
+    videoId: 'aaaaaaaaaaa',
+    fetchedAt: 1234,
+    title: 'Its own title',
+    author: 'Its channel',
+    authorId: 'UCaaaaaaaaaaaaaaaaaaaaaa',
+    lengthSeconds: 213,
+    viewCount: 1000,
+    published: Date.UTC(2009, 9, 25),
+  }
+
+  it('shows what the video says of itself once its details are in: duration, views, date, and a channel to link to', () => {
+    const [video] = wallVideos([share('hackertube', 'aaaaaaaaaaa')], { aaaaaaaaaaa: details })
+
+    expect(video).toEqual({
+      type: 'video',
+      videoId: 'aaaaaaaaaaa',
+      title: 'Its own title',
+      author: 'Its channel',
+      authorId: 'UCaaaaaaaaaaaaaaaaaaaaaa',
+      lengthSeconds: 213,
+      viewCount: 1000,
+      published: Date.UTC(2009, 9, 25),
+      lastUpdatedAt: 1234,
+      collection: {
+        votes: 1,
+        sharedAt: Date.UTC(2020, 0, 1),
+        sourceIds: ['hackertube'],
+      },
+    })
+  })
+
+  it('keeps what the share says where the details say nothing', () => {
+    const [video] = wallVideos([share('hackertube', 'aaaaaaaaaaa')], {
+      aaaaaaaaaaa: { ...details, title: '', author: '', authorId: '', viewCount: null, published: null, lengthSeconds: '' },
+    })
+
+    expect(video.title).toBe('Title aaaaaaaaaaa')
+    expect(video.author).toBe('Channel aaaaaaaaaaa')
+    expect(video.lengthSeconds).toBe('')
+    expect(video).not.toHaveProperty('authorId')
+    expect(video).not.toHaveProperty('viewCount')
+    expect(video).not.toHaveProperty('published')
+  })
+
+  it('carries the live and upcoming flags, an upcoming one\'s start as a date', () => {
+    const [live, upcoming] = wallVideos([
+      share('a', 'aaaaaaaaaaa', { votes: 2 }),
+      share('a', 'bbbbbbbbbbb', { votes: 1 }),
+    ], {
+      aaaaaaaaaaa: { ...details, liveNow: true },
+      bbbbbbbbbbb: { ...details, _id: 'bbbbbbbbbbb', videoId: 'bbbbbbbbbbb', isUpcoming: true, premiereDate: Date.UTC(2030, 0, 1) },
+    })
+
+    expect(live.liveNow).toBe(true)
+    expect(upcoming.isUpcoming).toBe(true)
+    expect(upcoming.premiereDate).toEqual(new Date(Date.UTC(2030, 0, 1)))
+  })
+
+  it('is worked out again when details arrive in a reactive map it had no key for, as the store adds them', () => {
+    const kept = reactive({})
+    const wall = computed(() => wallVideos([share('hackertube', 'aaaaaaaaaaa')], kept))
+
+    expect(wall.value[0].lengthSeconds).toBe('')
+
+    kept.aaaaaaaaaaa = Object.freeze({ ...details })
+
+    expect(wall.value[0].lengthSeconds).toBe(213)
+  })
+
+  it('leaves a video YouTube said is unavailable off the wall', () => {
+    const videos = wallVideos([share('a', 'aaaaaaaaaaa'), share('a', 'bbbbbbbbbbb')], {
+      aaaaaaaaaaa: { _id: 'aaaaaaaaaaa', videoId: 'aaaaaaaaaaa', fetchedAt: 1, unavailable: 'gone' },
+    })
+
+    expect(videos.map(video => video.videoId)).toEqual(['bbbbbbbbbbb'])
+  })
+
+  it('matches a PeerTube video\'s details by its uuid and host', () => {
+    const uuid = '9c9de5e8-0a1e-484a-b099-e80766180a6d'
+    const [video] = wallVideos([share('a', uuid, { platform: 'peertube', host: 'framatube.org' })], {
+      [`${uuid}@framatube.org`]: { ...details, _id: `${uuid}@framatube.org`, videoId: uuid },
+    })
+
+    expect(video.lengthSeconds).toBe(213)
   })
 })

@@ -46,12 +46,43 @@ export function shareId(sourceId, ref) {
  * @property {string} videoId
  * @property {string} title
  * @property {string} author
- * @property {''} lengthSeconds unknown until the details arrive; `''` and not
+ * @property {number | ''} lengthSeconds `''` until the details say, and not
  *   undefined, which the card would take for a live stream
  * @property {'peertube'} [platform]
  * @property {string} [host]
+ * @property {string} [authorId] the channel, once the details say: what the
+ *   card links to, and what hidden and marked channels are matched by
+ * @property {number} [viewCount]
+ * @property {number} [published]
+ * @property {true} [liveNow]
+ * @property {true} [isUpcoming]
+ * @property {Date} [premiereDate]
+ * @property {number} [lastUpdatedAt] when the details were fetched: part of
+ *   the card's key on the wall, so that a card drawn before they came is drawn
+ *   again with them, as a card reads its video once
  * @property {{ votes: number | null, sharedAt: number | null, sourceIds: string[] }} collection
  */
+
+/**
+ * What the details kept for a video say of it (`details.js` has the record's
+ * shape), laid over what its shares said. A field the details have no value
+ * for is left as the shares had it.
+ *
+ * @param {CollectionVideo} video
+ * @param {any} details
+ */
+function withDetails(video, details) {
+  if (typeof details.title === 'string' && details.title !== '') { video.title = details.title }
+  if (typeof details.author === 'string' && details.author !== '') { video.author = details.author }
+  if (typeof details.authorId === 'string' && details.authorId !== '') { video.authorId = details.authorId }
+  if (typeof details.lengthSeconds === 'number') { video.lengthSeconds = details.lengthSeconds }
+  if (typeof details.viewCount === 'number') { video.viewCount = details.viewCount }
+  if (typeof details.published === 'number') { video.published = details.published }
+  if (details.liveNow === true) { video.liveNow = true }
+  if (details.isUpcoming === true) { video.isUpcoming = true }
+  if (typeof details.premiereDate === 'number') { video.premiereDate = new Date(details.premiereDate) }
+  if (typeof details.fetchedAt === 'number') { video.lastUpdatedAt = details.fetchedAt }
+}
 
 /**
  * @param {number | null} a
@@ -75,10 +106,16 @@ function mostFirst(a, b) {
  * The shares given are the ones that count: the caller decides which sources
  * are shown.
  *
+ * A video's details, once the crawl has them, say what it says of itself:
+ * its own title, its channel, duration, views and date. A video YouTube said
+ * is unavailable is left off.
+ *
  * @param {import('./hackertube').Share[]} shares
+ * @param {Record<string, any>} [details] the details kept, by the video's ref
+ *   as one string (`shareVideoKey`)
  * @returns {CollectionVideo[]}
  */
-export function wallVideos(shares) {
+export function wallVideos(shares, details = {}) {
   /** @type {Map<string, CollectionVideo>} */
   const byVideo = new Map()
 
@@ -122,7 +159,24 @@ export function wallVideos(shares) {
     }
   }
 
-  return [...byVideo.values()].sort((a, b) => {
+  /** @type {CollectionVideo[]} */
+  const videos = []
+
+  for (const [key, video] of byVideo) {
+    // Read before it is looked for, so that a reactive map tells the wall
+    // when a video's details arrive
+    const kept = details[key]
+    const known = Object.hasOwn(details, key) ? kept : undefined
+
+    if (known === undefined) {
+      videos.push(video)
+    } else if (known.unavailable === undefined) {
+      withDetails(video, known)
+      videos.push(video)
+    }
+  }
+
+  return videos.sort((a, b) => {
     return mostFirst(a.collection.votes, b.collection.votes) ||
       mostFirst(a.collection.sharedAt, b.collection.sharedAt) ||
       (a.videoId < b.videoId ? -1 : a.videoId > b.videoId ? 1 : 0)

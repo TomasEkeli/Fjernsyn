@@ -5,23 +5,27 @@ import { fetchHackerTubeBundle } from '../../helpers/collections/hackertubeBundl
 
 /**
  * Collections: the sources followed and the shares they made, from
- * `collection-sources.db` and `collection-shares.db`, loaded at startup and
- * written through on every change.
+ * `collection-sources.db` and `collection-shares.db`, and each collection
+ * video's own details as the crawl fetched them, from `collection-videos.db`,
+ * loaded at startup and written through on every change.
  *
- * Shares are frozen as they come in: there are thousands of them, nothing
- * edits one in place, and a frozen object is one Vue does not make deeply
- * reactive. A change replaces the share.
+ * Shares and details are frozen as they come in: there are thousands of
+ * them, nothing edits one in place, and a frozen object is one Vue does not
+ * make deeply reactive. A change replaces the record.
  *
  * The walls are worked out from the shares in `helpers/collections/shares.js`.
  */
 
 /** @import { Share, Source } from '../../helpers/collections/hackertube' */
+/** @import { VideoDetails } from '../../helpers/collections/details' */
 
 const state = {
   /** @type {Record<string, Source>} by `_id` */
   collectionSources: {},
   /** @type {Record<string, Share>} by `_id` */
   collectionShares: {},
+  /** @type {Record<string, VideoDetails>} by `_id`, the video's ref as one string */
+  collectionVideos: {},
   collectionsReady: false,
   // The last read of the datastore failed, so what is held says nothing about
   // what is followed: nothing may be followed or loaded on the strength of it
@@ -38,11 +42,14 @@ const getters = {
   getCollectionsReady: (state) => state.collectionsReady,
   getCollectionsLoading: (state) => state.collectionsLoading,
   getCollectionsLoadFailed: (state) => state.collectionsLoadFailed,
+  getCollectionsGrabFailed: (state) => state.collectionsGrabFailed,
   /** @returns {Source[]} */
   getCollectionSources: (state) => Object.values(state.collectionSources),
   getCollectionSource: (state) => (id) => state.collectionSources[id],
   /** @returns {Share[]} */
   getCollectionShares: (state) => Object.values(state.collectionShares),
+  /** @returns {Record<string, VideoDetails>} by the video's ref as one string */
+  getCollectionVideos: (state) => state.collectionVideos,
 }
 
 /** The one first open in flight, which a second open joins */
@@ -60,12 +67,15 @@ const actions = {
     commit('startCollectionsGrab')
 
     try {
-      const [sources, shares] = await Promise.all([
+      // All three or none: details that could not be read would make the
+      // crawl take every video for missing
+      const [sources, shares, videos] = await Promise.all([
         DBCollectionHandlers.findSources(),
         DBCollectionHandlers.findShares(),
+        DBCollectionHandlers.findVideos(),
       ])
 
-      commit('finishCollectionsGrab', { sources, shares })
+      commit('finishCollectionsGrab', { sources, shares, videos })
       commit('setCollectionsGrabFailed', false)
     } catch (error) {
       console.error(error)
@@ -96,6 +106,19 @@ const actions = {
 
     await DBCollectionHandlers.putShares(shares)
     commit('putCollectionShares', shares)
+  },
+
+  /**
+   * Keeps videos' details, each replacing what was kept for its video
+   *
+   * @param {any} context
+   * @param {VideoDetails[]} videos
+   */
+  async putCollectionVideos({ commit }, videos) {
+    if (videos.length === 0) { return }
+
+    await DBCollectionHandlers.putVideos(videos)
+    commit('putCollectionVideos', videos)
   },
 
   /**
@@ -187,6 +210,21 @@ function withShares(kept, shares) {
   return next
 }
 
+/**
+ * Into the map held, not a copy of it: the crawl puts one record at a time,
+ * twice a second, into a map of thousands. Whatever reads a record by its key
+ * hears of it, as `detailsFor` reads before it looks.
+ *
+ * @param {Record<string, VideoDetails>} kept
+ * @param {VideoDetails[]} videos
+ */
+function putVideos(kept, videos) {
+  for (const video of videos) {
+    // As main's put: the record given replaces the one kept
+    kept[video._id] = Object.freeze({ ...video })
+  }
+}
+
 const mutations = {
   setCollectionsReady(state, value) {
     state.collectionsReady = value
@@ -210,12 +248,15 @@ const mutations = {
 
   /**
    * @param {any} state
-   * @param {{ sources: Source[], shares: Share[] } | null} read null when the read failed
+   * @param {{ sources: Source[], shares: Share[], videos: VideoDetails[] } | null} read null when the read failed
    */
   finishCollectionsGrab(state, read) {
     if (read !== null) {
       state.collectionSources = Object.fromEntries(read.sources.map(source => [source._id, source]))
       state.collectionShares = withShares({}, read.shares)
+      const videos = {}
+      putVideos(videos, read.videos)
+      state.collectionVideos = videos
     }
 
     const buffered = state.collectionsSyncBuffer ?? []
@@ -232,6 +273,10 @@ const mutations = {
 
   putCollectionShares(state, shares) {
     state.collectionShares = withShares(state.collectionShares, shares)
+  },
+
+  putCollectionVideos(state, videos) {
+    putVideos(state.collectionVideos, videos)
   },
 
   /**
@@ -252,6 +297,10 @@ const mutations = {
 
       case SyncEvents.COLLECTIONS.PUT_SHARES:
         mutations.putCollectionShares(state, data)
+        break
+
+      case SyncEvents.COLLECTIONS.PUT_VIDEOS:
+        mutations.putCollectionVideos(state, data)
         break
 
       default:

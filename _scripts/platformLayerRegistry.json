@@ -10,12 +10,16 @@
       "reason": "lockfile entries for the renderer test dev dependencies"
     },
     {
+      "path": "_scripts/webpack.renderer.config.js",
+      "reason": "bakes in FT_COLLECTIONS_CRAWL_LIMIT, the Collections crawl's cap on requests, in a development build only (src/renderer/helpers/collections/crawlLimit.js)"
+    },
+    {
       "path": "src/constants.js",
-      "reason": "the PeerTube download IPC channels (PEERTUBE_DOWNLOAD, _CANCEL, _REVEAL, _DISMISS, _LIST_DOWNLOADS); Collections' IPC channels (DB_COLLECTIONS, SYNC_COLLECTIONS), DBActions.COLLECTIONS and SyncEvents.COLLECTIONS"
+      "reason": "the PeerTube download IPC channels (PEERTUBE_DOWNLOAD, _CANCEL, _REVEAL, _DISMISS, _LIST_DOWNLOADS); Collections' IPC channels (DB_COLLECTIONS, SYNC_COLLECTIONS), DBActions.COLLECTIONS and SyncEvents.COLLECTIONS, the videos' details (FIND_VIDEOS, PUT_VIDEOS) included; the crawl's claim channels (COLLECTIONS_CRAWL_CLAIM, COLLECTIONS_CRAWL_RELEASE)"
     },
     {
       "path": "src/datastores/handlers/base.js",
-      "reason": "the Collections handler class (sources by id, shares only ever added or updated), and its two datastores loaded and compacted with the others"
+      "reason": "the Collections handler class (sources by id, shares only ever added or updated, videos' details by video ref), and its three datastores loaded and compacted with the others"
     },
     {
       "path": "src/datastores/handlers/electron.js",
@@ -31,7 +35,7 @@
     },
     {
       "path": "src/datastores/index.js",
-      "reason": "Collections' two datastores, collectionSources and collectionShares"
+      "reason": "Collections' three datastores, collectionSources, collectionShares and collectionVideos"
     },
     {
       "path": "src/main/externalPlayer.js",
@@ -39,11 +43,11 @@
     },
     {
       "path": "src/main/index.js",
-      "reason": "onBeforeSendHeaders hands every request to the PeerTube User-Agent helper (src/main/peertubeRequests.js) first; registers the PeerTube download handlers (src/main/peertubeDownloads/ipc.js) next to the yt-dlp ones; handles DB_COLLECTIONS, Collections' sources and shares, beside the Later list's handler"
+      "reason": "onBeforeSendHeaders hands every request to the PeerTube User-Agent helper (src/main/peertubeRequests.js) first; registers the PeerTube download handlers (src/main/peertubeDownloads/ipc.js) next to the yt-dlp ones; handles DB_COLLECTIONS, Collections' sources, shares and videos' details, beside the Later list's handler, refusing records with `$` fields (src/main/collectionsRecords.js); grants the Collections crawl to one window at a time (src/main/collectionsCrawlClaim.js)"
     },
     {
       "path": "src/preload/interface.js",
-      "reason": "the PeerTube download functions (peerTubeDownload, peerTubeCancel, peerTubeReveal, peerTubeDismiss, peerTubeListDownloads); Collections' dbCollections and handleSyncCollections"
+      "reason": "the PeerTube download functions (peerTubeDownload, peerTubeCancel, peerTubeReveal, peerTubeDismiss, peerTubeListDownloads); Collections' dbCollections and handleSyncCollections; claimCollectionsCrawl and releaseCollectionsCrawl"
     },
     {
       "path": "src/renderer/App.vue",
@@ -92,6 +96,10 @@
     {
       "path": "src/renderer/components/ft-shaka-video-player/ft-shaka-video-player.js",
       "reason": "optional `platform` prop: no SponsorBlock and no YouTube HLS seek rule for other platforms; lowest variant when none is at or below the preferred quality"
+    },
+    {
+      "path": "src/renderer/helpers/api/local.js",
+      "reason": "getLocalPlayerResponse, a video's raw plain /player response, for the Collections crawl (src/renderer/helpers/collections/crawlRunner.js)"
     },
     {
       "path": "src/renderer/helpers/strings.js",

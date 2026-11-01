@@ -297,6 +297,14 @@ class Collections {
   static putShares(shares) {
     return window.ftElectron.dbCollections(DBActions.COLLECTIONS.PUT_SHARES, shares)
   }
+
+  static findVideos() {
+    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.FIND_VIDEOS)
+  }
+
+  static putVideos(videos) {
+    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.PUT_VIDEOS, videos)
+  }
 }
 
 export {
