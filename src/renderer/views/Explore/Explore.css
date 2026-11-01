@@ -11,7 +11,7 @@
 /* The control row's far end, .pageControls, is shared with Subscriptions; it
    lives in components/FtToggleChip/chipRow.css. */
 
-/* The region select's look is shared with the collections walls; it lives
+/* The region select's look is shared with the communities walls; it lives
    in components/FtToggleChip/pickerSelect.css. */
 
 @media only screen and (width <= 680px) {

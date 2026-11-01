@@ -1484,7 +1484,7 @@ export async function getLocalLiveState(videoId) {
 /**
  * A video's raw `/player` response, unparsed: the same plain request as
  * {@linkcode getLocalVideoMetadata}, for a caller that reads it itself, the
- * Collections crawl (helpers/collections/details.js).
+ * Communities crawl (helpers/communities/details.js).
  *
  * Throws what the request throws, an HTTP 403 or 429 included.
  * @param {string} videoId

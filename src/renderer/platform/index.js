@@ -201,7 +201,7 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
    * origin, without the playback source, captions, chapters or storyboard
    * `getVideo` asks for: one request, and one more when the instance asked
    * says the video is not its own. For whatever needs a video's details
-   * without playing it (Collections). PeerTube only: any other ref rejects
+   * without playing it (Communities). PeerTube only: any other ref rejects
    * as `invalid`, without a request; failures are `getVideo`'s.
    *
    * @param {import('./shapes').PeerTubeVideoRef} ref

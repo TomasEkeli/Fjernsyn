@@ -61,7 +61,7 @@
         >
           <RouterLink
             class="sourceLink"
-            :to="{ name: 'collectionSource', params: { sourceId: source._id } }"
+            :to="{ name: 'communitySource', params: { sourceId: source._id } }"
           >
             <span class="sourceName">{{ source.name }}</span>
             <span class="sourceAbout">
@@ -105,33 +105,33 @@ import FtPrompt from '../../components/FtPrompt/FtPrompt.vue'
 
 import store from '../../store/index'
 
-import { opmlFeedUrls, sourcesOpml } from '../../helpers/collections/opml'
-import { sourceInstance, sourceKindLabel } from '../../helpers/collections/sourceLabels'
-import { sourcesByName } from '../../helpers/collections/sourceChips'
+import { opmlFeedUrls, sourcesOpml } from '../../helpers/communities/opml'
+import { sourceInstance, sourceKindLabel } from '../../helpers/communities/sourceLabels'
+import { sourcesByName } from '../../helpers/communities/sourceChips'
 import { getTodayDateStrLocalTimezone, readFileWithPicker, showToast, writeFileWithPicker } from '../../helpers/utils'
 
 /**
- * Sources: the places Collections follows, as the Channels page lists the
+ * Sources: the places Communities follows, as the Channels page lists the
  * channels subscribed to, without its profiles.
  *
  * A source is followed by pasting its address: each source kind is asked in
  * turn whether it recognises it, and the source is then asked once for what
- * it shares before it is followed (`helpers/collections/follow.js`), so that
+ * it shares before it is followed (`helpers/communities/follow.js`), so that
  * an instance serving no feed, or none that can be read, is refused at once
  * rather than followed and failing on every refresh. Its videos are kept as
  * soon as it is followed. Unfollowing, after a prompt, takes its videos off
- * Collections; a feed lists only the latest posts, so following it again does
+ * Communities; a feed lists only the latest posts, so following it again does
  * not bring the older ones back.
  *
- * Each source opens its own page (`views/CollectionSource`).
+ * Each source opens its own page (`views/CommunitySource`).
  *
  * The followed sources export as an OPML file, and an OPML file imports,
  * following every source in it a kind recognises and is not followed
- * already, without asking any of them first (`helpers/collections/opml.js`,
- * the store's `importCollectionSources`).
+ * already, without asking any of them first (`helpers/communities/opml.js`,
+ * the store's `importCommunitySources`).
  *
  * Visiting it follows the starter set on a first run, and nothing more: the
- * list is what Collections will follow from the start, and a starter source
+ * list is what Communities will follow from the start, and a starter source
  * can be unfollowed before any wall is opened. Their videos come with the
  * first wall opened (HackerTube's from the bundle, the communities' from its
  * refresh), so until then each shows none here.
@@ -140,7 +140,7 @@ import { getTodayDateStrLocalTimezone, readFileWithPicker, showToast, writeFileW
 const { t } = useI18n()
 
 /** @type {import('vue').ComputedRef<boolean>} */
-const ready = computed(() => store.getters.getCollectionsReady)
+const ready = computed(() => store.getters.getCommunitiesReady)
 
 // Once the datastore is read: before, what is held says nothing of what is followed
 let applied = false
@@ -148,11 +148,11 @@ watch(ready, (isReady) => {
   if (!isReady || applied) { return }
 
   applied = true
-  store.dispatch('applyCollectionsStarterSet').catch(error => console.error('Sources: could not follow the starter set', error))
+  store.dispatch('applyCommunitiesStarterSet').catch(error => console.error('Sources: could not follow the starter set', error))
 }, { immediate: true })
 
 /** @type {import('vue').ComputedRef<boolean>} */
-const grabFailed = computed(() => store.getters.getCollectionsGrabFailed)
+const grabFailed = computed(() => store.getters.getCommunitiesGrabFailed)
 
 /**
  * Every followed source, by name, with how it is described and how many of
@@ -162,11 +162,11 @@ const sources = computed(() => {
   /** @type {Map<string, number>} */
   const counts = new Map()
 
-  for (const share of store.getters.getCollectionShares) {
+  for (const share of store.getters.getCommunityShares) {
     counts.set(share.sourceId, (counts.get(share.sourceId) ?? 0) + 1)
   }
 
-  const rows = store.getters.getCollectionSources
+  const rows = store.getters.getCommunitySources
     .map(source => ({
       _id: source._id,
       name: source.name,
@@ -208,7 +208,7 @@ async function follow(text) {
   status.value = { text: t('Sources.Trying'), refused: false }
 
   try {
-    const followed = await store.dispatch('followCollectionSourceByUrl', text)
+    const followed = await store.dispatch('followCommunitySourceByUrl', text)
     status.value = statusOf(followed)
 
     if (followed.outcome === 'followed') {
@@ -249,7 +249,7 @@ function statusOf({ outcome, source }) {
 }
 
 /** Where the file dialogs open, and which folder they remember */
-const OPML_DIRECTORY_ID = 'collections-sources'
+const OPML_DIRECTORY_ID = 'communities-sources'
 const START_IN_DIRECTORY = 'downloads'
 
 /** @type {import('vue').ComputedRef<boolean>} */
@@ -267,7 +267,7 @@ async function exportSources() {
   try {
     const written = await writeFileWithPicker(
       `fjernsyn-sources-${getTodayDateStrLocalTimezone()}.opml`,
-      sourcesOpml(store.getters.getCollectionSources),
+      sourcesOpml(store.getters.getCommunitySources),
       t('Sources.Sources File'),
       'application/xml',
       '.opml',
@@ -308,7 +308,7 @@ async function importSources() {
       return
     }
 
-    const imported = await store.dispatch('importCollectionSources', urls)
+    const imported = await store.dispatch('importCommunitySources', urls)
 
     if (imported.outcome === 'imported') {
       const { followed, followedAlready, refused } = imported
@@ -342,7 +342,7 @@ async function handleUnfollowPrompt(answer) {
   unfollowing.value = source._id
 
   try {
-    await store.dispatch('unfollowCollectionSource', source._id)
+    await store.dispatch('unfollowCommunitySource', source._id)
     showToast(t('Sources.Unfollowed', { name: source.name }))
   } catch (error) {
     console.error('Sources: could not unfollow', error)

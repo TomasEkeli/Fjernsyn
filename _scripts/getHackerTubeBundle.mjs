@@ -1,11 +1,11 @@
 /**
- * Makes the HackerTube bundle the app ships, `static/collections/hackertube.json.gz`,
+ * Makes the HackerTube bundle the app ships, `static/communities/hackertube.json.gz`,
  * from HackerTube's published export (https://hackertube.org/data, ODC-By 1.0).
  *
  * Asks `/api/export` for the export's date, downloads `videos.jsonl` and
  * `taxonomy.json` from `/download/`, strips each video to the fields the app
  * uses, all through the same functions the app's update check uses
- * (`src/renderer/helpers/collections/kinds/hackertube.js`), and writes the
+ * (`src/renderer/helpers/communities/kinds/hackertube.js`), and writes the
  * result as one gzipped JSON file. Never the zip, and never `mentions.jsonl`.
  *
  * Run by hand when a fresher bundle is wanted, not on every build, and commit
@@ -16,9 +16,9 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, relative, resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
 
-import { downloadHackerTubeExport, fetchHackerTubeManifest } from '../src/renderer/helpers/collections/kinds/hackertube.js'
+import { downloadHackerTubeExport, fetchHackerTubeManifest } from '../src/renderer/helpers/communities/kinds/hackertube.js'
 
-const OUTPUT = resolve(import.meta.dirname, '../static/collections/hackertube.json.gz')
+const OUTPUT = resolve(import.meta.dirname, '../static/communities/hackertube.json.gz')
 
 const manifest = await fetchHackerTubeManifest(fetch)
 const bundle = await downloadHackerTubeExport(fetch, manifest.generated)

@@ -459,12 +459,12 @@ export default {
   },
 
   /**
-   * Collections: the followed sources, their shares, and the videos' details
+   * Communities: the followed sources, their shares, and the videos' details
    * @param {number} action
    * @param {any} [data]
    */
-  dbCollections: (action, data) => {
-    return ipcRenderer.invoke(IpcChannels.DB_COLLECTIONS, data ? { action, data } : { action })
+  dbCommunities: (action, data) => {
+    return ipcRenderer.invoke(IpcChannels.DB_COMMUNITIES, data ? { action, data } : { action })
   },
 
   /**
@@ -559,16 +559,16 @@ export default {
   },
 
   /**
-   * Asks main for the Collections crawl, which one window runs at a time
+   * Asks main for the Communities crawl, which one window runs at a time
    * @returns {Promise<boolean>} whether this window now runs it
    */
-  claimCollectionsCrawl: () => {
-    return ipcRenderer.invoke(IpcChannels.COLLECTIONS_CRAWL_CLAIM)
+  claimCommunitiesCrawl: () => {
+    return ipcRenderer.invoke(IpcChannels.COMMUNITIES_CRAWL_CLAIM)
   },
 
-  /** Gives the Collections crawl back to main, for another window to run */
-  releaseCollectionsCrawl: () => {
-    ipcRenderer.send(IpcChannels.COLLECTIONS_CRAWL_RELEASE)
+  /** Gives the Communities crawl back to main, for another window to run */
+  releaseCommunitiesCrawl: () => {
+    ipcRenderer.send(IpcChannels.COMMUNITIES_CRAWL_RELEASE)
   },
 
   /**
@@ -730,8 +730,8 @@ export default {
   /**
    * @param {(event: number, data: any) => void} handler
    */
-  handleSyncCollections: (handler) => {
-    ipcRenderer.on(IpcChannels.SYNC_COLLECTIONS, (_, { event, data }) => {
+  handleSyncCommunities: (handler) => {
+    ipcRenderer.on(IpcChannels.SYNC_COMMUNITIES, (_, { event, data }) => {
       handler(event, data)
     })
   },

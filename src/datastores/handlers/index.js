@@ -8,5 +8,5 @@ export {
   channels as DBChannelHandlers,
   aiVerdicts as DBAiVerdictHandlers,
   later as DBLaterHandlers,
-  collections as DBCollectionHandlers,
+  communities as DBCommunityHandlers,
 } from 'DB_HANDLERS_ELECTRON_RENDERER_OR_WEB'

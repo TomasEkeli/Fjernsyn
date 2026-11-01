@@ -14,10 +14,10 @@ vi.mock('../../store/index', async () => {
   return {
     default: createFakeStore({
       getters: {
-        getCollectionsReady: true,
-        getCollectionsGrabFailed: false,
-        getCollectionSources: [],
-        getCollectionShares: [],
+        getCommunitiesReady: true,
+        getCommunitiesGrabFailed: false,
+        getCommunitySources: [],
+        getCommunityShares: [],
       },
     }),
   }
@@ -42,7 +42,7 @@ function share(source, videoId) {
 }
 
 /**
- * The store's answer to a follow, as `followCollectionSourceByUrl` gives it
+ * The store's answer to a follow, as `followCommunitySourceByUrl` gives it
  *
  * @param {object | Error} answer
  */
@@ -51,7 +51,7 @@ function answerFollow(answer) {
     // The field asks the store whether its text is a YouTube link, for its icon
     if (type === 'getYoutubeUrlInfo') { return { urlType: 'invalid_url' } }
     store.dispatched.push({ type, payload })
-    if (type !== 'followCollectionSourceByUrl') { return undefined }
+    if (type !== 'followCommunitySourceByUrl') { return undefined }
     if (answer instanceof Error) { throw answer }
     return answer
   })
@@ -61,7 +61,7 @@ function answerFollow(answer) {
 async function mountSources() {
   const router = createTestRouter([
     { path: '/sources', name: 'sources' },
-    { path: '/sources/:sourceId', name: 'collectionSource' },
+    { path: '/sources/:sourceId', name: 'communitySource' },
   ])
   await router.push('/sources')
 
@@ -84,7 +84,7 @@ async function paste(wrapper, text) {
 }
 
 /** What the page dispatched to follow by address, apart from following the starter set */
-const follows = () => store.dispatched.filter(({ type }) => type === 'followCollectionSourceByUrl')
+const follows = () => store.dispatched.filter(({ type }) => type === 'followCommunitySourceByUrl')
 
 enableAutoUnmount(afterEach)
 
@@ -100,10 +100,10 @@ describe('the Sources page', () => {
     document.body.appendChild(app)
     store.dispatch = originalDispatch
     store.dispatched.length = 0
-    store.setGetter('getCollectionsReady', true)
-    store.setGetter('getCollectionsGrabFailed', false)
-    store.setGetter('getCollectionSources', [MEALTIME, HACKERTUBE])
-    store.setGetter('getCollectionShares', [share(HACKERTUBE, 'aaaaaaaaaaa'), share(HACKERTUBE, 'bbbbbbbbbbb'), share(MEALTIME, 'aaaaaaaaaaa')])
+    store.setGetter('getCommunitiesReady', true)
+    store.setGetter('getCommunitiesGrabFailed', false)
+    store.setGetter('getCommunitySources', [MEALTIME, HACKERTUBE])
+    store.setGetter('getCommunityShares', [share(HACKERTUBE, 'aaaaaaaaaaa'), share(HACKERTUBE, 'bbbbbbbbbbb'), share(MEALTIME, 'aaaaaaaaaaa')])
     vi.mocked(showToast).mockClear()
   })
 
@@ -123,7 +123,7 @@ describe('the Sources page', () => {
   })
 
   it('says when nothing is followed', async () => {
-    store.setGetter('getCollectionSources', [])
+    store.setGetter('getCommunitySources', [])
 
     const wrapper = await mountSources()
 
@@ -142,7 +142,7 @@ describe('the Sources page', () => {
 
     await paste(wrapper, 'https://lemmy.world/c/documentaries@lemmy.cafe')
 
-    expect(follows()).toEqual([{ type: 'followCollectionSourceByUrl', payload: 'https://lemmy.world/c/documentaries@lemmy.cafe' }])
+    expect(follows()).toEqual([{ type: 'followCommunitySourceByUrl', payload: 'https://lemmy.world/c/documentaries@lemmy.cafe' }])
     expect(wrapper.find('.followStatus').text()).toBe('Following documentaries@lemmy.cafe.')
     expect(wrapper.find('.followStatus').classes()).not.toContain('refused')
     expect(wrapper.findComponent(FtInput).props('value')).toBe('')
@@ -181,7 +181,7 @@ describe('the Sources page', () => {
     await input.trigger('keydown', { key: 'Enter' })
     await flushPromises()
 
-    expect(follows()).toEqual([{ type: 'followCollectionSourceByUrl', payload: 'https://slrpnk.net/c/solarpunk' }])
+    expect(follows()).toEqual([{ type: 'followCommunitySourceByUrl', payload: 'https://slrpnk.net/c/solarpunk' }])
     expect(document.activeElement).toBe(input.element)
   })
 
@@ -195,7 +195,7 @@ describe('the Sources page', () => {
   })
 
   it('follows nothing before the datastore is read, or after it could not be', async () => {
-    for (const [getter, value] of [['getCollectionsReady', false], ['getCollectionsGrabFailed', true]]) {
+    for (const [getter, value] of [['getCommunitiesReady', false], ['getCommunitiesGrabFailed', true]]) {
       store.setGetter(getter, value)
       const wrapper = await mountSources()
 
@@ -204,27 +204,27 @@ describe('the Sources page', () => {
       expect(follows(), getter).toEqual([])
 
       wrapper.unmount()
-      store.setGetter(getter, getter === 'getCollectionsReady')
+      store.setGetter(getter, getter === 'getCommunitiesReady')
     }
   })
 
   it('follows the starter set once the datastore is read, and loads nothing, as a first run does on a wall', async () => {
-    store.setGetter('getCollectionsReady', false)
+    store.setGetter('getCommunitiesReady', false)
     const wrapper = await mountSources()
-    const opens = () => store.dispatched.filter(({ type }) => type === 'applyCollectionsStarterSet')
+    const opens = () => store.dispatched.filter(({ type }) => type === 'applyCommunitiesStarterSet')
 
     expect(opens()).toEqual([])
 
-    store.setGetter('getCollectionsReady', true)
+    store.setGetter('getCommunitiesReady', true)
     await flushPromises()
     expect(opens()).toHaveLength(1)
 
     // Once only, whatever changes after
-    store.setGetter('getCollectionSources', [HACKERTUBE])
+    store.setGetter('getCommunitySources', [HACKERTUBE])
     await flushPromises()
     expect(opens()).toHaveLength(1)
     // No bundle load from here: HackerTube's videos come with the first wall
-    expect(store.dispatched.filter(({ type }) => type === 'openCollections')).toEqual([])
+    expect(store.dispatched.filter(({ type }) => type === 'openCommunities')).toEqual([])
     wrapper.unmount()
   })
 
@@ -244,7 +244,7 @@ describe('the Sources page', () => {
     expect(prompt.props('label')).toBe('Unfollow mealtimevideos@lemmy.cafe?')
 
     // What the prompt itself dispatches is not the page's
-    const unfollowed = () => store.dispatched.filter(({ type }) => type === 'unfollowCollectionSource')
+    const unfollowed = () => store.dispatched.filter(({ type }) => type === 'unfollowCommunitySource')
 
     prompt.vm.$emit('click', 'cancel')
     await flushPromises()
@@ -255,21 +255,21 @@ describe('the Sources page', () => {
     wrapper.findComponent(FtPrompt).vm.$emit('click', 'unfollow')
     await flushPromises()
 
-    expect(unfollowed()).toEqual([{ type: 'unfollowCollectionSource', payload: MEALTIME._id }])
+    expect(unfollowed()).toEqual([{ type: 'unfollowCommunitySource', payload: MEALTIME._id }])
     expect(showToast).toHaveBeenCalledWith('Unfollowed mealtimevideos@lemmy.cafe')
   })
 
   describe('export and import', () => {
-    /** The store's answer to an import, as `importCollectionSources` gives it */
+    /** The store's answer to an import, as `importCommunitySources` gives it */
     function answerImport(answer) {
       store.dispatch = vi.fn(async (type, payload) => {
         if (type === 'getYoutubeUrlInfo') { return { urlType: 'invalid_url' } }
         store.dispatched.push({ type, payload })
-        return type === 'importCollectionSources' ? answer : undefined
+        return type === 'importCommunitySources' ? answer : undefined
       })
     }
 
-    const imports = () => store.dispatched.filter(({ type }) => type === 'importCollectionSources')
+    const imports = () => store.dispatched.filter(({ type }) => type === 'importCommunitySources')
 
     beforeEach(() => {
       vi.mocked(readFileWithPicker).mockReset()
@@ -291,7 +291,7 @@ describe('the Sources page', () => {
     })
 
     it('has nothing to export when nothing is followed', async () => {
-      store.setGetter('getCollectionSources', [])
+      store.setGetter('getCommunitySources', [])
       const wrapper = await mountSources()
 
       expect(wrapper.find('.exportButton').attributes('disabled')).toBeDefined()
@@ -308,7 +308,7 @@ describe('the Sources page', () => {
       await wrapper.find('.importButton').trigger('click')
       await flushPromises()
 
-      expect(imports()).toEqual([{ type: 'importCollectionSources', payload: ['https://hackertube.org/api/export', 'https://example.org/feed'] }])
+      expect(imports()).toEqual([{ type: 'importCommunitySources', payload: ['https://hackertube.org/api/export', 'https://example.org/feed'] }])
       expect(showToast).toHaveBeenCalledWith('Imported: 1 followed, 1 followed already, 1 not recognised')
     })
 
@@ -334,7 +334,7 @@ describe('the Sources page', () => {
     })
 
     it('imports nothing before the datastore is read', async () => {
-      store.setGetter('getCollectionsReady', false)
+      store.setGetter('getCommunitiesReady', false)
       const wrapper = await mountSources()
 
       expect(wrapper.find('.importButton').attributes('disabled')).toBeDefined()

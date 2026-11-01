@@ -20,9 +20,9 @@ const DATASTORE_FILES = {
   channels: 'channels',
   aiVerdicts: 'ai-verdicts',
   later: 'later',
-  collectionSources: 'collection-sources',
-  collectionShares: 'collection-shares',
-  collectionSourceData: 'collection-source-data',
+  communitySources: 'community-sources',
+  communityShares: 'community-shares',
+  communitySourceData: 'community-source-data',
 }
 
 const MAIN_PROFILE = { _id: 'allChannels', name: 'All Channels', bgColor: '#000000', textColor: '#FFFFFF', subscriptions: [] }
@@ -190,13 +190,13 @@ describe('two machines running at once, following sources', () => {
 
   /** A machine that follows HackerTube and the community, refreshed as this machine refreshes */
   async function following(m, refreshedAt) {
-    await m.datastores.collectionSources.insertAsync([
+    await m.datastores.communitySources.insertAsync([
       { ...HACKERTUBE, dataGenerated: '2026-10-31', checkedAt: refreshedAt, attemptedAt: refreshedAt, failedAt: null },
       { ...LEMMY, checkedAt: refreshedAt, attemptedAt: refreshedAt, failedAt: null },
     ])
-    await m.datastores.collectionShares.insertAsync([share('hackertube', 'hackertube1'), share(LEMMY._id, 'lemmyvideo1')])
-    await m.datastores.collectionSourceData.insertAsync({ _id: 'hackertube', generated: '2026-10-31', taxonomy: { areas: [] } })
-    await m.datastores.settings.insertAsync({ _id: 'collectionsStarterSetDone', value: true })
+    await m.datastores.communityShares.insertAsync([share('hackertube', 'hackertube1'), share(LEMMY._id, 'lemmyvideo1')])
+    await m.datastores.communitySourceData.insertAsync({ _id: 'hackertube', generated: '2026-10-31', taxonomy: { areas: [] } })
+    await m.datastores.settings.insertAsync({ _id: 'communitiesStarterSetDone', value: true })
   }
 
   const ids = async datastore => (await datastore.findAsync({})).map(record => record._id).sort()
@@ -213,10 +213,10 @@ describe('two machines running at once, following sources', () => {
 
     await desktop.keeper.tick()
 
-    expect(await desktop.datastores.collectionSources.findAsync({}).sort({ _id: 1 })).toEqual([HACKERTUBE, LEMMY])
-    expect(await ids(desktop.datastores.collectionShares)).toEqual([`${LEMMY._id}|lemmyvideo1`])
-    expect(await desktop.datastores.settings.findOneAsync({ _id: 'collectionsStarterSetDone' })).toMatchObject({ value: true })
-    expect(desktop.dataChanged.map(sections => [...sections].sort())).toEqual([['collectionShares', 'collectionSources', 'settings']])
+    expect(await desktop.datastores.communitySources.findAsync({}).sort({ _id: 1 })).toEqual([HACKERTUBE, LEMMY])
+    expect(await ids(desktop.datastores.communityShares)).toEqual([`${LEMMY._id}|lemmyvideo1`])
+    expect(await desktop.datastores.settings.findOneAsync({ _id: 'communitiesStarterSetDone' })).toMatchObject({ value: true })
+    expect(desktop.dataChanged.map(sections => [...sections].sort())).toEqual([['communityShares', 'communitySources', 'settings']])
   })
 
   it('a refresh, which only moves this machine\'s refresh times, writes nothing', async () => {
@@ -226,7 +226,7 @@ describe('two machines running at once, following sources', () => {
     await laptop.keeper.tick()
     const writtenAt = laptop.keeper.status().writtenAt
 
-    await laptop.datastores.collectionSources.updateAsync({ _id: LEMMY._id }, { $set: { checkedAt: 900, attemptedAt: 900 } })
+    await laptop.datastores.communitySources.updateAsync({ _id: LEMMY._id }, { $set: { checkedAt: 900, attemptedAt: 900 } })
     await laptop.keeper.tick()
 
     expect(laptop.keeper.status().writtenAt).toBe(writtenAt)
@@ -240,17 +240,17 @@ describe('two machines running at once, following sources', () => {
 
     const laptop = await machine('Laptop')
     await laptop.keeper.start()
-    await laptop.datastores.collectionShares.insertAsync(share('hackertube', 'hackertube1'))
-    await laptop.datastores.collectionSources.removeAsync({ _id: 'hackertube' }, {})
-    await laptop.datastores.collectionShares.removeAsync({ sourceId: 'hackertube' }, { multi: true })
+    await laptop.datastores.communityShares.insertAsync(share('hackertube', 'hackertube1'))
+    await laptop.datastores.communitySources.removeAsync({ _id: 'hackertube' }, {})
+    await laptop.datastores.communityShares.removeAsync({ sourceId: 'hackertube' }, { multi: true })
     await laptop.keeper.tick()
 
     await desktop.keeper.tick()
 
-    expect(await ids(desktop.datastores.collectionSources)).toEqual([LEMMY._id])
-    expect(await ids(desktop.datastores.collectionShares)).toEqual([`${LEMMY._id}|lemmyvideo1`])
-    expect(await ids(desktop.datastores.collectionSourceData)).toEqual([])
-    expect(desktop.dataChanged).toEqual([['collectionSources']])
+    expect(await ids(desktop.datastores.communitySources)).toEqual([LEMMY._id])
+    expect(await ids(desktop.datastores.communityShares)).toEqual([`${LEMMY._id}|lemmyvideo1`])
+    expect(await ids(desktop.datastores.communitySourceData)).toEqual([])
+    expect(desktop.dataChanged).toEqual([['communitySources']])
   })
 
   it('carries a vote update to the other machine, which keeps its own refresh times', async () => {
@@ -261,14 +261,14 @@ describe('two machines running at once, following sources', () => {
 
     const laptop = await machine('Laptop')
     await laptop.keeper.start()
-    await laptop.datastores.collectionShares.updateAsync({ _id: `${LEMMY._id}|lemmyvideo1` }, { $set: { votes: 40, seenAt: 20 } })
-    await laptop.datastores.collectionSources.updateAsync({ _id: LEMMY._id }, { $set: { name: 'Videos' } })
+    await laptop.datastores.communityShares.updateAsync({ _id: `${LEMMY._id}|lemmyvideo1` }, { $set: { votes: 40, seenAt: 20 } })
+    await laptop.datastores.communitySources.updateAsync({ _id: LEMMY._id }, { $set: { name: 'Videos' } })
     await laptop.keeper.tick()
 
     await desktop.keeper.tick()
 
-    expect(await desktop.datastores.collectionShares.findOneAsync({ _id: `${LEMMY._id}|lemmyvideo1` })).toMatchObject({ votes: 40, seenAt: 20 })
-    expect(await desktop.datastores.collectionSources.findOneAsync({ _id: LEMMY._id })).toEqual({ ...LEMMY, name: 'Videos', checkedAt: 100, attemptedAt: 100, failedAt: null })
+    expect(await desktop.datastores.communityShares.findOneAsync({ _id: `${LEMMY._id}|lemmyvideo1` })).toMatchObject({ votes: 40, seenAt: 20 })
+    expect(await desktop.datastores.communitySources.findOneAsync({ _id: LEMMY._id })).toEqual({ ...LEMMY, name: 'Videos', checkedAt: 100, attemptedAt: 100, failedAt: null })
   })
 
   it('leaves no share behind of a source one machine unfollowed while the other updated the share', async () => {
@@ -281,21 +281,21 @@ describe('two machines running at once, following sources', () => {
     await laptop.keeper.start()
 
     // Desktop's vote update reaches the folder first; Laptop unfollowed meanwhile
-    await desktop.datastores.collectionShares.updateAsync({ _id: `${LEMMY._id}|lemmyvideo1` }, { $set: { votes: 40, seenAt: 20 } })
+    await desktop.datastores.communityShares.updateAsync({ _id: `${LEMMY._id}|lemmyvideo1` }, { $set: { votes: 40, seenAt: 20 } })
     await desktop.keeper.tick()
-    await laptop.datastores.collectionSources.removeAsync({ _id: LEMMY._id }, {})
-    await laptop.datastores.collectionShares.removeAsync({ sourceId: LEMMY._id }, { multi: true })
+    await laptop.datastores.communitySources.removeAsync({ _id: LEMMY._id }, {})
+    await laptop.datastores.communityShares.removeAsync({ sourceId: LEMMY._id }, { multi: true })
     await laptop.keeper.tick()
 
-    expect(await ids(laptop.datastores.collectionSources)).toEqual(['hackertube'])
-    expect(await ids(laptop.datastores.collectionShares)).toEqual([])
+    expect(await ids(laptop.datastores.communitySources)).toEqual(['hackertube'])
+    expect(await ids(laptop.datastores.communityShares)).toEqual([])
 
     await desktop.keeper.tick()
-    expect(await ids(desktop.datastores.collectionSources)).toEqual(['hackertube'])
-    expect(await ids(desktop.datastores.collectionShares)).toEqual(['hackertube|hackertube1'])
+    expect(await ids(desktop.datastores.communitySources)).toEqual(['hackertube'])
+    expect(await ids(desktop.datastores.communityShares)).toEqual(['hackertube|hackertube1'])
   })
 
-  it('writes the sources it merges in turn with the app\'s own collections writes', async () => {
+  it('writes the sources it merges in turn with the app\'s own communities writes', async () => {
     const desktop = await machine('Desktop')
     await following(desktop, 100)
     await desktop.keeper.start()
@@ -303,7 +303,7 @@ describe('two machines running at once, following sources', () => {
 
     let inQueue = false
     const writes = []
-    const inCollectionsQueue = async (write) => {
+    const inCommunitiesQueue = async (write) => {
       inQueue = true
       try {
         return await write()
@@ -311,8 +311,8 @@ describe('two machines running at once, following sources', () => {
         inQueue = false
       }
     }
-    const laptop = await machine('Laptop', { inCollectionsQueue })
-    for (const name of ['collectionSources', 'collectionShares', 'collectionSourceData']) {
+    const laptop = await machine('Laptop', { inCommunitiesQueue })
+    for (const name of ['communitySources', 'communityShares', 'communitySourceData']) {
       for (const method of ['updateAsync', 'removeAsync']) {
         const original = laptop.datastores[name][method]
         laptop.datastores[name][method] = function (...args) {
@@ -323,14 +323,14 @@ describe('two machines running at once, following sources', () => {
     }
     await laptop.keeper.start()
 
-    await desktop.datastores.collectionSources.removeAsync({ _id: 'hackertube' }, {})
-    await desktop.datastores.collectionShares.removeAsync({ sourceId: 'hackertube' }, { multi: true })
+    await desktop.datastores.communitySources.removeAsync({ _id: 'hackertube' }, {})
+    await desktop.datastores.communityShares.removeAsync({ sourceId: 'hackertube' }, { multi: true })
     await desktop.keeper.tick()
     await laptop.keeper.tick()
 
-    const sourceWrites = writes.filter(write => !write.startsWith('collectionShares.updateAsync'))
+    const sourceWrites = writes.filter(write => !write.startsWith('communityShares.updateAsync'))
     expect(sourceWrites.length).toBeGreaterThan(0)
     expect(sourceWrites.filter(write => write.endsWith('outside'))).toEqual([])
-    expect(await ids(laptop.datastores.collectionSources)).toEqual([LEMMY._id])
+    expect(await ids(laptop.datastores.communitySources)).toEqual([LEMMY._id])
   })
 })

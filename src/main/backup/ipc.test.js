@@ -21,7 +21,7 @@ vi.mock('electron', () => ({
 
 vi.mock('../../datastores/index', async () => {
   const { default: Datastore } = await import('@seald-io/nedb')
-  const names = ['settings', 'profiles', 'playlists', 'history', 'searchHistory', 'subscriptionCache', 'channels', 'aiVerdicts', 'later', 'collectionSources', 'collectionShares']
+  const names = ['settings', 'profiles', 'playlists', 'history', 'searchHistory', 'subscriptionCache', 'channels', 'aiVerdicts', 'later', 'communitySources', 'communityShares']
   return Object.fromEntries(names.map(name => [name, new Datastore({ inMemoryOnly: true })]))
 })
 

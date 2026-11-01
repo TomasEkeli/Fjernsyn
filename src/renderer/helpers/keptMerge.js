@@ -36,15 +36,15 @@ const TIME_FIELDS = {
   playlists: 'lastUpdatedAt',
   searchHistory: 'lastUpdatedAt',
   aiVerdicts: 'checkedAt',
-  collectionShares: 'seenAt',
+  communityShares: 'seenAt',
 }
 
 /**
- * The setting that says the Collections starter set has been followed once,
+ * The setting that says the Communities starter set has been followed once,
  * so that it is never followed again over the unfollows of a machine whose
  * sources arrive here
  */
-const STARTER_SET_DONE = 'collectionsStarterSetDone'
+const STARTER_SET_DONE = 'communitiesStarterSetDone'
 
 /**
  * The key a record is told apart by: the video in the history, as each
@@ -179,11 +179,11 @@ export function mergeSections({ ancestor, theirs, ours }) {
     }
   }
 
-  if (merged.collectionShares !== undefined) {
+  if (merged.communityShares !== undefined) {
     dropUnfollowedShares(merged, toApply)
   }
 
-  if (theirs.collectionSources?.length > 0) {
+  if (theirs.communitySources?.length > 0) {
     markStarterSetDone(merged, toApply)
   }
 
@@ -199,19 +199,19 @@ export function mergeSections({ ancestor, theirs, ours }) {
  * @param {Changes} toApply
  */
 function dropUnfollowedShares(merged, toApply) {
-  const followed = new Set((merged.collectionSources ?? []).map(source => source._id))
+  const followed = new Set((merged.communitySources ?? []).map(source => source._id))
   const isFollowed = share => followed.has(share.sourceId)
 
-  merged.collectionShares = merged.collectionShares.filter(isFollowed)
+  merged.communityShares = merged.communityShares.filter(isFollowed)
 
-  const changes = toApply.collectionShares
+  const changes = toApply.communityShares
   if (changes === undefined) { return }
 
   const put = changes.put.filter(isFollowed)
   if (put.length === 0 && changes.remove.length === 0) {
-    delete toApply.collectionShares
+    delete toApply.communityShares
   } else {
-    toApply.collectionShares = { put, remove: changes.remove }
+    toApply.communityShares = { put, remove: changes.remove }
   }
 }
 

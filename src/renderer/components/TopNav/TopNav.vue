@@ -102,8 +102,8 @@
       </RouterLink>
       <RouterLink
         class="navLink"
-        to="/collections"
-        :title="t('Collections.Collections')"
+        to="/communities"
+        :title="t('Communities.Communities')"
       >
         <FontAwesomeIcon
           class="navIcon"
@@ -112,7 +112,7 @@
         <span
           v-if="showLabels"
           class="navLinkLabel"
-        >{{ t('Collections.Collections') }}</span>
+        >{{ t('Communities.Communities') }}</span>
       </RouterLink>
       <RouterLink
         class="navLink"
