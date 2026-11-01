@@ -564,8 +564,9 @@ class Later {
  * id and video ref (`helpers/collections/shares.js`), and each collection
  * video's own details, by video ref (`helpers/collections/details.js`).
  *
- * Shares are only ever added or updated here, never dropped: a share that
- * falls out of a feed stays. Putting shares writes the new ones in one insert,
+ * Shares are only ever added or updated here, never dropped while their source
+ * is followed: a share that falls out of a feed stays. Unfollowing a source
+ * removes its shares with it. Putting shares writes the new ones in one insert,
  * which is one append to the file however many there are, and updates the
  * fields of those already there; put calls run one after another, so that two
  * windows putting the same shares at once cannot both insert them.
@@ -591,6 +592,28 @@ class Collections {
    */
   static putShares(shares) {
     const run = collectionSharesQueue.then(() => putCollectionShares(shares))
+    collectionSharesQueue = run.catch(() => {})
+    return run
+  }
+
+  /**
+   * Unfollows a source: removes its shares, its own data and its record, in
+   * that order, so that a removal cut short leaves the source followed, and
+   * a refresh brings its shares back, rather than shares of nothing. In turn
+   * with the puts, so that a put under way cannot leave a share behind it.
+   * The videos' details stay: they belong to the video, which another source
+   * may share.
+   *
+   * @param {string} sourceId
+   * @returns {Promise<{ shares: number }>} how many shares were removed
+   */
+  static removeSource(sourceId) {
+    const run = collectionSharesQueue.then(async () => {
+      const shares = await db.collectionShares.removeAsync({ sourceId }, { multi: true })
+      await db.collectionSourceData.removeAsync({ _id: sourceId }, {})
+      await db.collectionSources.removeAsync({ _id: sourceId }, {})
+      return { shares }
+    })
     collectionSharesQueue = run.catch(() => {})
     return run
   }

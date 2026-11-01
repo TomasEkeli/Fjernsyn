@@ -181,6 +181,7 @@ const DBActions = {
     PUT_VIDEOS: 25,
     FIND_SOURCE_DATA: 26,
     PUT_SOURCE_DATA: 27,
+    REMOVE_SOURCE: 28,
   },
 }
 
@@ -241,6 +242,7 @@ const SyncEvents = {
     PUT_SHARES: 21,
     PUT_VIDEOS: 22,
     PUT_SOURCE_DATA: 23,
+    REMOVE_SOURCE: 24,
   },
 }
 

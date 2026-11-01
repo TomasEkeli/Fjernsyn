@@ -106,6 +106,54 @@ describe('putting collection videos\' details', () => {
   })
 })
 
+describe('unfollowing a collection source', () => {
+  beforeEach(async () => {
+    for (const store of [db.collectionSources, db.collectionShares, db.collectionVideos, db.collectionSourceData]) {
+      await store.removeAsync({}, { multi: true })
+    }
+
+    await collections.upsertSource({ _id: 'hackertube', kind: 'hackertube', name: 'HackerTube' })
+    await collections.upsertSource({ _id: 'lemmy:a@b.example', kind: 'lemmy', name: 'a@b.example' })
+    await collections.putShares([
+      share('aaaaaaaaaaa'),
+      share('bbbbbbbbbbb'),
+      { _id: 'lemmy:a@b.example|aaaaaaaaaaa', sourceId: 'lemmy:a@b.example', videoId: 'aaaaaaaaaaa', votes: 4, seenAt: 1 },
+    ])
+    await collections.putSourceData({ _id: 'hackertube', generated: '2026-10-31', taxonomy: { areas: [] } })
+    await collections.putVideos([{ _id: 'aaaaaaaaaaa', videoId: 'aaaaaaaaaaa', fetchedAt: 1 }])
+  })
+
+  it('removes the source, its shares and its own data, and nothing of another source\'s', async () => {
+    const removed = await collections.removeSource('hackertube')
+
+    expect(removed).toEqual({ shares: 2 })
+    expect((await collections.findSources()).map(({ _id }) => _id)).toEqual(['lemmy:a@b.example'])
+    expect((await kept()).map(({ _id }) => _id)).toEqual(['lemmy:a@b.example|aaaaaaaaaaa'])
+    expect(await collections.findSourceData()).toEqual([])
+  })
+
+  it('leaves the videos\' details, which belong to the video and not to a source', async () => {
+    await collections.removeSource('hackertube')
+
+    expect((await collections.findVideos()).map(({ _id }) => _id)).toEqual(['aaaaaaaaaaa'])
+  })
+
+  it('does nothing for a source not followed', async () => {
+    expect(await collections.removeSource('lemmy:nothing@b.example')).toEqual({ shares: 0 })
+    expect(await collections.findSources()).toHaveLength(2)
+    expect(await kept()).toHaveLength(3)
+  })
+
+  it('waits for a put under way, so that no share of the source is left behind it', async () => {
+    const put = collections.putShares([share('ccccccccccc')])
+    const removal = collections.removeSource('hackertube')
+
+    await Promise.all([put, removal])
+
+    expect((await kept()).map(({ _id }) => _id)).toEqual(['lemmy:a@b.example|aaaaaaaaaaa'])
+  })
+})
+
 describe('putting a collection source\'s own data', () => {
   beforeEach(async () => {
     await db.collectionSourceData.removeAsync({}, { multi: true })
