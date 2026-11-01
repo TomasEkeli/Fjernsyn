@@ -7,7 +7,8 @@
  * - `recognise` turns a URL someone pasted into the source it names, or
  *   nothing when the URL is not of its kind. Pure, and never asks the network.
  * - `fetch` asks the source what it shares now, through the `fetch` it is
- *   given (so tests hand it a fake server), and answers its items in its own
+ *   given (so tests hand it a fake server), confirming any link that looks
+ *   like a PeerTube video through the `peertube` it is given, and answers its items in its own
  *   shape, with fields to keep on the source's record once their shares are
  *   in, and data of its own too large to rewrite with its record on every
  *   refresh, kept apart. It throws when the source cannot be reached or answers with
@@ -37,10 +38,19 @@ import { lemmyKind } from './lemmy.js'
  */
 
 /**
+ * @typedef {object} PeerTubeLinks what a kind asks of a link that looks like
+ *   a PeerTube video (`../peertubeLinks.js`)
+ * @property {(candidate: { host: string, videoId: string }) => Promise<import('../../../platform/shapes').PeerTubeVideoRef | null>} refFor
+ *   the video's ref at its origin, once the platform layer has confirmed it,
+ *   or null; never rejects
+ */
+
+/**
  * @typedef {object} SourceKind
  * @property {string} kind the `kind` on a source's record
  * @property {(url: string, now: number) => import('../shares.js').Source | null} recognise
- * @property {(source: import('../shares.js').Source, deps: { fetch: typeof fetch }) => Promise<SourceFetch>} fetch
+ * @property {(source: import('../shares.js').Source, deps: { fetch: typeof fetch, peertube?: PeerTubeLinks }) => Promise<SourceFetch>} fetch
+ *   `peertube` confirms PeerTube links; without it, a kind takes none
  * @property {(items: any[], source: import('../shares.js').Source, seenAt: number, kept: Record<string, import('../shares.js').Share>) => import('../shares.js').Share[]} toShares
  * @property {boolean} [shipped] whether its videos come with the app, so
  *   that following it by URL asks it nothing first (`../follow.js`), and the

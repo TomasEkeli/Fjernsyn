@@ -21,7 +21,7 @@
  */
 
 import { shareId } from '../shares.js'
-import { isYouTubeHost, videoRefFromLink } from '../videoLinks.js'
+import { isYouTubeHost, peerTubeCandidateFromLink, videoRefFromLink } from '../videoLinks.js'
 
 /** @import { Share, Source } from '../shares.js' */
 
@@ -35,6 +35,10 @@ import { isYouTubeHost, videoRefFromLink } from '../videoLinks.js'
  *   read; when not, its votes and why are unknown rather than none
  * @property {number | null} votes its points
  * @property {string | null} why its body, as plain text, one paragraph a line
+ * @property {import('../../../platform/shapes').PeerTubeVideoRef | null} [ref]
+ *   the PeerTube video its link is, once the platform layer has confirmed it
+ *   (`fetch`); null when its link looked like one and was not, or could not
+ *   be asked about; absent for any other link
  */
 
 /**
@@ -50,6 +54,9 @@ export const LEMMY_FEED_LIMIT = 50
 
 /** A feed is some tens of KB */
 const FEED_TIMEOUT_MS = 20_000
+
+/** PeerTube links asked about at once, of one community: each is another instance's */
+const PEERTUBE_LINKS_AT_ONCE = 3
 
 /** A community's name, as Lemmy allows it */
 const COMMUNITY_NAME = /^\w+$/
@@ -353,10 +360,11 @@ function before(a, b) {
  * without a field leaves the one kept as it is (`sharesToPut`, and main's
  * put), so an unreadable header never wipes what was known.
  *
- * A post links a video when `videoRefFromLink` says so of its link. When
- * PeerTube links are recognised, the kind's `fetch` will have confirmed them
- * through the platform layer, and a confirmed ref will travel on the post as
- * `ref`, to be taken before the link is read here.
+ * A post links a video when `videoRefFromLink` says so of its link (YouTube),
+ * or when the kind's `fetch` confirmed its link as a PeerTube video through
+ * the platform layer, whose ref then travels on the post as `ref`: the
+ * video's uuid and origin host, so that one video linked on two instances is
+ * one share.
  *
  * @param {LemmyPost[]} posts
  * @param {string} sourceId
@@ -365,11 +373,11 @@ function before(a, b) {
  * @returns {Share[]}
  */
 export function lemmyShares(posts, sourceId, seenAt, kept = {}) {
-  /** @type {Map<string, { ref: { videoId: string }, post: LemmyPost }>} */
+  /** @type {Map<string, { ref: { videoId: string, platform?: string, host?: string }, post: LemmyPost }>} */
   const byShare = new Map()
 
   for (const post of posts) {
-    const ref = videoRefFromLink(post.link)
+    const ref = post.ref ?? videoRefFromLink(post.link)
     if (ref === null) { continue }
 
     const id = shareId(sourceId, ref)
@@ -389,6 +397,7 @@ export function lemmyShares(posts, sourceId, seenAt, kept = {}) {
       _id: id,
       sourceId,
       videoId: ref.videoId,
+      ...(ref.platform === 'peertube' ? { platform: 'peertube', host: ref.host } : {}),
       title: post.title,
       // Lemmy says who posted it, not whose channel it is
       author: '',
@@ -437,14 +446,50 @@ async function fetchFeed(fetchFn, url) {
 }
 
 /**
- * The community's newest posts and its week's top, each post once. Fails when
- * either feed cannot be had, so that a refresh says so; the shares kept stay.
+ * The posts given, those whose link has PeerTube's shape for a video with the
+ * ref the platform layer confirmed it as (null when it did not), a few at a
+ * time. Never fails: a link that could not be confirmed is skipped this time.
+ *
+ * @param {LemmyPost[]} posts
+ * @param {import('./index.js').PeerTubeLinks} peertube
+ * @returns {Promise<LemmyPost[]>}
+ */
+async function withPeerTubeRefs(posts, peertube) {
+  const confirmed = [...posts]
+  const asks = []
+
+  posts.forEach((post, index) => {
+    if (videoRefFromLink(post.link) !== null) { return }
+
+    const candidate = peerTubeCandidateFromLink(post.link)
+    if (candidate !== null) { asks.push({ index, candidate }) }
+  })
+
+  let next = 0
+
+  async function work() {
+    while (next < asks.length) {
+      const { index, candidate } = asks[next++]
+      confirmed[index] = { ...confirmed[index], ref: await peertube.refFor(candidate) }
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(PEERTUBE_LINKS_AT_ONCE, asks.length) }, work))
+
+  return confirmed
+}
+
+/**
+ * The community's newest posts and its week's top, each post once, a link
+ * that looks like a PeerTube video confirmed through the platform layer when
+ * it is given (`deps.peertube`), and otherwise skipped. Fails when either
+ * feed cannot be had, so that a refresh says so; the shares kept stay.
  *
  * @param {Source} source
- * @param {{ fetch: typeof fetch }} deps
+ * @param {{ fetch: typeof fetch, peertube?: import('./index.js').PeerTubeLinks }} deps
  * @returns {Promise<import('./index.js').SourceFetch>}
  */
-async function fetchItems(source, { fetch: fetchFn }) {
+async function fetchItems(source, { fetch: fetchFn, peertube }) {
   const where = lemmyCommunity(source.url)
 
   if (where === null) {
@@ -452,8 +497,9 @@ async function fetchItems(source, { fetch: fetchFn }) {
   }
 
   const feeds = await Promise.all(LEMMY_FEED_SORTS.map(sort => fetchFeed(fetchFn, lemmyFeedUrl(where, sort))))
+  const posts = mergeLemmyPosts(feeds)
 
-  return { items: mergeLemmyPosts(feeds) }
+  return { items: peertube === undefined ? posts : await withPeerTubeRefs(posts, peertube) }
 }
 
 /** @type {import('./index.js').SourceKind} */

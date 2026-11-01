@@ -5,7 +5,8 @@ import store from '../../store/index'
 import { enqueueSubscriptionJobs, LANE_ENRICHMENT, removeSubscriptionJobs } from '../subscriptionWorker'
 import { createCollectionsCrawl } from './crawl'
 import { COLLECTIONS_CRAWL_LIMIT } from './crawlLimit'
-import { detailsFor, missingDetails, needsDetails } from './details'
+import { detailsFor, missingDetails, missingPeerTubeDetails, needsDetails } from './details'
+import { createPeerTubeDetailsFill } from './peertubeDetails'
 
 /**
  * The app's one crawl, built from the store, the request manager and the
@@ -20,7 +21,12 @@ import { detailsFor, missingDetails, needsDetails } from './details'
  * Started once, it starts again by itself: when shares arrive, so that a
  * video new in a refresh gets its details with no more asked of whoever added
  * it; after a profile switch cancels the enrichment lane, as collections are
- * not per profile; and when the backend comes back to Local.
+ * not per profile; when the backend comes back to Local; and when PeerTube is
+ * switched on.
+ *
+ * Its PeerTube path (`./peertubeDetails.js`) starts with it, in the window
+ * holding the crawl, and asks the platform layer, not YouTube: off the lane,
+ * on any backend, while PeerTube is switched on, and under no development cap.
  */
 
 const progress = reactive({
@@ -95,11 +101,29 @@ const crawl = createCollectionsCrawl({
   onFailure: (message, error) => console.warn(message, error ?? ''),
 })
 
+/** The platform layer, imported when first asked for: the wiring reaches the router, which imports the views */
+async function platformLayer() {
+  const { getPlatformLayer } = await import('../../platform/vue')
+  return getPlatformLayer()
+}
+
+const peerTubeFill = createPeerTubeDetailsFill({
+  missing: () => missingPeerTubeDetails(store.getters.getCollectionShares, store.getters.getCollectionVideos, Date.now()),
+  isDone: key => !needsDetails(detailsFor(store.getters.getCollectionVideos, key), Date.now()),
+  request: async ref => (await platformLayer()).getVideoSummary(ref),
+  record: records => store.dispatch('putCollectionVideos', records),
+  enabled: () => store.getters.getEnablePeerTube === true &&
+    store.getters.getCollectionsReady &&
+    !store.getters.getCollectionsGrabFailed,
+  onFailure: (message, error) => console.warn(message, error ?? ''),
+})
+
 async function resume() {
   if (!started) { return }
   if (!(await claim())) { return }
 
   crawl.start()
+  peerTubeFill.start()
 }
 
 /**
@@ -115,6 +139,9 @@ export function startCollectionsCrawl() {
       store.watch(() => store.getters.getCollectionShares, resume),
       store.watch(() => store.getters.getBackendPreference, (backend) => {
         if (backend === 'local') { resume() }
+      }),
+      store.watch(() => store.getters.getEnablePeerTube, (enabled) => {
+        if (enabled === true) { resume() }
       })
     )
   }

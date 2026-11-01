@@ -298,6 +298,8 @@ const videos = computed(() => {
   return wallVideos(store.getters.getCollectionShares, store.getters.getCollectionVideos, {
     shown: shownSources.value,
     sort: sort.value,
+    // As every PeerTube wall: what its uploader marked NSFW only when asked for
+    showNsfw: store.getters.getPeerTubeShowNsfw,
   })
 })
 

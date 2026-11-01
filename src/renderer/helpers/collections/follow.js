@@ -76,6 +76,8 @@ export async function trySource(text, { now, fetch: fetchFn, isFollowed }) {
   }
 
   try {
+    // No PeerTube link is confirmed here: that may take as long as the
+    // instances linked take to answer, and the next refresh does it
     const fetched = await kind.fetch(source, { fetch: watched })
     return { outcome: 'followable', source, fetched }
   } catch (error) {

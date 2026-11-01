@@ -94,7 +94,9 @@ export function lastAttemptOf(sources) {
  * @typedef {object} RefreshDependencies
  * @property {import('./shares.js').Source[]} sources the sources to ask
  * @property {Record<string, import('./kinds/index.js').SourceKind>} kinds by kind
- * @property {typeof fetch} fetch what every request goes through
+ * @property {typeof fetch} fetch what every request to a source goes through
+ * @property {import('./kinds/index.js').PeerTubeLinks} [peertube] confirms
+ *   the PeerTube links a source shares, through the platform layer
  * @property {() => number} now
  * @property {() => Record<string, import('./shares.js').Share>} keptShares the shares kept now, by `_id`
  * @property {(sourceId: string) => boolean} isFollowed whether the source is still followed
@@ -156,7 +158,7 @@ async function refreshSource(deps, source) {
     throw new Error(`no source kind ${source.kind}`)
   }
 
-  return keepSourceFetch(deps, source, await kind.fetch(source, { fetch: deps.fetch }))
+  return keepSourceFetch(deps, source, await kind.fetch(source, { fetch: deps.fetch, peertube: deps.peertube }))
 }
 
 /**

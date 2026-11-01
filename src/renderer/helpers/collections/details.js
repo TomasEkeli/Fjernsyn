@@ -1,5 +1,7 @@
 import { liveStateFromPlayerResponse } from '../api/liveState'
-import { isYouTubeVideoRef, platformOf, PLATFORM_YOUTUBE } from '../../platform/refs'
+import { PlatformError } from '../../platform/errors'
+import { isPeerTubeNotFound } from '../../platform/peertube/feed'
+import { isPeerTubeVideoRef, isYouTubeVideoRef, platformOf, PLATFORM_PEERTUBE, PLATFORM_YOUTUBE } from '../../platform/refs'
 import { shareVideoKey, wallVideos } from './shares'
 
 /**
@@ -22,6 +24,10 @@ import { shareVideoKey, wallVideos } from './shares'
  * hides a video: it is kept as a suspect, still on the wall and still asked
  * about, and becomes private only after asking to sign in on
  * `PRIVATE_AFTER_SIGHTINGS` occasions at least `SIGHTINGS_APART_MS` apart.
+ *
+ * A PeerTube video's details come from the platform layer instead
+ * (`videoDetailsFromPeerTubeSummary`), kept by its uuid and origin host in
+ * the same records, with the same rules for what is done.
  *
  * Pure, and tested against the recorded answers in `../api/fixtures`.
  */
@@ -74,6 +80,9 @@ import { shareVideoKey, wallVideos } from './shares'
  * @property {true} [liveNow]
  * @property {true} [isUpcoming]
  * @property {number} [premiereDate]
+ * @property {string} [thumbnail] PeerTube only: its own thumbnail, an
+ *   absolute https URL on the instance that answered
+ * @property {true} [nsfw] PeerTube only: its uploader marked it NSFW
  */
 
 /**
@@ -259,10 +268,44 @@ export function detailsFor(details, key) {
 }
 
 /**
- * The YouTube videos the shares name that are to be asked about: those never
- * asked about first, then those asked about before, each the most voted
+ * The videos of one platform the shares name that are to be asked about:
+ * those never asked about first, then those asked about before, each the most
+ * voted first, so that the top of the wall fills in first.
+ *
+ * @template T
+ * @param {import('./shares').Share[]} shares
+ * @param {Record<string, VideoDetails>} details by the video's ref as one string
+ * @param {number} now
+ * @param {(video: import('./shares').CollectionVideo) => T | null} pick what
+ *   to answer for a video of the platform asked for, null for any other
+ * @returns {T[]}
+ */
+function missingOf(shares, details, now, pick) {
+  const never = []
+  const again = []
+
+  for (const video of wallVideos(shares)) {
+    const picked = pick(video)
+    if (picked === null) { continue }
+
+    const record = detailsFor(details, shareVideoKey(video))
+
+    if (record === undefined) {
+      never.push(picked)
+    } else if (needsDetails(record, now)) {
+      again.push(picked)
+    }
+  }
+
+  return never.concat(again)
+}
+
+/**
+ * The YouTube videos the shares name that are to be asked about, by id: those
+ * never asked about first, then those asked about before, each the most voted
  * first, so that the top of the wall fills in first. PeerTube videos are not
- * among them: their details come through the platform layer, not YouTube.
+ * among them: their details come through the platform layer, not YouTube
+ * (`missingPeerTubeDetails`).
  *
  * @param {import('./shares').Share[]} shares
  * @param {Record<string, VideoDetails>} details by the video's ref as one string
@@ -270,22 +313,97 @@ export function detailsFor(details, key) {
  * @returns {string[]}
  */
 export function missingDetails(shares, details, now) {
-  const never = []
-  const again = []
+  return missingOf(shares, details, now, (video) => {
+    return platformOf(video) === PLATFORM_YOUTUBE && isYouTubeVideoRef(video.videoId) ? video.videoId : null
+  })
+}
 
-  for (const video of wallVideos(shares)) {
-    if (platformOf(video) !== PLATFORM_YOUTUBE || !isYouTubeVideoRef(video.videoId)) { continue }
+/**
+ * The PeerTube videos the shares name that are to be asked about, by ref, in
+ * the order `missingDetails` gives YouTube's.
+ *
+ * @param {import('./shares').Share[]} shares
+ * @param {Record<string, VideoDetails>} details by the video's ref as one string
+ * @param {number} now
+ * @returns {import('../../platform/shapes').PeerTubeVideoRef[]}
+ */
+export function missingPeerTubeDetails(shares, details, now) {
+  return missingOf(shares, details, now, (video) => {
+    return isPeerTubeVideoRef(video) ? peerTubeRefOf(video) : null
+  })
+}
 
-    const record = detailsFor(details, video.videoId)
+/**
+ * A PeerTube video's ref, from anything that carries one: a share, a wall
+ * video, the layer's summary
+ *
+ * @param {{ videoId: string, host: string }} video
+ * @returns {import('../../platform/shapes').PeerTubeVideoRef}
+ */
+export function peerTubeRefOf({ videoId, host }) {
+  return { platform: PLATFORM_PEERTUBE, host, videoId }
+}
 
-    if (record === undefined) {
-      never.push(video.videoId)
-    } else if (needsDetails(record, now)) {
-      again.push(video.videoId)
-    }
+/**
+ * What the platform layer's summary of a PeerTube video
+ * (`getVideoSummary`) says of it, as the details kept for a YouTube video say
+ * it: its channel is its handle (`name@host`), which the card links and
+ * hidden and marked channels match by. Two more of its own: its thumbnail,
+ * which `describe` takes from the video and cannot work out from its id as
+ * YouTube's, and its uploader's NSFW mark, for the wall to honour the
+ * setting by.
+ *
+ * @param {import('../../platform/shapes').VideoSummary} summary
+ * @returns {VideoDetailsFields & { thumbnail?: string, nsfw?: true }}
+ */
+export function videoDetailsFromPeerTubeSummary(summary) {
+  /** @type {VideoDetailsFields & { thumbnail?: string, nsfw?: true }} */
+  const fields = {
+    title: typeof summary.title === 'string' ? summary.title : '',
+    author: typeof summary.author === 'string' ? summary.author : '',
+    authorId: typeof summary.authorId === 'string' ? summary.authorId : '',
+    // A live now has none, which the card reads as live; '' says the same
+    lengthSeconds: wholeNumber(summary.lengthSeconds) ?? '',
+    viewCount: wholeNumber(summary.viewCount),
+    published: typeof summary.published === 'number' && Number.isFinite(summary.published) ? summary.published : null,
   }
 
-  return never.concat(again)
+  if (typeof summary.thumbnail === 'string' && summary.thumbnail !== '') { fields.thumbnail = summary.thumbnail }
+  if (summary.liveNow === true) { fields.liveNow = true }
+
+  if (summary.isUpcoming === true) {
+    fields.isUpcoming = true
+
+    const start = summary.premiereDate instanceof Date ? summary.premiereDate.getTime() : NaN
+    if (Number.isFinite(start)) { fields.premiereDate = start }
+  }
+
+  if (summary.nsfw === true) { fields.nsfw = true }
+
+  return fields
+}
+
+/**
+ * What a PeerTube video whose details could not be had is kept as: gone when
+ * the instance itself says it has no such video (a 404 whose body is
+ * PeerTube's own not-found, `isPeerTubeNotFound`), private when it refuses to
+ * show it and says why (private, internal, password protected, blocked), and
+ * nothing for anything else, which is asked again on the next start: an HTML
+ * 404 or a bare 403 is as likely a proxy, a firewall or a lapsed domain as
+ * the instance, and a mark would hide a real video for a month.
+ *
+ * @param {import('../../platform/shapes').PeerTubeVideoRef} ref
+ * @param {unknown} error
+ * @param {number} at
+ * @returns {VideoDetails | null}
+ */
+export function peerTubeFailureRecord(ref, error, at) {
+  const kind = error instanceof PlatformError ? error.kind : null
+
+  if (kind === 'notFound' && isPeerTubeNotFound(error.body)) { return unavailableRecord(ref, 'gone', at) }
+  if (kind === 'refused' && error.reason != null) { return unavailableRecord(ref, 'private', at) }
+
+  return null
 }
 
 /**
