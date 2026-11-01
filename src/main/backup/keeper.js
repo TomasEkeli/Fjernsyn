@@ -173,6 +173,7 @@ function isMissing(error) {
  * @param {typeof fs} [deps.fileSystem]
  * @param {() => number} [deps.now] must agree with the file system's clock, as file ages are measured by it
  * @param {(ms: number) => Promise<void>} [deps.sleep]
+ * @param {<T>(write: () => Promise<T>) => Promise<T>} [deps.inCollectionsQueue] the queue main's Collections handler writes the sources and their shares in (datastores/handlers/base.js); a write runs at once without one
  * @param {() => string} [deps.makeToken]
  */
 export function createKeeper({
@@ -188,6 +189,7 @@ export function createKeeper({
   now = () => Date.now(),
   sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
   makeToken = () => randomBytes(8).toString('hex'),
+  inCollectionsQueue = write => write(),
 }) {
   /** @type {string} */
   let installationId = typeof installationIdSource === 'string' ? installationIdSource : ''
@@ -887,16 +889,20 @@ export function createKeeper({
   async function applySources(put, remove) {
     const sources = datastores.collectionSources
 
-    for (const _id of remove) {
-      await datastores.collectionShares.removeAsync({ sourceId: _id }, { multi: true })
-      await datastores.collectionSourceData.removeAsync({ _id }, {})
-      await sources.removeAsync({ _id }, {})
-    }
+    // In turn with the app's own writes, as an unfollow made here is, so that
+    // a refresh's put under way cannot leave a share behind the removal
+    await inCollectionsQueue(async () => {
+      for (const _id of remove) {
+        await datastores.collectionShares.removeAsync({ sourceId: _id }, { multi: true })
+        await datastores.collectionSourceData.removeAsync({ _id }, {})
+        await sources.removeAsync({ _id }, {})
+      }
 
-    for (const record of put) {
-      const kept = await sources.findOneAsync({ _id: record._id })
-      await sources.updateAsync({ _id: record._id }, withMachineFields(record, kept), { upsert: true })
-    }
+      for (const record of put) {
+        const kept = await sources.findOneAsync({ _id: record._id })
+        await sources.updateAsync({ _id: record._id }, withMachineFields(record, kept), { upsert: true })
+      }
+    })
   }
 
   /**

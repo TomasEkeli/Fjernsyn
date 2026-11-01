@@ -9,6 +9,7 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 
 import packageDetails from '../../../package.json'
 import { IpcChannels, SyncEvents } from '../../constants'
+import { inCollectionsQueue } from '../../datastores/handlers/base'
 import * as datastores from '../../datastores/index'
 import { isFreeTubeUrl } from '../utils'
 import { createKeeper, TICK_MS, watchDatastores } from './keeper'
@@ -126,6 +127,8 @@ export function registerKeeper({ installationId, chooseDefaultFolder }) {
     onStatus: status => sendToAllWindows(IpcChannels.KEEPER_STATUS_CHANGED, status),
     // Every window loads the merged sections again, as it loads them at startup
     onDataChanged: changes => sendToAllWindows(IpcChannels.KEEPER_DATA_CHANGED, changes),
+    // A merged unfollow or follow in turn with the Collections handler's writes
+    inCollectionsQueue,
   })
 
   watchDatastores(datastores, () => keeper.markChanged())

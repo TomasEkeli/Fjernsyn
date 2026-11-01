@@ -294,4 +294,43 @@ describe('two machines running at once, following sources', () => {
     expect(await ids(desktop.datastores.collectionSources)).toEqual(['hackertube'])
     expect(await ids(desktop.datastores.collectionShares)).toEqual(['hackertube|hackertube1'])
   })
+
+  it('writes the sources it merges in turn with the app\'s own collections writes', async () => {
+    const desktop = await machine('Desktop')
+    await following(desktop, 100)
+    await desktop.keeper.start()
+    await desktop.keeper.tick()
+
+    let inQueue = false
+    const writes = []
+    const inCollectionsQueue = async (write) => {
+      inQueue = true
+      try {
+        return await write()
+      } finally {
+        inQueue = false
+      }
+    }
+    const laptop = await machine('Laptop', { inCollectionsQueue })
+    for (const name of ['collectionSources', 'collectionShares', 'collectionSourceData']) {
+      for (const method of ['updateAsync', 'removeAsync']) {
+        const original = laptop.datastores[name][method]
+        laptop.datastores[name][method] = function (...args) {
+          writes.push(`${name}.${method} ${inQueue ? 'in turn' : 'outside'}`)
+          return original.apply(this, args)
+        }
+      }
+    }
+    await laptop.keeper.start()
+
+    await desktop.datastores.collectionSources.removeAsync({ _id: 'hackertube' }, {})
+    await desktop.datastores.collectionShares.removeAsync({ sourceId: 'hackertube' }, { multi: true })
+    await desktop.keeper.tick()
+    await laptop.keeper.tick()
+
+    const sourceWrites = writes.filter(write => !write.startsWith('collectionShares.updateAsync'))
+    expect(sourceWrites.length).toBeGreaterThan(0)
+    expect(sourceWrites.filter(write => write.endsWith('outside'))).toEqual([])
+    expect(await ids(laptop.datastores.collectionSources)).toEqual([LEMMY._id])
+  })
 })

@@ -784,6 +784,7 @@ export {
   Later as later,
   Collections as collections,
 
+  inCollectionsQueue,
   loadDatastores,
   compactAllDatastores,
 }
