@@ -7,6 +7,9 @@ import Popular from '../views/Popular/Popular.vue'
 import UserPlaylists from '../views/UserPlaylists/UserPlaylists.vue'
 import History from '../views/History/History.vue'
 import Later from '../views/Later/Later.vue'
+import Communities from '../views/Communities/Communities.vue'
+import Sources from '../views/Sources/Sources.vue'
+import CommunitySource from '../views/CommunitySource/CommunitySource.vue'
 import Settings from '../views/Settings/Settings.vue'
 import About from '../views/About/About.vue'
 import LayerSearchPage from '../views/LayerSearchPage/LayerSearchPage.vue'
@@ -41,6 +44,30 @@ const router = createRouter({
         title: 'Channels'
       },
       component: ChannelsOverview
+    },
+    {
+      path: '/communities',
+      name: 'communities',
+      meta: {
+        title: 'Communities'
+      },
+      component: Communities
+    },
+    {
+      path: '/sources',
+      name: 'sources',
+      meta: {
+        title: 'Sources'
+      },
+      component: Sources
+    },
+    {
+      path: '/sources/:sourceId',
+      name: 'communitySource',
+      meta: {
+        title: 'Sources'
+      },
+      component: CommunitySource
     },
     ...(process.env.SUPPORTS_LOCAL_API
       ? [{

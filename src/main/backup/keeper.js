@@ -5,6 +5,7 @@ import { promisify } from 'node:util'
 import { gunzip as gunzipCallback } from 'node:zlib'
 
 import { BACKUP_SECTIONS } from '../../renderer/helpers/backup'
+import { communitiesBackupSections, withMachineFields } from '../../renderer/helpers/communities/backup.js'
 import { isBaseFileName, lineageEntry, readSyncFile, SYNC_FILE_NAME } from '../../renderer/helpers/keptBackup'
 import { MACHINE_BOUND_SETTINGS } from './machineBound'
 import { backupsFolder, isRestorableSetting, removeOldSafetyCopies, safetyCopyName } from './restore'
@@ -172,6 +173,7 @@ function isMissing(error) {
  * @param {typeof fs} [deps.fileSystem]
  * @param {() => number} [deps.now] must agree with the file system's clock, as file ages are measured by it
  * @param {(ms: number) => Promise<void>} [deps.sleep]
+ * @param {<T>(write: () => Promise<T>) => Promise<T>} [deps.inCommunitiesQueue] the queue main's Communities handler writes the sources and their shares in (datastores/handlers/base.js); a write runs at once without one
  * @param {() => string} [deps.makeToken]
  */
 export function createKeeper({
@@ -187,6 +189,7 @@ export function createKeeper({
   now = () => Date.now(),
   sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
   makeToken = () => randomBytes(8).toString('hex'),
+  inCommunitiesQueue = write => write(),
 }) {
   /** @type {string} */
   let installationId = typeof installationIdSource === 'string' ? installationIdSource : ''
@@ -754,7 +757,9 @@ export function createKeeper({
         : records
     }
 
-    return sections
+    // The sources without this machine's refresh times, and no share of
+    // HackerTube's, which the bundle rebuilds, or of a source not followed
+    return { ...sections, ...communitiesBackupSections(sections.communitySources, sections.communityShares) }
   }
 
   // #endregion collecting
@@ -852,6 +857,11 @@ export function createKeeper({
    */
   async function applyToDatastores(toApply) {
     for (const [section, { put, remove }] of Object.entries(toApply)) {
+      if (section === 'communitySources') {
+        await applySources(put, remove)
+        continue
+      }
+
       const datastore = datastores[section]
 
       // Removals first: a history entry may come back under another _id
@@ -865,6 +875,34 @@ export function createKeeper({
 
       await Promise.all(records.map(record => datastore.updateAsync({ _id: record._id }, record, { upsert: true })))
     }
+  }
+
+  /**
+   * The followed sources put and removed, written straight to the datastore,
+   * never through the store's follow, which would turn a hidden chip back on.
+   * An unfollow takes the source's shares and its own data with it, as it
+   * does where it was made: HackerTube's shares are in no backup, so nothing
+   * else would remove them. A source put keeps this machine's refresh times.
+   * @param {Record<string, any>[]} put
+   * @param {string[]} remove
+   */
+  async function applySources(put, remove) {
+    const sources = datastores.communitySources
+
+    // In turn with the app's own writes, as an unfollow made here is, so that
+    // a refresh's put under way cannot leave a share behind the removal
+    await inCommunitiesQueue(async () => {
+      for (const _id of remove) {
+        await datastores.communityShares.removeAsync({ sourceId: _id }, { multi: true })
+        await datastores.communitySourceData.removeAsync({ _id }, {})
+        await sources.removeAsync({ _id }, {})
+      }
+
+      for (const record of put) {
+        const kept = await sources.findOneAsync({ _id: record._id })
+        await sources.updateAsync({ _id: record._id }, withMachineFields(record, kept), { upsert: true })
+      }
+    })
   }
 
   /**

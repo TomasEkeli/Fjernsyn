@@ -37,6 +37,8 @@ const IpcChannels = {
   DB_CHANNELS: 'db-channels',
   DB_AI_VERDICTS: 'db-ai-verdicts',
   DB_LATER: 'db-later',
+  // The fork's Communities: the followed sources, their shares, and the videos' details
+  DB_COMMUNITIES: 'db-communities',
 
   // The fork's backup, see src/main/backup/: where the safety copies go, and the restore
   BACKUP_FOLDER: 'backup-folder',
@@ -59,6 +61,10 @@ const IpcChannels = {
   SYNC_SUBSCRIPTION_CACHE: 'sync-subscription-cache',
   SYNC_CHANNELS: 'sync-channels',
   SYNC_LATER: 'sync-later',
+  SYNC_COMMUNITIES: 'sync-communities',
+  // The fork's Communities crawl: one window runs it at a time
+  COMMUNITIES_CRAWL_CLAIM: 'communities-crawl-claim',
+  COMMUNITIES_CRAWL_RELEASE: 'communities-crawl-release',
 
   // The fork's Later list: which window is the main one, whether a window is
   // shown, and the desktop notification of an armed event gone live
@@ -165,6 +171,19 @@ const DBActions = {
     UPDATE_ALARM: 21,
     UPDATE_VIEW_COUNT: 22,
   },
+
+  COMMUNITIES: {
+    FIND_SOURCES: 20,
+    FIND_SHARES: 21,
+    UPSERT_SOURCE: 22,
+    PUT_SHARES: 23,
+    FIND_VIDEOS: 24,
+    PUT_VIDEOS: 25,
+    FIND_SOURCE_DATA: 26,
+    PUT_SOURCE_DATA: 27,
+    REMOVE_SOURCE: 28,
+    UPDATE_SOURCE: 29,
+  },
 }
 
 const SyncEvents = {
@@ -217,6 +236,14 @@ const SyncEvents = {
     UPDATE_POSITION: 20,
     UPDATE_ALARM: 21,
     UPDATE_VIEW_COUNT: 22,
+  },
+
+  COMMUNITIES: {
+    UPSERT_SOURCE: 20,
+    PUT_SHARES: 21,
+    PUT_VIDEOS: 22,
+    PUT_SOURCE_DATA: 23,
+    REMOVE_SOURCE: 24,
   },
 }
 

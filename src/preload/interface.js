@@ -459,6 +459,15 @@ export default {
   },
 
   /**
+   * Communities: the followed sources, their shares, and the videos' details
+   * @param {number} action
+   * @param {any} [data]
+   */
+  dbCommunities: (action, data) => {
+    return ipcRenderer.invoke(IpcChannels.DB_COMMUNITIES, data ? { action, data } : { action })
+  },
+
+  /**
    * Where a restore writes its safety copy: `backups/` in the data folder
    * @returns {Promise<string>}
    */
@@ -547,6 +556,19 @@ export default {
         history: changes?.history ?? null,
       })
     })
+  },
+
+  /**
+   * Asks main for the Communities crawl, which one window runs at a time
+   * @returns {Promise<boolean>} whether this window now runs it
+   */
+  claimCommunitiesCrawl: () => {
+    return ipcRenderer.invoke(IpcChannels.COMMUNITIES_CRAWL_CLAIM)
+  },
+
+  /** Gives the Communities crawl back to main, for another window to run */
+  releaseCommunitiesCrawl: () => {
+    ipcRenderer.send(IpcChannels.COMMUNITIES_CRAWL_RELEASE)
   },
 
   /**
@@ -701,6 +723,15 @@ export default {
    */
   handleSyncLater: (handler) => {
     ipcRenderer.on(IpcChannels.SYNC_LATER, (_, { event, data }) => {
+      handler(event, data)
+    })
+  },
+
+  /**
+   * @param {(event: number, data: any) => void} handler
+   */
+  handleSyncCommunities: (handler) => {
+    ipcRenderer.on(IpcChannels.SYNC_COMMUNITIES, (_, { event, data }) => {
       handler(event, data)
     })
   },

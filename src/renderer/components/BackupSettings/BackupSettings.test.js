@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   DBAiVerdictHandlers,
   DBChannelHandlers,
+  DBCommunityHandlers,
   DBHistoryHandlers,
   DBLaterHandlers,
   DBPlaylistHandlers,
@@ -52,6 +53,7 @@ vi.mock('../../../datastores/handlers/index', () => {
   return {
     DBAiVerdictHandlers: handler(),
     DBChannelHandlers: handler(),
+    DBCommunityHandlers: { findSources: vi.fn(async () => []), findShares: vi.fn(async () => []) },
     DBHistoryHandlers: handler(),
     DBLaterHandlers: handler(),
     DBPlaylistHandlers: handler(),
@@ -76,6 +78,10 @@ const MAIN_PROFILE = { _id: 'allChannels', name: 'All Channels', bgColor: '#0000
 const HISTORY = { _id: 'h1', videoId: 'dQw4w9WgXcQ', title: 'T', author: 'A', authorId: 'UCa', published: 1, description: '', lengthSeconds: 1, watchProgress: 0, timeWatched: 2, isLive: false, type: 'video' }
 const VERDICT = { _id: 'dQw4w9WgXcQ', ai: false, checkedAt: 3 }
 const CHANNEL = { _id: 'UCa', channelTags: ['x'] }
+const HACKERTUBE = { _id: 'hackertube', kind: 'hackertube', url: 'https://hackertube.org', name: 'HackerTube', followedAt: 1 }
+const LEMMY = { _id: 'lemmy:videos@lemmy.example', kind: 'lemmy', url: 'https://lemmy.example/c/videos', name: 'videos@lemmy.example', followedAt: 2 }
+const LEMMY_SHARE = { _id: `${LEMMY._id}|dQw4w9WgXcQ`, sourceId: LEMMY._id, videoId: 'dQw4w9WgXcQ', title: 'T', author: '', votes: 5, why: null, sharedAt: 1, discussionUrl: null, seenAt: 4 }
+const HACKERTUBE_SHARE = { _id: 'hackertube|dQw4w9WgXcQ', sourceId: 'hackertube', videoId: 'dQw4w9WgXcQ', title: 'T', author: 'A', votes: 20, why: 'x', sharedAt: 1, discussionUrl: null, categories: ['c'], seenAt: 4 }
 
 const STORED_SETTINGS = [
   { _id: 'maxVolume', value: 1000 },
@@ -122,6 +128,11 @@ beforeEach(() => {
   DBSettingHandlers.find.mockResolvedValue(STORED_SETTINGS)
   DBChannelHandlers.find.mockResolvedValue([CHANNEL])
   DBAiVerdictHandlers.find.mockResolvedValue([VERDICT])
+  DBCommunityHandlers.findSources.mockResolvedValue([
+    { ...HACKERTUBE, dataGenerated: '2026-10-31', checkedAt: 9, attemptedAt: 9, failedAt: null },
+    { ...LEMMY, checkedAt: 9, attemptedAt: 9, failedAt: 8 },
+  ])
+  DBCommunityHandlers.findShares.mockResolvedValue([HACKERTUBE_SHARE, LEMMY_SHARE])
 
   window.ftElectron = {
     getBackupFolder: vi.fn(async () => BACKUP_FOLDER),
@@ -246,7 +257,14 @@ describe('the Backup group', () => {
     it('leaves out the subscription cache', async () => {
       const { document } = await exportBackup()
 
-      expect(Object.keys(document.sections)).toEqual(['profiles', 'history', 'playlists', 'later', 'searchHistory', 'settings', 'channels', 'aiVerdicts'])
+      expect(Object.keys(document.sections)).toEqual(['profiles', 'history', 'playlists', 'later', 'searchHistory', 'settings', 'channels', 'aiVerdicts', 'communitySources', 'communityShares'])
+    })
+
+    it('writes the followed sources without this machine\'s refresh times, and the shares of all but HackerTube', async () => {
+      const { document } = await exportBackup()
+
+      expect(document.sections.communitySources).toEqual([HACKERTUBE, LEMMY])
+      expect(document.sections.communityShares).toEqual([LEMMY_SHARE])
     })
 
     it('still writes the backup when main cannot say the machine name, without one', async () => {
@@ -323,6 +341,14 @@ describe('the Backup group', () => {
       expect(text).toContain(`Your data as it is now is saved first, in ${BACKUP_FOLDER}.`)
       expect(text).toContain('Fjernsyn restarts once the backup is restored.')
       expect(text).not.toContain('downloads are running')
+    })
+
+    it('names the followed sources and their shares among what the backup holds', async () => {
+      await chooseBackup(backupFile({ communitySources: [HACKERTUBE, LEMMY], communityShares: [LEMMY_SHARE] }))
+
+      const text = confirmation().textContent
+      expect(text).toContain('Followed sources in Communities: 2')
+      expect(text).toContain('Videos the Communities sources shared: 1')
     })
 
     it('says when the backup is from this installation, and on which machine', async () => {

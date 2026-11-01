@@ -11,6 +11,7 @@ import subscriptionCache from './modules/subscription-cache'
 import channels from './modules/channels'
 import aiVerdicts from './modules/aiVerdicts'
 import later from './modules/later'
+import communities from './modules/communities'
 import utils from './modules/utils'
 import player from './modules/player'
 
@@ -26,6 +27,7 @@ export default createStore({
     channels,
     aiVerdicts,
     later,
+    communities,
     utils,
     player,
   },

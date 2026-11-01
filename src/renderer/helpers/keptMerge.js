@@ -36,7 +36,15 @@ const TIME_FIELDS = {
   playlists: 'lastUpdatedAt',
   searchHistory: 'lastUpdatedAt',
   aiVerdicts: 'checkedAt',
+  communityShares: 'seenAt',
 }
+
+/**
+ * The setting that says the Communities starter set has been followed once,
+ * so that it is never followed again over the unfollows of a machine whose
+ * sources arrive here
+ */
+const STARTER_SET_DONE = 'communitiesStarterSetDone'
 
 /**
  * The key a record is told apart by: the video in the history, as each
@@ -171,5 +179,55 @@ export function mergeSections({ ancestor, theirs, ours }) {
     }
   }
 
+  if (merged.communityShares !== undefined) {
+    dropUnfollowedShares(merged, toApply)
+  }
+
+  if (theirs.communitySources?.length > 0) {
+    markStarterSetDone(merged, toApply)
+  }
+
   return { merged, toApply, conflicts }
+}
+
+/**
+ * The shares of a source the merged state does not follow, taken out of it
+ * and out of what to apply: one side unfollowed it while the other changed
+ * one of its shares, and the change must not bring back a share of nothing,
+ * which no unfollow would ever remove
+ * @param {Sections} merged
+ * @param {Changes} toApply
+ */
+function dropUnfollowedShares(merged, toApply) {
+  const followed = new Set((merged.communitySources ?? []).map(source => source._id))
+  const isFollowed = share => followed.has(share.sourceId)
+
+  merged.communityShares = merged.communityShares.filter(isFollowed)
+
+  const changes = toApply.communityShares
+  if (changes === undefined) { return }
+
+  const put = changes.put.filter(isFollowed)
+  if (put.length === 0 && changes.remove.length === 0) {
+    delete toApply.communityShares
+  } else {
+    toApply.communityShares = { put, remove: changes.remove }
+  }
+}
+
+/**
+ * The starter set marked done in the merged settings and in what to apply,
+ * unless it is already
+ * @param {Sections} merged
+ * @param {Changes} toApply
+ */
+function markStarterSetDone(merged, toApply) {
+  const settings = merged.settings ?? []
+  if (settings.some(record => record._id === STARTER_SET_DONE && record.value === true)) { return }
+
+  const done = { _id: STARTER_SET_DONE, value: true }
+  merged.settings = [...settings.filter(record => record._id !== STARTER_SET_DONE), done]
+
+  const changes = toApply.settings ?? { put: [], remove: [] }
+  toApply.settings = { put: [...changes.put.filter(record => record._id !== STARTER_SET_DONE), done], remove: changes.remove }
 }

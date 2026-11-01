@@ -178,3 +178,51 @@ describe('mergeSections', () => {
     expect(conflicts).toBe(0)
   })
 })
+
+describe('mergeSections, the followed sources and their shares', () => {
+  const SOURCE = { _id: 'lemmy:videos@lemmy.example', kind: 'lemmy', url: 'https://lemmy.example/c/videos', name: 'videos@lemmy.example', followedAt: 1 }
+  const share = (votes, seenAt) => ({ _id: `${SOURCE._id}|video000001`, sourceId: SOURCE._id, videoId: 'video000001', title: 'Synthetic', author: '', votes, why: null, sharedAt: 1, discussionUrl: null, seenAt })
+  const DONE = { _id: 'communitiesStarterSetDone', value: true }
+  const NOT_DONE = { _id: 'communitiesStarterSetDone', value: false }
+
+  const ancestor = { settings: [DONE], communitySources: [SOURCE], communityShares: [share(3, 10)] }
+
+  it('decides a share both changed by when it was last seen in a feed', () => {
+    const theirs = { ...ancestor, communityShares: [share(9, 30)] }
+    const ours = { ...ancestor, communityShares: [share(5, 20)] }
+
+    expect(mergeSections({ ancestor, theirs, ours }).toApply).toEqual({ communityShares: { put: [share(9, 30)], remove: [] } })
+    expect(mergeSections({ ancestor, theirs: ours, ours: theirs }).toApply).toEqual({})
+  })
+
+  it('marks the starter set done when the folder brings a source, so it is never applied over its unfollows', () => {
+    const theirs = { ...ancestor, settings: [NOT_DONE] }
+    const ours = { settings: [NOT_DONE], communitySources: [], communityShares: [] }
+
+    const { merged, toApply } = mergeSections({ ancestor: null, theirs, ours })
+
+    expect(merged.settings).toEqual([DONE])
+    expect(toApply.settings).toEqual({ put: [DONE], remove: [] })
+    expect(toApply.communitySources).toEqual({ put: [SOURCE], remove: [] })
+  })
+
+  it('leaves the mark as it is when the folder follows nothing, or it is set already', () => {
+    const followsNothing = mergeSections({ ancestor: null, theirs: { settings: [NOT_DONE], communitySources: [], communityShares: [] }, ours: { settings: [NOT_DONE] } })
+    expect(followsNothing.merged.settings).toEqual([NOT_DONE])
+    expect(followsNothing.toApply).toEqual({})
+
+    const setAlready = mergeSections({ ancestor, theirs: ancestor, ours: { ...ancestor, communityShares: [] } })
+    expect(setAlready.toApply).toEqual({})
+  })
+
+  it('drops a share of a source the merge no longer follows, whichever side kept it', () => {
+    const theirs = { ...ancestor, communityShares: [share(9, 30)] }
+    const ours = { settings: [DONE], communitySources: [], communityShares: [] }
+
+    const { merged, toApply } = mergeSections({ ancestor, theirs, ours })
+
+    expect(merged.communitySources).toEqual([])
+    expect(merged.communityShares).toEqual([])
+    expect(toApply).toEqual({})
+  })
+})

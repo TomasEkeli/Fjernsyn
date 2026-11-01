@@ -53,6 +53,8 @@ const RENDERER_CONSTANTS = {
   FT_WATCH_TRACE: '',
   FT_SUBS_BUDGET: '',
   FT_SABR_WALL: '',
+  FT_COMMUNITIES_CRAWL_LIMIT: '',
+  FT_COMMUNITIES_CRAWL_DELAY_MS: '',
   BUILD_STAMP: 'test',
   RELEASE_TAG: '',
 }
@@ -82,7 +84,7 @@ export default defineConfig({
       {
         test: {
           name: 'main',
-          include: ['src/main/**/*.test.js', '_scripts/**/*.test.mjs'],
+          include: ['src/main/**/*.test.js', 'src/datastores/**/*.test.js', '_scripts/**/*.test.mjs'],
           environment: 'node',
         },
       },

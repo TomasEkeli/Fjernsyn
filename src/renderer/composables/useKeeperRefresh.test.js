@@ -114,6 +114,18 @@ describe('loading again what the keeper changed', () => {
     expect(dispatch).not.toHaveBeenCalled()
   })
 
+  it('loads the communities once, whichever of their two sections changed', async () => {
+    for (const sections of [['communitySources'], ['communityShares'], ['communitySources', 'communityShares']]) {
+      const store = fakeStore()
+      wrapper?.unmount()
+      mountRefresh(store)
+
+      await changed(sections)
+
+      expect(store.dispatched, sections.join()).toEqual(['grabCommunities'])
+    }
+  })
+
   it('loads only the sections named', async () => {
     const store = fakeStore()
     mountRefresh(store)

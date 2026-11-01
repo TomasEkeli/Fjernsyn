@@ -311,6 +311,120 @@ Explore:
   No Categories Shown: Switch on a category to see what is trending in it.
   Nothing to Explore: YouTube is not offering anything to explore in this region.
   Load More: Load More
+# The wall of videos the followed sources (HackerTube, communities) have shared
+Communities:
+  Communities: Communities
+  Load More: Load More
+  Nothing Shared: Nothing has been shared here yet.
+  Load Failed: The videos that come with Fjernsyn could not be loaded. Open Communities again to try once more.
+  # The credit HackerTube's licence asks for. {hackertube}, {dataset} and
+  # {licence} are links named HackerTube, open-index/hacker-news and ODC-By 1.0
+  HackerTube Credit: Videos and notes from {hackertube}, built on the {dataset} dataset, under {licence}.
+  # Short, in the refresh widget beside its progress bar: while the crawl
+  # fetches each video's own details (duration, views, date, channel) in the
+  # background, and while it waits a few minutes after failures
+  Crawl Progress: Fetching video details
+  Crawl Paused: Video details paused
+  # In the refresh widget while the followed sources are asked what they share now
+  Refreshing: Asking the sources for new videos
+  # Beside the refresh widget when the last refresh of a source failed, and
+  # still there after a restart until a refresh of it works; everything it had
+  # stays. {sources} is the sources' names, separated by commas
+  Refresh Failed: 'Could not refresh {sources}'
+  # For screen readers: the row of chips, one per followed source, saying
+  # whose videos are on the wall
+  Sources Shown: Sources shown
+  # Instead of the wall, when every source's chip is off
+  No Sources Shown: No source is shown. Switch one on above.
+  # Beside the select choosing the wall's order
+  Sort By: Sort by
+  # The wall's orders, each the most or the newest first
+  Sorts:
+    Published: Video published
+    Shared: Shared on community
+    Views: Views
+    Upvotes: Upvotes
+  # The button beside the sort select that reverses the order, named for the
+  # direction the wall is in
+  Sort Descending: Descending, the most or newest first. Click to reverse
+  Sort Ascending: Ascending, the fewest or oldest first. Click to reverse
+  # Beside the select of HackerTube's categories, which shows only the videos
+  # HackerTube put in the one chosen
+  Category: Category
+  # The category select's first choice, which shows every video
+  All Categories: All
+  # Instead of the wall, when no video shown is in the category chosen
+  Nothing In Category: Nothing here is in this category.
+  # The quiet badge at the top left of a card's thumbnail on Communities and
+  # on a source's page, and what hovering it shows
+  Vote Badge:
+    # The badge itself, and each source's votes on hovering it. {arrow} is
+    # the Arrow below, which screen readers skip; {votes} is a number, as 35
+    # or 22.5
+    Votes: '{arrow} {votes}'
+    # The upvote arrow in Votes
+    Arrow: ▲
+    # For screen readers, in place of the badge's arrow and number
+    Votes Label: '{votes} upvotes'
+    # On a source's page: when the source shared the video. {date} is a day,
+    # or for HackerTube a year
+    Shared: Shared {date}
+    # On a source's page: the link to the post or comment that shared the
+    # video, which opens in the browser
+    Discussion: Open the discussion
+# The list of sources Communities follows (HackerTube, Lemmy communities), where
+# one is followed by pasting its address, and each source's own page
+Sources:
+  Sources: Sources
+  Follow Placeholder: Address of a community to follow
+  Follow: Follow
+  # Under the field, before anything is pasted. {'@'} is a literal @, which
+  # vue-i18n would otherwise read as a link to another message
+  Follow Hint: "A Lemmy community, as https://lemmy.cafe/c/mealtimevideos or !mealtimevideos{'@'}lemmy.cafe"
+  # While the source is asked for its feed, before it is followed
+  Trying: Asking it for its feed…
+  Followed: 'Following {name}.'
+  Followed Already: '{name} is followed already.'
+  Unrecognised: Fjernsyn cannot follow this address yet. It follows HackerTube and Lemmy communities.
+  # The instance answered, but with no feed it can read; slrpnk.net, for one,
+  # serves none
+  No Feed: '{name} cannot be followed yet: its instance does not serve a feed Fjernsyn can read.'
+  Unreachable: '{name} could not be reached. Check the address, or try again later.'
+  Follow Failed: Something went wrong while following it.
+  Nothing Followed: No source is followed.
+  # How many of the source's videos are kept
+  Videos: '{count} video | {count} videos'
+  Unfollow: Unfollow
+  # The Unfollow button's name for a screen reader, and its tooltip
+  Unfollow Source: 'Unfollow {name}'
+  Unfollow Prompt: 'Unfollow {name}?'
+  # In the prompt before unfollowing: its videos go, and a feed only lists its
+  # latest posts, so following it again does not bring back the older ones
+  Unfollow Prompt Detail: Its videos leave Communities. Following it again brings back only what its feed still lists.
+  Unfollowed: 'Unfollowed {name}'
+  Unfollow Failed: 'Could not unfollow {name}'
+  # On the page of a source no longer followed. {sources} is a link to the
+  # Sources page, named as the top bar names it
+  Not Followed: 'This source is not followed. {sources} lists those that are.'
+  Read Failed: The followed sources could not be read.
+  # The buttons that write the followed sources to an OPML file, and follow
+  # the sources an OPML file lists
+  Export: Export
+  Export Title: Export the followed sources as an OPML file
+  Import: Import
+  Import Title: Follow the sources an OPML file lists
+  # The kind of file, in the save and open dialogs
+  Sources File: Sources file
+  Exported: The followed sources have been exported
+  Export Failed: Could not write the file
+  # After an import. {refused} counts the feeds Fjernsyn cannot follow
+  Imported: 'Imported: {followed} followed, {followedAlready} followed already, {refused} not recognised'
+  Import Not OPML: This file is not an OPML file
+  Import Failed: Something went wrong while importing the file
+  # What kind of place a source is
+  Kinds:
+    HackerTube: HackerTube
+    Lemmy: Lemmy community
 # The chip on the subscriptions and explore pages saying whether videos already
 # watched stay in the stream. It is the "Hide Videos on Watch" setting, the
 # other way round: pressed means watched videos are shown
@@ -980,6 +1094,8 @@ Settings:
         Settings: Settings
         Channels: Channel tags and Probe samples
         AI verdicts: AI labels already checked
+        Community sources: Followed sources in Communities
+        Community shares: Videos the Communities sources shared
       Restoring: Restoring the backup. Fjernsyn restarts when it is done.
       Failed: 'The restore failed: {error}. Some sections may already be replaced. Your data from before the restore is in {path}; restore that file to go back.'
       Failed before writing: 'The restore failed, and nothing was changed: {error}'

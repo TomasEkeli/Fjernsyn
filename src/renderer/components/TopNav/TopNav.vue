@@ -101,6 +101,34 @@
         >{{ t('Channels.Channels') }}</span>
       </RouterLink>
       <RouterLink
+        class="navLink"
+        to="/communities"
+        :title="t('Communities.Communities')"
+      >
+        <FontAwesomeIcon
+          class="navIcon"
+          :icon="['fas', 'people-group']"
+        />
+        <span
+          v-if="showLabels"
+          class="navLinkLabel"
+        >{{ t('Communities.Communities') }}</span>
+      </RouterLink>
+      <RouterLink
+        class="navLink"
+        to="/sources"
+        :title="t('Sources.Sources')"
+      >
+        <FontAwesomeIcon
+          class="navIcon"
+          :icon="['fas', 'satellite-dish']"
+        />
+        <span
+          v-if="showLabels"
+          class="navLinkLabel"
+        >{{ t('Sources.Sources') }}</span>
+      </RouterLink>
+      <RouterLink
         v-if="exploreVisible"
         class="navLink"
         to="/explore"

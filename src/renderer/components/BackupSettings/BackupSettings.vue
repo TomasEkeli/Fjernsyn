@@ -127,6 +127,7 @@ import { NON_TRANSFERABLE_SETTINGS } from '../../store/modules/settings'
 import {
   DBAiVerdictHandlers,
   DBChannelHandlers,
+  DBCommunityHandlers,
   DBHistoryHandlers,
   DBLaterHandlers,
   DBPlaylistHandlers,
@@ -135,6 +136,7 @@ import {
   DBSettingHandlers,
 } from '../../../datastores/handlers/index'
 import { BACKUP_SECTIONS, backupFileName, readBackup, writeBackup } from '../../helpers/backup'
+import { communitiesBackupSections } from '../../helpers/communities/backup'
 import { listAllDownloads } from '../../helpers/downloads'
 import { isRunning } from '../../helpers/ytdlpDownloads'
 import { getTodayDateStrLocalTimezone, showToast, writeFileWithPicker } from '../../helpers/utils'
@@ -175,7 +177,7 @@ const { t } = useI18n()
  * @returns {Promise<{ installationId: string, sections: Record<string, object[]> }>}
  */
 async function collectBackup() {
-  const [profiles, history, playlists, later, searchHistory, storedSettings, channels, aiVerdicts] = await Promise.all([
+  const [profiles, history, playlists, later, searchHistory, storedSettings, channels, aiVerdicts, sources, shares] = await Promise.all([
     DBProfileHandlers.find(),
     DBHistoryHandlers.find(),
     DBPlaylistHandlers.find(),
@@ -184,6 +186,8 @@ async function collectBackup() {
     DBSettingHandlers.find(),
     DBChannelHandlers.find(),
     DBAiVerdictHandlers.find(),
+    DBCommunityHandlers.findSources(),
+    DBCommunityHandlers.findShares(),
   ])
 
   const stored = new Map(storedSettings.map(({ _id, value }) => [_id, value]))
@@ -197,7 +201,7 @@ async function collectBackup() {
 
   return {
     installationId: storedInstallationId(storedSettings),
-    sections: { profiles, history, playlists, later, searchHistory, settings, channels, aiVerdicts },
+    sections: { profiles, history, playlists, later, searchHistory, settings, channels, aiVerdicts, ...communitiesBackupSections(sources, shares) },
   }
 }
 
@@ -432,6 +436,8 @@ const sectionLabels = computed(() => ({
   settings: t('Settings.Data Settings.Backup.Sections.Settings'),
   channels: t('Settings.Data Settings.Backup.Sections.Channels'),
   aiVerdicts: t('Settings.Data Settings.Backup.Sections.AI verdicts'),
+  communitySources: t('Settings.Data Settings.Backup.Sections.Community sources'),
+  communityShares: t('Settings.Data Settings.Backup.Sections.Community shares'),
 }))
 
 /**

@@ -1,4 +1,5 @@
 import { flushPromises } from '@vue/test-utils'
+import { h } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
@@ -11,6 +12,7 @@ import { mountWithApp } from '../../testing/mount'
 import { createTestRouter } from '../../testing/router'
 import FtIconButton from '../FtIconButton/FtIconButton.vue'
 import FtListVideo from './FtListVideo.vue'
+import { THUMBNAIL_BADGE } from '../../helpers/thumbnailBadge'
 
 // What the card reads of the settings, as the defaults have them, but with
 // DeArrow and SponsorBlock on, so that a test can see they are not asked
@@ -133,8 +135,9 @@ const YOUTUBE_VIDEO = {
 /**
  * @param {object} data
  * @param {Record<string, any>} [props]
+ * @param {Record<string | symbol, any>} [provide]
  */
-async function mountCard(data, props = {}) {
+async function mountCard(data, props = {}, provide = undefined) {
   const router = createTestRouter([{ path: '/search/:query', name: 'search' }])
   await router.push('/search/x')
 
@@ -142,6 +145,7 @@ async function mountCard(data, props = {}) {
     store,
     router,
     props: { data, appearance: 'result', ...props },
+    provide,
   })
 
   return { wrapper, router }
@@ -703,5 +707,54 @@ describe('FtListVideo, the Later buttons', () => {
     button(wrapper, 'trashIcon').vm.$emit('click')
     expect(wrapper.emitted('remove-from-playlist')).toEqual([[YOUTUBE_ID, YOUTUBE_ID]])
     expect(wrapper.find('a.thumbnailLink').attributes('href')).not.toContain('playlist')
+  })
+})
+
+describe('FtListVideo, with a wall\'s own thumbnail badge', () => {
+  // A badge as a wall would provide it: told the card's video, nothing more
+  const StubBadge = {
+    props: { video: { type: Object, required: true } },
+    setup: props => () => h('span', { class: 'stubBadge' }, props.video.videoId),
+  }
+
+  /**
+   * The card's markup as the browser has it, less comments (Vue's placeholders
+   * and the template's own, which a production build drops) and the
+   * whitespace between tags
+   *
+   * @param {string} html
+   */
+  function markup(html) {
+    return html.replaceAll(/<!--[\s\S]*?-->/g, '').replaceAll(/>\s+</g, '><').replaceAll(/\s+/g, ' ')
+  }
+
+  const COMMUNITY_VIDEO = { ...YOUTUBE_VIDEO, community: { votes: 35, sharedAt: null, sourceIds: ['hackertube'] } }
+
+  it('draws none on a wall that provides none, video with a community or not', async () => {
+    for (const data of [YOUTUBE_VIDEO, PEERTUBE_VIDEO, COMMUNITY_VIDEO]) {
+      const { wrapper } = await mountCard(data)
+      expect(wrapper.find('.stubBadge').exists()).toBe(false)
+    }
+  })
+
+  it('draws the provided badge on the thumbnail, right after the image, given the card\'s video', async () => {
+    const { wrapper } = await mountCard(COMMUNITY_VIDEO, {}, { [THUMBNAIL_BADGE]: StubBadge })
+
+    const badge = wrapper.find('.videoThumbnail > .stubBadge')
+    expect(badge.text()).toBe(YOUTUBE_ID)
+    expect(badge.element.previousElementSibling.classList.contains('thumbnailLink')).toBe(true)
+    expect(wrapper.findComponent(StubBadge).props('video')).toEqual(COMMUNITY_VIDEO)
+  })
+
+  it('changes nothing else on the card: the badge taken away, the markup is the one a wall without it gets', async () => {
+    for (const data of [YOUTUBE_VIDEO, PEERTUBE_VIDEO, COMMUNITY_VIDEO]) {
+      const plain = (await mountCard(data)).wrapper
+      const badged = (await mountCard(data, {}, { [THUMBNAIL_BADGE]: StubBadge })).wrapper
+      await flushPromises()
+
+      badged.find('.stubBadge').element.remove()
+
+      expect(markup(badged.html())).toBe(markup(plain.html()))
+    }
   })
 })

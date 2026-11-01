@@ -162,7 +162,31 @@ export function createVideoReader({ client, config }) {
     }
   }
 
-  return Object.freeze({ getVideo })
+  /**
+   * The video as a list item has it, with no playback source, captions,
+   * chapters or storyboard: one request to the instance given, and one more
+   * to the origin when that instance says the video is not its own.
+   *
+   * @param {import('../shapes').PeerTubeVideoRef} ref
+   * @returns {Promise<import('../shapes').VideoSummary>}
+   */
+  async function getVideoSummary(ref) {
+    if (!isPeerTubeVideoRef(ref)) {
+      throw new PlatformError('invalid', 'Not a PeerTube video ref')
+    }
+
+    const { host, video } = await fetchFromOrigin(ref.host.toLowerCase(), ref.videoId.toLowerCase())
+    const summary = videoSummary(video, host)
+
+    if (!summary) {
+      throw new PlatformError('unavailable', `${host} answered without a video`, { status: 200, host })
+    }
+
+    // The origin, whatever the details' own fields say
+    return { ...summary, host }
+  }
+
+  return Object.freeze({ getVideo, getVideoSummary })
 }
 
 /**

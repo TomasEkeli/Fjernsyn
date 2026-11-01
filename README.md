@@ -157,6 +157,12 @@ You can change region on the page, and the last four you looked at stay a click 
 
 ![Explore with all six categories on, the region set to Norway and the recent regions NO, GB and US beside it](_screenshots/explore.webp)
 
+### Communities
+
+YouTube's recommendations find the next thing you will click. A better source of good videos are what people share and "upvote" on different communities, like lemmy or hacker-news. The "communities" section gathers such links. To get users started a few communities are included by default: [HackerTube](https://hackertube.org), Andrej Karpathy's index of the videos Hacker News has recommended over the years, and some larger Lemmy communities. You can add your own sources on the "sources" -section (only Lemmy supported for now).
+
+HackerTube's data is from [HackerTube](https://hackertube.org) and the [open-index/hacker-news](https://huggingface.co/datasets/open-index/hacker-news) dataset, under the [Open Data Commons Attribution License (ODC-By) 1.0](https://opendatacommons.org/licenses/by/1-0/).
+
 ### Videos made with AI
 
 Searching YouTube turns up a lot of videos made wholly by AI. Many are poor, and some are wrong in ways that are dangerous or unhealthy. YouTube lets creators label the videos ("Made with AI" on the watch page), but lists do not expose it; search results, channel pages and related videos look like any other.

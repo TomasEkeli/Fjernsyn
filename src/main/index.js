@@ -31,6 +31,8 @@ import contextMenu from 'electron-context-menu'
 import packageDetails from '../../package.json'
 import { registerBackupHandlers } from './backup/ipc'
 import { registerKeeper } from './backup/keeperIpc'
+import { createCommunitiesCrawlClaim } from './communitiesCrawlClaim'
+import { handleCommunitiesDb } from './communitiesDb'
 import { handleOpenInExternalPlayer } from './externalPlayer'
 import { holdFullscreen, isFullscreenHeld, releaseFullscreen } from './fullscreenHold'
 import { registerPeerTubeDownloadHandlers } from './peertubeDownloads/ipc'
@@ -2563,6 +2565,38 @@ function runApp() {
       if (typeof err === 'string') throw err
       else throw err.toString()
     }
+  })
+
+  // *********** //
+  // Communities: the followed sources, their shares, and the videos' details
+  ipcMain.handle(IpcChannels.DB_COMMUNITIES, (event, { action, data }) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      return
+    }
+
+    return handleCommunitiesDb(action, data, {
+      handlers: baseHandlers.communities,
+      syncOthers: payload => syncOtherWindows(IpcChannels.SYNC_COMMUNITIES, event, payload),
+    })
+  })
+
+  // Communities: which window runs the crawl, one at a time
+  const communitiesCrawlClaim = createCommunitiesCrawlClaim()
+
+  ipcMain.handle(IpcChannels.COMMUNITIES_CRAWL_CLAIM, (event) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      return false
+    }
+
+    return communitiesCrawlClaim.claim(event.sender)
+  })
+
+  ipcMain.on(IpcChannels.COMMUNITIES_CRAWL_RELEASE, (event) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      return
+    }
+
+    communitiesCrawlClaim.release(event.sender)
   })
 
   // *********** //

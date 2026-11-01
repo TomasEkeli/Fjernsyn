@@ -1482,6 +1482,26 @@ export async function getLocalLiveState(videoId) {
 }
 
 /**
+ * A video's raw `/player` response, unparsed: the same plain request as
+ * {@linkcode getLocalVideoMetadata}, for a caller that reads it itself, the
+ * Communities crawl (helpers/communities/details.js).
+ *
+ * Throws what the request throws, an HTTP 403 or 429 included.
+ * @param {string} videoId
+ * @returns {Promise<any>}
+ */
+export async function getLocalPlayerResponse(videoId) {
+  const session = await createSession()
+  const response = await session.actions.execute('/player', {
+    videoId,
+    racyCheckOk: true,
+    contentCheckOk: true
+  })
+
+  return response.data
+}
+
+/**
  * Returns the channel or the channel termination reason
  * @param {string} id
  */

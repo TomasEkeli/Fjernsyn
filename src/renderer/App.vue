@@ -190,10 +190,12 @@ onMounted(async () => {
     store.dispatch('grabChannels')
     store.dispatch('grabAiVerdicts')
     store.dispatch('grabLater')
+    store.dispatch('grabCommunities')
     store.dispatch('grabSearchHistoryEntries')
 
     if (process.env.IS_ELECTRON) {
       store.dispatch('setupListenersToSyncWindows')
+      store.dispatch('setupCommunitiesSync')
       document.addEventListener('click', handleClick)
       document.addEventListener('auxclick', handleAuxClick)
       enableOpenUrl()
