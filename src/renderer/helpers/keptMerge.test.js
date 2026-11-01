@@ -214,4 +214,15 @@ describe('mergeSections, the followed sources and their shares', () => {
     const setAlready = mergeSections({ ancestor, theirs: ancestor, ours: { ...ancestor, collectionShares: [] } })
     expect(setAlready.toApply).toEqual({})
   })
+
+  it('drops a share of a source the merge no longer follows, whichever side kept it', () => {
+    const theirs = { ...ancestor, collectionShares: [share(9, 30)] }
+    const ours = { settings: [DONE], collectionSources: [], collectionShares: [] }
+
+    const { merged, toApply } = mergeSections({ ancestor, theirs, ours })
+
+    expect(merged.collectionSources).toEqual([])
+    expect(merged.collectionShares).toEqual([])
+    expect(toApply).toEqual({})
+  })
 })

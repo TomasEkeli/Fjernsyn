@@ -55,7 +55,7 @@ function historyEntry(videoId, timeWatched, watchProgress = 30) {
   }
 }
 
-async function machine(name) {
+async function machine(name, deps = {}) {
   const dataFolder = path.join(root, name)
   const datastores = {}
 
@@ -80,6 +80,7 @@ async function machine(name) {
       m.historyChanges = [...(m.historyChanges ?? []), changes.history]
     },
     sleep: async () => {},
+    ...deps,
   })
   watchDatastores(datastores, () => m.keeper.markChanged())
 
@@ -268,5 +269,29 @@ describe('two machines running at once, following sources', () => {
 
     expect(await desktop.datastores.collectionShares.findOneAsync({ _id: `${LEMMY._id}|lemmyvideo1` })).toMatchObject({ votes: 40, seenAt: 20 })
     expect(await desktop.datastores.collectionSources.findOneAsync({ _id: LEMMY._id })).toEqual({ ...LEMMY, name: 'Videos', checkedAt: 100, attemptedAt: 100, failedAt: null })
+  })
+
+  it('leaves no share behind of a source one machine unfollowed while the other updated the share', async () => {
+    const desktop = await machine('Desktop')
+    await following(desktop, 100)
+    await desktop.keeper.start()
+    await desktop.keeper.tick()
+
+    const laptop = await machine('Laptop')
+    await laptop.keeper.start()
+
+    // Desktop's vote update reaches the folder first; Laptop unfollowed meanwhile
+    await desktop.datastores.collectionShares.updateAsync({ _id: `${LEMMY._id}|lemmyvideo1` }, { $set: { votes: 40, seenAt: 20 } })
+    await desktop.keeper.tick()
+    await laptop.datastores.collectionSources.removeAsync({ _id: LEMMY._id }, {})
+    await laptop.datastores.collectionShares.removeAsync({ sourceId: LEMMY._id }, { multi: true })
+    await laptop.keeper.tick()
+
+    expect(await ids(laptop.datastores.collectionSources)).toEqual(['hackertube'])
+    expect(await ids(laptop.datastores.collectionShares)).toEqual([])
+
+    await desktop.keeper.tick()
+    expect(await ids(desktop.datastores.collectionSources)).toEqual(['hackertube'])
+    expect(await ids(desktop.datastores.collectionShares)).toEqual(['hackertube|hackertube1'])
   })
 })

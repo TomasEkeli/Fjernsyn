@@ -179,11 +179,40 @@ export function mergeSections({ ancestor, theirs, ours }) {
     }
   }
 
+  if (merged.collectionShares !== undefined) {
+    dropUnfollowedShares(merged, toApply)
+  }
+
   if (theirs.collectionSources?.length > 0) {
     markStarterSetDone(merged, toApply)
   }
 
   return { merged, toApply, conflicts }
+}
+
+/**
+ * The shares of a source the merged state does not follow, taken out of it
+ * and out of what to apply: one side unfollowed it while the other changed
+ * one of its shares, and the change must not bring back a share of nothing,
+ * which no unfollow would ever remove
+ * @param {Sections} merged
+ * @param {Changes} toApply
+ */
+function dropUnfollowedShares(merged, toApply) {
+  const followed = new Set((merged.collectionSources ?? []).map(source => source._id))
+  const isFollowed = share => followed.has(share.sourceId)
+
+  merged.collectionShares = merged.collectionShares.filter(isFollowed)
+
+  const changes = toApply.collectionShares
+  if (changes === undefined) { return }
+
+  const put = changes.put.filter(isFollowed)
+  if (put.length === 0 && changes.remove.length === 0) {
+    delete toApply.collectionShares
+  } else {
+    toApply.collectionShares = { put, remove: changes.remove }
+  }
 }
 
 /**
