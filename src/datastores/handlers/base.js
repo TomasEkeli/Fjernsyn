@@ -560,9 +560,9 @@ class Later {
 }
 
 /**
- * Collections: the followed sources, by source id, their shares, by source
- * id and video ref (`helpers/collections/shares.js`), and each collection
- * video's own details, by video ref (`helpers/collections/details.js`).
+ * Communities: the followed sources, by source id, their shares, by source
+ * id and video ref (`helpers/communities/shares.js`), and each community
+ * video's own details, by video ref (`helpers/communities/details.js`).
  *
  * Shares are only ever added or updated here, never dropped while their source
  * is followed: a share that falls out of a feed stays. Unfollowing a source
@@ -578,16 +578,16 @@ class Later {
  * source's record (`updateSource`), which never creates one. Only following
  * creates a record (`upsertSource`).
  */
-let collectionsQueue = Promise.resolve()
+let communitiesQueue = Promise.resolve()
 
 /**
  * @template T
  * @param {() => Promise<T>} write
  * @returns {Promise<T>}
  */
-function inCollectionsQueue(write) {
-  const run = collectionsQueue.then(write)
-  collectionsQueue = run.catch(() => {})
+function inCommunitiesQueue(write) {
+  const run = communitiesQueue.then(write)
+  communitiesQueue = run.catch(() => {})
   return run
 }
 
@@ -596,17 +596,17 @@ function inCollectionsQueue(write) {
  * @returns {Promise<Set<string>>} those of them that are followed
  */
 async function followedOf(sourceIds) {
-  const found = await db.collectionSources.findAsync({ _id: { $in: [...new Set(sourceIds)] } }, { _id: 1 })
+  const found = await db.communitySources.findAsync({ _id: { $in: [...new Set(sourceIds)] } }, { _id: 1 })
   return new Set(found.map(source => source._id))
 }
 
-class Collections {
+class Communities {
   static findSources() {
-    return db.collectionSources.findAsync({})
+    return db.communitySources.findAsync({})
   }
 
   static findShares() {
-    return db.collectionShares.findAsync({})
+    return db.communityShares.findAsync({})
   }
 
   /**
@@ -615,7 +615,7 @@ class Collections {
    * @param {{ _id: string }} source
    */
   static upsertSource(source) {
-    return inCollectionsQueue(() => db.collectionSources.updateAsync({ _id: source._id }, source, { upsert: true }))
+    return inCommunitiesQueue(() => db.communitySources.updateAsync({ _id: source._id }, source, { upsert: true }))
   }
 
   /**
@@ -626,8 +626,8 @@ class Collections {
    * @returns {Promise<{ updated: number }>}
    */
   static updateSource(source) {
-    return inCollectionsQueue(async () => {
-      const { numAffected } = await db.collectionSources.updateAsync({ _id: source._id }, source, { upsert: false })
+    return inCommunitiesQueue(async () => {
+      const { numAffected } = await db.communitySources.updateAsync({ _id: source._id }, source, { upsert: false })
       return { updated: numAffected }
     })
   }
@@ -638,7 +638,7 @@ class Collections {
    *   `dropped`, the ids of those of a source not followed, which were not written
    */
   static putShares(shares) {
-    return inCollectionsQueue(() => putCollectionShares(shares))
+    return inCommunitiesQueue(() => putCommunityShares(shares))
   }
 
   /**
@@ -654,32 +654,32 @@ class Collections {
    * @returns {Promise<{ shares: number }>} how many shares were removed
    */
   static removeSource(sourceId) {
-    return inCollectionsQueue(async () => {
-      const shares = await db.collectionShares.removeAsync({ sourceId }, { multi: true })
-      await db.collectionSourceData.removeAsync({ _id: sourceId }, {})
-      await db.collectionSources.removeAsync({ _id: sourceId }, {})
+    return inCommunitiesQueue(async () => {
+      const shares = await db.communityShares.removeAsync({ sourceId }, { multi: true })
+      await db.communitySourceData.removeAsync({ _id: sourceId }, {})
+      await db.communitySources.removeAsync({ _id: sourceId }, {})
       return { shares }
     })
   }
 
   static findVideos() {
-    return db.collectionVideos.findAsync({})
+    return db.communityVideos.findAsync({})
   }
 
   /**
    * Keeps each video's details, replacing what was kept for it
-   * (`helpers/collections/details.js`)
+   * (`helpers/communities/details.js`)
    *
    * @param {{ _id: string }[]} videos
    */
   static async putVideos(videos) {
     for (const video of videos) {
-      await db.collectionVideos.updateAsync({ _id: video._id }, video, { upsert: true })
+      await db.communityVideos.updateAsync({ _id: video._id }, video, { upsert: true })
     }
   }
 
   static findSourceData() {
-    return db.collectionSourceData.findAsync({})
+    return db.communitySourceData.findAsync({})
   }
 
   /**
@@ -690,12 +690,12 @@ class Collections {
    * @returns {Promise<{ kept: boolean }>}
    */
   static putSourceData(record) {
-    return inCollectionsQueue(async () => {
+    return inCommunitiesQueue(async () => {
       if (!(await followedOf([record._id])).has(record._id)) {
         return { kept: false }
       }
 
-      await db.collectionSourceData.updateAsync({ _id: record._id }, record, { upsert: true })
+      await db.communitySourceData.updateAsync({ _id: record._id }, record, { upsert: true })
       return { kept: true }
     })
   }
@@ -705,13 +705,13 @@ class Collections {
  * @param {{ _id: string, sourceId?: string }[]} shares
  * @returns {Promise<{ added: number, updated: number, dropped: string[] }>}
  */
-async function putCollectionShares(shares) {
+async function putCommunityShares(shares) {
   // The last of a share given twice wins, as it would one write after another
   const byId = new Map(shares.map(share => [share._id, share]))
   const ids = [...byId.keys()]
 
   /** @type {Map<string, string>} the source of each share already kept */
-  const known = new Map((await db.collectionShares.findAsync({ _id: { $in: ids } }, { _id: 1, sourceId: 1 })).map(share => [share._id, share.sourceId]))
+  const known = new Map((await db.communityShares.findAsync({ _id: { $in: ids } }, { _id: 1, sourceId: 1 })).map(share => [share._id, share.sourceId]))
 
   // An update may give only the fields that changed: the share kept names its source
   const sourceOf = id => byId.get(id).sourceId ?? known.get(id)
@@ -721,16 +721,16 @@ async function putCollectionShares(shares) {
 
   const fresh = writable.filter(id => !known.has(id)).map(id => byId.get(id))
   if (fresh.length > 0) {
-    await db.collectionShares.insertAsync(fresh)
+    await db.communityShares.insertAsync(fresh)
   }
 
   // One update, and one appended line, per share already kept, so the
   // renderer puts only the shares that are new or changed
-  // (`helpers/collections/shares.js`, `sharesToPut`)
+  // (`helpers/communities/shares.js`, `sharesToPut`)
   const kept = writable.filter(id => known.has(id))
   for (const id of kept) {
     const { _id, ...fields } = byId.get(id)
-    await db.collectionShares.updateAsync({ _id }, { $set: fields })
+    await db.communityShares.updateAsync({ _id }, { $set: fields })
   }
 
   return { added: fresh.length, updated: kept.length, dropped }
@@ -747,10 +747,10 @@ function loadDatastores() {
     db.channels.loadDatabaseAsync(),
     db.aiVerdicts.loadDatabaseAsync(),
     db.later.loadDatabaseAsync(),
-    db.collectionSources.loadDatabaseAsync(),
-    db.collectionShares.loadDatabaseAsync(),
-    db.collectionVideos.loadDatabaseAsync(),
-    db.collectionSourceData.loadDatabaseAsync(),
+    db.communitySources.loadDatabaseAsync(),
+    db.communityShares.loadDatabaseAsync(),
+    db.communityVideos.loadDatabaseAsync(),
+    db.communitySourceData.loadDatabaseAsync(),
   ])
 }
 
@@ -765,10 +765,10 @@ function compactAllDatastores() {
     db.channels.compactDatafileAsync(),
     db.aiVerdicts.compactDatafileAsync(),
     db.later.compactDatafileAsync(),
-    db.collectionSources.compactDatafileAsync(),
-    db.collectionShares.compactDatafileAsync(),
-    db.collectionVideos.compactDatafileAsync(),
-    db.collectionSourceData.compactDatafileAsync(),
+    db.communitySources.compactDatafileAsync(),
+    db.communityShares.compactDatafileAsync(),
+    db.communityVideos.compactDatafileAsync(),
+    db.communitySourceData.compactDatafileAsync(),
   ])
 }
 
@@ -782,9 +782,9 @@ export {
   Channels as channels,
   AiVerdicts as aiVerdicts,
   Later as later,
-  Collections as collections,
+  Communities as communities,
 
-  inCollectionsQueue,
+  inCommunitiesQueue,
   loadDatastores,
   compactAllDatastores,
 }

@@ -5,7 +5,7 @@ import { promisify } from 'node:util'
 import { gunzip as gunzipCallback } from 'node:zlib'
 
 import { BACKUP_SECTIONS } from '../../renderer/helpers/backup'
-import { collectionsBackupSections, withMachineFields } from '../../renderer/helpers/collections/backup.js'
+import { communitiesBackupSections, withMachineFields } from '../../renderer/helpers/communities/backup.js'
 import { isBaseFileName, lineageEntry, readSyncFile, SYNC_FILE_NAME } from '../../renderer/helpers/keptBackup'
 import { MACHINE_BOUND_SETTINGS } from './machineBound'
 import { backupsFolder, isRestorableSetting, removeOldSafetyCopies, safetyCopyName } from './restore'
@@ -173,7 +173,7 @@ function isMissing(error) {
  * @param {typeof fs} [deps.fileSystem]
  * @param {() => number} [deps.now] must agree with the file system's clock, as file ages are measured by it
  * @param {(ms: number) => Promise<void>} [deps.sleep]
- * @param {<T>(write: () => Promise<T>) => Promise<T>} [deps.inCollectionsQueue] the queue main's Collections handler writes the sources and their shares in (datastores/handlers/base.js); a write runs at once without one
+ * @param {<T>(write: () => Promise<T>) => Promise<T>} [deps.inCommunitiesQueue] the queue main's Communities handler writes the sources and their shares in (datastores/handlers/base.js); a write runs at once without one
  * @param {() => string} [deps.makeToken]
  */
 export function createKeeper({
@@ -189,7 +189,7 @@ export function createKeeper({
   now = () => Date.now(),
   sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
   makeToken = () => randomBytes(8).toString('hex'),
-  inCollectionsQueue = write => write(),
+  inCommunitiesQueue = write => write(),
 }) {
   /** @type {string} */
   let installationId = typeof installationIdSource === 'string' ? installationIdSource : ''
@@ -759,7 +759,7 @@ export function createKeeper({
 
     // The sources without this machine's refresh times, and no share of
     // HackerTube's, which the bundle rebuilds, or of a source not followed
-    return { ...sections, ...collectionsBackupSections(sections.collectionSources, sections.collectionShares) }
+    return { ...sections, ...communitiesBackupSections(sections.communitySources, sections.communityShares) }
   }
 
   // #endregion collecting
@@ -857,7 +857,7 @@ export function createKeeper({
    */
   async function applyToDatastores(toApply) {
     for (const [section, { put, remove }] of Object.entries(toApply)) {
-      if (section === 'collectionSources') {
+      if (section === 'communitySources') {
         await applySources(put, remove)
         continue
       }
@@ -887,14 +887,14 @@ export function createKeeper({
    * @param {string[]} remove
    */
   async function applySources(put, remove) {
-    const sources = datastores.collectionSources
+    const sources = datastores.communitySources
 
     // In turn with the app's own writes, as an unfollow made here is, so that
     // a refresh's put under way cannot leave a share behind the removal
-    await inCollectionsQueue(async () => {
+    await inCommunitiesQueue(async () => {
       for (const _id of remove) {
-        await datastores.collectionShares.removeAsync({ sourceId: _id }, { multi: true })
-        await datastores.collectionSourceData.removeAsync({ _id }, {})
+        await datastores.communityShares.removeAsync({ sourceId: _id }, { multi: true })
+        await datastores.communitySourceData.removeAsync({ _id }, {})
         await sources.removeAsync({ _id }, {})
       }
 

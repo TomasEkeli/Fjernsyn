@@ -127,7 +127,7 @@ import { NON_TRANSFERABLE_SETTINGS } from '../../store/modules/settings'
 import {
   DBAiVerdictHandlers,
   DBChannelHandlers,
-  DBCollectionHandlers,
+  DBCommunityHandlers,
   DBHistoryHandlers,
   DBLaterHandlers,
   DBPlaylistHandlers,
@@ -136,7 +136,7 @@ import {
   DBSettingHandlers,
 } from '../../../datastores/handlers/index'
 import { BACKUP_SECTIONS, backupFileName, readBackup, writeBackup } from '../../helpers/backup'
-import { collectionsBackupSections } from '../../helpers/collections/backup'
+import { communitiesBackupSections } from '../../helpers/communities/backup'
 import { listAllDownloads } from '../../helpers/downloads'
 import { isRunning } from '../../helpers/ytdlpDownloads'
 import { getTodayDateStrLocalTimezone, showToast, writeFileWithPicker } from '../../helpers/utils'
@@ -186,8 +186,8 @@ async function collectBackup() {
     DBSettingHandlers.find(),
     DBChannelHandlers.find(),
     DBAiVerdictHandlers.find(),
-    DBCollectionHandlers.findSources(),
-    DBCollectionHandlers.findShares(),
+    DBCommunityHandlers.findSources(),
+    DBCommunityHandlers.findShares(),
   ])
 
   const stored = new Map(storedSettings.map(({ _id, value }) => [_id, value]))
@@ -201,7 +201,7 @@ async function collectBackup() {
 
   return {
     installationId: storedInstallationId(storedSettings),
-    sections: { profiles, history, playlists, later, searchHistory, settings, channels, aiVerdicts, ...collectionsBackupSections(sources, shares) },
+    sections: { profiles, history, playlists, later, searchHistory, settings, channels, aiVerdicts, ...communitiesBackupSections(sources, shares) },
   }
 }
 
@@ -436,8 +436,8 @@ const sectionLabels = computed(() => ({
   settings: t('Settings.Data Settings.Backup.Sections.Settings'),
   channels: t('Settings.Data Settings.Backup.Sections.Channels'),
   aiVerdicts: t('Settings.Data Settings.Backup.Sections.AI verdicts'),
-  collectionSources: t('Settings.Data Settings.Backup.Sections.Collection sources'),
-  collectionShares: t('Settings.Data Settings.Backup.Sections.Collection shares'),
+  communitySources: t('Settings.Data Settings.Backup.Sections.Community sources'),
+  communityShares: t('Settings.Data Settings.Backup.Sections.Community shares'),
 }))
 
 /**

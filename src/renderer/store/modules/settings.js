@@ -421,24 +421,24 @@ const state = {
   // list (composables/useLaterTakeover.js), so that a playlist named Watch
   // Later made afterwards, which upstream gives the same id, stays a playlist
   laterTakeoverDone: false,
-  // Set once Collections' starter set has been followed
-  // (helpers/collections/starterSet.js), so that it is never followed again
+  // Set once Communities' starter set has been followed
+  // (helpers/communities/starterSet.js), so that it is never followed again
   // and a starter source unfollowed stays unfollowed. Goes in a backup with
   // the followed sources, so a machine restoring one does not follow again
   // what the other machine unfollowed.
-  collectionsStarterSetDone: false,
-  // The sources whose chips are off on Collections, by source id
-  // (helpers/collections/sourceChips.js). What is off rather than what is on,
+  communitiesStarterSetDone: false,
+  // The sources whose chips are off on Communities, by source id
+  // (helpers/communities/sourceChips.js). What is off rather than what is on,
   // as `exploreCategoriesHidden`, so that a source followed later arrives
   // with its chip on. Only what is shown: every source is fetched whatever
   // these say.
-  collectionsSourcesHidden: [],
-  // The order of the collections walls: 'votes', 'shared', 'published' or
-  // 'views' (helpers/collections/shares.js, COLLECTION_SORTS)
-  collectionsSort: 'votes',
+  communitiesSourcesHidden: [],
+  // The order of the communities walls: 'votes', 'shared', 'published' or
+  // 'views' (helpers/communities/shares.js, COMMUNITY_SORTS)
+  communitiesSort: 'votes',
   // Whether that order is descending, the most or the newest first, or
   // reversed; a video without the value sorted on is last either way
-  collectionsSortDescending: true,
+  communitiesSortDescending: true,
   generalAutoLoadMorePaginatedItemsEnabled: false,
   commentAutoLoadEnabled: true,
   hideToTrayOnMinimize: false,

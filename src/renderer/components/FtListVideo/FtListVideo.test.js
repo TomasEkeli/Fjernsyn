@@ -728,26 +728,26 @@ describe('FtListVideo, with a wall\'s own thumbnail badge', () => {
     return html.replaceAll(/<!--[\s\S]*?-->/g, '').replaceAll(/>\s+</g, '><').replaceAll(/\s+/g, ' ')
   }
 
-  const COLLECTION_VIDEO = { ...YOUTUBE_VIDEO, collection: { votes: 35, sharedAt: null, sourceIds: ['hackertube'] } }
+  const COMMUNITY_VIDEO = { ...YOUTUBE_VIDEO, community: { votes: 35, sharedAt: null, sourceIds: ['hackertube'] } }
 
-  it('draws none on a wall that provides none, video with a collection or not', async () => {
-    for (const data of [YOUTUBE_VIDEO, PEERTUBE_VIDEO, COLLECTION_VIDEO]) {
+  it('draws none on a wall that provides none, video with a community or not', async () => {
+    for (const data of [YOUTUBE_VIDEO, PEERTUBE_VIDEO, COMMUNITY_VIDEO]) {
       const { wrapper } = await mountCard(data)
       expect(wrapper.find('.stubBadge').exists()).toBe(false)
     }
   })
 
   it('draws the provided badge on the thumbnail, right after the image, given the card\'s video', async () => {
-    const { wrapper } = await mountCard(COLLECTION_VIDEO, {}, { [THUMBNAIL_BADGE]: StubBadge })
+    const { wrapper } = await mountCard(COMMUNITY_VIDEO, {}, { [THUMBNAIL_BADGE]: StubBadge })
 
     const badge = wrapper.find('.videoThumbnail > .stubBadge')
     expect(badge.text()).toBe(YOUTUBE_ID)
     expect(badge.element.previousElementSibling.classList.contains('thumbnailLink')).toBe(true)
-    expect(wrapper.findComponent(StubBadge).props('video')).toEqual(COLLECTION_VIDEO)
+    expect(wrapper.findComponent(StubBadge).props('video')).toEqual(COMMUNITY_VIDEO)
   })
 
   it('changes nothing else on the card: the badge taken away, the markup is the one a wall without it gets', async () => {
-    for (const data of [YOUTUBE_VIDEO, PEERTUBE_VIDEO, COLLECTION_VIDEO]) {
+    for (const data of [YOUTUBE_VIDEO, PEERTUBE_VIDEO, COMMUNITY_VIDEO]) {
       const plain = (await mountCard(data)).wrapper
       const badged = (await mountCard(data, {}, { [THUMBNAIL_BADGE]: StubBadge })).wrapper
       await flushPromises()

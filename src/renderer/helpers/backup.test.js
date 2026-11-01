@@ -137,8 +137,8 @@ const SECTIONS = {
   settings: SETTINGS,
   channels: [CHANNEL],
   aiVerdicts: [VERDICT],
-  collectionSources: [SOURCE],
-  collectionShares: [SHARE],
+  communitySources: [SOURCE],
+  communityShares: [SHARE],
 }
 
 const KNOWN_SETTINGS = ['maxVolume', 'profilePictures', 'aiChannels', 'proxyHostname', 'installationId']
@@ -483,7 +483,7 @@ describe('the backup format', () => {
 
     describe('the followed sources and their shares', () => {
       it('come after the AI verdicts, in that order', () => {
-        expect(BACKUP_SECTIONS.slice(-3)).toEqual(['aiVerdicts', 'collectionSources', 'collectionShares'])
+        expect(BACKUP_SECTIONS.slice(-3)).toEqual(['aiVerdicts', 'communitySources', 'communityShares'])
       })
 
       it('leave out a source or a share without its required fields', () => {
@@ -494,22 +494,22 @@ describe('the backup format', () => {
           { ...SHARE, _id: 'noVideo', videoId: undefined },
           { ...SHARE, _id: 'noSeenAt', seenAt: '1759572000000' },
         ]
-        const result = readBackup(backupText({ collectionSources: [...sources, SOURCE].map(r => JSON.parse(JSON.stringify(r))), collectionShares: [...shares, SHARE].map(r => JSON.parse(JSON.stringify(r))) }), SETTINGS_CONTEXT)
+        const result = readBackup(backupText({ communitySources: [...sources, SOURCE].map(r => JSON.parse(JSON.stringify(r))), communityShares: [...shares, SHARE].map(r => JSON.parse(JSON.stringify(r))) }), SETTINGS_CONTEXT)
 
-        expect(result.sections.collectionSources).toEqual([SOURCE])
-        expect(result.sections.collectionShares).toEqual([SHARE])
-        expect(result.counts.collectionSources).toEqual({ kept: 1, leftOut: { missingFields: 4 } })
-        expect(result.counts.collectionShares).toEqual({ kept: 1, leftOut: { missingFields: 4 } })
+        expect(result.sections.communitySources).toEqual([SOURCE])
+        expect(result.sections.communityShares).toEqual([SHARE])
+        expect(result.counts.communitySources).toEqual({ kept: 1, leftOut: { missingFields: 4 } })
+        expect(result.counts.communityShares).toEqual({ kept: 1, leftOut: { missingFields: 4 } })
       })
 
       it('take a source without this machine\'s refresh times, whatever the file says', () => {
-        const result = readBackup(backupText({ collectionSources: [{ ...SOURCE, checkedAt: 1, attemptedAt: 2, failedAt: 3, dataGenerated: '2026-10-31' }] }), SETTINGS_CONTEXT)
+        const result = readBackup(backupText({ communitySources: [{ ...SOURCE, checkedAt: 1, attemptedAt: 2, failedAt: 3, dataGenerated: '2026-10-31' }] }), SETTINGS_CONTEXT)
 
-        expect(result.sections.collectionSources).toEqual([SOURCE])
+        expect(result.sections.communitySources).toEqual([SOURCE])
       })
 
       it('never replace what is followed with nothing: no source, and the shares are not restored either', () => {
-        for (const sections of [{ collectionSources: [], collectionShares: [SHARE] }, { collectionShares: [SHARE] }, { collectionSources: [{ _id: 'bad' }], collectionShares: [] }]) {
+        for (const sections of [{ communitySources: [], communityShares: [SHARE] }, { communityShares: [SHARE] }, { communitySources: [{ _id: 'bad' }], communityShares: [] }]) {
           const result = readBackup(backupText({ ...sections, searchHistory: [SEARCH] }), SETTINGS_CONTEXT)
 
           expect(Object.keys(result.sections), JSON.stringify(sections)).toEqual(['searchHistory'])

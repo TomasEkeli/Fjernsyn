@@ -3,7 +3,7 @@
   "touched": [
     {
       "path": "package.json",
-      "reason": "the registry check and upstream report scripts; dev dependencies for renderer tests (jsdom, Vue test utils, the single file component plugin); the get-hackertube script, which makes the Collections bundle (_scripts/getHackerTubeBundle.mjs)"
+      "reason": "the registry check and upstream report scripts; dev dependencies for renderer tests (jsdom, Vue test utils, the single file component plugin); the get-hackertube script, which makes the Communities bundle (_scripts/getHackerTubeBundle.mjs)"
     },
     {
       "path": "pnpm-lock.yaml",
@@ -11,31 +11,31 @@
     },
     {
       "path": "_scripts/webpack.renderer.config.js",
-      "reason": "bakes in FT_COLLECTIONS_CRAWL_LIMIT, the Collections crawl's cap on requests, and FT_COLLECTIONS_CRAWL_DELAY_MS, its wait between requests, in a development build only (src/renderer/helpers/collections/crawlLimit.js)"
+      "reason": "bakes in FT_COMMUNITIES_CRAWL_LIMIT, the Communities crawl's cap on requests, and FT_COMMUNITIES_CRAWL_DELAY_MS, its wait between requests, in a development build only (src/renderer/helpers/communities/crawlLimit.js)"
     },
     {
       "path": "src/constants.js",
-      "reason": "the PeerTube download IPC channels (PEERTUBE_DOWNLOAD, _CANCEL, _REVEAL, _DISMISS, _LIST_DOWNLOADS); Collections' IPC channels (DB_COLLECTIONS, SYNC_COLLECTIONS), DBActions.COLLECTIONS and SyncEvents.COLLECTIONS, the videos' details (FIND_VIDEOS, PUT_VIDEOS) and unfollowing (REMOVE_SOURCE) included; the crawl's claim channels (COLLECTIONS_CRAWL_CLAIM, COLLECTIONS_CRAWL_RELEASE)"
+      "reason": "the PeerTube download IPC channels (PEERTUBE_DOWNLOAD, _CANCEL, _REVEAL, _DISMISS, _LIST_DOWNLOADS); Communities' IPC channels (DB_COMMUNITIES, SYNC_COMMUNITIES), DBActions.COMMUNITIES and SyncEvents.COMMUNITIES, the videos' details (FIND_VIDEOS, PUT_VIDEOS) and unfollowing (REMOVE_SOURCE) included; the crawl's claim channels (COMMUNITIES_CRAWL_CLAIM, COMMUNITIES_CRAWL_RELEASE)"
     },
     {
       "path": "src/datastores/handlers/base.js",
-      "reason": "the Collections handler class (sources by id, shares only ever added or updated, videos' details by video ref, each source's own data by source id; unfollowing removes a source with its shares and its own data), and its four datastores loaded and compacted with the others; its write queue exported, so that the kept backup's merge writes the sources in turn with it"
+      "reason": "the Communities handler class (sources by id, shares only ever added or updated, videos' details by video ref, each source's own data by source id; unfollowing removes a source with its shares and its own data), and its four datastores loaded and compacted with the others; its write queue exported, so that the kept backup's merge writes the sources in turn with it"
     },
     {
       "path": "src/datastores/handlers/electron.js",
-      "reason": "the Collections handler class, through dbCollections"
+      "reason": "the Communities handler class, through dbCommunities"
     },
     {
       "path": "src/datastores/handlers/index.js",
-      "reason": "exports DBCollectionHandlers"
+      "reason": "exports DBCommunityHandlers"
     },
     {
       "path": "src/datastores/handlers/web.js",
-      "reason": "exports the Collections handlers from base"
+      "reason": "exports the Communities handlers from base"
     },
     {
       "path": "src/datastores/index.js",
-      "reason": "Collections' four datastores, collectionSources, collectionShares, collectionVideos and collectionSourceData"
+      "reason": "Communities' four datastores, communitySources, communityShares, communityVideos and communitySourceData"
     },
     {
       "path": "src/main/externalPlayer.js",
@@ -43,15 +43,15 @@
     },
     {
       "path": "src/main/index.js",
-      "reason": "onBeforeSendHeaders hands every request to the PeerTube User-Agent helper (src/main/peertubeRequests.js) first; registers the PeerTube download handlers (src/main/peertubeDownloads/ipc.js) next to the yt-dlp ones; handles DB_COLLECTIONS, Collections' sources, shares and videos' details, beside the Later list's handler, by handing it to src/main/collectionsDb.js; grants the Collections crawl to one window at a time (src/main/collectionsCrawlClaim.js)"
+      "reason": "onBeforeSendHeaders hands every request to the PeerTube User-Agent helper (src/main/peertubeRequests.js) first; registers the PeerTube download handlers (src/main/peertubeDownloads/ipc.js) next to the yt-dlp ones; handles DB_COMMUNITIES, Communities' sources, shares and videos' details, beside the Later list's handler, by handing it to src/main/communitiesDb.js; grants the Communities crawl to one window at a time (src/main/communitiesCrawlClaim.js)"
     },
     {
       "path": "src/preload/interface.js",
-      "reason": "the PeerTube download functions (peerTubeDownload, peerTubeCancel, peerTubeReveal, peerTubeDismiss, peerTubeListDownloads); Collections' dbCollections and handleSyncCollections; claimCollectionsCrawl and releaseCollectionsCrawl"
+      "reason": "the PeerTube download functions (peerTubeDownload, peerTubeCancel, peerTubeReveal, peerTubeDismiss, peerTubeListDownloads); Communities' dbCommunities and handleSyncCommunities; claimCommunitiesCrawl and releaseCommunitiesCrawl"
     },
     {
       "path": "src/renderer/App.vue",
-      "reason": "the deep link handler (`enableOpenUrl`) hands a `fjernsyn://` link to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `handleYoutubeLink` only when that hands it back (always, while PeerTube is off); in-app link clicks unchanged; loads Collections' sources and shares at startup (grabCollections) and listens for other windows' writes to them (setupCollectionsSync)"
+      "reason": "the deep link handler (`enableOpenUrl`) hands a `fjernsyn://` link to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `handleYoutubeLink` only when that hands it back (always, while PeerTube is off); in-app link clicks unchanged; loads Communities' sources and shares at startup (grabCommunities) and listens for other windows' writes to them (setupCommunitiesSync)"
     },
     {
       "path": "src/renderer/components/DataSettings/DataSettings.vue",
@@ -71,7 +71,7 @@
     },
     {
       "path": "src/renderer/components/FtListVideo/FtListVideo.vue",
-      "reason": "hooks gated on a PeerTube record (src/renderer/platform/cards.js): watch and channel routes, thumbnail, canonical share entries in place of YouTube and Invidious ones, external player `videoUrl` with no playlist, no DeArrow, no SponsorBlock channel entry; the history entry, playlist item and quick bookmark it writes keep `platform`, `host` and `thumbnail` (and a plain-text description) through `platformRecordFields`; draws a badge a wall provides under `THUMBNAIL_BADGE` (src/renderer/helpers/thumbnailBadge.js) at the thumbnail's top left, which only the collections walls do, for the vote badge"
+      "reason": "hooks gated on a PeerTube record (src/renderer/platform/cards.js): watch and channel routes, thumbnail, canonical share entries in place of YouTube and Invidious ones, external player `videoUrl` with no playlist, no DeArrow, no SponsorBlock channel entry; the history entry, playlist item and quick bookmark it writes keep `platform`, `host` and `thumbnail` (and a plain-text description) through `platformRecordFields`; draws a badge a wall provides under `THUMBNAIL_BADGE` (src/renderer/helpers/thumbnailBadge.js) at the thumbnail's top left, which only the communities walls do, for the vote badge"
     },
     {
       "path": "src/renderer/components/FtPlaylistSelector/FtPlaylistSelector.vue",
@@ -87,7 +87,7 @@
     },
     {
       "path": "src/renderer/components/TopNav/TopNav.vue",
-      "reason": "the search bar (`goToSearch`, now async) hands its text to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `getYoutubeUrlInfo` only when that hands it back (always, while PeerTube is off); for the layer's search page: the pill (src/renderer/components/LayerSearchPill) in place of the filter button, a plain search goes to the route src/renderer/components/LayerSearchPill/searchBox.js builds instead of one from the store's searchSettings, and an operator's values are the suggestions once its key and colon are typed; the Collections link, after Channels, and the Sources link after it"
+      "reason": "the search bar (`goToSearch`, now async) hands its text to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `getYoutubeUrlInfo` only when that hands it back (always, while PeerTube is off); for the layer's search page: the pill (src/renderer/components/LayerSearchPill) in place of the filter button, a plain search goes to the route src/renderer/components/LayerSearchPill/searchBox.js builds instead of one from the store's searchSettings, and an operator's values are the suggestions once its key and colon are typed; the Communities link, after Channels, and the Sources link after it"
     },
     {
       "path": "src/renderer/components/WatchVideoPlaylist/WatchVideoPlaylist.vue",
@@ -99,11 +99,11 @@
     },
     {
       "path": "src/renderer/helpers/api/local.js",
-      "reason": "getLocalPlayerResponse, a video's raw plain /player response, for the Collections crawl (src/renderer/helpers/collections/crawlRunner.js)"
+      "reason": "getLocalPlayerResponse, a video's raw plain /player response, for the Communities crawl (src/renderer/helpers/communities/crawlRunner.js)"
     },
     {
       "path": "src/renderer/helpers/strings.js",
-      "reason": "translateWindowTitle names the Collections and Sources routes' window titles"
+      "reason": "translateWindowTitle names the Communities and Sources routes' window titles"
     },
     {
       "path": "src/renderer/main.js",
@@ -111,15 +111,15 @@
     },
     {
       "path": "src/renderer/router/index.js",
-      "reason": "the PeerTube routes (the layer's watch, channel and search views) spread in from src/renderer/platform/routes.js; `/search/:query` renders the layer's search page (src/renderer/views/LayerSearchPage), imported in place of SearchPage, which stays in the tree unrouted (shadowed); `/channel/:id/:currentTab?` renders `ChannelSurface` from src/renderer/platform/routes.js, upstream's Channel while the surface switch (enableLayerSurfaces) is off and the layer's channel view while it is on, imported in place of Channel; `/watch/:id` likewise renders `WatchSurface`, upstream's Watch or the layer's watch view, imported in place of Watch; the `/collections` route (src/renderer/views/Collections/), `/sources` (src/renderer/views/Sources/) and a source's own page, `/sources/:sourceId` (src/renderer/views/CollectionSource/)"
+      "reason": "the PeerTube routes (the layer's watch, channel and search views) spread in from src/renderer/platform/routes.js; `/search/:query` renders the layer's search page (src/renderer/views/LayerSearchPage), imported in place of SearchPage, which stays in the tree unrouted (shadowed); `/channel/:id/:currentTab?` renders `ChannelSurface` from src/renderer/platform/routes.js, upstream's Channel while the surface switch (enableLayerSurfaces) is off and the layer's channel view while it is on, imported in place of Channel; `/watch/:id` likewise renders `WatchSurface`, upstream's Watch or the layer's watch view, imported in place of Watch; the `/communities` route (src/renderer/views/Communities/), `/sources` (src/renderer/views/Sources/) and a source's own page, `/sources/:sourceId` (src/renderer/views/CommunitySource/)"
     },
     {
       "path": "src/renderer/store/index.js",
-      "reason": "registers the collections store module"
+      "reason": "registers the communities store module"
     },
     {
       "path": "src/renderer/store/modules/settings.js",
-      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw; the layer search page's: defaultSearchScope, searchRememberedParameters, searchLatched; the surface switch: enableLayerSurfaces; Collections' collectionsStarterSetDone, the mark that the starter set has been followed once; collectionsSourcesHidden, the sources whose chips are off on Collections; collectionsSort, the order of the collections walls; collectionsSortDescending, whether that order is reversed"
+      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw; the layer search page's: defaultSearchScope, searchRememberedParameters, searchLatched; the surface switch: enableLayerSurfaces; Communities' communitiesStarterSetDone, the mark that the starter set has been followed once; communitiesSourcesHidden, the sources whose chips are off on Communities; communitiesSort, the order of the communities walls; communitiesSortDescending, whether that order is reversed"
     },
     {
       "path": "src/renderer/views/Settings/Settings.vue",
@@ -127,7 +127,7 @@
     },
     {
       "path": "static/locales/en-US.yaml",
-      "reason": "the fork-only PeerTube, Layer Search and Layer Surfaces strings; the Collections and Sources strings, and the names of their two backup sections"
+      "reason": "the fork-only PeerTube, Layer Search and Layer Surfaces strings; the Communities and Sources strings, and the names of their two backup sections"
     }
   ],
   "shadowed": {

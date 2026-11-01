@@ -281,45 +281,45 @@ class Later {
   }
 }
 
-class Collections {
+class Communities {
   static findSources() {
-    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.FIND_SOURCES)
+    return window.ftElectron.dbCommunities(DBActions.COMMUNITIES.FIND_SOURCES)
   }
 
   static findShares() {
-    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.FIND_SHARES)
+    return window.ftElectron.dbCommunities(DBActions.COMMUNITIES.FIND_SHARES)
   }
 
   static upsertSource(source) {
-    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.UPSERT_SOURCE, source)
+    return window.ftElectron.dbCommunities(DBActions.COMMUNITIES.UPSERT_SOURCE, source)
   }
 
   static putShares(shares) {
-    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.PUT_SHARES, shares)
+    return window.ftElectron.dbCommunities(DBActions.COMMUNITIES.PUT_SHARES, shares)
   }
 
   static updateSource(source) {
-    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.UPDATE_SOURCE, source)
+    return window.ftElectron.dbCommunities(DBActions.COMMUNITIES.UPDATE_SOURCE, source)
   }
 
   static removeSource(sourceId) {
-    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.REMOVE_SOURCE, sourceId)
+    return window.ftElectron.dbCommunities(DBActions.COMMUNITIES.REMOVE_SOURCE, sourceId)
   }
 
   static findVideos() {
-    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.FIND_VIDEOS)
+    return window.ftElectron.dbCommunities(DBActions.COMMUNITIES.FIND_VIDEOS)
   }
 
   static putVideos(videos) {
-    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.PUT_VIDEOS, videos)
+    return window.ftElectron.dbCommunities(DBActions.COMMUNITIES.PUT_VIDEOS, videos)
   }
 
   static findSourceData() {
-    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.FIND_SOURCE_DATA)
+    return window.ftElectron.dbCommunities(DBActions.COMMUNITIES.FIND_SOURCE_DATA)
   }
 
   static putSourceData(record) {
-    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.PUT_SOURCE_DATA, record)
+    return window.ftElectron.dbCommunities(DBActions.COMMUNITIES.PUT_SOURCE_DATA, record)
   }
 }
 
@@ -333,5 +333,5 @@ export {
   Channels as channels,
   AiVerdicts as aiVerdicts,
   Later as later,
-  Collections as collections,
+  Communities as communities,
 }

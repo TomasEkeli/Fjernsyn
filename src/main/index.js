@@ -31,8 +31,8 @@ import contextMenu from 'electron-context-menu'
 import packageDetails from '../../package.json'
 import { registerBackupHandlers } from './backup/ipc'
 import { registerKeeper } from './backup/keeperIpc'
-import { createCollectionsCrawlClaim } from './collectionsCrawlClaim'
-import { handleCollectionsDb } from './collectionsDb'
+import { createCommunitiesCrawlClaim } from './communitiesCrawlClaim'
+import { handleCommunitiesDb } from './communitiesDb'
 import { handleOpenInExternalPlayer } from './externalPlayer'
 import { holdFullscreen, isFullscreenHeld, releaseFullscreen } from './fullscreenHold'
 import { registerPeerTubeDownloadHandlers } from './peertubeDownloads/ipc'
@@ -2568,35 +2568,35 @@ function runApp() {
   })
 
   // *********** //
-  // Collections: the followed sources, their shares, and the videos' details
-  ipcMain.handle(IpcChannels.DB_COLLECTIONS, (event, { action, data }) => {
+  // Communities: the followed sources, their shares, and the videos' details
+  ipcMain.handle(IpcChannels.DB_COMMUNITIES, (event, { action, data }) => {
     if (!isFreeTubeUrl(event.senderFrame.url)) {
       return
     }
 
-    return handleCollectionsDb(action, data, {
-      handlers: baseHandlers.collections,
-      syncOthers: payload => syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, payload),
+    return handleCommunitiesDb(action, data, {
+      handlers: baseHandlers.communities,
+      syncOthers: payload => syncOtherWindows(IpcChannels.SYNC_COMMUNITIES, event, payload),
     })
   })
 
-  // Collections: which window runs the crawl, one at a time
-  const collectionsCrawlClaim = createCollectionsCrawlClaim()
+  // Communities: which window runs the crawl, one at a time
+  const communitiesCrawlClaim = createCommunitiesCrawlClaim()
 
-  ipcMain.handle(IpcChannels.COLLECTIONS_CRAWL_CLAIM, (event) => {
+  ipcMain.handle(IpcChannels.COMMUNITIES_CRAWL_CLAIM, (event) => {
     if (!isFreeTubeUrl(event.senderFrame.url)) {
       return false
     }
 
-    return collectionsCrawlClaim.claim(event.sender)
+    return communitiesCrawlClaim.claim(event.sender)
   })
 
-  ipcMain.on(IpcChannels.COLLECTIONS_CRAWL_RELEASE, (event) => {
+  ipcMain.on(IpcChannels.COMMUNITIES_CRAWL_RELEASE, (event) => {
     if (!isFreeTubeUrl(event.senderFrame.url)) {
       return
     }
 
-    collectionsCrawlClaim.release(event.sender)
+    communitiesCrawlClaim.release(event.sender)
   })
 
   // *********** //

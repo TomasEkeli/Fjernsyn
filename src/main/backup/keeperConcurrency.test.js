@@ -36,9 +36,9 @@ const DATASTORE_FILES = {
   channels: 'channels',
   aiVerdicts: 'ai-verdicts',
   later: 'later',
-  collectionSources: 'collection-sources',
-  collectionShares: 'collection-shares',
-  collectionSourceData: 'collection-source-data',
+  communitySources: 'community-sources',
+  communityShares: 'community-shares',
+  communitySourceData: 'community-source-data',
 }
 
 const MAIN_PROFILE = { _id: 'allChannels', name: 'All Channels', bgColor: '#000000', textColor: '#FFFFFF', subscriptions: [] }

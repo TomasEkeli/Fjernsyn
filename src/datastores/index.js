@@ -49,16 +49,16 @@ export const aiVerdicts = createDatastore('ai-verdicts')
 // The Later list, one record per video, by the video's ref: what to watch
 // later, in an order of its own, and which upcoming events are armed
 export const later = createDatastore('later')
-// Collections: the followed sources, one record per source, and their
+// Communities: the followed sources, one record per source, and their
 // shares, one record per source per video; a share is never dropped while
 // its source is followed
-export const collectionSources = createDatastore('collection-sources')
-export const collectionShares = createDatastore('collection-shares')
-// Collections: each collection video's own details, by the video's ref, as
+export const communitySources = createDatastore('community-sources')
+export const communityShares = createDatastore('community-shares')
+// Communities: each community video's own details, by the video's ref, as
 // the crawl fetched them; kept apart from the shares, which stay what their
 // sources said
-export const collectionVideos = createDatastore('collection-videos')
-// Collections: what a source has of its own besides its shares and too large
+export const communityVideos = createDatastore('community-videos')
+// Communities: what a source has of its own besides its shares and too large
 // to rewrite with its record on every refresh (HackerTube's taxonomy), one
 // record per source; rebuilt from the bundle and the update, never backed up
-export const collectionSourceData = createDatastore('collection-source-data')
+export const communitySourceData = createDatastore('community-source-data')

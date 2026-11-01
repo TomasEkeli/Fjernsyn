@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   DBAiVerdictHandlers,
   DBChannelHandlers,
-  DBCollectionHandlers,
+  DBCommunityHandlers,
   DBHistoryHandlers,
   DBLaterHandlers,
   DBPlaylistHandlers,
@@ -53,7 +53,7 @@ vi.mock('../../../datastores/handlers/index', () => {
   return {
     DBAiVerdictHandlers: handler(),
     DBChannelHandlers: handler(),
-    DBCollectionHandlers: { findSources: vi.fn(async () => []), findShares: vi.fn(async () => []) },
+    DBCommunityHandlers: { findSources: vi.fn(async () => []), findShares: vi.fn(async () => []) },
     DBHistoryHandlers: handler(),
     DBLaterHandlers: handler(),
     DBPlaylistHandlers: handler(),
@@ -128,11 +128,11 @@ beforeEach(() => {
   DBSettingHandlers.find.mockResolvedValue(STORED_SETTINGS)
   DBChannelHandlers.find.mockResolvedValue([CHANNEL])
   DBAiVerdictHandlers.find.mockResolvedValue([VERDICT])
-  DBCollectionHandlers.findSources.mockResolvedValue([
+  DBCommunityHandlers.findSources.mockResolvedValue([
     { ...HACKERTUBE, dataGenerated: '2026-10-31', checkedAt: 9, attemptedAt: 9, failedAt: null },
     { ...LEMMY, checkedAt: 9, attemptedAt: 9, failedAt: 8 },
   ])
-  DBCollectionHandlers.findShares.mockResolvedValue([HACKERTUBE_SHARE, LEMMY_SHARE])
+  DBCommunityHandlers.findShares.mockResolvedValue([HACKERTUBE_SHARE, LEMMY_SHARE])
 
   window.ftElectron = {
     getBackupFolder: vi.fn(async () => BACKUP_FOLDER),
@@ -257,14 +257,14 @@ describe('the Backup group', () => {
     it('leaves out the subscription cache', async () => {
       const { document } = await exportBackup()
 
-      expect(Object.keys(document.sections)).toEqual(['profiles', 'history', 'playlists', 'later', 'searchHistory', 'settings', 'channels', 'aiVerdicts', 'collectionSources', 'collectionShares'])
+      expect(Object.keys(document.sections)).toEqual(['profiles', 'history', 'playlists', 'later', 'searchHistory', 'settings', 'channels', 'aiVerdicts', 'communitySources', 'communityShares'])
     })
 
     it('writes the followed sources without this machine\'s refresh times, and the shares of all but HackerTube', async () => {
       const { document } = await exportBackup()
 
-      expect(document.sections.collectionSources).toEqual([HACKERTUBE, LEMMY])
-      expect(document.sections.collectionShares).toEqual([LEMMY_SHARE])
+      expect(document.sections.communitySources).toEqual([HACKERTUBE, LEMMY])
+      expect(document.sections.communityShares).toEqual([LEMMY_SHARE])
     })
 
     it('still writes the backup when main cannot say the machine name, without one', async () => {
@@ -344,11 +344,11 @@ describe('the Backup group', () => {
     })
 
     it('names the followed sources and their shares among what the backup holds', async () => {
-      await chooseBackup(backupFile({ collectionSources: [HACKERTUBE, LEMMY], collectionShares: [LEMMY_SHARE] }))
+      await chooseBackup(backupFile({ communitySources: [HACKERTUBE, LEMMY], communityShares: [LEMMY_SHARE] }))
 
       const text = confirmation().textContent
-      expect(text).toContain('Followed sources in Collections: 2')
-      expect(text).toContain('Videos the Collections sources shared: 1')
+      expect(text).toContain('Followed sources in Communities: 2')
+      expect(text).toContain('Videos the Communities sources shared: 1')
     })
 
     it('says when the backup is from this installation, and on which machine', async () => {

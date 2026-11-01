@@ -312,11 +312,11 @@ Explore:
   Nothing to Explore: YouTube is not offering anything to explore in this region.
   Load More: Load More
 # The wall of videos the followed sources (HackerTube, communities) have shared
-Collections:
-  Collections: Collections
+Communities:
+  Communities: Communities
   Load More: Load More
   Nothing Shared: Nothing has been shared here yet.
-  Load Failed: The videos that come with Fjernsyn could not be loaded. Open Collections again to try once more.
+  Load Failed: The videos that come with Fjernsyn could not be loaded. Open Communities again to try once more.
   # The credit HackerTube's licence asks for. {hackertube}, {dataset} and
   # {licence} are links named HackerTube, open-index/hacker-news and ODC-By 1.0
   HackerTube Credit: Videos and notes from {hackertube}, built on the {dataset} dataset, under {licence}.
@@ -355,7 +355,7 @@ Collections:
   All Categories: All
   # Instead of the wall, when no video shown is in the category chosen
   Nothing In Category: Nothing here is in this category.
-  # The quiet badge at the top left of a card's thumbnail on Collections and
+  # The quiet badge at the top left of a card's thumbnail on Communities and
   # on a source's page, and what hovering it shows
   Vote Badge:
     # The badge itself, and each source's votes on hovering it. {arrow} is
@@ -372,7 +372,7 @@ Collections:
     # On a source's page: the link to the post or comment that shared the
     # video, which opens in the browser
     Discussion: Open the discussion
-# The list of sources Collections follows (HackerTube, Lemmy communities), where
+# The list of sources Communities follows (HackerTube, Lemmy communities), where
 # one is followed by pasting its address, and each source's own page
 Sources:
   Sources: Sources
@@ -400,7 +400,7 @@ Sources:
   Unfollow Prompt: 'Unfollow {name}?'
   # In the prompt before unfollowing: its videos go, and a feed only lists its
   # latest posts, so following it again does not bring back the older ones
-  Unfollow Prompt Detail: Its videos leave Collections. Following it again brings back only what its feed still lists.
+  Unfollow Prompt Detail: Its videos leave Communities. Following it again brings back only what its feed still lists.
   Unfollowed: 'Unfollowed {name}'
   Unfollow Failed: 'Could not unfollow {name}'
   # On the page of a source no longer followed. {sources} is a link to the
@@ -1094,8 +1094,8 @@ Settings:
         Settings: Settings
         Channels: Channel tags and Probe samples
         AI verdicts: AI labels already checked
-        Collection sources: Followed sources in Collections
-        Collection shares: Videos the Collections sources shared
+        Community sources: Followed sources in Communities
+        Community shares: Videos the Communities sources shared
       Restoring: Restoring the backup. Fjernsyn restarts when it is done.
       Failed: 'The restore failed: {error}. Some sections may already be replaced. Your data from before the restore is in {path}; restore that file to go back.'
       Failed before writing: 'The restore failed, and nothing was changed: {error}'
