@@ -1,7 +1,16 @@
 import { computed, reactive } from 'vue'
 import { describe, expect, it } from 'vitest'
 
-import { shareId, sharesToPut, shareVideoKey, wallVideos } from './shares'
+import {
+  COLLECTION_SORTS,
+  collectionSortOf,
+  collectionValues,
+  DEFAULT_COLLECTION_SORT,
+  shareId,
+  sharesToPut,
+  shareVideoKey,
+  wallVideos
+} from './shares'
 
 /**
  * @param {string} sourceId
@@ -220,6 +229,199 @@ describe('the wall\'s videos, with their details', () => {
     })
 
     expect(video.lengthSeconds).toBe(213)
+  })
+})
+
+describe('a video\'s values, from its shares and the sources shown', () => {
+  const shares = [
+    share('hackertube', 'aaaaaaaaaaa', { votes: 12.5, sharedAt: Date.UTC(2019, 0, 1) }),
+    share('lemmy:a@x.y', 'aaaaaaaaaaa', { votes: 40, sharedAt: Date.UTC(2026, 9, 3) }),
+    share('lemmy:b@x.y', 'aaaaaaaaaaa', { votes: 7, sharedAt: Date.UTC(2026, 9, 30) }),
+  ]
+
+  it('sums the votes of every share and takes the latest date when every source is shown', () => {
+    expect(collectionValues(shares, null)).toEqual({
+      votes: 59.5,
+      sharedAt: Date.UTC(2026, 9, 30),
+      sourceIds: ['hackertube', 'lemmy:a@x.y', 'lemmy:b@x.y'],
+    })
+  })
+
+  it('counts only the shares of the sources shown: their votes, their latest date', () => {
+    expect(collectionValues(shares, new Set(['hackertube', 'lemmy:a@x.y']))).toEqual({
+      votes: 52.5,
+      sharedAt: Date.UTC(2026, 9, 3),
+      sourceIds: ['hackertube', 'lemmy:a@x.y'],
+    })
+  })
+
+  it('on a source\'s page is that source\'s share alone: its votes and its date', () => {
+    expect(collectionValues(shares, new Set(['hackertube']))).toEqual({
+      votes: 12.5,
+      sharedAt: Date.UTC(2019, 0, 1),
+      sourceIds: ['hackertube'],
+    })
+  })
+
+  it('has no sources, votes or date when no source that shared it is shown', () => {
+    expect(collectionValues(shares, new Set(['lemmy:c@x.y']))).toEqual({ votes: null, sharedAt: null, sourceIds: [] })
+    expect(collectionValues(shares, new Set())).toEqual({ votes: null, sharedAt: null, sourceIds: [] })
+  })
+
+  it('has no votes when no shown share has any, whether null or never given', () => {
+    const { votes: _absent, ...unvoted } = share('lemmy:b@x.y', 'aaaaaaaaaaa')
+
+    expect(collectionValues([share('lemmy:a@x.y', 'aaaaaaaaaaa', { votes: null }), unvoted], null).votes).toBeNull()
+  })
+
+  it('sums only the shares that have votes, and counts zero as votes', () => {
+    expect(collectionValues([share('a', 'aaaaaaaaaaa', { votes: null }), share('b', 'aaaaaaaaaaa', { votes: 0 })], null).votes).toBe(0)
+    expect(collectionValues([share('a', 'aaaaaaaaaaa', { votes: null }), share('b', 'aaaaaaaaaaa', { votes: 3 })], null).votes).toBe(3)
+  })
+
+  it('leaves the votes of a hidden source out even when only it voted', () => {
+    const values = collectionValues([share('a', 'aaaaaaaaaaa', { votes: 9 }), share('b', 'aaaaaaaaaaa', { votes: null })], new Set(['b']))
+
+    expect(values.votes).toBeNull()
+    expect(values.sourceIds).toEqual(['b'])
+  })
+
+  it('has no date when no shown share has one', () => {
+    expect(collectionValues([share('a', 'aaaaaaaaaaa', { sharedAt: null })], null).sharedAt).toBeNull()
+  })
+
+  it('names each shown source once, in the order of its shares', () => {
+    expect(collectionValues([share('b', 'aaaaaaaaaaa'), share('a', 'aaaaaaaaaaa'), share('b', 'aaaaaaaaaaa')], null).sourceIds).toEqual(['b', 'a'])
+  })
+})
+
+describe('the wall of the sources shown', () => {
+  it('leaves off a video shared only by sources not shown, and keeps one any shown source shared', () => {
+    const videos = wallVideos([
+      share('a', 'aaaaaaaaaaa'),
+      share('b', 'bbbbbbbbbbb'),
+      share('a', 'ccccccccccc'),
+      share('b', 'ccccccccccc'),
+    ], {}, { shown: new Set(['a']) })
+
+    expect(videos.map(video => video.videoId).sort()).toEqual(['aaaaaaaaaaa', 'ccccccccccc'])
+  })
+
+  it('orders by the votes of the shown shares alone, as the badge counts them', () => {
+    const shares = [
+      share('a', 'aaaaaaaaaaa', { votes: 10 }),
+      share('b', 'aaaaaaaaaaa', { votes: 100 }),
+      share('a', 'bbbbbbbbbbb', { votes: 20 }),
+    ]
+
+    expect(wallVideos(shares).map(video => video.videoId)).toEqual(['aaaaaaaaaaa', 'bbbbbbbbbbb'])
+
+    const shownA = wallVideos(shares, {}, { shown: new Set(['a']) })
+
+    expect(shownA.map(video => video.videoId)).toEqual(['bbbbbbbbbbb', 'aaaaaaaaaaa'])
+    expect(shownA[1].collection).toEqual({ votes: 10, sharedAt: Date.UTC(2020, 0, 1), sourceIds: ['a'] })
+  })
+
+  it('takes the title and channel name from a shown share, not a hidden one', () => {
+    const [video] = wallVideos([
+      share('a', 'aaaaaaaaaaa', { title: 'Hidden title', author: 'Hidden channel' }),
+      share('b', 'aaaaaaaaaaa', { title: 'Shown title', author: '' }),
+    ], {}, { shown: new Set(['b']) })
+
+    expect(video.title).toBe('Shown title')
+    expect(video.author).toBe('')
+  })
+
+  it('shows every source when none is named, as before', () => {
+    expect(wallVideos([share('a', 'aaaaaaaaaaa'), share('b', 'bbbbbbbbbbb')], {}, { shown: null })).toHaveLength(2)
+  })
+})
+
+describe('the wall\'s sorts', () => {
+  const details = (videoId, extra) => ({ _id: videoId, videoId, fetchedAt: 1, title: '', author: '', authorId: '', lengthSeconds: 60, viewCount: null, published: null, ...extra })
+
+  const shares = [
+    share('a', 'aaaaaaaaaaa', { votes: 30, sharedAt: Date.UTC(2020, 0, 1) }),
+    share('a', 'bbbbbbbbbbb', { votes: 10, sharedAt: Date.UTC(2026, 9, 1) }),
+    share('b', 'ccccccccccc', { votes: null, sharedAt: Date.UTC(2024, 5, 1) }),
+    share('b', 'ddddddddddd', { votes: 20, sharedAt: null }),
+  ]
+
+  const kept = {
+    aaaaaaaaaaa: details('aaaaaaaaaaa', { viewCount: 500, published: Date.UTC(2010, 0, 1) }),
+    bbbbbbbbbbb: details('bbbbbbbbbbb', { viewCount: 9000, published: null }),
+    ccccccccccc: details('ccccccccccc', { viewCount: 0, published: Date.UTC(2023, 0, 1) }),
+  }
+
+  const order = sort => wallVideos(shares, kept, { sort }).map(video => video.videoId)
+
+  it('offers four sorts, upvotes first among them by default', () => {
+    expect([...COLLECTION_SORTS].sort()).toEqual(['published', 'shared', 'views', 'votes'])
+    expect(DEFAULT_COLLECTION_SORT).toBe('votes')
+  })
+
+  it('by upvotes: most first, a video without votes last', () => {
+    expect(order('votes')).toEqual(['aaaaaaaaaaa', 'ddddddddddd', 'bbbbbbbbbbb', 'ccccccccccc'])
+  })
+
+  it('is by upvotes when no sort is given', () => {
+    expect(wallVideos(shares, kept).map(video => video.videoId)).toEqual(order('votes'))
+  })
+
+  it('by shared on community: the latest shown share first, a video with no date last', () => {
+    expect(order('shared')).toEqual(['bbbbbbbbbbb', 'ccccccccccc', 'aaaaaaaaaaa', 'ddddddddddd'])
+  })
+
+  it('by video published: newest first, a video whose details have no date, or that has no details, last', () => {
+    expect(order('published')).toEqual(['ccccccccccc', 'aaaaaaaaaaa', 'ddddddddddd', 'bbbbbbbbbbb'])
+  })
+
+  it('by views: most first, zero before unknown, a video without details last', () => {
+    expect(order('views')).toEqual(['bbbbbbbbbbb', 'aaaaaaaaaaa', 'ccccccccccc', 'ddddddddddd'])
+  })
+
+  it('breaks a tie on the sorted value by votes, then the latest share, then the video id', () => {
+    const tied = [
+      share('a', 'bbbbbbbbbbb', { votes: 1, sharedAt: Date.UTC(2020, 0, 1) }),
+      share('a', 'aaaaaaaaaaa', { votes: 1, sharedAt: Date.UTC(2020, 0, 1) }),
+      share('a', 'ccccccccccc', { votes: 1, sharedAt: Date.UTC(2021, 0, 1) }),
+      share('a', 'ddddddddddd', { votes: 2, sharedAt: Date.UTC(2020, 0, 1) }),
+    ]
+
+    expect(wallVideos(tied, {}, { sort: 'views' }).map(video => video.videoId))
+      .toEqual(['ddddddddddd', 'ccccccccccc', 'aaaaaaaaaaa', 'bbbbbbbbbbb'])
+    expect(wallVideos(tied, {}, { sort: 'shared' }).map(video => video.videoId))
+      .toEqual(['ccccccccccc', 'ddddddddddd', 'aaaaaaaaaaa', 'bbbbbbbbbbb'])
+  })
+
+  it('sorts on the values of the shown shares: by shared on community, a hidden source\'s later date does not count', () => {
+    const two = [
+      share('a', 'aaaaaaaaaaa', { sharedAt: Date.UTC(2020, 0, 1) }),
+      share('b', 'aaaaaaaaaaa', { sharedAt: Date.UTC(2026, 0, 1) }),
+      share('a', 'bbbbbbbbbbb', { sharedAt: Date.UTC(2022, 0, 1) }),
+    ]
+
+    expect(wallVideos(two, {}, { sort: 'shared' }).map(video => video.videoId)).toEqual(['aaaaaaaaaaa', 'bbbbbbbbbbb'])
+    expect(wallVideos(two, {}, { sort: 'shared', shown: new Set(['a']) }).map(video => video.videoId)).toEqual(['bbbbbbbbbbb', 'aaaaaaaaaaa'])
+  })
+
+  it('takes a sort it does not know as upvotes', () => {
+    expect(wallVideos(shares, kept, { sort: 'nonsense' }).map(video => video.videoId)).toEqual(order('votes'))
+  })
+})
+
+describe('a stored sort', () => {
+  it('is kept when it is one of the four', () => {
+    for (const sort of COLLECTION_SORTS) {
+      expect(collectionSortOf(sort)).toBe(sort)
+    }
+  })
+
+  it('is upvotes when it is anything else', () => {
+    expect(collectionSortOf('')).toBe('votes')
+    expect(collectionSortOf(undefined)).toBe('votes')
+    expect(collectionSortOf('toString')).toBe('votes')
+    expect(collectionSortOf(3)).toBe('votes')
   })
 })
 

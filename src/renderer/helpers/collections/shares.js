@@ -147,7 +147,9 @@ export function sharesToPut(kept, shares) {
  * @property {number} [lastUpdatedAt] when the details were fetched: part of
  *   the card's key on the wall, so that a card drawn before they came is drawn
  *   again with them, as a card reads its video once
- * @property {{ votes: number | null, sharedAt: number | null, sourceIds: string[] }} collection
+ * @property {CollectionValues} collection what the shares of the sources
+ *   shown say of it (`collectionValues`): what the wall is sorted by, and
+ *   what the vote badge shows
  */
 
 /**
@@ -172,26 +174,129 @@ function withDetails(video, details) {
 }
 
 /**
- * @param {number | null} a
- * @param {number | null} b
+ * @typedef {object} CollectionValues what a video's shares say of it on a
+ *   wall, counting only the shares of the sources shown
+ * @property {number | null} votes the shown shares' votes summed; null when
+ *   none of them has votes (a source kind without votes, or a share whose
+ *   votes could not be read), which is not the same as zero
+ * @property {number | null} sharedAt the latest of the shown shares' dates,
+ *   in ms; null when none has one
+ * @property {string[]} sourceIds the shown sources that shared it, each
+ *   once, in the order of its shares; empty when none of them is shown
+ */
+
+/**
+ * What a video's shares say of it, counting only those of the sources shown:
+ * its votes summed, the latest date it was shared, and which shown sources
+ * shared it. The one answer to these, for the wall's order and for the vote
+ * badge on its card, so that the badge always shows the number the wall is
+ * sorted by.
+ *
+ * On Collections the sources shown are those whose chips are on; on a
+ * source's page, that source alone, so that its own votes and its own dates
+ * are the ones that count there.
+ *
+ * Votes are summed raw: a video shared widely gets every share's votes, which
+ * is intended. A share with no votes, null or never given, adds nothing, and
+ * a video none of whose shown shares has votes has none, not zero.
+ *
+ * @param {Share[]} shares one video's shares, of any sources
+ * @param {ReadonlySet<string> | null} shown the ids of the sources shown;
+ *   null for every source
+ * @returns {CollectionValues}
+ */
+export function collectionValues(shares, shown) {
+  /** @type {CollectionValues} */
+  const values = { votes: null, sharedAt: null, sourceIds: [] }
+
+  for (const share of shares) {
+    if (shown !== null && !shown.has(share.sourceId)) { continue }
+
+    if (isNumber(share.votes)) {
+      values.votes = (values.votes ?? 0) + share.votes
+    }
+
+    if (isNumber(share.sharedAt) && (values.sharedAt === null || share.sharedAt > values.sharedAt)) {
+      values.sharedAt = share.sharedAt
+    }
+
+    if (!values.sourceIds.includes(share.sourceId)) {
+      values.sourceIds.push(share.sourceId)
+    }
+  }
+
+  return values
+}
+
+/**
+ * @param {unknown} value
+ * @returns {value is number}
+ */
+function isNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+/**
+ * The orders a collections wall can be in, each the most or the newest first:
+ * by the shown shares' votes summed (`votes`, "upvotes"), by the latest shown
+ * share's date (`shared`, "shared on community"), by the video's own publish
+ * date (`published`) and by its views (`views`), the last two from its
+ * details.
+ *
+ * @typedef {'votes' | 'shared' | 'published' | 'views'} CollectionSort
+ */
+
+/** @type {readonly CollectionSort[]} in the order the sort select offers them */
+export const COLLECTION_SORTS = Object.freeze(['votes', 'shared', 'published', 'views'])
+
+/** @type {CollectionSort} */
+export const DEFAULT_COLLECTION_SORT = 'votes'
+
+/**
+ * A sort as stored, made safe: one of the four, or upvotes for anything else.
+ *
+ * @param {unknown} value
+ * @returns {CollectionSort}
+ */
+export function collectionSortOf(value) {
+  return COLLECTION_SORTS.includes(/** @type {any} */ (value)) ? /** @type {CollectionSort} */ (value) : DEFAULT_COLLECTION_SORT
+}
+
+/**
+ * @param {number | null | undefined} a
+ * @param {number | null | undefined} b
  * @returns {number} most first, nothing last
  */
 function mostFirst(a, b) {
-  if (a === b) { return 0 }
-  if (a === null) { return 1 }
-  if (b === null) { return -1 }
+  const aKnown = isNumber(a)
+  const bKnown = isNumber(b)
+
+  if (!aKnown || !bKnown) { return aKnown === bKnown ? 0 : aKnown ? -1 : 1 }
   return b - a
 }
 
 /**
- * The wall: one video per video ref among the shares given, with the votes
- * of those shares summed and the latest of their dates, ordered by votes,
- * most first. A video no share voted on comes after every one that has
- * votes. Ties go to the latest shared, then to the video id, so that the
- * order is the same every time.
+ * What each sort orders by, before the ties: the value it is named for
  *
- * The shares given are the ones that count: the caller decides which sources
- * are shown.
+ * @type {Record<CollectionSort, (video: CollectionVideo) => number | null | undefined>}
+ */
+const SORT_VALUES = {
+  votes: video => video.collection.votes,
+  shared: video => video.collection.sharedAt,
+  published: video => video.published,
+  views: video => video.viewCount,
+}
+
+/**
+ * The wall: one video per video ref among the shares of the sources shown,
+ * with the values those shares give it (`collectionValues`), in the order
+ * asked for, the most or the newest first. A video missing the value sorted
+ * on (details not yet known, no shown source with votes) comes after every
+ * one that has it. Ties go to the votes, then to the latest shared, then to
+ * the video id, so that the order is the same every time.
+ *
+ * A video none of whose shares is of a source shown is left off; one shown
+ * source sharing it is enough.
  *
  * A video's details, once the crawl has them, say what it says of itself:
  * its own title, its channel, duration, views and date. A video YouTube said
@@ -200,71 +305,71 @@ function mostFirst(a, b) {
  * @param {Share[]} shares
  * @param {Record<string, any>} [details] the details kept, by the video's ref
  *   as one string (`shareVideoKey`)
+ * @param {{ shown?: ReadonlySet<string> | null, sort?: CollectionSort | string }} [options]
+ *   the ids of the sources shown, null (the default) for every one of them;
+ *   the order, upvotes by default
  * @returns {CollectionVideo[]}
  */
-export function wallVideos(shares, details = {}) {
-  /** @type {Map<string, CollectionVideo>} */
+export function wallVideos(shares, details = {}, { shown = null, sort = DEFAULT_COLLECTION_SORT } = {}) {
+  /** @type {Map<string, Share[]>} */
   const byVideo = new Map()
 
   for (const share of shares) {
     const key = shareVideoKey(share)
-    let video = byVideo.get(key)
+    const group = byVideo.get(key)
 
-    if (video === undefined) {
-      video = {
-        type: 'video',
-        videoId: share.videoId,
-        title: '',
-        author: '',
-        lengthSeconds: '',
-        collection: { votes: null, sharedAt: null, sourceIds: [] },
-      }
-
-      if (share.platform === 'peertube') {
-        video.platform = 'peertube'
-        video.host = share.host
-      }
-
-      byVideo.set(key, video)
-    }
-
-    if (video.title === '' && typeof share.title === 'string') { video.title = share.title }
-    if (video.author === '' && typeof share.author === 'string') { video.author = share.author }
-
-    const { collection } = video
-
-    if (typeof share.votes === 'number') {
-      collection.votes = (collection.votes ?? 0) + share.votes
-    }
-
-    if (typeof share.sharedAt === 'number' && (collection.sharedAt === null || share.sharedAt > collection.sharedAt)) {
-      collection.sharedAt = share.sharedAt
-    }
-
-    if (!collection.sourceIds.includes(share.sourceId)) {
-      collection.sourceIds.push(share.sourceId)
+    if (group === undefined) {
+      byVideo.set(key, [share])
+    } else {
+      group.push(share)
     }
   }
 
   /** @type {CollectionVideo[]} */
   const videos = []
 
-  for (const [key, video] of byVideo) {
+  for (const [key, group] of byVideo) {
+    const collection = collectionValues(group, shown)
+
+    if (collection.sourceIds.length === 0) { continue }
+
     // Read before it is looked for, so that a reactive map tells the wall
     // when a video's details arrive
     const kept = details[key]
     const known = Object.hasOwn(details, key) ? kept : undefined
 
-    if (known === undefined) {
-      videos.push(video)
-    } else if (known.unavailable === undefined) {
-      withDetails(video, known)
-      videos.push(video)
+    if (known !== undefined && known.unavailable !== undefined) { continue }
+
+    const shownShares = shown === null ? group : group.filter(share => shown.has(share.sourceId))
+    const [first] = shownShares
+
+    /** @type {CollectionVideo} */
+    const video = {
+      type: 'video',
+      videoId: first.videoId,
+      title: shownShares.find(share => typeof share.title === 'string' && share.title !== '')?.title ?? '',
+      author: shownShares.find(share => typeof share.author === 'string' && share.author !== '')?.author ?? '',
+      lengthSeconds: '',
+      collection,
     }
+
+    if (first.platform === 'peertube') {
+      video.platform = 'peertube'
+      video.host = first.host
+    }
+
+    if (known !== undefined) {
+      withDetails(video, known)
+    }
+
+    videos.push(video)
   }
 
+  const valueOf = SORT_VALUES[collectionSortOf(sort)]
+
   return videos.sort((a, b) => {
-    return mostFirst(a.collection.votes, b.collection.votes) ||
+    return mostFirst(valueOf(a), valueOf(b)) ||
+      mostFirst(a.collection.votes, b.collection.votes) ||
       mostFirst(a.collection.sharedAt, b.collection.sharedAt) ||
       (a.videoId < b.videoId ? -1 : a.videoId > b.videoId ? 1 : 0)
   })
