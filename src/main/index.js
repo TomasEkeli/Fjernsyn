@@ -31,6 +31,7 @@ import contextMenu from 'electron-context-menu'
 import packageDetails from '../../package.json'
 import { registerBackupHandlers } from './backup/ipc'
 import { registerKeeper } from './backup/keeperIpc'
+import { isStorableCollectionRecord } from './collectionsRecords'
 import { handleOpenInExternalPlayer } from './externalPlayer'
 import { holdFullscreen, isFullscreenHeld, releaseFullscreen } from './fullscreenHold'
 import { registerPeerTubeDownloadHandlers } from './peertubeDownloads/ipc'
@@ -2581,7 +2582,7 @@ function runApp() {
           return await baseHandlers.collections.findShares()
 
         case DBActions.COLLECTIONS.UPSERT_SOURCE:
-          if (typeof data?._id !== 'string') {
+          if (!isStorableCollectionRecord(data)) {
             // eslint-disable-next-line no-throw-literal
             throw 'invalid collections data'
           }
@@ -2590,7 +2591,7 @@ function runApp() {
           return null
 
         case DBActions.COLLECTIONS.PUT_SHARES: {
-          if (!Array.isArray(data) || !data.every(share => typeof share?._id === 'string')) {
+          if (!Array.isArray(data) || !data.every(share => isStorableCollectionRecord(share))) {
             // eslint-disable-next-line no-throw-literal
             throw 'invalid collections data'
           }
@@ -2603,7 +2604,7 @@ function runApp() {
           return await baseHandlers.collections.findVideos()
 
         case DBActions.COLLECTIONS.PUT_VIDEOS:
-          if (!Array.isArray(data) || !data.every(video => typeof video?._id === 'string')) {
+          if (!Array.isArray(data) || !data.every(video => isStorableCollectionRecord(video, { videoId: true }))) {
             // eslint-disable-next-line no-throw-literal
             throw 'invalid collections data'
           }
