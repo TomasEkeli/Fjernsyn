@@ -200,7 +200,6 @@ describe('the discussion link', () => {
   it('is taken only as a web address', () => {
     expect(discussionLink('https://news.ycombinator.com/item?id=123')).toBe('https://news.ycombinator.com/item?id=123')
     expect(discussionLink('http://lemmy.example/post/1')).toBe('http://lemmy.example/post/1')
-    // eslint-disable-next-line no-script-url
     expect(discussionLink('javascript:alert(1)')).toBeNull()
     expect(discussionLink('file:///etc/passwd')).toBeNull()
     expect(discussionLink('not a url')).toBeNull()

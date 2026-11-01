@@ -71,7 +71,7 @@
     },
     {
       "path": "src/renderer/components/FtListVideo/FtListVideo.vue",
-      "reason": "hooks gated on a PeerTube record (src/renderer/platform/cards.js): watch and channel routes, thumbnail, canonical share entries in place of YouTube and Invidious ones, external player `videoUrl` with no playlist, no DeArrow, no SponsorBlock channel entry; the history entry, playlist item and quick bookmark it writes keep `platform`, `host` and `thumbnail` (and a plain-text description) through `platformRecordFields`"
+      "reason": "hooks gated on a PeerTube record (src/renderer/platform/cards.js): watch and channel routes, thumbnail, canonical share entries in place of YouTube and Invidious ones, external player `videoUrl` with no playlist, no DeArrow, no SponsorBlock channel entry; the history entry, playlist item and quick bookmark it writes keep `platform`, `host` and `thumbnail` (and a plain-text description) through `platformRecordFields`; draws a badge a wall provides under `THUMBNAIL_BADGE` (src/renderer/helpers/thumbnailBadge.js) at the thumbnail's top left, which only the collections walls do, for the vote badge"
     },
     {
       "path": "src/renderer/components/FtPlaylistSelector/FtPlaylistSelector.vue",

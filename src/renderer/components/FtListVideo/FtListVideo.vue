@@ -40,6 +40,12 @@
           @load="onThumbnailLoad"
         >
       </RouterLink>
+      <!-- Fjernsyn: a wall's own badge, where one provides it (helpers/thumbnailBadge.js) -->
+      <component
+        :is="thumbnailBadge"
+        v-if="thumbnailBadge !== null"
+        :video="data"
+      />
       <div
         v-if="isLive || isUpcoming || isStation || (displayDuration !== '' && displayDuration !== '0:00')"
         class="videoDuration"
@@ -353,7 +359,7 @@
 
 <script setup>
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
@@ -382,6 +388,7 @@ import { aiMarkOf, isChannelMarkedAi, markChannelAi, unmarkChannelAi } from '../
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
 import { cardShareOptions, describeCard, platformRecordFields, runCardShareOption } from '../../platform/cards'
 import { subscriptionEntryIsUpcoming, subscriptionEntryScheduledAt } from '../../../subscriptionFeedMerge'
+import { THUMBNAIL_BADGE } from '../../helpers/thumbnailBadge.js'
 
 const props = defineProps({
   data: {
@@ -492,6 +499,9 @@ const emit = defineEmits([
 ])
 
 const { locale, t } = useI18n()
+
+/** The wall's own badge for the thumbnail, if it provides one */
+const thumbnailBadge = inject(THUMBNAIL_BADGE, null)
 const route = useRoute()
 
 const id = ref('')
