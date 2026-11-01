@@ -3,10 +3,10 @@
     <slot name="header" />
     <div
       class="controlRow"
-      :class="{ withoutChips: sourceId !== null }"
+      :class="{ withoutChips: !chipsShown }"
     >
       <div
-        v-if="sourceId === null"
+        v-if="chipsShown"
         class="chipRow"
         role="group"
         :aria-label="$t('Collections.Sources Shown')"
@@ -215,6 +215,14 @@ const bundleFailed = computed(() => {
 const chips = computed(() => sourcesByName(store.getters.getCollectionSources))
 
 /**
+ * Whether the row has chips: on Collections, with any source followed; a
+ * source's page is one source's wall, and has none
+ *
+ * @type {import('vue').ComputedRef<boolean>}
+ */
+const chipsShown = computed(() => props.sourceId === null && chips.value.length > 0)
+
+/**
  * The sources whose shares count on this wall: the source's own on its page,
  * whatever its chip on Collections says; and on Collections every source
  * followed whose chip is on, so that a share of a source unfollowed while it
@@ -236,6 +244,9 @@ const shownSources = computed(() => {
 function toggleSource(sourceId) {
   const hidden = store.getters.getCollectionsSourcesHidden
   store.dispatch('updateCollectionsSourcesHidden', hiddenSourcesWith(hidden, sourceId, !shownSources.value.has(sourceId)))
+    .catch((error) => {
+      console.error(`Collections: could not keep the chip of ${sourceId}`, error)
+    })
 }
 
 /**
@@ -256,7 +267,11 @@ const noSourceShown = computed(() => {
  */
 const sort = computed({
   get: () => collectionSortOf(store.getters.getCollectionsSort),
-  set: value => store.dispatch('updateCollectionsSort', value),
+  set: (value) => {
+    store.dispatch('updateCollectionsSort', value).catch((error) => {
+      console.error('Collections: could not keep the order of the wall', error)
+    })
+  },
 })
 
 const sortSelectId = useId()

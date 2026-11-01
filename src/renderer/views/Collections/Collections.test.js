@@ -437,6 +437,39 @@ describe('Collections', () => {
       expect(wrapper.find('.chipRow').attributes('aria-label')).toBe('Sources shown')
     })
 
+    it('has no chip group when no source is followed, and the row of a wall without chips', async () => {
+      store.setGetter('getCollectionSources', [])
+
+      const wrapper = mountCollections()
+      await flushPromises()
+
+      expect(wrapper.find('.chipRow').exists()).toBe(false)
+      expect(wrapper.find('.controlRow').classes()).toContain('withoutChips')
+    })
+
+    it('logs a chip or a sort that could not be kept, rather than leaving the failure unhandled', async () => {
+      const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const wrapper = mountCollections()
+      await flushPromises()
+      const dispatch = store.dispatch
+      store.dispatch = () => Promise.reject(new Error('settings.db is gone'))
+
+      try {
+        sourceChips(wrapper)[0].vm.$emit('toggle')
+        await wrapper.find('select.sortSelect').setValue('views')
+        await flushPromises()
+      } finally {
+        store.dispatch = dispatch
+      }
+
+      // Font Awesome's own complaints about the test's missing icons aside
+      expect(errors.mock.calls.map(([message]) => message).filter(message => String(message).startsWith('Collections:'))).toEqual([
+        `Collections: could not keep the chip of ${LEMMY_A._id}`,
+        'Collections: could not keep the order of the wall',
+      ])
+      errors.mockRestore()
+    })
+
     it('switches a source off and on through the setting', async () => {
       store.setGetter('getCollectionsSourcesHidden', [LEMMY_A._id])
       const wrapper = mountCollections()

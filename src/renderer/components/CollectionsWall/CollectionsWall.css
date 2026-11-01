@@ -10,8 +10,8 @@
 }
 
 /* The control row is the subscriptions page's (chipRow.css); on a source's
-   page there are no chips, so the refresh takes the first column and the
-   pills and the sort the rest, to the far end */
+   page, or with nothing followed, there are no chips, so the refresh takes
+   the first column and the pills and the sort the rest, to the far end */
 .controlRow.withoutChips {
   grid-template-columns: auto 1fr;
 }
