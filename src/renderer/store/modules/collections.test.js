@@ -1138,6 +1138,28 @@ describe('the Collections store', () => {
       return fetch
     }
 
+    it('confirms no PeerTube link in the trial, leaving them to the next refresh, so that following answers at the pace of the feed alone', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const state = await loadedState()
+      vi.stubGlobal('fetch', vi.fn(async (url) => {
+        const { host, pathname } = new URL(url)
+        return host === 'lemmy.cafe' && pathname === '/feeds/c/mealtimevideos.xml'
+          ? new Response(mealtimeTopWeek.replaceAll('https://www.youtube.com/watch?v=dTXl4RQimbY', 'https://fedi.video/w/1GcddTf1uzhyXscJ4ymdEG'))
+          : new Response('not found', { status: 404 })
+      }))
+      fakeLayer.resolveUrl.mockReset()
+      fakeLayer.getVideoSummary.mockReset()
+      const context = contextFor(state)
+      context.rootGetters = { ...context.rootGetters, getEnablePeerTube: true }
+
+      const followed = await collections.actions.followCollectionSourceByUrl(context, 'https://lemmy.cafe/c/mealtimevideos')
+
+      expect(followed.outcome).toBe('followed')
+      expect(fakeLayer.resolveUrl).not.toHaveBeenCalled()
+      expect(fakeLayer.getVideoSummary).not.toHaveBeenCalled()
+      expect(Object.keys(state.collectionShares).filter(id => id.startsWith(MEALTIME._id))).toEqual(['lemmy:mealtimevideos@lemmy.cafe|neGgUavFT0w'])
+    })
+
     it('follows a community, and keeps its videos as its shares at once from the feed it was tried with', async () => {
       vi.spyOn(console, 'warn').mockImplementation(() => {})
       const state = await loadedState()

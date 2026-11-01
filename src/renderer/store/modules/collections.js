@@ -191,7 +191,6 @@ const actions = {
       // As it is when asked, so that a test can stand in for the network
       fetch: (...args) => fetch(...args),
       isFollowed,
-      peertube: peerTubeLinks(context),
     })
 
     if (trial.outcome !== 'followable') { return trial }
@@ -506,8 +505,10 @@ async function platformLayer() {
 }
 
 /**
- * What confirms the PeerTube links a source shares, for one refresh or one
- * follow (`helpers/collections/peertubeLinks.js`): through the platform
+ * What confirms the PeerTube links a source shares, for one refresh
+ * (`helpers/collections/peertubeLinks.js`); not for the trial of a source
+ * followed by URL, which answers at the pace of its feed alone and leaves
+ * its PeerTube links to the next refresh: through the platform
  * layer, while PeerTube is switched on; the videos kept known by uuid, and
  * what each host was found to be remembered in this installation's
  * localStorage; each confirmed video's details kept at once.

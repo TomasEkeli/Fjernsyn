@@ -59,14 +59,13 @@ describe('trying a pasted URL before following it', () => {
     ])
   })
 
-  it('hands the trial what confirms PeerTube links, so that a community followed keeps its PeerTube shares at once', async () => {
+  it('confirms no PeerTube link in the trial: the next refresh does', async () => {
     const spy = vi.spyOn(lemmyKind, 'fetch')
-    const peertube = { refFor: vi.fn(async () => null) }
 
     try {
-      await trySource('https://lemmy.cafe/c/mealtimevideos', { now: NOW, fetch: stubInstances(), isFollowed: () => false, peertube })
+      await trySource('https://lemmy.cafe/c/mealtimevideos', { now: NOW, fetch: stubInstances(), isFollowed: () => false })
 
-      expect(spy).toHaveBeenCalledWith(MEALTIME, expect.objectContaining({ peertube }))
+      expect(spy.mock.calls[0][1]).not.toHaveProperty('peertube')
     } finally {
       spy.mockRestore()
     }

@@ -42,13 +42,9 @@ import { SOURCE_KINDS_BY_KIND, recogniseSource } from './kinds/index.js'
  * @param {number} deps.now when it would be followed
  * @param {typeof fetch} deps.fetch what the trial asks through
  * @param {(sourceId: string) => boolean} deps.isFollowed
- * @param {import('./kinds/index.js').PeerTubeLinks} [deps.peertube] confirms the
- *   PeerTube links the trial finds, through the platform layer, whose
- *   requests are not the trial's: a PeerTube instance down never makes the
- *   source unreachable
  * @returns {Promise<SourceTrial>}
  */
-export async function trySource(text, { now, fetch: fetchFn, isFollowed, peertube }) {
+export async function trySource(text, { now, fetch: fetchFn, isFollowed }) {
   const source = typeof text === 'string' ? recogniseSource(text.trim(), now) : null
 
   if (source === null) {
@@ -80,7 +76,9 @@ export async function trySource(text, { now, fetch: fetchFn, isFollowed, peertub
   }
 
   try {
-    const fetched = await kind.fetch(source, { fetch: watched, peertube })
+    // No PeerTube link is confirmed here: that may take as long as the
+    // instances linked take to answer, and the next refresh does it
+    const fetched = await kind.fetch(source, { fetch: watched })
     return { outcome: 'followable', source, fetched }
   } catch (error) {
     console.warn(`Collections: could not follow ${source._id}`, error)
