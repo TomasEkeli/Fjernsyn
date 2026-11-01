@@ -4,7 +4,8 @@ import { HACKERTUBE_SOURCE_ID, hackerTubeShare, hackerTubeSource } from '../../h
 import { fetchHackerTubeBundle } from '../../helpers/collections/hackertubeBundle'
 import { isNewerExport } from '../../helpers/collections/kinds/hackertube'
 import { SOURCE_KINDS_BY_KIND } from '../../helpers/collections/kinds/index'
-import { lastAttemptOf, lastRefreshOf, refreshCollectionSources, refreshIsDue } from '../../helpers/collections/refresh'
+import { trySource } from '../../helpers/collections/follow'
+import { keepSourceFetch, lastAttemptOf, lastRefreshOf, refreshCollectionSources, refreshIsDue } from '../../helpers/collections/refresh'
 import { sharesToPut } from '../../helpers/collections/shares'
 import { starterSources } from '../../helpers/collections/starterSet'
 
@@ -29,6 +30,11 @@ import { starterSources } from '../../helpers/collections/starterSet'
  * (`helpers/collections/refresh.js`), and keeps on each source's record
  * when a refresh last worked for it (`checkedAt`), when one last asked it
  * (`attemptedAt`), and `failedAt` while its last refresh failed.
+ *
+ * A source is followed by a URL pasted on the Sources page, once asking it
+ * has shown it can be (`helpers/collections/follow.js`), and unfollowed
+ * there, which removes its record, its shares and its own data; the videos'
+ * details stay, as they belong to the video.
  */
 
 /** @import { Share, Source } from '../../helpers/collections/shares' */
@@ -126,6 +132,70 @@ const actions = {
   async followCollectionSource({ commit }, source) {
     await DBCollectionHandlers.upsertSource(source)
     commit('upsertCollectionSource', source)
+  },
+
+  /**
+   * Follows the source a pasted URL names, once it has been tried
+   * (`helpers/collections/follow.js`), and keeps at once what the trial
+   * fetched, as a refresh would; HackerTube, whose videos come with the app,
+   * has them loaded from the bundle. Nothing is followed when no kind
+   * recognises the URL, when the source is followed already, when it serves
+   * nothing its kind can read, or when it cannot be reached. A source
+   * followed whose videos could then not be kept stays followed, marked
+   * failed, for a refresh to bring them.
+   *
+   * @param {any} context
+   * @param {string} url
+   * @returns {Promise<{ outcome: 'followed', source: Source } | Exclude<import('../../helpers/collections/follow').SourceTrial, { outcome: 'followable' }>>}
+   */
+  async followCollectionSourceByUrl(context, url) {
+    const { state, dispatch } = context
+    const isFollowed = sourceId => Object.hasOwn(state.collectionSources, sourceId)
+
+    const trial = await trySource(url, {
+      now: Date.now(),
+      // As it is when asked, so that a test can stand in for the network
+      fetch: (...args) => fetch(...args),
+      isFollowed,
+    })
+
+    if (trial.outcome !== 'followable') { return trial }
+
+    const { source, fetched } = trial
+
+    // Followed meanwhile, from another window or by a paste before this one
+    if (isFollowed(source._id)) {
+      return { outcome: 'followed-already', source }
+    }
+
+    await dispatch('followCollectionSource', source)
+
+    if (fetched === null) {
+      // Loads the bundle, as the source has no shares and no export yet
+      await dispatch('openCollections')
+    } else {
+      try {
+        await keepSourceFetch(refreshDependencies(context), source, fetched)
+      } catch (error) {
+        console.error(`Collections: could not keep what ${source._id} shares`, error)
+        const at = Date.now()
+        await dispatch('updateCollectionSource', { sourceId: source._id, fields: { attemptedAt: at, failedAt: at } })
+      }
+    }
+
+    return { outcome: 'followed', source }
+  },
+
+  /**
+   * Unfollows a source: its record, its shares and its own data go, here
+   * and in every other window. The videos' details stay.
+   *
+   * @param {any} context
+   * @param {string} sourceId
+   */
+  async unfollowCollectionSource({ commit }, sourceId) {
+    await DBCollectionHandlers.removeSource(sourceId)
+    commit('removeCollectionSource', sourceId)
   },
 
   /**
@@ -308,9 +378,32 @@ async function openCollectionsOnce({ state, commit, dispatch }) {
 }
 
 /**
+ * What a refresh, and the follow that keeps what its trial fetched, need of
+ * the store (`helpers/collections/refresh.js`)
+ *
+ * @param {any} context
+ * @returns {Omit<import('../../helpers/collections/refresh').RefreshDependencies, 'sources'>}
+ */
+function refreshDependencies({ state, dispatch }) {
+  return {
+    kinds: SOURCE_KINDS_BY_KIND,
+    // As it is when asked, so that a test can stand in for the network
+    fetch: (...args) => fetch(...args),
+    now: () => Date.now(),
+    keptShares: () => state.collectionShares,
+    isFollowed: sourceId => Object.hasOwn(state.collectionSources, sourceId),
+    putShares: shares => dispatch('putCollectionShares', shares),
+    putSourceData: (sourceId, data) => dispatch('putCollectionSourceData', { ...data, _id: sourceId }),
+    updateSource: (sourceId, fields) => dispatch('updateCollectionSource', { sourceId, fields }),
+  }
+}
+
+/**
  * @param {any} context
  */
-async function refreshCollectionsOnce({ state, commit, dispatch }) {
+async function refreshCollectionsOnce(context) {
+  const { state, commit } = context
+
   if (opening !== null) {
     await opening
   }
@@ -321,16 +414,8 @@ async function refreshCollectionsOnce({ state, commit, dispatch }) {
 
   try {
     const { failed } = await refreshCollectionSources({
+      ...refreshDependencies(context),
       sources: Object.values(state.collectionSources),
-      kinds: SOURCE_KINDS_BY_KIND,
-      // As it is when asked, so that a test can stand in for the network
-      fetch: (...args) => fetch(...args),
-      now: () => Date.now(),
-      keptShares: () => state.collectionShares,
-      isFollowed: sourceId => Object.hasOwn(state.collectionSources, sourceId),
-      putShares: shares => dispatch('putCollectionShares', shares),
-      putSourceData: (sourceId, data) => dispatch('putCollectionSourceData', { ...data, _id: sourceId }),
-      updateSource: (sourceId, fields) => dispatch('updateCollectionSource', { sourceId, fields }),
       onProgress: progress => commit('setCollectionsRefreshProgress', progress),
     })
 
@@ -439,6 +524,26 @@ const mutations = {
     state.collectionSources = { ...state.collectionSources, [source._id]: Object.freeze({ ...source }) }
   },
 
+  /**
+   * A source unfollowed: its record, its shares and its own data
+   *
+   * @param {any} state
+   * @param {string} sourceId
+   */
+  removeCollectionSource(state, sourceId) {
+    if (Object.hasOwn(state.collectionSources, sourceId)) {
+      const { [sourceId]: _source, ...sources } = state.collectionSources
+      state.collectionSources = sources
+    }
+
+    if (Object.hasOwn(state.collectionSourceData, sourceId)) {
+      const { [sourceId]: _data, ...sourceData } = state.collectionSourceData
+      state.collectionSourceData = sourceData
+    }
+
+    state.collectionShares = Object.fromEntries(Object.entries(state.collectionShares).filter(([, share]) => share.sourceId !== sourceId))
+  },
+
   putCollectionSourceData(state, record) {
     state.collectionSourceData = { ...state.collectionSourceData, [record._id]: Object.freeze({ ...record }) }
   },
@@ -465,6 +570,10 @@ const mutations = {
     switch (event) {
       case SyncEvents.COLLECTIONS.UPSERT_SOURCE:
         mutations.upsertCollectionSource(state, data)
+        break
+
+      case SyncEvents.COLLECTIONS.REMOVE_SOURCE:
+        mutations.removeCollectionSource(state, data)
         break
 
       case SyncEvents.COLLECTIONS.PUT_SHARES:
