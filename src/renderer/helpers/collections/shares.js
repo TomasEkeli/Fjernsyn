@@ -39,10 +39,12 @@
  *   of the data loaded into this installation's shares, null before any is
  * @property {import('./hackertube.js').HackerTubeTaxonomy} [taxonomy] HackerTube only: the taxonomy of
  *   that export, its categories by area
- * @property {number | null} [checkedAt] when a refresh last asked it, in ms,
- *   whether or not it answered; absent before the first refresh
- * @property {number | null} [failedAt] when it last failed to answer a
- *   refresh, in ms, while that is its last refresh; null once one works
+ * @property {number} [checkedAt] when a refresh last worked for it, in ms;
+ *   absent before the first that did. The age the page shows
+ * @property {number} [attemptedAt] when a refresh last asked it, in ms,
+ *   worked or not; what the hour before opening refreshes again counts from
+ * @property {number | null} [failedAt] when its last refresh failed, in ms,
+ *   while that is its last refresh; null once one works
  */
 
 /**

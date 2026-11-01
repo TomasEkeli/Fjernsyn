@@ -409,7 +409,10 @@ describe('the Collections store', () => {
 
       expect(DBCollectionHandlers.putShares).not.toHaveBeenCalled()
       expect(state.collectionShares).toEqual(before)
-      expect(state.collectionSources.hackertube).toMatchObject({ dataGenerated: '2026-10-31', checkedAt: NOW, failedAt: NOW })
+      expect(state.collectionSources.hackertube).toMatchObject({ dataGenerated: '2026-10-31', attemptedAt: NOW, failedAt: NOW })
+      // Never refreshed successfully, so the widget has no age to give
+      expect(state.collectionSources.hackertube.checkedAt).toBeUndefined()
+      expect(collections.getters.getCollectionsLastRefreshAt(state)).toBe(null)
       expect(collections.getters.getCollectionsRefreshFailures(state).map(source => source._id)).toEqual(['hackertube'])
       expect(state.collectionsRefreshing).toBe(false)
     })
@@ -438,6 +441,38 @@ describe('the Collections store', () => {
 
       expect(console.warn).not.toHaveBeenCalled()
       expect(state.collectionSources.hackertube).toMatchObject({ checkedAt: NOW, failedAt: null, taxonomy: { version: 'v' } })
+    })
+
+    it('keeps when HackerTube last refreshed when a later refresh fails, and does not ask again on open within the hour', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const state = await loadedState()
+      stubHackerTube()
+      await collections.actions.refreshCollections(contextFor(state))
+      const worked = state.collectionSources.hackertube.checkedAt
+      Date.now.mockReturnValue(NOW + 2 * 60 * 60_000)
+
+      const down = stubHackerTube({ down: true })
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(state.collectionSources.hackertube).toMatchObject({ checkedAt: worked, attemptedAt: NOW + 2 * 60 * 60_000, failedAt: NOW + 2 * 60 * 60_000 })
+      expect(collections.getters.getCollectionsLastRefreshAt(state)).toBe(worked)
+
+      await collections.actions.refreshCollectionsIfDue(contextFor(state))
+      expect(down).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not refresh on open with nothing followed', async () => {
+      const state = freshState()
+      const dispatched = []
+      const context = contextFor(state)
+      context.dispatch = (type, payload) => {
+        dispatched.push(type)
+        return collections.actions[type](context, payload)
+      }
+
+      await collections.actions.refreshCollectionsIfDue(context)
+
+      expect(dispatched).toEqual([])
     })
 
     it('stops saying it failed once a refresh works', async () => {
@@ -495,14 +530,14 @@ describe('the Collections store', () => {
       await collections.actions.refreshCollectionsIfDue(contextFor(state))
       expect(fetch).toHaveBeenCalledTimes(1)
 
-      state.collectionSources.hackertube = { ...state.collectionSources.hackertube, checkedAt: NOW - 61 * 60_000 }
+      state.collectionSources.hackertube = { ...state.collectionSources.hackertube, attemptedAt: NOW - 61 * 60_000 }
       await collections.actions.refreshCollectionsIfDue(contextFor(state))
       expect(fetch).toHaveBeenCalledTimes(2)
     })
 
     it('does not refresh on open when the last refresh was within the hour, as one kept from before a restart', async () => {
       const state = await loadedState()
-      state.collectionSources.hackertube = { ...state.collectionSources.hackertube, checkedAt: NOW - 59 * 60_000 }
+      state.collectionSources.hackertube = { ...state.collectionSources.hackertube, checkedAt: NOW - 5 * 60 * 60_000, attemptedAt: NOW - 59 * 60_000 }
       const fetch = stubHackerTube()
 
       await collections.actions.refreshCollectionsIfDue(contextFor(state))

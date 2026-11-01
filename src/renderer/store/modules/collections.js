@@ -3,7 +3,7 @@ import { SyncEvents } from '../../../constants'
 import { HACKERTUBE_SOURCE_ID, hackerTubeShare, hackerTubeSource } from '../../helpers/collections/hackertube'
 import { fetchHackerTubeBundle } from '../../helpers/collections/hackertubeBundle'
 import { SOURCE_KINDS_BY_KIND } from '../../helpers/collections/kinds/index'
-import { lastRefreshOf, refreshCollectionSources, refreshIsDue } from '../../helpers/collections/refresh'
+import { lastAttemptOf, lastRefreshOf, refreshCollectionSources, refreshIsDue } from '../../helpers/collections/refresh'
 import { sharesToPut } from '../../helpers/collections/shares'
 
 /**
@@ -20,9 +20,9 @@ import { sharesToPut } from '../../helpers/collections/shares'
  * The walls are worked out from the shares in `helpers/collections/shares.js`.
  *
  * A refresh asks every followed source what it shares now
- * (`helpers/collections/refresh.js`), and keeps when it did on each source's
- * record, as `checkedAt`, with `failedAt` while the source's last refresh
- * failed.
+ * (`helpers/collections/refresh.js`), and keeps on each source's record
+ * when a refresh last worked for it (`checkedAt`), when one last asked it
+ * (`attemptedAt`), and `failedAt` while its last refresh failed.
  */
 
 /** @import { Share, Source } from '../../helpers/collections/shares' */
@@ -65,7 +65,7 @@ const getters = {
   getCollectionsRefreshing: (state) => state.collectionsRefreshing,
   /** @returns {{ done: number, total: number }} sources asked, of those being asked */
   getCollectionsRefreshProgress: (state) => state.collectionsRefreshProgress,
-  /** @returns {number | null} when every followed source was last refreshed by, in ms; null for never */
+  /** @returns {number | null} when every followed source was last refreshed successfully by, in ms; null for never */
   getCollectionsLastRefreshAt: (state) => lastRefreshOf(Object.values(state.collectionSources)),
   /** @returns {Source[]} the followed sources whose last refresh failed */
   getCollectionsRefreshFailures: (state) => Object.values(state.collectionSources).filter(source => typeof source.failedAt === 'number'),
@@ -194,15 +194,17 @@ const actions = {
 
   /**
    * What opening Collections does once it is open: a refresh, when the last
-   * one was more than an hour ago (`refreshIsDue`), or never was.
+   * one, worked or not, was more than an hour ago (`refreshIsDue`), or never
+   * was. Nothing with nothing followed.
    *
    * @param {any} context
    * @returns {Promise<void>}
    */
   async refreshCollectionsIfDue({ state, dispatch }) {
-    if (state.collectionsGrabFailed) { return }
+    const sources = Object.values(state.collectionSources)
+    if (state.collectionsGrabFailed || sources.length === 0) { return }
 
-    if (refreshIsDue(lastRefreshOf(Object.values(state.collectionSources)), Date.now())) {
+    if (refreshIsDue(lastAttemptOf(sources), Date.now())) {
       await dispatch('refreshCollections')
     }
   },

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { lastRefreshOf, REFRESH_AFTER_MS, refreshCollectionSources, refreshIsDue } from './refresh'
+import { lastAttemptOf, lastRefreshOf, REFRESH_AFTER_MS, refreshCollectionSources, refreshIsDue } from './refresh'
 
 const NOW = Date.parse('2026-11-01T12:00:00Z')
 const MINUTE = 60_000
@@ -42,6 +42,17 @@ describe('when Collections was last refreshed', () => {
 
   it('is when the source refreshed longest ago was, so that every source is at least that fresh', () => {
     expect(lastRefreshOf([{ _id: 'a', checkedAt: NOW }, { _id: 'b', checkedAt: NOW - 5 * MINUTE }])).toBe(NOW - 5 * MINUTE)
+  })
+})
+
+describe('when Collections was last asked to refresh, worked or not', () => {
+  it('is never, with nothing followed, or while a followed source has never been asked', () => {
+    expect(lastAttemptOf([])).toBe(null)
+    expect(lastAttemptOf([{ _id: 'a', attemptedAt: NOW }, { _id: 'b', checkedAt: NOW }])).toBe(null)
+  })
+
+  it('is the oldest of the sources\' last attempts, not of their last successes', () => {
+    expect(lastAttemptOf([{ _id: 'a', attemptedAt: NOW, checkedAt: NOW - 90 * MINUTE }, { _id: 'b', attemptedAt: NOW - 5 * MINUTE }])).toBe(NOW - 5 * MINUTE)
   })
 })
 
@@ -145,7 +156,7 @@ describe('a refresh', () => {
 
     await refreshCollectionSources(deps)
 
-    expect(deps.updateSource).toHaveBeenCalledWith('one', { dataGenerated: '2026-11-01', checkedAt: NOW, failedAt: null })
+    expect(deps.updateSource).toHaveBeenCalledWith('one', { dataGenerated: '2026-11-01', checkedAt: NOW, attemptedAt: NOW, failedAt: null })
     expect(order).toEqual(['shares', 'source'])
   })
 
@@ -159,8 +170,9 @@ describe('a refresh', () => {
     const result = await refreshCollectionSources(deps)
 
     expect(result.failed).toEqual(['one'])
-    expect(deps.updateSource).toHaveBeenCalledWith('one', { checkedAt: NOW, failedAt: NOW })
-    expect(deps.updateSource).toHaveBeenCalledWith('two', { checkedAt: NOW, failedAt: null })
+    // When it last worked stays as it was: only the attempt is new
+    expect(deps.updateSource).toHaveBeenCalledWith('one', { attemptedAt: NOW, failedAt: NOW })
+    expect(deps.updateSource).toHaveBeenCalledWith('two', { checkedAt: NOW, attemptedAt: NOW, failedAt: null })
     expect(deps.putShares.mock.calls.flatMap(([shares]) => shares.map(share => share.sourceId))).toEqual(['two'])
   })
 
@@ -175,7 +187,7 @@ describe('a refresh', () => {
 
     expect(result.failed).toEqual(['one'])
     expect(deps.updateSource).toHaveBeenCalledTimes(1)
-    expect(deps.updateSource).toHaveBeenCalledWith('one', { checkedAt: NOW, failedAt: NOW })
+    expect(deps.updateSource).toHaveBeenCalledWith('one', { attemptedAt: NOW, failedAt: NOW })
   })
 
   it('counts a source of a kind it does not know as failed', async () => {

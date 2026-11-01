@@ -10,9 +10,12 @@
  * the others carry on. Nothing is removed: a share a source no longer gives
  * stays (`sharesToPut`).
  *
- * When each source was last asked is kept on its record (`checkedAt`, and
- * `failedAt` while its last ask failed), so the rule holds across restarts
- * and other windows hear of it as of any other change to a source.
+ * Each source's record keeps when a refresh last worked for it (`checkedAt`,
+ * the age the page shows), when one last asked it, worked or not
+ * (`attemptedAt`, what the hour is counted from, so that opening the page
+ * does not ask a dead server again and again), and `failedAt` while its last
+ * refresh failed. So the rule holds across restarts, and other windows hear
+ * of it as of any other change to a source.
  *
  * Framework-free: the store hands it what it needs (`store/modules/collections.js`).
  */
@@ -41,24 +44,50 @@ export function refreshIsDue(lastRefreshAt, now) {
 }
 
 /**
- * When Collections was last refreshed, as far as every followed source is
- * concerned: the oldest of their last refreshes, and never while one of them
- * has not been refreshed at all, or nothing is followed.
+ * The oldest of the sources' times in the field given, and null while one of
+ * them has none, or nothing is followed
  *
- * @param {{ checkedAt?: number | null }[]} sources
+ * @param {Record<string, any>[]} sources
+ * @param {'checkedAt' | 'attemptedAt'} field
  * @returns {number | null}
  */
-export function lastRefreshOf(sources) {
+function oldestOf(sources, field) {
   if (sources.length === 0) { return null }
 
   let oldest = Infinity
 
   for (const source of sources) {
-    if (typeof source.checkedAt !== 'number') { return null }
-    oldest = Math.min(oldest, source.checkedAt)
+    if (typeof source[field] !== 'number') { return null }
+    oldest = Math.min(oldest, source[field])
   }
 
   return oldest
+}
+
+/**
+ * When Collections was last refreshed, as far as every followed source is
+ * concerned: the oldest of their last successful refreshes, and never while
+ * one of them has not been refreshed successfully, or nothing is followed.
+ * The age the refresh widget shows.
+ *
+ * @param {{ checkedAt?: number | null }[]} sources
+ * @returns {number | null}
+ */
+export function lastRefreshOf(sources) {
+  return oldestOf(sources, 'checkedAt')
+}
+
+/**
+ * When Collections was last asked to refresh, whether or not that worked:
+ * the oldest of the sources' last attempts, and never while one of them has
+ * not been asked. What the hour before opening refreshes again is counted
+ * from.
+ *
+ * @param {{ attemptedAt?: number | null }[]} sources
+ * @returns {number | null}
+ */
+export function lastAttemptOf(sources) {
+  return oldestOf(sources, 'attemptedAt')
 }
 
 /**
@@ -137,7 +166,8 @@ async function refreshSource(deps, source) {
 
   // Only once the shares are in, so that what the source's record says was
   // loaded (HackerTube's export date) never runs ahead of them
-  await deps.updateSource(source._id, { ...sourceFields, checkedAt: deps.now(), failedAt: null })
+  const at = deps.now()
+  await deps.updateSource(source._id, { ...sourceFields, checkedAt: at, attemptedAt: at, failedAt: null })
 
   return shares.length
 }
@@ -152,7 +182,8 @@ async function markFailed(deps, sourceId) {
   const at = deps.now()
 
   try {
-    await deps.updateSource(sourceId, { checkedAt: at, failedAt: at })
+    // When it last worked stays as it was
+    await deps.updateSource(sourceId, { attemptedAt: at, failedAt: at })
   } catch (error) {
     console.warn(`Collections: could not mark ${sourceId} failed`, error)
   }
