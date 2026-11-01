@@ -6,13 +6,18 @@
  * Shared for the same reason as chipRow.css, and loaded the same way: as a
  * scoped stylesheet by each page that has one, so the classes only reach
  * that page's own markup.
+ *
+ * A picker is one unit: its label stays on the select's line, and when the
+ * row is narrow the whole picker wraps, not its label away from its select.
+ * The select is kept compact, a long choice cut short with an ellipsis.
  */
 
 .picker {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px 8px;
+  flex: none;
+  flex-wrap: nowrap;
+  gap: 8px;
 }
 
 .pickerLabel {
@@ -30,8 +35,12 @@
   font-family: inherit;
   font-size: 0.85rem;
   line-height: 1.2;
+  max-inline-size: 14rem;
+  overflow: hidden;
   padding-block: 6px;
   padding-inline: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pickerSelect:focus-visible {

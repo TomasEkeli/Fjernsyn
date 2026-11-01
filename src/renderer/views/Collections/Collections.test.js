@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import store from '../../store/index'
 import { collectionsCrawlProgress, startCollectionsCrawl } from '../../helpers/collections/crawlRunner'
-import { shippedHackerTubeTaxonomy } from '../../helpers/collections/hackertubeBundle'
 import { mountWithApp } from '../../testing/mount'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
@@ -31,6 +30,7 @@ vi.mock('../../store/index', async () => {
         getCollectionsRefreshFailures: [],
         getCollectionsSourcesHidden: [],
         getCollectionsSort: 'votes',
+        getCollectionsSortDescending: true,
         getHideWatchedSubs: false,
         getHistoryCacheById: {},
         getHideAiVideos: false,
@@ -109,6 +109,7 @@ describe('Collections', () => {
     store.setGetter('getCollectionsRefreshFailures', [])
     store.setGetter('getCollectionsSourcesHidden', [])
     store.setGetter('getCollectionsSort', 'votes')
+    store.setGetter('getCollectionsSortDescending', true)
     store.setGetter('getHideWatchedSubs', false)
     store.setGetter('getHistoryCacheById', {})
     store.setGetter('getHideAiVideos', false)
@@ -618,6 +619,25 @@ describe('Collections', () => {
       expect(order(wrapper)).toEqual(['video000003', 'video000001', 'video000002'])
     })
 
+    it('reverses the order with the button beside the sort, which says the direction, and keeps it in the setting', async () => {
+      const wrapper = mountCollections()
+      await flushPromises()
+      store.dispatched.length = 0
+
+      const button = wrapper.find('.picker button.sortDirection')
+      expect(button.attributes('aria-label')).toBe('Descending, the most or newest first. Click to reverse')
+
+      await button.trigger('click')
+      expect(store.dispatched).toEqual([{ type: 'updateCollectionsSortDescending', payload: false }])
+
+      const descending = order(wrapper)
+      store.setGetter('getCollectionsSortDescending', false)
+      await flushPromises()
+
+      expect(order(wrapper)).toEqual([...descending].reverse())
+      expect(wrapper.find('button.sortDirection').attributes('aria-label')).toBe('Ascending, the fewest or oldest first. Click to reverse')
+    })
+
     it('orders by video published and views from the details, a video without them last', async () => {
       store.setGetter('getCollectionVideos', {
         video000002: { _id: 'video000002', videoId: 'video000002', fetchedAt: 1, published: 200, viewCount: 5 },
@@ -682,108 +702,22 @@ describe('Collections', () => {
       expect(wrapper.find('.message').text()).toContain('Everything here is made with AI')
     })
 
-    describe('the category select', () => {
-      const TAXONOMY = {
-        version: 'v',
-        areas: [
-          { id: 'cs', name: 'Computing', categories: [{ id: 'compilers', name: 'Compilers' }, { id: 'databases', name: 'Databases' }] },
-          { id: 'sci', name: 'Science', categories: [{ id: 'physics', name: 'Physics' }] },
-        ],
-      }
+    it('has no category select, and ignores a category chosen on HackerTube\'s page', async () => {
+      store.setGetter('getCollectionSourceData', id => id === HACKERTUBE._id
+        ? { _id: id, generated: '2026-10-31', taxonomy: { version: 'v', areas: [{ id: 'sci', name: 'Science', categories: [{ id: 'physics', name: 'Physics' }] }] } }
+        : undefined)
+      store.setGetter('getCollectionShares', [
+        shareOf(HACKERTUBE, 1, { votes: 10, categories: ['compilers'] }),
+        shareOf(LEMMY_A, 2, { votes: 5 }),
+        shareOf(HACKERTUBE, 3, { votes: 1, categories: ['physics'] }),
+      ])
+      sessionStorage.setItem('collectionsCategory', 'physics')
 
-      beforeEach(() => {
-        store.setGetter('getCollectionSourceData', id => id === HACKERTUBE._id ? { _id: id, generated: '2026-10-31', taxonomy: TAXONOMY } : undefined)
-        store.setGetter('getCollectionShares', [
-          shareOf(HACKERTUBE, 1, { votes: 10, categories: ['compilers'] }),
-          shareOf(LEMMY_A, 1, { votes: 100 }),
-          shareOf(LEMMY_A, 2, { votes: 50 }),
-          shareOf(HACKERTUBE, 3, { votes: 5, categories: ['physics'] }),
-          shareOf(LEMMY_Z, 3, { votes: 20 }),
-        ])
-      })
+      const wrapper = mountCollections()
+      await flushPromises()
 
-      /** @param {import('@vue/test-utils').VueWrapper} wrapper */
-      const select = wrapper => wrapper.find('select.categorySelect')
-
-      it('lists HackerTube\'s categories by name, grouped by area, after All, which is chosen', async () => {
-        const wrapper = mountCollections()
-        await flushPromises()
-
-        expect(select(wrapper).findAll('optgroup').map(group => [group.attributes('label'), group.findAll('option').map(option => option.text())])).toEqual([
-          ['Computing', ['Compilers', 'Databases']],
-          ['Science', ['Physics']],
-        ])
-        expect(select(wrapper).find('option').text()).toBe('All')
-        expect(select(wrapper).element.value).toBe('')
-        expect(wrapper.find(`label[for="${select(wrapper).attributes('id')}"]`).text()).toBe('Category')
-        expect(order(wrapper)).toEqual(['video000001', 'video000002', 'video000003'])
-      })
-
-      it('leaves the videos HackerTube put in the category chosen, those shared by others too with every source\'s votes, and keeps the choice for the session', async () => {
-        const wrapper = mountCollections()
-        await flushPromises()
-
-        await select(wrapper).setValue('physics')
-
-        expect(listed(wrapper).map(video => [video.videoId, video.collection.votes])).toEqual([['video000003', 25]])
-        expect(sessionStorage.getItem('collectionsCategory')).toBe('physics')
-        wrapper.unmount()
-
-        const again = mountCollections()
-        await flushPromises()
-        expect(select(again).element.value).toBe('physics')
-        expect(order(again)).toEqual(['video000003'])
-
-        await select(again).setValue('')
-        expect(order(again)).toEqual(['video000001', 'video000002', 'video000003'])
-        expect(sessionStorage.getItem('collectionsCategory')).toBeNull()
-      })
-
-      it('says so when nothing shown is in the category', async () => {
-        const wrapper = mountCollections()
-        await flushPromises()
-
-        await select(wrapper).setValue('databases')
-
-        expect(wrapper.find('.message').text()).toBe('Nothing here is in this category.')
-      })
-
-      it('is hidden, and filters nothing, while HackerTube\'s chip is off or it is not followed', async () => {
-        sessionStorage.setItem('collectionsCategory', 'physics')
-        store.setGetter('getCollectionsSourcesHidden', [HACKERTUBE._id])
-        const wrapper = mountCollections()
-        await flushPromises()
-
-        expect(select(wrapper).exists()).toBe(false)
-        expect(order(wrapper)).toEqual(['video000001', 'video000002', 'video000003'])
-
-        store.setGetter('getCollectionsSourcesHidden', [])
-        store.setGetter('getCollectionSources', [LEMMY_Z, LEMMY_A])
-        await flushPromises()
-
-        expect(select(wrapper).exists()).toBe(false)
-        expect(order(wrapper)).toEqual(['video000001', 'video000002', 'video000003'])
-      })
-
-      it('takes a choice the taxonomy no longer has for All', async () => {
-        sessionStorage.setItem('collectionsCategory', 'gone')
-        const wrapper = mountCollections()
-        await flushPromises()
-
-        expect(select(wrapper).element.value).toBe('')
-        expect(order(wrapper)).toHaveLength(3)
-      })
-
-      it('lists the shipped bundle\'s categories where none are kept', async () => {
-        store.setGetter('getCollectionSourceData', () => undefined)
-        vi.mocked(shippedHackerTubeTaxonomy).mockResolvedValueOnce(TAXONOMY)
-
-        const wrapper = mountCollections()
-        await flushPromises()
-
-        expect(shippedHackerTubeTaxonomy).toHaveBeenCalled()
-        expect(select(wrapper).findAll('optgroup')).toHaveLength(2)
-      })
+      expect(wrapper.find('select.categorySelect').exists()).toBe(false)
+      expect(order(wrapper)).toEqual(['video000001', 'video000002', 'video000003'])
     })
   })
 })

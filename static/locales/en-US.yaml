@@ -344,6 +344,10 @@ Collections:
     Shared: Shared on community
     Views: Views
     Upvotes: Upvotes
+  # The button beside the sort select that reverses the order, named for the
+  # direction the wall is in
+  Sort Descending: Descending, the most or newest first. Click to reverse
+  Sort Ascending: Ascending, the fewest or oldest first. Click to reverse
   # Beside the select of HackerTube's categories, which shows only the videos
   # HackerTube put in the one chosen
   Category: Category

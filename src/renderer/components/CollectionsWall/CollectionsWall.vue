@@ -65,6 +65,18 @@
               {{ option.label }}
             </option>
           </select>
+          <button
+            type="button"
+            class="sortDirection"
+            :aria-label="sortDirectionLabel"
+            :title="sortDirectionLabel"
+            @click="descending = !descending"
+          >
+            <FontAwesomeIcon
+              :icon="['fas', descending ? 'arrow-down' : 'arrow-up']"
+              fixed-width
+            />
+          </button>
         </div>
         <div
           v-if="categoryShown"
@@ -152,6 +164,7 @@
 <script setup>
 import { computed, h, onBeforeUnmount, onMounted, provide, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 import AiChip from '../AiChip/AiChip.vue'
 import CollectionsVoteBadge from '../CollectionsVoteBadge/CollectionsVoteBadge.vue'
@@ -209,12 +222,14 @@ import { KeyboardShortcuts } from '../../../constants'
  * wall is, or what is being done to it, the refresh or the crawl, with how
  * far along it is. At the far end the Watched and AI pills, the same
  * settings as on every wall that has them, and the order the wall is in:
- * upvotes, shared on community, video published or views. Which shares count
+ * upvotes, shared on community, video published or views, with a button
+ * beside it that reverses it. Which shares count
  * for the order is which sources are shown: the chips' on Collections, the
  * source's own on its page (`collectionValues` in helpers/collections/
- * shares.js). Last, while HackerTube's videos are on the wall, one of
- * HackerTube's categories, which leaves only the videos HackerTube put in it
- * (helpers/collections/category.js). The `header` slot comes above the row.
+ * shares.js). Last, on HackerTube's own page only, one of HackerTube's
+ * categories, which leaves only the videos HackerTube put in it
+ * (helpers/collections/category.js); Collections has none, and ignores a
+ * choice made there. The `header` slot comes above the row.
  *
  * Each card carries the vote badge, the votes that order the wall, quietly
  * at the top left of its thumbnail.
@@ -340,6 +355,30 @@ const sort = computed({
 const sortSelectId = useId()
 
 /**
+ * Whether the wall's order is descending, the most or the newest first, or
+ * reversed; a setting as the order is. Anything but false is descending
+ *
+ * @type {import('vue').WritableComputedRef<boolean>}
+ */
+const descending = computed({
+  get: () => store.getters.getCollectionsSortDescending !== false,
+  set: (value) => {
+    store.dispatch('updateCollectionsSortDescending', value).catch((error) => {
+      console.error('Collections: could not keep the direction of the wall\'s order', error)
+    })
+  },
+})
+
+/**
+ * The direction button's name, which says the direction the wall is in
+ *
+ * @type {import('vue').ComputedRef<string>}
+ */
+const sortDirectionLabel = computed(() => {
+  return descending.value ? t('Collections.Sort Descending') : t('Collections.Sort Ascending')
+})
+
+/**
  * The orders on offer, in the order the spec names them. Spelled out, as a
  * message's key may not be built
  *
@@ -361,6 +400,7 @@ const videos = computed(() => {
   return wallVideos(store.getters.getCollectionShares, store.getters.getCollectionVideos, {
     shown: shownSources.value,
     sort: sort.value,
+    descending: descending.value,
     // As every PeerTube wall: what its uploader marked NSFW only when asked for
     showNsfw: store.getters.getPeerTubeShowNsfw,
   })
@@ -383,13 +423,14 @@ const taxonomy = computed(() => {
 const categoryGroups = computed(() => categoryAreas(taxonomy.value))
 
 /**
- * Whether HackerTube's videos are on this wall, which are the only ones with
- * categories: followed, and its chip on, or its own page
+ * Whether this is HackerTube's own page, followed, the one wall with the
+ * category select: on Collections, where its videos are among every other
+ * source's, it would take too much room for what it does
  *
  * @type {import('vue').ComputedRef<boolean>}
  */
 const hackerTubeShown = computed(() => {
-  return shownSources.value.has(HACKERTUBE_SOURCE_ID) &&
+  return props.sourceId === HACKERTUBE_SOURCE_ID &&
     store.getters.getCollectionSources.some(source => source._id === HACKERTUBE_SOURCE_ID)
 })
 
@@ -409,8 +450,7 @@ const categoryShown = computed(() => hackerTubeShown.value && categoryGroups.val
 const CATEGORY_KEY = 'collectionsCategory'
 
 /**
- * The category chosen, for the session, and the same on Collections and
- * HackerTube's page; '' is all
+ * The category chosen on HackerTube's page, for the session; '' is all
  */
 const chosenCategory = ref(sessionStorage.getItem(CATEGORY_KEY) ?? '')
 
@@ -435,8 +475,8 @@ const category = computed({
 const categorySelectId = useId()
 
 /**
- * The wall in the category chosen, while its select is shown: with HackerTube
- * off the wall the choice waits, and the wall is whole
+ * The wall in the category chosen, while its select is shown: elsewhere,
+ * Collections included, the choice waits, and the wall is whole
  *
  * @type {import('vue').ComputedRef<import('../../helpers/collections/shares').CollectionVideo[]>}
  */

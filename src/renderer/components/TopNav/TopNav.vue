@@ -107,7 +107,7 @@
       >
         <FontAwesomeIcon
           class="navIcon"
-          :icon="['fas', 'photo-film']"
+          :icon="['fas', 'people-group']"
         />
         <span
           v-if="showLabels"

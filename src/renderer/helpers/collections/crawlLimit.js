@@ -42,3 +42,34 @@ export const COLLECTIONS_CRAWL_LIMIT = crawlLimitFrom(process.env.FT_COLLECTIONS
 if (COLLECTIONS_CRAWL_LIMIT !== null) {
   console.warn(`[collections] CRAWL LIMIT ACTIVE: at most ${COLLECTIONS_CRAWL_LIMIT} video detail requests while the app runs. FT_COLLECTIONS_CRAWL_LIMIT=none lifts it.`)
 }
+
+/**
+ * A development run's wait between the crawl's requests, set by
+ * `FT_COLLECTIONS_CRAWL_DELAY_MS` at launch: one job on the lane at a time,
+ * and the next queued that many milliseconds after it finishes, to watch the
+ * crawl at a pace a person can follow, or to keep it gentle:
+ *
+ *   FT_COLLECTIONS_CRAWL_DELAY_MS=2000 pnpm dev
+ *
+ * Honoured only in a development build and baked in the same way as the cap.
+ * Unset, or anything but a whole number above nought, is no delay: the
+ * crawl as it always is.
+ *
+ * @param {string | undefined} raw the variable as set
+ * @param {string | undefined} nodeEnv which build this is
+ * @returns {number | null} the wait in ms, or null for none
+ */
+export function crawlDelayFrom(raw, nodeEnv) {
+  if (nodeEnv !== 'development' || raw == null || !/^\d+$/.test(raw)) { return null }
+
+  const delay = Number(raw)
+
+  return Number.isSafeInteger(delay) && delay > 0 ? delay : null
+}
+
+/** The delay in force in this build, or null for none */
+export const COLLECTIONS_CRAWL_DELAY_MS = crawlDelayFrom(process.env.FT_COLLECTIONS_CRAWL_DELAY_MS, process.env.NODE_ENV)
+
+if (COLLECTIONS_CRAWL_DELAY_MS !== null) {
+  console.warn(`[collections] CRAWL DELAY ACTIVE: one video detail request at a time, ${COLLECTIONS_CRAWL_DELAY_MS} ms apart.`)
+}

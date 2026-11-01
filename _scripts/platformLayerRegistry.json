@@ -11,7 +11,7 @@
     },
     {
       "path": "_scripts/webpack.renderer.config.js",
-      "reason": "bakes in FT_COLLECTIONS_CRAWL_LIMIT, the Collections crawl's cap on requests, in a development build only (src/renderer/helpers/collections/crawlLimit.js)"
+      "reason": "bakes in FT_COLLECTIONS_CRAWL_LIMIT, the Collections crawl's cap on requests, and FT_COLLECTIONS_CRAWL_DELAY_MS, its wait between requests, in a development build only (src/renderer/helpers/collections/crawlLimit.js)"
     },
     {
       "path": "src/constants.js",
@@ -119,7 +119,7 @@
     },
     {
       "path": "src/renderer/store/modules/settings.js",
-      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw; the layer search page's: defaultSearchScope, searchRememberedParameters, searchLatched; the surface switch: enableLayerSurfaces; Collections' collectionsStarterSetDone, the mark that the starter set has been followed once; collectionsSourcesHidden, the sources whose chips are off on Collections; collectionsSort, the order of the collections walls"
+      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw; the layer search page's: defaultSearchScope, searchRememberedParameters, searchLatched; the surface switch: enableLayerSurfaces; Collections' collectionsStarterSetDone, the mark that the starter set has been followed once; collectionsSourcesHidden, the sources whose chips are off on Collections; collectionsSort, the order of the collections walls; collectionsSortDescending, whether that order is reversed"
     },
     {
       "path": "src/renderer/views/Settings/Settings.vue",
