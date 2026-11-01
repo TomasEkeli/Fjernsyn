@@ -171,6 +171,8 @@ async function fetchItems(source, { fetch: fetchFn }) {
 /** @type {import('./index.js').SourceKind} */
 export const hackerTubeKind = {
   kind: 'hackertube',
+  // Its videos come with the app, in the bundle the first open loads
+  shipped: true,
   recognise,
   fetch: fetchItems,
   toShares: (items, _source, seenAt) => items.map(video => hackerTubeShare(video, seenAt)).filter(share => share !== null),

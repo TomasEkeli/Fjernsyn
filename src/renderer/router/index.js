@@ -8,6 +8,8 @@ import UserPlaylists from '../views/UserPlaylists/UserPlaylists.vue'
 import History from '../views/History/History.vue'
 import Later from '../views/Later/Later.vue'
 import Collections from '../views/Collections/Collections.vue'
+import Sources from '../views/Sources/Sources.vue'
+import CollectionSource from '../views/CollectionSource/CollectionSource.vue'
 import Settings from '../views/Settings/Settings.vue'
 import About from '../views/About/About.vue'
 import LayerSearchPage from '../views/LayerSearchPage/LayerSearchPage.vue'
@@ -50,6 +52,22 @@ const router = createRouter({
         title: 'Collections'
       },
       component: Collections
+    },
+    {
+      path: '/sources',
+      name: 'sources',
+      meta: {
+        title: 'Sources'
+      },
+      component: Sources
+    },
+    {
+      path: '/sources/:sourceId',
+      name: 'collectionSource',
+      meta: {
+        title: 'Sources'
+      },
+      component: CollectionSource
     },
     ...(process.env.SUPPORTS_LOCAL_API
       ? [{

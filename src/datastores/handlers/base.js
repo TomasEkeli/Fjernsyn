@@ -564,13 +564,41 @@ class Later {
  * id and video ref (`helpers/collections/shares.js`), and each collection
  * video's own details, by video ref (`helpers/collections/details.js`).
  *
- * Shares are only ever added or updated here, never dropped: a share that
- * falls out of a feed stays. Putting shares writes the new ones in one insert,
+ * Shares are only ever added or updated here, never dropped while their source
+ * is followed: a share that falls out of a feed stays. Unfollowing a source
+ * removes its shares with it. Putting shares writes the new ones in one insert,
  * which is one append to the file however many there are, and updates the
- * fields of those already there; put calls run one after another, so that two
- * windows putting the same shares at once cannot both insert them.
+ * fields of those already there.
+ *
+ * Every write of a source, its shares or its own data runs in one queue, one
+ * after another, in the order asked, so that two windows putting the same
+ * shares at once cannot both insert them, and so that what a refresh writes
+ * after an unfollow cannot bring the source back: inside the queue, shares
+ * and data of a source with no record are dropped, and a refresh updates its
+ * source's record (`updateSource`), which never creates one. Only following
+ * creates a record (`upsertSource`).
  */
-let collectionSharesQueue = Promise.resolve()
+let collectionsQueue = Promise.resolve()
+
+/**
+ * @template T
+ * @param {() => Promise<T>} write
+ * @returns {Promise<T>}
+ */
+function inCollectionsQueue(write) {
+  const run = collectionsQueue.then(write)
+  collectionsQueue = run.catch(() => {})
+  return run
+}
+
+/**
+ * @param {string[]} sourceIds
+ * @returns {Promise<Set<string>>} those of them that are followed
+ */
+async function followedOf(sourceIds) {
+  const found = await db.collectionSources.findAsync({ _id: { $in: [...new Set(sourceIds)] } }, { _id: 1 })
+  return new Set(found.map(source => source._id))
+}
 
 class Collections {
   static findSources() {
@@ -581,18 +609,57 @@ class Collections {
     return db.collectionShares.findAsync({})
   }
 
+  /**
+   * Follows a source: creates its record, or replaces it
+   *
+   * @param {{ _id: string }} source
+   */
   static upsertSource(source) {
-    return db.collectionSources.updateAsync({ _id: source._id }, source, { upsert: true })
+    return inCollectionsQueue(() => db.collectionSources.updateAsync({ _id: source._id }, source, { upsert: true }))
   }
 
   /**
-   * @param {{ _id: string }[]} shares
-   * @returns {Promise<{ added: number, updated: number }>}
+   * Replaces a followed source's record, and does nothing for one that is
+   * not followed: what a refresh writes of a source unfollowed meanwhile
+   *
+   * @param {{ _id: string }} source
+   * @returns {Promise<{ updated: number }>}
+   */
+  static updateSource(source) {
+    return inCollectionsQueue(async () => {
+      const { numAffected } = await db.collectionSources.updateAsync({ _id: source._id }, source, { upsert: false })
+      return { updated: numAffected }
+    })
+  }
+
+  /**
+   * @param {{ _id: string, sourceId?: string }[]} shares
+   * @returns {Promise<{ added: number, updated: number, dropped: string[] }>}
+   *   `dropped`, the ids of those of a source not followed, which were not written
    */
   static putShares(shares) {
-    const run = collectionSharesQueue.then(() => putCollectionShares(shares))
-    collectionSharesQueue = run.catch(() => {})
-    return run
+    return inCollectionsQueue(() => putCollectionShares(shares))
+  }
+
+  /**
+   * Unfollows a source: removes its shares, its own data and its record, in
+   * that order, so that a removal cut short leaves the source followed, and
+   * a refresh brings its shares back, rather than shares of nothing. In turn
+   * with the other writes, so that a put under way cannot leave a share
+   * behind it, and none asked for after it can bring one back.
+   * The videos' details stay: they belong to the video, which another source
+   * may share.
+   *
+   * @param {string} sourceId
+   * @returns {Promise<{ shares: number }>} how many shares were removed
+   */
+  static removeSource(sourceId) {
+    return inCollectionsQueue(async () => {
+      const shares = await db.collectionShares.removeAsync({ sourceId }, { multi: true })
+      await db.collectionSourceData.removeAsync({ _id: sourceId }, {})
+      await db.collectionSources.removeAsync({ _id: sourceId }, {})
+      return { shares }
+    })
   }
 
   static findVideos() {
@@ -616,27 +683,43 @@ class Collections {
   }
 
   /**
-   * Keeps a source's own data, by the source's id, replacing what was kept
+   * Keeps a source's own data, by the source's id, replacing what was kept;
+   * nothing for a source not followed
    *
    * @param {{ _id: string }} record
+   * @returns {Promise<{ kept: boolean }>}
    */
   static putSourceData(record) {
-    return db.collectionSourceData.updateAsync({ _id: record._id }, record, { upsert: true })
+    return inCollectionsQueue(async () => {
+      if (!(await followedOf([record._id])).has(record._id)) {
+        return { kept: false }
+      }
+
+      await db.collectionSourceData.updateAsync({ _id: record._id }, record, { upsert: true })
+      return { kept: true }
+    })
   }
 }
 
 /**
- * @param {{ _id: string }[]} shares
- * @returns {Promise<{ added: number, updated: number }>}
+ * @param {{ _id: string, sourceId?: string }[]} shares
+ * @returns {Promise<{ added: number, updated: number, dropped: string[] }>}
  */
 async function putCollectionShares(shares) {
   // The last of a share given twice wins, as it would one write after another
   const byId = new Map(shares.map(share => [share._id, share]))
   const ids = [...byId.keys()]
 
-  const known = new Set((await db.collectionShares.findAsync({ _id: { $in: ids } }, { _id: 1 })).map(share => share._id))
+  /** @type {Map<string, string>} the source of each share already kept */
+  const known = new Map((await db.collectionShares.findAsync({ _id: { $in: ids } }, { _id: 1, sourceId: 1 })).map(share => [share._id, share.sourceId]))
 
-  const fresh = ids.filter(id => !known.has(id)).map(id => byId.get(id))
+  // An update may give only the fields that changed: the share kept names its source
+  const sourceOf = id => byId.get(id).sourceId ?? known.get(id)
+  const followed = await followedOf(ids.map(sourceOf).filter(sourceId => typeof sourceId === 'string'))
+  const dropped = ids.filter(id => !followed.has(sourceOf(id)))
+  const writable = ids.filter(id => followed.has(sourceOf(id)))
+
+  const fresh = writable.filter(id => !known.has(id)).map(id => byId.get(id))
   if (fresh.length > 0) {
     await db.collectionShares.insertAsync(fresh)
   }
@@ -644,12 +727,13 @@ async function putCollectionShares(shares) {
   // One update, and one appended line, per share already kept, so the
   // renderer puts only the shares that are new or changed
   // (`helpers/collections/shares.js`, `sharesToPut`)
-  for (const id of known) {
+  const kept = writable.filter(id => known.has(id))
+  for (const id of kept) {
     const { _id, ...fields } = byId.get(id)
     await db.collectionShares.updateAsync({ _id }, { $set: fields })
   }
 
-  return { added: fresh.length, updated: known.size }
+  return { added: fresh.length, updated: kept.length, dropped }
 }
 
 function loadDatastores() {

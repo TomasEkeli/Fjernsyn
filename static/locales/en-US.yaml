@@ -331,6 +331,45 @@ Collections:
   # still there after a restart until a refresh of it works; everything it had
   # stays. {sources} is the sources' names, separated by commas
   Refresh Failed: 'Could not refresh {sources}'
+# The list of sources Collections follows (HackerTube, Lemmy communities), where
+# one is followed by pasting its address, and each source's own page
+Sources:
+  Sources: Sources
+  Follow Placeholder: Address of a community to follow
+  Follow: Follow
+  # Under the field, before anything is pasted. {'@'} is a literal @, which
+  # vue-i18n would otherwise read as a link to another message
+  Follow Hint: "A Lemmy community, as https://lemmy.cafe/c/mealtimevideos or !mealtimevideos{'@'}lemmy.cafe"
+  # While the source is asked for its feed, before it is followed
+  Trying: Asking it for its feed…
+  Followed: 'Following {name}.'
+  Followed Already: '{name} is followed already.'
+  Unrecognised: Fjernsyn cannot follow this address yet. It follows HackerTube and Lemmy communities.
+  # The instance answered, but with no feed it can read; slrpnk.net, for one,
+  # serves none
+  No Feed: '{name} cannot be followed yet: its instance does not serve a feed Fjernsyn can read.'
+  Unreachable: '{name} could not be reached. Check the address, or try again later.'
+  Follow Failed: Something went wrong while following it.
+  Nothing Followed: No source is followed.
+  # How many of the source's videos are kept
+  Videos: '{count} video | {count} videos'
+  Unfollow: Unfollow
+  # The Unfollow button's name for a screen reader, and its tooltip
+  Unfollow Source: 'Unfollow {name}'
+  Unfollow Prompt: 'Unfollow {name}?'
+  # In the prompt before unfollowing: its videos go, and a feed only lists its
+  # latest posts, so following it again does not bring back the older ones
+  Unfollow Prompt Detail: Its videos leave Collections. Following it again brings back only what its feed still lists.
+  Unfollowed: 'Unfollowed {name}'
+  Unfollow Failed: 'Could not unfollow {name}'
+  # On the page of a source no longer followed. {sources} is a link to the
+  # Sources page, named as the top bar names it
+  Not Followed: 'This source is not followed. {sources} lists those that are.'
+  Read Failed: The followed sources could not be read.
+  # What kind of place a source is
+  Kinds:
+    HackerTube: HackerTube
+    Lemmy: Lemmy community
 # The chip on the subscriptions and explore pages saying whether videos already
 # watched stay in the stream. It is the "Hide Videos on Watch" setting, the
 # other way round: pressed means watched videos are shown

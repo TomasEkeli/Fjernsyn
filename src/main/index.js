@@ -32,7 +32,7 @@ import packageDetails from '../../package.json'
 import { registerBackupHandlers } from './backup/ipc'
 import { registerKeeper } from './backup/keeperIpc'
 import { createCollectionsCrawlClaim } from './collectionsCrawlClaim'
-import { isStorableCollectionRecord } from './collectionsRecords'
+import { handleCollectionsDb } from './collectionsDb'
 import { handleOpenInExternalPlayer } from './externalPlayer'
 import { holdFullscreen, isFullscreenHeld, releaseFullscreen } from './fullscreenHold'
 import { registerPeerTubeDownloadHandlers } from './peertubeDownloads/ipc'
@@ -2569,70 +2569,15 @@ function runApp() {
 
   // *********** //
   // Collections: the followed sources, their shares, and the videos' details
-  ipcMain.handle(IpcChannels.DB_COLLECTIONS, async (event, { action, data }) => {
+  ipcMain.handle(IpcChannels.DB_COLLECTIONS, (event, { action, data }) => {
     if (!isFreeTubeUrl(event.senderFrame.url)) {
       return
     }
 
-    try {
-      switch (action) {
-        case DBActions.COLLECTIONS.FIND_SOURCES:
-          return await baseHandlers.collections.findSources()
-
-        case DBActions.COLLECTIONS.FIND_SHARES:
-          return await baseHandlers.collections.findShares()
-
-        case DBActions.COLLECTIONS.UPSERT_SOURCE:
-          if (!isStorableCollectionRecord(data)) {
-            // eslint-disable-next-line no-throw-literal
-            throw 'invalid collections data'
-          }
-          await baseHandlers.collections.upsertSource(data)
-          syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, { event: SyncEvents.COLLECTIONS.UPSERT_SOURCE, data })
-          return null
-
-        case DBActions.COLLECTIONS.PUT_SHARES: {
-          if (!Array.isArray(data) || !data.every(share => isStorableCollectionRecord(share))) {
-            // eslint-disable-next-line no-throw-literal
-            throw 'invalid collections data'
-          }
-          const counts = await baseHandlers.collections.putShares(data)
-          syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, { event: SyncEvents.COLLECTIONS.PUT_SHARES, data })
-          return counts
-        }
-
-        case DBActions.COLLECTIONS.FIND_VIDEOS:
-          return await baseHandlers.collections.findVideos()
-
-        case DBActions.COLLECTIONS.PUT_VIDEOS:
-          if (!Array.isArray(data) || !data.every(video => isStorableCollectionRecord(video, { videoId: true }))) {
-            // eslint-disable-next-line no-throw-literal
-            throw 'invalid collections data'
-          }
-          await baseHandlers.collections.putVideos(data)
-          syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, { event: SyncEvents.COLLECTIONS.PUT_VIDEOS, data })
-          return null
-
-        case DBActions.COLLECTIONS.FIND_SOURCE_DATA:
-          return await baseHandlers.collections.findSourceData()
-
-        case DBActions.COLLECTIONS.PUT_SOURCE_DATA:
-          if (!isStorableCollectionRecord(data)) {
-            // eslint-disable-next-line no-throw-literal
-            throw 'invalid collections data'
-          }
-          await baseHandlers.collections.putSourceData(data)
-          syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, { event: SyncEvents.COLLECTIONS.PUT_SOURCE_DATA, data })
-          return null
-
-        default:
-          // eslint-disable-next-line no-throw-literal
-          throw 'invalid collections db action'
-      }
-    } catch (err) {
-      if (typeof err === 'string') throw err
-      else throw err.toString()
-    }
+    return handleCollectionsDb(action, data, {
+      handlers: baseHandlers.collections,
+      syncOthers: payload => syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, payload),
+    })
   })
 
   // Collections: which window runs the crawl, one at a time

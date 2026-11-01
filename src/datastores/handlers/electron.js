@@ -298,6 +298,14 @@ class Collections {
     return window.ftElectron.dbCollections(DBActions.COLLECTIONS.PUT_SHARES, shares)
   }
 
+  static updateSource(source) {
+    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.UPDATE_SOURCE, source)
+  }
+
+  static removeSource(sourceId) {
+    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.REMOVE_SOURCE, sourceId)
+  }
+
   static findVideos() {
     return window.ftElectron.dbCollections(DBActions.COLLECTIONS.FIND_VIDEOS)
   }
