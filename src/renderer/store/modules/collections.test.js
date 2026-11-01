@@ -324,6 +324,26 @@ describe('the Collections store', () => {
       expect(state.collectionSources.hackertube.dataGenerated).toBe('2026-10-31')
     })
 
+    it('does not put the bundle over a newer export a refresh brought in while it was loading', async () => {
+      const state = freshState()
+      state.collectionSources.hackertube = { _id: 'hackertube', kind: 'hackertube', followedAt: 1, dataGenerated: null }
+      fetchHackerTubeBundle.mockImplementationOnce(async () => {
+        // As a refresh would, from an open whose bundle load had failed
+        collections.mutations.upsertCollectionSource(state, { ...state.collectionSources.hackertube, dataGenerated: '2026-11-07' })
+        collections.mutations.putCollectionShares(state, [{ _id: 'hackertube|aaaaaaaaaaa', sourceId: 'hackertube', videoId: 'aaaaaaaaaaa', votes: 30 }])
+        return BUNDLE
+      })
+
+      await collections.actions.openCollections(contextFor(state))
+
+      expect(DBCollectionHandlers.putShares).not.toHaveBeenCalled()
+      expect(DBCollectionHandlers.upsertSource).not.toHaveBeenCalled()
+      expect(state.collectionSources.hackertube.dataGenerated).toBe('2026-11-07')
+      expect(state.collectionShares['hackertube|aaaaaaaaaaa'].votes).toBe(30)
+      expect(state.collectionsLoading).toBe(false)
+      expect(state.collectionsLoadFailed).toBe(false)
+    })
+
     it('keeps what it has and says so when the bundle cannot be read, and tries again next time', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {})
       fetchHackerTubeBundle.mockRejectedValueOnce(new Error('gone'))

@@ -2,6 +2,7 @@ import { DBCollectionHandlers } from '../../../datastores/handlers/index'
 import { SyncEvents } from '../../../constants'
 import { HACKERTUBE_SOURCE_ID, hackerTubeShare, hackerTubeSource } from '../../helpers/collections/hackertube'
 import { fetchHackerTubeBundle } from '../../helpers/collections/hackertubeBundle'
+import { isNewerExport } from '../../helpers/collections/kinds/hackertube'
 import { SOURCE_KINDS_BY_KIND } from '../../helpers/collections/kinds/index'
 import { lastAttemptOf, lastRefreshOf, refreshCollectionSources, refreshIsDue } from '../../helpers/collections/refresh'
 import { sharesToPut } from '../../helpers/collections/shares'
@@ -248,6 +249,16 @@ async function openCollectionsOnce({ state, commit, dispatch }) {
     if (loaded) { return }
 
     const bundle = await fetchHackerTubeBundle()
+
+    // A refresh may have loaded a newer export while the bundle was read (an
+    // open after a failed load, during a refresh): the bundle must not go
+    // over it. Only a change made meanwhile counts: a date that was already
+    // there, as after a restore, is one whose shares are missing.
+    const meanwhile = state.collectionSources[HACKERTUBE_SOURCE_ID]?.dataGenerated ?? null
+    if (meanwhile !== null && meanwhile !== (source.dataGenerated ?? null) && !isNewerExport(bundle.generated, meanwhile)) {
+      return
+    }
+
     const seenAt = Date.now()
     const shares = bundle.videos.map(video => hackerTubeShare(video, seenAt)).filter(share => share !== null)
 
