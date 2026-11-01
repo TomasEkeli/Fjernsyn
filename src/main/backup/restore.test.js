@@ -19,6 +19,8 @@ const DATASTORE_FILES = {
   channels: 'channels',
   aiVerdicts: 'ai-verdicts',
   later: 'later',
+  collectionSources: 'collection-sources',
+  collectionShares: 'collection-shares',
 }
 
 const MAIN_PROFILE = { _id: 'allChannels', name: 'All Channels', bgColor: '#000000', textColor: '#FFFFFF', subscriptions: [] }
@@ -180,6 +182,43 @@ describe('restoreBackup', () => {
     for (const [name, records] of Object.entries(sections)) {
       expect(await onDisk(name), name).toEqual(records)
     }
+  })
+
+  it('replaces the followed sources and their shares, HackerTube\'s included, and marks the starter set done', async () => {
+    const datastores = await openDatastores()
+    await populate(datastores)
+    await datastores.collectionSources.insertAsync([
+      { _id: 'hackertube', kind: 'hackertube', url: 'https://hackertube.org', name: 'HackerTube', followedAt: 1, dataGenerated: '2026-10-31' },
+      { _id: 'lemmy:old@lemmy.example', kind: 'lemmy', url: 'https://lemmy.example/c/old', name: 'old@lemmy.example', followedAt: 1 },
+    ])
+    await datastores.collectionShares.insertAsync([
+      { _id: 'hackertube|oldVideo001', sourceId: 'hackertube', videoId: 'oldVideo001', seenAt: 1 },
+      { _id: 'lemmy:old@lemmy.example|oldVideo002', sourceId: 'lemmy:old@lemmy.example', videoId: 'oldVideo002', seenAt: 1 },
+    ])
+    const { restore, relaunch } = setup(datastores)
+
+    const collectionSources = [{ _id: 'lemmy:new@lemmy.example', kind: 'lemmy', url: 'https://lemmy.example/c/new', name: 'new@lemmy.example', followedAt: 2 }]
+    const collectionShares = [{ _id: 'lemmy:new@lemmy.example|newVideo001', sourceId: 'lemmy:new@lemmy.example', videoId: 'newVideo001', votes: 4, seenAt: 2 }]
+    const result = await restore({
+      safetyCopy: SAFETY_COPY,
+      sections: { settings: [{ _id: 'collectionsStarterSetDone', value: false }], collectionSources, collectionShares },
+    })
+
+    expect(result.ok).toBe(true)
+    expect(relaunch).toHaveBeenCalledOnce()
+    expect(await onDisk('collectionSources')).toEqual(collectionSources)
+    expect(await onDisk('collectionShares')).toEqual(collectionShares)
+    expect(await onDisk('settings', { _id: 'collectionsStarterSetDone' })).toEqual([{ _id: 'collectionsStarterSetDone', value: true }])
+  })
+
+  it('leaves the starter set\'s mark alone when it restores no source', async () => {
+    const datastores = await openDatastores()
+    await populate(datastores)
+    const { restore } = setup(datastores)
+
+    await restore({ safetyCopy: SAFETY_COPY, sections: { settings: [{ _id: 'collectionsStarterSetDone', value: false }], collectionSources: [] } })
+
+    expect(await onDisk('settings', { _id: 'collectionsStarterSetDone' })).toEqual([{ _id: 'collectionsStarterSetDone', value: false }])
   })
 
   it('upserts the settings rather than clearing them: a setting the backup does not mention keeps its value', async () => {
