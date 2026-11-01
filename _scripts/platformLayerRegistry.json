@@ -3,7 +3,7 @@
   "touched": [
     {
       "path": "package.json",
-      "reason": "the registry check and upstream report scripts; dev dependencies for renderer tests (jsdom, Vue test utils, the single file component plugin)"
+      "reason": "the registry check and upstream report scripts; dev dependencies for renderer tests (jsdom, Vue test utils, the single file component plugin); the get-hackertube script, which makes the Collections bundle (_scripts/getHackerTubeBundle.mjs)"
     },
     {
       "path": "pnpm-lock.yaml",
@@ -11,7 +11,27 @@
     },
     {
       "path": "src/constants.js",
-      "reason": "the PeerTube download IPC channels (PEERTUBE_DOWNLOAD, _CANCEL, _REVEAL, _DISMISS, _LIST_DOWNLOADS)"
+      "reason": "the PeerTube download IPC channels (PEERTUBE_DOWNLOAD, _CANCEL, _REVEAL, _DISMISS, _LIST_DOWNLOADS); Collections' IPC channels (DB_COLLECTIONS, SYNC_COLLECTIONS), DBActions.COLLECTIONS and SyncEvents.COLLECTIONS"
+    },
+    {
+      "path": "src/datastores/handlers/base.js",
+      "reason": "the Collections handler class (sources by id, shares only ever added or updated), and its two datastores loaded and compacted with the others"
+    },
+    {
+      "path": "src/datastores/handlers/electron.js",
+      "reason": "the Collections handler class, through dbCollections"
+    },
+    {
+      "path": "src/datastores/handlers/index.js",
+      "reason": "exports DBCollectionHandlers"
+    },
+    {
+      "path": "src/datastores/handlers/web.js",
+      "reason": "exports the Collections handlers from base"
+    },
+    {
+      "path": "src/datastores/index.js",
+      "reason": "Collections' two datastores, collectionSources and collectionShares"
     },
     {
       "path": "src/main/externalPlayer.js",
@@ -19,15 +39,15 @@
     },
     {
       "path": "src/main/index.js",
-      "reason": "onBeforeSendHeaders hands every request to the PeerTube User-Agent helper (src/main/peertubeRequests.js) first; registers the PeerTube download handlers (src/main/peertubeDownloads/ipc.js) next to the yt-dlp ones"
+      "reason": "onBeforeSendHeaders hands every request to the PeerTube User-Agent helper (src/main/peertubeRequests.js) first; registers the PeerTube download handlers (src/main/peertubeDownloads/ipc.js) next to the yt-dlp ones; handles DB_COLLECTIONS, Collections' sources and shares, beside the Later list's handler"
     },
     {
       "path": "src/preload/interface.js",
-      "reason": "the PeerTube download functions (peerTubeDownload, peerTubeCancel, peerTubeReveal, peerTubeDismiss, peerTubeListDownloads)"
+      "reason": "the PeerTube download functions (peerTubeDownload, peerTubeCancel, peerTubeReveal, peerTubeDismiss, peerTubeListDownloads); Collections' dbCollections and handleSyncCollections"
     },
     {
       "path": "src/renderer/App.vue",
-      "reason": "the deep link handler (`enableOpenUrl`) hands a `fjernsyn://` link to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `handleYoutubeLink` only when that hands it back (always, while PeerTube is off); in-app link clicks unchanged"
+      "reason": "the deep link handler (`enableOpenUrl`) hands a `fjernsyn://` link to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `handleYoutubeLink` only when that hands it back (always, while PeerTube is off); in-app link clicks unchanged; loads Collections' sources and shares at startup (grabCollections) and listens for other windows' writes to them (setupCollectionsSync)"
     },
     {
       "path": "src/renderer/components/DataSettings/DataSettings.vue",
@@ -63,7 +83,7 @@
     },
     {
       "path": "src/renderer/components/TopNav/TopNav.vue",
-      "reason": "the search bar (`goToSearch`, now async) hands its text to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `getYoutubeUrlInfo` only when that hands it back (always, while PeerTube is off); for the layer's search page: the pill (src/renderer/components/LayerSearchPill) in place of the filter button, a plain search goes to the route src/renderer/components/LayerSearchPill/searchBox.js builds instead of one from the store's searchSettings, and an operator's values are the suggestions once its key and colon are typed"
+      "reason": "the search bar (`goToSearch`, now async) hands its text to src/renderer/platform/entryPoints.js `openPeerTubeEntry` first, and to `getYoutubeUrlInfo` only when that hands it back (always, while PeerTube is off); for the layer's search page: the pill (src/renderer/components/LayerSearchPill) in place of the filter button, a plain search goes to the route src/renderer/components/LayerSearchPill/searchBox.js builds instead of one from the store's searchSettings, and an operator's values are the suggestions once its key and colon are typed; the Collections link, after Channels"
     },
     {
       "path": "src/renderer/components/WatchVideoPlaylist/WatchVideoPlaylist.vue",
@@ -74,12 +94,20 @@
       "reason": "optional `platform` prop: no SponsorBlock and no YouTube HLS seek rule for other platforms; lowest variant when none is at or below the preferred quality"
     },
     {
+      "path": "src/renderer/helpers/strings.js",
+      "reason": "translateWindowTitle names the Collections route's window title"
+    },
+    {
       "path": "src/renderer/main.js",
       "reason": "installs the platform layer (src/renderer/platform/vue.js) on the app"
     },
     {
       "path": "src/renderer/router/index.js",
-      "reason": "the PeerTube routes (the layer's watch, channel and search views) spread in from src/renderer/platform/routes.js; `/search/:query` renders the layer's search page (src/renderer/views/LayerSearchPage), imported in place of SearchPage, which stays in the tree unrouted (shadowed); `/channel/:id/:currentTab?` renders `ChannelSurface` from src/renderer/platform/routes.js, upstream's Channel while the surface switch (enableLayerSurfaces) is off and the layer's channel view while it is on, imported in place of Channel; `/watch/:id` likewise renders `WatchSurface`, upstream's Watch or the layer's watch view, imported in place of Watch"
+      "reason": "the PeerTube routes (the layer's watch, channel and search views) spread in from src/renderer/platform/routes.js; `/search/:query` renders the layer's search page (src/renderer/views/LayerSearchPage), imported in place of SearchPage, which stays in the tree unrouted (shadowed); `/channel/:id/:currentTab?` renders `ChannelSurface` from src/renderer/platform/routes.js, upstream's Channel while the surface switch (enableLayerSurfaces) is off and the layer's channel view while it is on, imported in place of Channel; `/watch/:id` likewise renders `WatchSurface`, upstream's Watch or the layer's watch view, imported in place of Watch; the `/collections` route (src/renderer/views/Collections/)"
+    },
+    {
+      "path": "src/renderer/store/index.js",
+      "reason": "registers the collections store module"
     },
     {
       "path": "src/renderer/store/modules/settings.js",
@@ -91,7 +119,7 @@
     },
     {
       "path": "static/locales/en-US.yaml",
-      "reason": "the fork-only PeerTube, Layer Search and Layer Surfaces strings"
+      "reason": "the fork-only PeerTube, Layer Search and Layer Surfaces strings; the Collections strings"
     }
   ],
   "shadowed": {
