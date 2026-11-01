@@ -237,6 +237,12 @@ export function hackerTubeShare(row, seenAt) {
  * @property {number} followedAt
  * @property {string | null} [dataGenerated] HackerTube only: the `generated`
  *   of the data loaded into this installation's shares, null before any is
+ * @property {HackerTubeTaxonomy} [taxonomy] HackerTube only: the taxonomy of
+ *   that export, its categories by area
+ * @property {number | null} [checkedAt] when a refresh last asked it, in ms,
+ *   whether or not it answered; absent before the first refresh
+ * @property {number | null} [failedAt] when it last failed to answer a
+ *   refresh, in ms, while that is its last refresh; null once one works
  */
 
 /**

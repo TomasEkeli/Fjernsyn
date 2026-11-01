@@ -2,6 +2,9 @@ import { DBCollectionHandlers } from '../../../datastores/handlers/index'
 import { SyncEvents } from '../../../constants'
 import { HACKERTUBE_SOURCE_ID, hackerTubeShare, hackerTubeSource } from '../../helpers/collections/hackertube'
 import { fetchHackerTubeBundle } from '../../helpers/collections/hackertubeBundle'
+import { SOURCE_KINDS_BY_KIND } from '../../helpers/collections/kinds/index'
+import { lastRefreshOf, refreshCollectionSources, refreshIsDue } from '../../helpers/collections/refresh'
+import { sharesToPut } from '../../helpers/collections/shares'
 
 /**
  * Collections: the sources followed and the shares they made, from
@@ -14,6 +17,11 @@ import { fetchHackerTubeBundle } from '../../helpers/collections/hackertubeBundl
  * make deeply reactive. A change replaces the record.
  *
  * The walls are worked out from the shares in `helpers/collections/shares.js`.
+ *
+ * A refresh asks every followed source what it shares now
+ * (`helpers/collections/refresh.js`), and keeps when it did on each source's
+ * record, as `checkedAt`, with `failedAt` while the source's last refresh
+ * failed.
  */
 
 /** @import { Share, Source } from '../../helpers/collections/hackertube' */
@@ -36,6 +44,9 @@ const state = {
   // The bundle being loaded into the datastore, the first time Collections is opened
   collectionsLoading: false,
   collectionsLoadFailed: false,
+  // A refresh in this window, and how many of the sources it asks are done
+  collectionsRefreshing: false,
+  collectionsRefreshProgress: { done: 0, total: 0 },
 }
 
 const getters = {
@@ -50,10 +61,20 @@ const getters = {
   getCollectionShares: (state) => Object.values(state.collectionShares),
   /** @returns {Record<string, VideoDetails>} by the video's ref as one string */
   getCollectionVideos: (state) => state.collectionVideos,
+  getCollectionsRefreshing: (state) => state.collectionsRefreshing,
+  /** @returns {{ done: number, total: number }} sources asked, of those being asked */
+  getCollectionsRefreshProgress: (state) => state.collectionsRefreshProgress,
+  /** @returns {number | null} when every followed source was last refreshed by, in ms; null for never */
+  getCollectionsLastRefreshAt: (state) => lastRefreshOf(Object.values(state.collectionSources)),
+  /** @returns {Source[]} the followed sources whose last refresh failed */
+  getCollectionsRefreshFailures: (state) => Object.values(state.collectionSources).filter(source => typeof source.failedAt === 'number'),
 }
 
 /** The one first open in flight, which a second open joins */
 let opening = null
+
+/** The one refresh in flight in this window, which a second refresh joins */
+let refreshing = null
 
 const actions = {
   /**
@@ -140,6 +161,51 @@ const actions = {
     return opening
   },
 
+  /**
+   * Lays the fields given over a followed source's record as it is now, and
+   * does nothing for a source no longer followed.
+   *
+   * @param {any} context
+   * @param {{ sourceId: string, fields: Partial<Source> }} payload
+   */
+  async updateCollectionSource({ state, dispatch }, { sourceId, fields }) {
+    const current = state.collectionSources[sourceId]
+    if (current === undefined) { return }
+
+    await dispatch('followCollectionSource', { ...current, ...fields })
+  },
+
+  /**
+   * Asks every followed source what it shares now, whatever the page shows,
+   * and keeps what is new or changed; for HackerTube, a newer export when
+   * there is one. A source that fails keeps what it has and is marked
+   * failed. One refresh at a time: a second call joins the one under way.
+   * Nothing over a datastore that could not be read, and not before a first
+   * open under way has loaded the bundle.
+   *
+   * @param {any} context
+   * @returns {Promise<void>}
+   */
+  refreshCollections(context) {
+    refreshing ??= refreshCollectionsOnce(context).finally(() => { refreshing = null })
+    return refreshing
+  },
+
+  /**
+   * What opening Collections does once it is open: a refresh, when the last
+   * one was more than an hour ago (`refreshIsDue`), or never was.
+   *
+   * @param {any} context
+   * @returns {Promise<void>}
+   */
+  async refreshCollectionsIfDue({ state, dispatch }) {
+    if (state.collectionsGrabFailed) { return }
+
+    if (refreshIsDue(lastRefreshOf(Object.values(state.collectionSources)), Date.now())) {
+      await dispatch('refreshCollections')
+    }
+  },
+
   setupCollectionsSync({ commit }) {
     window.ftElectron.handleSyncCollections((event, data) => {
       commit('applyCollectionsSync', { event, data })
@@ -182,15 +248,46 @@ async function openCollectionsOnce({ state, commit, dispatch }) {
     const seenAt = Date.now()
     const shares = bundle.videos.map(video => hackerTubeShare(video, seenAt)).filter(share => share !== null)
 
-    await dispatch('putCollectionShares', shares)
+    // Those already kept as the bundle has them need no writing again
+    await dispatch('putCollectionShares', sharesToPut(state.collectionShares, shares))
     // As it is now: another window may have written it while the bundle loaded
     const current = state.collectionSources[HACKERTUBE_SOURCE_ID] ?? source
-    await dispatch('followCollectionSource', { ...current, dataGenerated: bundle.generated })
+    await dispatch('followCollectionSource', { ...current, dataGenerated: bundle.generated, taxonomy: bundle.taxonomy })
   } catch (error) {
     console.error('Collections: could not load the HackerTube bundle', error)
     commit('setCollectionsLoadFailed', true)
   } finally {
     commit('setCollectionsLoading', false)
+  }
+}
+
+/**
+ * @param {any} context
+ */
+async function refreshCollectionsOnce({ state, commit, dispatch }) {
+  if (opening !== null) {
+    await opening
+  }
+
+  if (state.collectionsGrabFailed) { return }
+
+  commit('setCollectionsRefreshing', true)
+
+  try {
+    await refreshCollectionSources({
+      sources: Object.values(state.collectionSources),
+      kinds: SOURCE_KINDS_BY_KIND,
+      // As it is when asked, so that a test can stand in for the network
+      fetch: (...args) => fetch(...args),
+      now: () => Date.now(),
+      keptShares: () => state.collectionShares,
+      isFollowed: sourceId => Object.hasOwn(state.collectionSources, sourceId),
+      putShares: shares => dispatch('putCollectionShares', shares),
+      updateSource: (sourceId, fields) => dispatch('updateCollectionSource', { sourceId, fields }),
+      onProgress: progress => commit('setCollectionsRefreshProgress', progress),
+    })
+  } finally {
+    commit('setCollectionsRefreshing', false)
   }
 }
 
@@ -240,6 +337,14 @@ const mutations = {
 
   setCollectionsGrabFailed(state, value) {
     state.collectionsGrabFailed = value
+  },
+
+  setCollectionsRefreshing(state, value) {
+    state.collectionsRefreshing = value
+  },
+
+  setCollectionsRefreshProgress(state, progress) {
+    state.collectionsRefreshProgress = progress
   },
 
   startCollectionsGrab(state) {
