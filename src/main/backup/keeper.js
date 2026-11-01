@@ -5,6 +5,7 @@ import { promisify } from 'node:util'
 import { gunzip as gunzipCallback } from 'node:zlib'
 
 import { BACKUP_SECTIONS } from '../../renderer/helpers/backup'
+import { collectionsBackupSections, withMachineFields } from '../../renderer/helpers/collections/backup.js'
 import { isBaseFileName, lineageEntry, readSyncFile, SYNC_FILE_NAME } from '../../renderer/helpers/keptBackup'
 import { MACHINE_BOUND_SETTINGS } from './machineBound'
 import { backupsFolder, isRestorableSetting, removeOldSafetyCopies, safetyCopyName } from './restore'
@@ -754,7 +755,9 @@ export function createKeeper({
         : records
     }
 
-    return sections
+    // The sources without this machine's refresh times, and no share of
+    // HackerTube's, which the bundle rebuilds, or of a source not followed
+    return { ...sections, ...collectionsBackupSections(sections.collectionSources, sections.collectionShares) }
   }
 
   // #endregion collecting
@@ -852,6 +855,11 @@ export function createKeeper({
    */
   async function applyToDatastores(toApply) {
     for (const [section, { put, remove }] of Object.entries(toApply)) {
+      if (section === 'collectionSources') {
+        await applySources(put, remove)
+        continue
+      }
+
       const datastore = datastores[section]
 
       // Removals first: a history entry may come back under another _id
@@ -864,6 +872,30 @@ export function createKeeper({
         : put
 
       await Promise.all(records.map(record => datastore.updateAsync({ _id: record._id }, record, { upsert: true })))
+    }
+  }
+
+  /**
+   * The followed sources put and removed, written straight to the datastore,
+   * never through the store's follow, which would turn a hidden chip back on.
+   * An unfollow takes the source's shares and its own data with it, as it
+   * does where it was made: HackerTube's shares are in no backup, so nothing
+   * else would remove them. A source put keeps this machine's refresh times.
+   * @param {Record<string, any>[]} put
+   * @param {string[]} remove
+   */
+  async function applySources(put, remove) {
+    const sources = datastores.collectionSources
+
+    for (const _id of remove) {
+      await datastores.collectionShares.removeAsync({ sourceId: _id }, { multi: true })
+      await datastores.collectionSourceData.removeAsync({ _id }, {})
+      await sources.removeAsync({ _id }, {})
+    }
+
+    for (const record of put) {
+      const kept = await sources.findOneAsync({ _id: record._id })
+      await sources.updateAsync({ _id: record._id }, withMachineFields(record, kept), { upsert: true })
     }
   }
 
