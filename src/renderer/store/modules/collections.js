@@ -171,6 +171,11 @@ const actions = {
    * followed whose videos could then not be kept stays followed, marked
    * failed, for a refresh to bring them.
    *
+   * The trial confirms no PeerTube link, so that following answers at the
+   * pace of the feed alone. While PeerTube is switched on, a refresh of that
+   * source alone then runs in the background, not waited for, which confirms
+   * them, and marks the source failed if it fails, as any refresh does.
+   *
    * @param {any} context
    * @param {string} url
    * @returns {Promise<{ outcome: 'followed', source: Source } | { outcome: 'unavailable' } | Exclude<import('../../helpers/collections/follow').SourceTrial, { outcome: 'followable' }>>}
@@ -214,6 +219,14 @@ const actions = {
         console.error(`Collections: could not keep what ${source._id} shares`, error)
         const at = Date.now()
         await dispatch('updateCollectionSource', { sourceId: source._id, fields: { attemptedAt: at, failedAt: at } })
+      }
+
+      // The trial confirms no PeerTube link; a refresh of this source alone,
+      // not waited for, does, so that they need not wait for the next one
+      if (context.rootGetters.getEnablePeerTube === true) {
+        refreshCollectionSources({ ...refreshDependencies(context), sources: [source] }).catch((error) => {
+          console.error(`Collections: could not refresh ${source._id} after following it`, error)
+        })
       }
     }
 

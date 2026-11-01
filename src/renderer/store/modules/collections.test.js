@@ -1138,26 +1138,94 @@ describe('the Collections store', () => {
       return fetch
     }
 
-    it('confirms no PeerTube link in the trial, leaving them to the next refresh, so that following answers at the pace of the feed alone', async () => {
-      vi.spyOn(console, 'warn').mockImplementation(() => {})
-      const state = await loadedState()
-      vi.stubGlobal('fetch', vi.fn(async (url) => {
-        const { host, pathname } = new URL(url)
-        return host === 'lemmy.cafe' && pathname === '/feeds/c/mealtimevideos.xml'
-          ? new Response(mealtimeTopWeek.replaceAll('https://www.youtube.com/watch?v=dTXl4RQimbY', 'https://fedi.video/w/1GcddTf1uzhyXscJ4ymdEG'))
-          : new Response('not found', { status: 404 })
-      }))
-      fakeLayer.resolveUrl.mockReset()
-      fakeLayer.getVideoSummary.mockReset()
-      const context = contextFor(state)
-      context.rootGetters = { ...context.rootGetters, getEnablePeerTube: true }
+    describe('a community linking PeerTube videos', () => {
+      const UUID = '059ca8df-3049-44a3-93a9-d603327f2e74'
+      const ORIGIN = 'peertube.v1.root42.de'
+      const FEED = mealtimeTopWeek.replaceAll('https://www.youtube.com/watch?v=dTXl4RQimbY', 'https://fedi.video/w/1GcddTf1uzhyXscJ4ymdEG')
 
-      const followed = await collections.actions.followCollectionSourceByUrl(context, 'https://lemmy.cafe/c/mealtimevideos')
+      /** lemmy.cafe serving that feed, or failing once the trial has had it */
+      function stubFeed({ failAfter = Infinity } = {}) {
+        let served = 0
+        const fetch = vi.fn(async (url) => {
+          const { host, pathname } = new URL(url)
+          if (host !== 'lemmy.cafe' || pathname !== '/feeds/c/mealtimevideos.xml') { return new Response('not found', { status: 404 }) }
+          return ++served > failAfter ? new Response('down', { status: 503 }) : new Response(FEED)
+        })
+        vi.stubGlobal('fetch', fetch)
+        return fetch
+      }
 
-      expect(followed.outcome).toBe('followed')
-      expect(fakeLayer.resolveUrl).not.toHaveBeenCalled()
-      expect(fakeLayer.getVideoSummary).not.toHaveBeenCalled()
-      expect(Object.keys(state.collectionShares).filter(id => id.startsWith(MEALTIME._id))).toEqual(['lemmy:mealtimevideos@lemmy.cafe|neGgUavFT0w'])
+      /** @param {object} state */
+      function withPeerTube(state, enabled) {
+        const context = contextFor(state)
+        context.rootGetters = { ...context.rootGetters, getEnablePeerTube: enabled }
+        return context
+      }
+
+      /** The layer, answering the video at its origin once `release` is called */
+      function layerHeldBack() {
+        let release
+        const held = new Promise((resolve) => { release = resolve })
+        fakeLayer.resolveUrl.mockReset()
+        fakeLayer.getVideoSummary.mockReset()
+        fakeLayer.resolveUrl.mockImplementation(async (url) => {
+          await held
+          return { platform: 'peertube', kind: 'video', ref: { platform: 'peertube', host: new URL(url).hostname, videoId: UUID }, host: new URL(url).hostname, timestamp: null }
+        })
+        fakeLayer.getVideoSummary.mockImplementation(async () => ({
+          type: 'video', platform: 'peertube', host: ORIGIN, videoId: UUID, title: 'Own', author: 'C', authorId: `c@${ORIGIN}`, lengthSeconds: 60, liveNow: false, isUpcoming: false, nsfw: false, thumbnail: '',
+        }))
+        return () => release()
+      }
+
+      beforeEach(() => {
+        localStorage.clear()
+        vi.spyOn(console, 'warn').mockImplementation(() => {})
+      })
+
+      it('answers the follow from the trial alone, which confirms no PeerTube link, and then refreshes that source in the background, which does', async () => {
+        const state = await loadedState()
+        const fetch = stubFeed()
+        const release = layerHeldBack()
+
+        const followed = await collections.actions.followCollectionSourceByUrl(withPeerTube(state, true), 'https://lemmy.cafe/c/mealtimevideos')
+
+        // Answered while the layer still has not: the PeerTube link waits for the background refresh
+        expect(followed.outcome).toBe('followed')
+        expect(Object.keys(state.collectionShares).filter(id => id.startsWith(MEALTIME._id))).toEqual(['lemmy:mealtimevideos@lemmy.cafe|neGgUavFT0w'])
+
+        release()
+
+        await vi.waitFor(() => expect(state.collectionShares[`${MEALTIME._id}|${UUID}@${ORIGIN}`]).toMatchObject({ platform: 'peertube', host: ORIGIN }))
+        expect(state.collectionVideos[`${UUID}@${ORIGIN}`]).toMatchObject({ lengthSeconds: 60 })
+        // The trial's two feeds, then the refresh's two, of this source alone
+        expect(fetch.mock.calls.map(([url]) => new URL(url).host)).toEqual(['lemmy.cafe', 'lemmy.cafe', 'lemmy.cafe', 'lemmy.cafe'])
+        await vi.waitFor(() => expect(state.collectionSources[MEALTIME._id]).toMatchObject({ failedAt: null }))
+      })
+
+      it('marks the source failed, as a refresh does, when the background refresh cannot have its feed', async () => {
+        const state = await loadedState()
+        stubFeed({ failAfter: 2 })
+        layerHeldBack()()
+
+        const followed = await collections.actions.followCollectionSourceByUrl(withPeerTube(state, true), 'https://lemmy.cafe/c/mealtimevideos')
+
+        expect(followed.outcome).toBe('followed')
+        await vi.waitFor(() => expect(state.collectionSources[MEALTIME._id]).toMatchObject({ failedAt: NOW, attemptedAt: NOW }))
+        expect(Object.keys(state.collectionShares).filter(id => id.startsWith(MEALTIME._id))).toEqual(['lemmy:mealtimevideos@lemmy.cafe|neGgUavFT0w'])
+      })
+
+      it('asks nothing more while PeerTube is off, as there is nothing to confirm', async () => {
+        const state = await loadedState()
+        const fetch = stubFeed()
+        layerHeldBack()()
+
+        await collections.actions.followCollectionSourceByUrl(withPeerTube(state, false), 'https://lemmy.cafe/c/mealtimevideos')
+        await new Promise(resolve => setTimeout(resolve, 10))
+
+        expect(fetch).toHaveBeenCalledTimes(2)
+        expect(fakeLayer.resolveUrl).not.toHaveBeenCalled()
+      })
     })
 
     it('follows a community, and keeps its videos as its shares at once from the feed it was tried with', async () => {
