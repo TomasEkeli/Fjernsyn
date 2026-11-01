@@ -31,6 +31,10 @@ import { starterSources, starterSourcesToFollow } from '../../helpers/collection
  * when a refresh last worked for it (`checkedAt`), when one last asked it
  * (`attemptedAt`), and `failedAt` while its last refresh failed.
  *
+ * The first open of Collections, or of the Sources page, follows the starter
+ * set once per installation (`applyCollectionsStarterSet`), marked done in
+ * the `collectionsStarterSetDone` setting.
+ *
  * A source is followed by a URL pasted on the Sources page, once asking it
  * has shown it can be (`helpers/collections/follow.js`), and unfollowed
  * there, which removes its record, its shares and its own data; the videos'
