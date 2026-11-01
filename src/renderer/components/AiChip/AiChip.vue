@@ -3,8 +3,8 @@
 
   One setting behind every wall that has the pill, as the Watched pill is, and
   the same one Distraction Free settings has as a switch, so pressing it here
-  hides them on search, subscriptions, channel pages and the related videos
-  alike (helpers/aiShown.js). Pressed while they are shown, which is the
+  hides them on search, subscriptions, explore, channel pages and the related
+  videos alike (helpers/aiShown.js). Pressed while they are shown, which is the
   default: hiding is the choice, marking is not.
 -->
 <template>

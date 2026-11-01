@@ -35,6 +35,7 @@
             :title="$t('Watched Chip.Hint')"
             @toggle="toggleWatched"
           />
+          <AiChip />
           <div
             v-if="regionNames.length > 0"
             class="picker"
@@ -81,6 +82,12 @@
         v-if="isLoading"
       />
       <p
+        v-else-if="shownCategories.length > 0 && stream.length === 0 && aiHidEverything"
+        class="message"
+      >
+        {{ $t('AI Chip.All Hidden') }}
+      </p>
+      <p
         v-else-if="shownCategories.length > 0 && stream.length === 0 && !watchedShown"
         class="message"
       >
@@ -89,6 +96,7 @@
       <FtElementList
         v-else-if="shownCategories.length > 0"
         :data="activeStream"
+        ai-wall
       />
       <p
         v-else
@@ -117,6 +125,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import AiChip from '../../components/AiChip/AiChip.vue'
 import FtAutoLoadNextPageWrapper from '../../components/FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
 import FtCard from '../../components/ft-card/ft-card.vue'
@@ -140,6 +149,7 @@ import {
   toggleExploreRegionPinned
 } from '../../helpers/exploreRegions'
 import { setWatchedShown, watchedIsShown, withWatchedPreference } from '../../helpers/watchedShown'
+import { aiIsShown, withAiPreference } from '../../helpers/aiShown'
 import { copyToClipboard, showToast } from '../../helpers/utils'
 import { KeyboardShortcuts } from '../../../constants'
 
@@ -257,9 +267,28 @@ const shownCategories = computed(() => {
 })
 
 /** @type {import('vue').ComputedRef<any[]>} */
-const stream = computed(() => {
+const unwatched = computed(() => {
   return withWatchedPreference(mergeByRank(shownCategories.value.map(category => category.videos)))
 })
+
+/**
+ * The stream less what the Watched and AI pills hide. AI videos are taken
+ * out before the stream is cut into pages, as on the subscriptions page, so
+ * that a page of them does not stand empty while more is to be had below.
+ * Each card on the wall asks for its own verdict (`ai-wall`), so a video
+ * leaves when its verdict arrives. See `helpers/aiShown.js`.
+ *
+ * @type {import('vue').ComputedRef<any[]>}
+ */
+const stream = computed(() => withAiPreference(unwatched.value))
+
+/**
+ * Whether the AI pill took out everything the Watched pill left, for the
+ * empty stream to say so rather than that everything was watched.
+ *
+ * @type {import('vue').ComputedRef<boolean>}
+ */
+const aiHidEverything = computed(() => !aiIsShown() && unwatched.value.length > 0)
 
 /**
  * Whether what has been watched stays in the stream: the same setting, and the
