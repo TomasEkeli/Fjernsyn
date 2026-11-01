@@ -96,8 +96,9 @@ import { KeyboardShortcuts } from '../../../constants'
  * The cards are the ordinary ones, so every card action works here as on any
  * other wall, and a video opens on the ordinary watch page.
  *
- * The first open follows HackerTube and loads the copy of its data the app
- * ships with (store/modules/collections.js). Every open then refreshes, when
+ * The first open follows HackerTube, and the Lemmy community followed beside
+ * it (helpers/collections/starterSet.js), and loads the copy of HackerTube's
+ * data the app ships with (store/modules/collections.js). Every open then refreshes, when
  * the last refresh was more than an hour ago, asking each followed source
  * what it shares now (helpers/collections/refresh.js); the refresh button and
  * R or F5 refresh at any time. Beside it the crawl starts, which fetches each
