@@ -97,6 +97,20 @@ describe('Collections', () => {
     expect(listed(wrapper)).toHaveLength(150)
   })
 
+  it('shows a hundred when the window remembered for the session is not a number', async () => {
+    for (const saved of ['garbage', '0', '-5']) {
+      sessionStorage.setItem('collectionsLimit', saved)
+      store.setGetter('getCollectionsReady', true)
+      store.setGetter('getCollectionShares', Array.from({ length: 150 }, (_, index) => share(index, index)))
+
+      const wrapper = mountCollections()
+      await flushPromises()
+
+      expect(listed(wrapper), saved).toHaveLength(100)
+      wrapper.unmount()
+    }
+  })
+
   it('credits HackerTube, the dataset and the licence, with links', async () => {
     store.setGetter('getCollectionsReady', true)
 

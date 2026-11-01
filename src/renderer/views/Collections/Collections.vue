@@ -112,9 +112,10 @@ const videos = computed(() => wallVideos(store.getters.getCollectionShares))
  */
 const PAGE_SIZE = 100
 
-const savedLimit = sessionStorage.getItem('collectionsLimit')
+// Anything but a whole number of at least one is taken as never widened
+const savedLimit = parseInt(sessionStorage.getItem('collectionsLimit') ?? '')
 
-const dataLimit = ref(savedLimit !== null ? parseInt(savedLimit) : PAGE_SIZE)
+const dataLimit = ref(Number.isInteger(savedLimit) && savedLimit > 0 ? savedLimit : PAGE_SIZE)
 
 /** @type {import('vue').ComputedRef<import('../../helpers/collections/shares').CollectionVideo[]>} */
 const activeVideos = computed(() => {
