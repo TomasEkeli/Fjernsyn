@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { chipSources, hiddenSourcesWith, shownSourceIds } from './sourceChips'
+import { hiddenSourcesWith, shownSourceIds, sourcesByName } from './sourceChips'
 
 const source = (_id, name = _id) => ({ _id, kind: 'lemmy', url: `https://x.y/c/${_id}`, name, followedAt: 0 })
 
@@ -64,9 +64,9 @@ describe('turning a source\'s chip on or off', () => {
   })
 })
 
-describe('the chips', () => {
-  it('are one per source followed, by name, whatever the case', () => {
-    const chips = chipSources([source('3', 'videos@lemmy.world'), source('1', 'HackerTube'), source('2', 'documentaries@lemmy.cafe')])
+describe('sources by name, as the chips and the Sources page list them', () => {
+  it('are by name, whatever the case', () => {
+    const chips = sourcesByName([source('3', 'videos@lemmy.world'), source('1', 'HackerTube'), source('2', 'documentaries@lemmy.cafe')])
 
     expect(chips.map(chip => chip.name)).toEqual(['documentaries@lemmy.cafe', 'HackerTube', 'videos@lemmy.world'])
   })
@@ -74,6 +74,10 @@ describe('the chips', () => {
   it('does not reorder the list it was given', () => {
     const sources = Object.freeze([source('b'), source('a')])
 
-    expect(chipSources(sources).map(chip => chip._id)).toEqual(['a', 'b'])
+    expect(sourcesByName(sources).map(chip => chip._id)).toEqual(['a', 'b'])
+  })
+
+  it('takes anything with a name, as the Sources page\'s rows', () => {
+    expect(sourcesByName([{ name: 'b', videoCount: 1 }, { name: 'A', videoCount: 2 }])).toEqual([{ name: 'A', videoCount: 2 }, { name: 'b', videoCount: 1 }])
   })
 })

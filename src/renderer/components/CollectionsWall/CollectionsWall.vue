@@ -129,7 +129,7 @@ import { collectionsCrawlProgress, startCollectionsCrawl } from '../../helpers/c
 import { detailsProgress } from '../../helpers/collections/details'
 import { HACKERTUBE_SOURCE_ID } from '../../helpers/collections/hackertube'
 import { collectionSortOf, wallVideos } from '../../helpers/collections/shares'
-import { chipSources, hiddenSourcesWith, shownSourceIds } from '../../helpers/collections/sourceChips'
+import { hiddenSourcesWith, shownSourceIds, sourcesByName } from '../../helpers/collections/sourceChips'
 import { aiIsShown, withAiPreference } from '../../helpers/aiShown'
 import { setWatchedShown, watchedIsShown, withWatchedPreference } from '../../helpers/watchedShown'
 import { KeyboardShortcuts } from '../../../constants'
@@ -212,7 +212,7 @@ const bundleFailed = computed(() => {
  *
  * @type {import('vue').ComputedRef<import('../../helpers/collections/shares').Source[]>}
  */
-const chips = computed(() => chipSources(store.getters.getCollectionSources))
+const chips = computed(() => sourcesByName(store.getters.getCollectionSources))
 
 /**
  * The sources whose shares count on this wall: the source's own on its page,

@@ -59,12 +59,13 @@ export function hiddenSourcesWith(hidden, sourceId, shown) {
 }
 
 /**
- * The chips, one per source followed, in the order the Sources page lists
- * them: by name, whatever the case.
+ * Sources, or anything named as one, by name, whatever the case: the order
+ * of the chips and of the Sources page's list, so that the two agree.
  *
- * @param {readonly Source[]} sources
- * @returns {Source[]}
+ * @template {{ name: string }} T
+ * @param {readonly T[]} sources
+ * @returns {T[]}
  */
-export function chipSources(sources) {
+export function sourcesByName(sources) {
   return [...sources].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
 }

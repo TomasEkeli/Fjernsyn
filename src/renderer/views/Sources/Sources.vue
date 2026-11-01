@@ -90,6 +90,7 @@ import FtPrompt from '../../components/FtPrompt/FtPrompt.vue'
 import store from '../../store/index'
 
 import { sourceInstance, sourceKindLabel } from '../../helpers/collections/sourceLabels'
+import { sourcesByName } from '../../helpers/collections/sourceChips'
 import { showToast } from '../../helpers/utils'
 
 /**
@@ -143,7 +144,7 @@ const sources = computed(() => {
     counts.set(share.sourceId, (counts.get(share.sourceId) ?? 0) + 1)
   }
 
-  return store.getters.getCollectionSources
+  const rows = store.getters.getCollectionSources
     .map(source => ({
       _id: source._id,
       name: source.name,
@@ -151,7 +152,8 @@ const sources = computed(() => {
       instance: sourceInstance(source),
       videoCount: counts.get(source._id) ?? 0,
     }))
-    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+
+  return sourcesByName(rows)
 })
 
 const followInput = useTemplateRef('followInput')
