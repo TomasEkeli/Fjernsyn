@@ -99,6 +99,8 @@ export function lastAttemptOf(sources) {
  * @property {() => Record<string, import('./shares.js').Share>} keptShares the shares kept now, by `_id`
  * @property {(sourceId: string) => boolean} isFollowed whether the source is still followed
  * @property {(shares: import('./shares.js').Share[]) => Promise<void>} putShares
+ * @property {(sourceId: string, data: Record<string, any>) => Promise<void>} putSourceData
+ *   keeps the source's own data, apart from its record
  * @property {(sourceId: string, fields: object) => Promise<void>} updateSource
  *   lays the fields given over the source's record as it is now
  * @property {(progress: { done: number, total: number }) => void} [onProgress]
@@ -154,7 +156,7 @@ async function refreshSource(deps, source) {
     throw new Error(`no source kind ${source.kind}`)
   }
 
-  const { items, sourceFields } = await kind.fetch(source, { fetch: deps.fetch })
+  const { items, sourceFields, sourceData } = await kind.fetch(source, { fetch: deps.fetch })
   const shares = sharesToPut(deps.keptShares(), kind.toShares(items, source, deps.now()))
 
   // Unfollowed meanwhile: its shares went with it, and must not come back
@@ -162,6 +164,10 @@ async function refreshSource(deps, source) {
 
   if (shares.length > 0) {
     await deps.putShares(shares)
+  }
+
+  if (sourceData !== undefined) {
+    await deps.putSourceData(source._id, sourceData)
   }
 
   // Only once the shares are in, so that what the source's record says was

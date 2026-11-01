@@ -144,9 +144,9 @@ function recognise(url, now) {
 }
 
 /**
- * The videos of a newer export than the one loaded, with its date and
- * taxonomy to keep on the source once they are in; nothing when the export
- * is the one loaded, which costs one small request.
+ * The videos of a newer export than the one loaded, with its date to keep on
+ * the source once they are in, and its taxonomy to keep apart; nothing when
+ * the export is the one loaded, which costs one small request.
  *
  * @param {import('../shares.js').Source} source
  * @param {{ fetch: typeof fetch }} deps
@@ -163,7 +163,8 @@ async function fetchItems(source, { fetch: fetchFn }) {
 
   return {
     items: bundle.videos,
-    sourceFields: { dataGenerated: bundle.generated, taxonomy: bundle.taxonomy },
+    sourceFields: { dataGenerated: bundle.generated },
+    sourceData: { generated: bundle.generated, taxonomy: bundle.taxonomy },
   }
 }
 

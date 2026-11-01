@@ -11,6 +11,7 @@ vi.mock('../index', async () => {
     collectionSources: new Datastore({ inMemoryOnly: true }),
     collectionShares: new Datastore({ inMemoryOnly: true }),
     collectionVideos: new Datastore({ inMemoryOnly: true }),
+    collectionSourceData: new Datastore({ inMemoryOnly: true }),
   }
 })
 
@@ -102,5 +103,18 @@ describe('putting collection videos\' details', () => {
     await collections.putVideos([details('aaaaaaaaaaa', { fetchedAt: 2 })])
 
     expect(await collections.findVideos()).toEqual([details('aaaaaaaaaaa', { fetchedAt: 2 })])
+  })
+})
+
+describe('putting a collection source\'s own data', () => {
+  beforeEach(async () => {
+    await db.collectionSourceData.removeAsync({}, { multi: true })
+  })
+
+  it('keeps one record per source, each put replacing the last, and finds them all', async () => {
+    await collections.putSourceData({ _id: 'hackertube', generated: '2026-10-31', taxonomy: { version: 'a', areas: [] } })
+    await collections.putSourceData({ _id: 'hackertube', generated: '2026-11-07', taxonomy: { version: 'b', areas: [] } })
+
+    expect(await collections.findSourceData()).toEqual([{ _id: 'hackertube', generated: '2026-11-07', taxonomy: { version: 'b', areas: [] } }])
   })
 })

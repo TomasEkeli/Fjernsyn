@@ -15,6 +15,8 @@ vi.mock('../../../datastores/handlers/index', () => ({
     putShares: vi.fn(async () => ({ added: 0, updated: 0 })),
     findVideos: vi.fn(async () => []),
     putVideos: vi.fn(async () => {}),
+    findSourceData: vi.fn(async () => []),
+    putSourceData: vi.fn(async () => {}),
   },
 }))
 
@@ -35,7 +37,7 @@ const BUNDLE = {
 }
 
 function freshState() {
-  return { collectionSources: {}, collectionShares: {}, collectionVideos: {}, collectionsReady: false, collectionsGrabFailed: false, collectionsSyncBuffer: null, collectionsLoading: false, collectionsLoadFailed: false, collectionsRefreshing: false, collectionsRefreshProgress: { done: 0, total: 0 } }
+  return { collectionSources: {}, collectionShares: {}, collectionVideos: {}, collectionsReady: false, collectionsGrabFailed: false, collectionsSyncBuffer: null, collectionsLoading: false, collectionsLoadFailed: false, collectionsRefreshing: false, collectionsRefreshProgress: { done: 0, total: 0 }, collectionSourceData: {} }
 }
 
 function contextFor(state) {
@@ -115,6 +117,23 @@ describe('the Collections store', () => {
 
     expect(collections.getters.getCollectionVideos(state)).toEqual({ aaaaaaaaaaa: { _id: 'aaaaaaaaaaa', videoId: 'aaaaaaaaaaa', fetchedAt: 1, lengthSeconds: 60 } })
     expect(Object.isFrozen(state.collectionVideos.aaaaaaaaaaa)).toBe(true)
+  })
+
+  it('loads each source\'s own data the datastore holds, by source', async () => {
+    DBCollectionHandlers.findSourceData.mockResolvedValueOnce([{ _id: 'hackertube', generated: '2026-10-31', taxonomy: { version: 'v', areas: [] } }])
+    const state = freshState()
+
+    await collections.actions.grabCollections(contextFor(state))
+
+    expect(collections.getters.getCollectionSourceData(state)('hackertube')).toEqual({ _id: 'hackertube', generated: '2026-10-31', taxonomy: { version: 'v', areas: [] } })
+  })
+
+  it('takes another window\'s source data', () => {
+    const state = freshState()
+
+    collections.mutations.applyCollectionsSync(state, { event: SyncEvents.COLLECTIONS.PUT_SOURCE_DATA, data: { _id: 'hackertube', generated: 'g', taxonomy: { areas: [] } } })
+
+    expect(state.collectionSourceData.hackertube.generated).toBe('g')
   })
 
   it('says the read failed when the details cannot be read, so the crawl does not take every video for missing', async () => {
@@ -240,7 +259,11 @@ describe('the Collections store', () => {
       expect(shares[0]).toMatchObject({ sourceId: 'hackertube', votes: 25, why: 'why a', seenAt: NOW })
 
       expect(shareIds(state)).toEqual(['hackertube|aaaaaaaaaaa', 'hackertube|bbbbbbbbbbb'])
-      expect(state.collectionSources.hackertube).toMatchObject({ kind: 'hackertube', followedAt: NOW, dataGenerated: '2026-10-31', taxonomy: { version: 'v', areas: [] } })
+      expect(state.collectionSources.hackertube).toMatchObject({ kind: 'hackertube', followedAt: NOW, dataGenerated: '2026-10-31' })
+      // The taxonomy apart from the source's record, which is written on every refresh
+      expect(state.collectionSources.hackertube).not.toHaveProperty('taxonomy')
+      expect(DBCollectionHandlers.putSourceData).toHaveBeenCalledWith({ _id: 'hackertube', generated: '2026-10-31', taxonomy: { version: 'v', areas: [] } })
+      expect(collections.getters.getCollectionSourceData(state)('hackertube')).toMatchObject({ generated: '2026-10-31', taxonomy: { version: 'v' } })
       // Followed first, then marked loaded once the shares are written
       expect(DBCollectionHandlers.upsertSource.mock.calls.map(([source]) => source.dataGenerated)).toEqual([null, '2026-10-31'])
     })
@@ -375,7 +398,9 @@ describe('the Collections store', () => {
 
       expect(pathsAsked(fetch)).toEqual(['/api/export'])
       expect(DBCollectionHandlers.putShares).not.toHaveBeenCalled()
+      expect(DBCollectionHandlers.putSourceData).not.toHaveBeenCalled()
       expect(state.collectionSources.hackertube).toMatchObject({ dataGenerated: '2026-10-31', checkedAt: NOW, failedAt: null })
+      expect(state.collectionSources.hackertube).not.toHaveProperty('taxonomy')
       expect(collections.getters.getCollectionsLastRefreshAt(state)).toBe(NOW)
     })
 
@@ -399,12 +424,8 @@ describe('the Collections store', () => {
       expect(state.collectionShares['hackertube|ccccccccccc']).toMatchObject({ votes: 9, title: 'C' })
       // Not in the new export, and kept as it was
       expect(state.collectionShares[`hackertube|${b.vid}`]).toMatchObject({ votes: 3 })
-      expect(state.collectionSources.hackertube).toMatchObject({
-        dataGenerated: '2026-11-07',
-        taxonomy: { version: 'v2' },
-        checkedAt: NOW,
-        failedAt: null,
-      })
+      expect(state.collectionSources.hackertube).toMatchObject({ dataGenerated: '2026-11-07', checkedAt: NOW, failedAt: null })
+      expect(state.collectionSourceData.hackertube).toMatchObject({ generated: '2026-11-07', taxonomy: { version: 'v2' } })
     })
 
     it('puts only the shares whose numbers changed when a newer export gives the same videos again', async () => {
@@ -460,7 +481,7 @@ describe('the Collections store', () => {
       await collections.actions.refreshCollections(contextFor(state))
 
       expect(console.warn).not.toHaveBeenCalled()
-      expect(state.collectionSources.hackertube).toMatchObject({ checkedAt: NOW, failedAt: null, taxonomy: { version: 'v' } })
+      expect(state.collectionSources.hackertube).toMatchObject({ checkedAt: NOW, failedAt: null })
     })
 
     it('keeps when HackerTube last refreshed when a later refresh fails, and does not ask again on open within the hour', async () => {

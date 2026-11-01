@@ -19,7 +19,7 @@
     },
     {
       "path": "src/datastores/handlers/base.js",
-      "reason": "the Collections handler class (sources by id, shares only ever added or updated, videos' details by video ref), and its three datastores loaded and compacted with the others"
+      "reason": "the Collections handler class (sources by id, shares only ever added or updated, videos' details by video ref, each source's own data by source id), and its four datastores loaded and compacted with the others"
     },
     {
       "path": "src/datastores/handlers/electron.js",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/datastores/index.js",
-      "reason": "Collections' three datastores, collectionSources, collectionShares and collectionVideos"
+      "reason": "Collections' four datastores, collectionSources, collectionShares, collectionVideos and collectionSourceData"
     },
     {
       "path": "src/main/externalPlayer.js",

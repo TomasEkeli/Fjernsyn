@@ -163,14 +163,17 @@ describe('HackerTube as a source kind', () => {
     expect(result).toEqual({ items: [] })
   })
 
-  it('downloads a newer export, and gives its videos and what to keep on the source: the export\'s date and taxonomy', async () => {
+  it('downloads a newer export, and gives its videos the export\'s date for the source, and its taxonomy as the source\'s own data', async () => {
     const fetch = fakeHackerTube()
 
     const result = await hackerTubeKind.fetch({ ...hackerTubeSource(NOW), dataGenerated: '2026-10-31' }, { fetch })
 
     expect(pathsAsked(fetch)).toEqual(['/api/export', '/download/videos.jsonl', '/download/taxonomy.json'])
     expect(result.items.map(video => video.vid)).toEqual(['aaaaaaaaaaa', 'bbbbbbbbbbb'])
-    expect(result.sourceFields).toEqual({ dataGenerated: '2026-11-07', taxonomy: { version: 'v2', areas: [{ id: 'a', name: 'Area', categories: [{ id: 'x', name: 'X' }] }] } })
+    // The date on the source's record; the taxonomy, larger and rebuilt from
+    // the bundle, apart from it
+    expect(result.sourceFields).toEqual({ dataGenerated: '2026-11-07' })
+    expect(result.sourceData).toEqual({ generated: '2026-11-07', taxonomy: { version: 'v2', areas: [{ id: 'a', name: 'Area', categories: [{ id: 'x', name: 'X' }] }] } })
   })
 
   it('never asks for the zip or the mentions', async () => {

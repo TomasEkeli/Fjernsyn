@@ -610,6 +610,19 @@ class Collections {
       await db.collectionVideos.updateAsync({ _id: video._id }, video, { upsert: true })
     }
   }
+
+  static findSourceData() {
+    return db.collectionSourceData.findAsync({})
+  }
+
+  /**
+   * Keeps a source's own data, by the source's id, replacing what was kept
+   *
+   * @param {{ _id: string }} record
+   */
+  static putSourceData(record) {
+    return db.collectionSourceData.updateAsync({ _id: record._id }, record, { upsert: true })
+  }
 }
 
 /**
@@ -653,6 +666,7 @@ function loadDatastores() {
     db.collectionSources.loadDatabaseAsync(),
     db.collectionShares.loadDatabaseAsync(),
     db.collectionVideos.loadDatabaseAsync(),
+    db.collectionSourceData.loadDatabaseAsync(),
   ])
 }
 
@@ -670,6 +684,7 @@ function compactAllDatastores() {
     db.collectionSources.compactDatafileAsync(),
     db.collectionShares.compactDatafileAsync(),
     db.collectionVideos.compactDatafileAsync(),
+    db.collectionSourceData.compactDatafileAsync(),
   ])
 }
 

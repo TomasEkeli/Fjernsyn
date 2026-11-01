@@ -37,8 +37,6 @@
  * @property {number} followedAt
  * @property {string | null} [dataGenerated] HackerTube only: the `generated`
  *   of the data loaded into this installation's shares, null before any is
- * @property {import('./hackertube.js').HackerTubeTaxonomy} [taxonomy] HackerTube only: the taxonomy of
- *   that export, its categories by area
  * @property {number} [checkedAt] when a refresh last worked for it, in ms;
  *   absent before the first that did. The age the page shows
  * @property {number} [attemptedAt] when a refresh last asked it, in ms,

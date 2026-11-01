@@ -70,7 +70,7 @@ function fakeKind(answers) {
       await fetch(source.url)
       const answer = answers[source._id]
       if (answer instanceof Error) { throw answer }
-      return { items: answer.items ?? [], sourceFields: answer.sourceFields }
+      return { items: answer.items ?? [], sourceFields: answer.sourceFields, sourceData: answer.sourceData }
     }),
     toShares: vi.fn((items, source, seenAt) => items.map(videoId => ({
       _id: `${source._id}|${videoId}`,
@@ -103,6 +103,7 @@ function harness(overrides = {}) {
     keptShares: () => kept,
     isFollowed: id => followed.has(id),
     putShares: vi.fn(async () => {}),
+    putSourceData: vi.fn(async () => {}),
     updateSource: vi.fn(async () => {}),
     onProgress: vi.fn(),
     ...overrides.deps,
@@ -158,6 +159,27 @@ describe('a refresh', () => {
 
     expect(deps.updateSource).toHaveBeenCalledWith('one', { dataGenerated: '2026-11-01', checkedAt: NOW, attemptedAt: NOW, failedAt: null })
     expect(order).toEqual(['shares', 'source'])
+  })
+
+  it('keeps a source\'s own data apart from its record, after its shares and before its record, and only when its kind gives some', async () => {
+    const order = []
+    const { deps } = harness({
+      answers: { one: { items: ['new'], sourceFields: { dataGenerated: '2026-11-01' }, sourceData: { generated: '2026-11-01', taxonomy: { areas: [] } } } },
+      deps: {
+        putShares: vi.fn(async () => { order.push('shares') }),
+        putSourceData: vi.fn(async () => { order.push('data') }),
+        updateSource: vi.fn(async () => { order.push('source') }),
+      },
+    })
+
+    await refreshCollectionSources(deps)
+
+    expect(deps.putSourceData).toHaveBeenCalledWith('one', { generated: '2026-11-01', taxonomy: { areas: [] } })
+    expect(order).toEqual(['shares', 'data', 'source'])
+
+    const { deps: without } = harness({ answers: { one: { items: ['new'] } } })
+    await refreshCollectionSources(without)
+    expect(without.putSourceData).not.toHaveBeenCalled()
   })
 
   it('keeps everything a failing source has, marks it failed, and still refreshes the others', async () => {

@@ -9,7 +9,8 @@
  * - `fetch` asks the source what it shares now, through the `fetch` it is
  *   given (so tests hand it a fake server), and answers its items in its own
  *   shape, with fields to keep on the source's record once their shares are
- *   in. It throws when the source cannot be reached or answers with
+ *   in, and data of its own too large to rewrite with its record on every
+ *   refresh, kept apart. It throws when the source cannot be reached or answers with
  *   something it cannot read; the refresh then keeps what the source had.
  * - `toShares` makes those items shares (`../hackertube.js` has the shape).
  *
@@ -24,9 +25,12 @@ import { hackerTubeKind } from './hackertube.js'
  * @typedef {object} SourceFetch
  * @property {any[]} items what the source shares now, in the kind's own
  *   shape; empty when it has nothing new
- * @property {Record<string, any>} [sourceFields] fields to lay over the
- *   source's record once the items' shares are in (HackerTube: the date and
- *   taxonomy of the export they came from)
+ * @property {Record<string, any>} [sourceFields] small fields to lay over
+ *   the source's record once the items' shares are in (HackerTube: the date
+ *   of the export they came from)
+ * @property {Record<string, any>} [sourceData] the source's own data, kept
+ *   apart from its record (`collection-source-data.db`, not backed up) and
+ *   written only when given (HackerTube: the export's taxonomy)
  */
 
 /**

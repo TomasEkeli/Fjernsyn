@@ -13,7 +13,11 @@ import { sharesToPut } from '../../helpers/collections/shares'
  * video's own details as the crawl fetched them, from `collection-videos.db`,
  * loaded at startup and written through on every change.
  *
- * Sources, shares and details are frozen as they come in: there are
+ * Each source's own data, too large to rewrite with its record on every
+ * refresh (HackerTube's taxonomy), is kept apart, in
+ * `collection-source-data.db`, by source id, and is not backed up.
+ *
+ * Sources, source data, shares and details are frozen as they come in: there are
  * thousands of shares, nothing edits one in place, and a frozen object is
  * one Vue does not make deeply reactive, which also keeps a record one the
  * IPC to main can copy. A change replaces the record.
@@ -36,6 +40,8 @@ const state = {
   collectionShares: {},
   /** @type {Record<string, VideoDetails>} by `_id`, the video's ref as one string */
   collectionVideos: {},
+  /** @type {Record<string, Record<string, any>>} each source's own data, by source id */
+  collectionSourceData: {},
   collectionsReady: false,
   // The last read of the datastore failed, so what is held says nothing about
   // what is followed: nothing may be followed or loaded on the strength of it
@@ -63,6 +69,8 @@ const getters = {
   getCollectionShares: (state) => Object.values(state.collectionShares),
   /** @returns {Record<string, VideoDetails>} by the video's ref as one string */
   getCollectionVideos: (state) => state.collectionVideos,
+  /** @returns {(sourceId: string) => Record<string, any> | undefined} a source's own data: HackerTube's is `{ generated, taxonomy }` */
+  getCollectionSourceData: (state) => (sourceId) => state.collectionSourceData[sourceId],
   getCollectionsRefreshing: (state) => state.collectionsRefreshing,
   /** @returns {{ done: number, total: number }} sources asked, of those being asked */
   getCollectionsRefreshProgress: (state) => state.collectionsRefreshProgress,
@@ -90,15 +98,16 @@ const actions = {
     commit('startCollectionsGrab')
 
     try {
-      // All three or none: details that could not be read would make the
+      // All or none: details that could not be read would make the
       // crawl take every video for missing
-      const [sources, shares, videos] = await Promise.all([
+      const [sources, shares, videos, sourceData] = await Promise.all([
         DBCollectionHandlers.findSources(),
         DBCollectionHandlers.findShares(),
         DBCollectionHandlers.findVideos(),
+        DBCollectionHandlers.findSourceData(),
       ])
 
-      commit('finishCollectionsGrab', { sources, shares, videos })
+      commit('finishCollectionsGrab', { sources, shares, videos, sourceData })
       commit('setCollectionsGrabFailed', false)
     } catch (error) {
       console.error(error)
@@ -129,6 +138,17 @@ const actions = {
 
     await DBCollectionHandlers.putShares(shares)
     commit('putCollectionShares', shares)
+  },
+
+  /**
+   * Keeps a source's own data, replacing what was kept for it
+   *
+   * @param {any} context
+   * @param {{ _id: string }} record the source's id as `_id`, and its data
+   */
+  async putCollectionSourceData({ commit }, record) {
+    await DBCollectionHandlers.putSourceData(record)
+    commit('putCollectionSourceData', record)
   },
 
   /**
@@ -266,7 +286,8 @@ async function openCollectionsOnce({ state, commit, dispatch }) {
     await dispatch('putCollectionShares', sharesToPut(state.collectionShares, shares))
     // As it is now: another window may have written it while the bundle loaded
     const current = state.collectionSources[HACKERTUBE_SOURCE_ID] ?? source
-    await dispatch('followCollectionSource', { ...current, dataGenerated: bundle.generated, taxonomy: bundle.taxonomy })
+    await dispatch('putCollectionSourceData', { _id: HACKERTUBE_SOURCE_ID, generated: bundle.generated, taxonomy: bundle.taxonomy })
+    await dispatch('followCollectionSource', { ...current, dataGenerated: bundle.generated })
   } catch (error) {
     console.error('Collections: could not load the HackerTube bundle', error)
     commit('setCollectionsLoadFailed', true)
@@ -297,6 +318,7 @@ async function refreshCollectionsOnce({ state, commit, dispatch }) {
       keptShares: () => state.collectionShares,
       isFollowed: sourceId => Object.hasOwn(state.collectionSources, sourceId),
       putShares: shares => dispatch('putCollectionShares', shares),
+      putSourceData: (sourceId, data) => dispatch('putCollectionSourceData', { ...data, _id: sourceId }),
       updateSource: (sourceId, fields) => dispatch('updateCollectionSource', { sourceId, fields }),
       onProgress: progress => commit('setCollectionsRefreshProgress', progress),
     })
@@ -367,7 +389,7 @@ const mutations = {
 
   /**
    * @param {any} state
-   * @param {{ sources: Source[], shares: Share[], videos: VideoDetails[] } | null} read null when the read failed
+   * @param {{ sources: Source[], shares: Share[], videos: VideoDetails[], sourceData: { _id: string }[] } | null} read null when the read failed
    */
   finishCollectionsGrab(state, read) {
     if (read !== null) {
@@ -376,6 +398,7 @@ const mutations = {
       const videos = {}
       putVideos(videos, read.videos)
       state.collectionVideos = videos
+      state.collectionSourceData = Object.fromEntries(read.sourceData.map(record => [record._id, Object.freeze({ ...record })]))
     }
 
     const buffered = state.collectionsSyncBuffer ?? []
@@ -396,6 +419,10 @@ const mutations = {
    */
   upsertCollectionSource(state, source) {
     state.collectionSources = { ...state.collectionSources, [source._id]: Object.freeze({ ...source }) }
+  },
+
+  putCollectionSourceData(state, record) {
+    state.collectionSourceData = { ...state.collectionSourceData, [record._id]: Object.freeze({ ...record }) }
   },
 
   putCollectionShares(state, shares) {
@@ -428,6 +455,10 @@ const mutations = {
 
       case SyncEvents.COLLECTIONS.PUT_VIDEOS:
         mutations.putCollectionVideos(state, data)
+        break
+
+      case SyncEvents.COLLECTIONS.PUT_SOURCE_DATA:
+        mutations.putCollectionSourceData(state, data)
         break
 
       default:

@@ -305,6 +305,14 @@ class Collections {
   static putVideos(videos) {
     return window.ftElectron.dbCollections(DBActions.COLLECTIONS.PUT_VIDEOS, videos)
   }
+
+  static findSourceData() {
+    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.FIND_SOURCE_DATA)
+  }
+
+  static putSourceData(record) {
+    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.PUT_SOURCE_DATA, record)
+  }
 }
 
 export {
