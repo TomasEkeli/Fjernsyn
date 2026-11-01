@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { recogniseSource, SOURCE_KINDS, SOURCE_KINDS_BY_KIND } from './index'
 import { hackerTubeSource } from '../hackertube'
+import { lemmySource } from './lemmy'
 
 const NOW = Date.parse('2026-11-01T12:00:00Z')
 
@@ -22,6 +23,11 @@ describe('source kinds', () => {
 
   it('makes a pasted URL the source of the first kind that recognises it', () => {
     expect(recogniseSource('https://hackertube.org', NOW)).toEqual(hackerTubeSource(NOW))
+  })
+
+  it('makes a Lemmy community a Lemmy source', () => {
+    expect(recogniseSource('https://lemmy.cafe/c/mealtimevideos', NOW)).toEqual(lemmySource({ name: 'mealtimevideos', host: 'lemmy.cafe' }, NOW))
+    expect(recogniseSource('!mealtimevideos@lemmy.cafe', NOW)?.kind).toBe('lemmy')
   })
 
   it('makes nothing of a URL no kind recognises', () => {

@@ -12,7 +12,7 @@
  *   in, and data of its own too large to rewrite with its record on every
  *   refresh, kept apart. It throws when the source cannot be reached or answers with
  *   something it cannot read; the refresh then keeps what the source had.
- * - `toShares` makes those items shares (`../hackertube.js` has the shape).
+ * - `toShares` makes those items shares (`../shares.js` has the shape).
  *
  * The refresh (`../refresh.js`) asks every followed source through its kind.
  * Following by URL asks each kind in turn, in the order below, whether it
@@ -20,6 +20,7 @@
  */
 
 import { hackerTubeKind } from './hackertube.js'
+import { lemmyKind } from './lemmy.js'
 
 /**
  * @typedef {object} SourceFetch
@@ -46,7 +47,7 @@ import { hackerTubeKind } from './hackertube.js'
  *
  * @type {readonly SourceKind[]}
  */
-export const SOURCE_KINDS = Object.freeze([hackerTubeKind])
+export const SOURCE_KINDS = Object.freeze([hackerTubeKind, lemmyKind])
 
 /**
  * The source kinds by their `kind`
