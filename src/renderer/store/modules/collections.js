@@ -462,11 +462,18 @@ async function applyStarterSetOnce({ state, rootGetters, dispatch }) {
       if (Object.hasOwn(state.collectionSources, source._id)) { continue }
       await dispatch('followCollectionSource', source)
     }
-
-    await dispatch('updateCollectionsStarterSetDone', true)
   } catch (error) {
     // Unmarked, the next open follows what is still not followed
     console.error('Collections: could not follow the starter set', error)
+    return
+  }
+
+  try {
+    await dispatch('updateCollectionsStarterSetDone', true)
+  } catch (error) {
+    // Unmarked, the next open applies it again, which follows nothing twice,
+    // but follows again any of it unfollowed meanwhile
+    console.error('Collections: followed the starter set, but could not mark it done', error)
   }
 }
 

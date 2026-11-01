@@ -538,12 +538,15 @@ describe('the Collections store', () => {
     })
 
     it('loads HackerTube all the same when the mark cannot be written, and the next open follows nothing twice', async () => {
-      vi.spyOn(console, 'error').mockImplementation(() => {})
+      const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
       const state = freshState()
-      updateStarterSetDone.mockRejectedValueOnce(new Error('locked'))
+      const locked = new Error('locked')
+      updateStarterSetDone.mockRejectedValueOnce(locked)
 
       await collections.actions.openCollections(contextFor(state))
 
+      // Told apart from a follow that failed
+      expect(logged).toHaveBeenCalledWith('Collections: followed the starter set, but could not mark it done', locked)
       expect(state.collectionsLoadFailed).toBe(false)
       expect(state.collectionSources.hackertube.dataGenerated).toBe('2026-10-31')
 
