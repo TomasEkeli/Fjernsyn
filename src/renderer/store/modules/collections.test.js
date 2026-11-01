@@ -167,6 +167,16 @@ describe('the Collections store', () => {
     expect(shareIds(state)).toEqual(['hackertube|aaaaaaaaaaa'])
   })
 
+  it('gives one share by its id, and nothing for one not held', async () => {
+    DBCollectionHandlers.findShares.mockResolvedValueOnce([{ _id: 'hackertube|aaaaaaaaaaa', sourceId: 'hackertube', videoId: 'aaaaaaaaaaa', votes: 22.5 }])
+    const state = freshState()
+
+    await collections.actions.grabCollections(contextFor(state))
+
+    expect(collections.getters.getCollectionShare(state)('hackertube|aaaaaaaaaaa')).toMatchObject({ votes: 22.5 })
+    expect(collections.getters.getCollectionShare(state)('hackertube|bbbbbbbbbbb')).toBeUndefined()
+  })
+
   it('loads the videos\' details the datastore holds, by the video\'s ref', async () => {
     DBCollectionHandlers.findVideos.mockResolvedValueOnce([{ _id: 'aaaaaaaaaaa', videoId: 'aaaaaaaaaaa', fetchedAt: 1, lengthSeconds: 60 }])
     const state = freshState()

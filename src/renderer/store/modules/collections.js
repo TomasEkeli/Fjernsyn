@@ -82,6 +82,8 @@ const getters = {
   getCollectionSource: (state) => (id) => state.collectionSources[id],
   /** @returns {Share[]} */
   getCollectionShares: (state) => Object.values(state.collectionShares),
+  /** @returns {(id: string) => Share | undefined} one share by its id (`shareId`), as the vote badge looks it up */
+  getCollectionShare: (state) => (id) => state.collectionShares[id],
   /** @returns {Record<string, VideoDetails>} by the video's ref as one string */
   getCollectionVideos: (state) => state.collectionVideos,
   /** @returns {(sourceId: string) => Record<string, any> | undefined} a source's own data: HackerTube's is `{ generated, taxonomy }` */

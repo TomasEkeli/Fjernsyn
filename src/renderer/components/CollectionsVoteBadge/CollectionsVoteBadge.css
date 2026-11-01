@@ -1,0 +1,125 @@
+/*
+ * Quiet, after the chosen mockup (option C): white at normal weight on a light
+ * dark scrim, a little transparent as a whole, so that it recedes into the
+ * thumbnail until it is looked for. It takes the thumbnail's top left corner,
+ * which on other walls is the playlist grab handle's; that never shows on a
+ * collections wall.
+ *
+ * It sits in the thumbnail's one grid cell, as the duration and the card's
+ * buttons do, rather than being positioned over it, so that it lands in the
+ * same place in the grid and the list layouts alike. Above the card's text
+ * scrim (1) and the duration (2), as the grab handle is (3).
+ */
+.collectionsVoteBadge {
+  grid-column: 1;
+  grid-row: 1;
+  place-self: start start;
+  position: relative;
+  z-index: 3;
+}
+
+.votes {
+  /* The block size is the Watched label's offset in CollectionsVoteBadgeCard.css */
+  block-size: 22px;
+  box-sizing: border-box;
+  padding-block: 0;
+  padding-inline: 8px;
+  border: 0;
+  border-end-end-radius: 6px;
+  background-color: rgb(0 0 0 / 45%);
+  color: #fff;
+  cursor: default;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.votes:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--accent-color);
+  outline-offset: -2px;
+}
+
+/*
+ * What hovering or focusing it shows: under the badge, touching it, so that
+ * the pointer can move onto it (and the discussion link in it) without it
+ * closing; on the same dark scrim as the card's text, a little denser so that
+ * small type reads over any thumbnail. A moment's delay before it opens, so
+ * that a pointer crossing the wall does not flash every card's.
+ */
+.popover {
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  inline-size: max-content;
+  max-inline-size: min(22rem, 80vw);
+  max-block-size: 16rem;
+  overflow-y: auto;
+  padding-block: 6px;
+  padding-inline: 10px;
+  border-end-end-radius: 6px;
+  border-start-end-radius: 6px;
+  background-color: rgb(0 0 0 / 80%);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.35;
+  opacity: 0;
+  overflow-wrap: anywhere;
+  text-align: start;
+  transition: opacity 120ms, visibility 0s 120ms;
+  visibility: hidden;
+}
+
+.collectionsVoteBadge:is(:hover, :focus-within):not(.dismissed) .popover {
+  opacity: 1;
+  transition: opacity 120ms 250ms, visibility 0s 250ms;
+  visibility: visible;
+}
+
+.sources {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.source {
+  display: contents;
+}
+
+.sourceVotes {
+  justify-self: end;
+  color: rgb(255 255 255 / 88%);
+  font-variant-numeric: tabular-nums;
+}
+
+.why {
+  margin-block: 0 4px;
+  font-style: italic;
+  white-space: pre-line;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0;
+  color: rgb(255 255 255 / 88%);
+}
+
+.facts:empty {
+  display: none;
+}
+
+.discussion {
+  display: inline-block;
+  margin-block-start: 4px;
+  color: #fff;
+  text-decoration: underline;
+}

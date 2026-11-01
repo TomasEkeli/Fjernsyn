@@ -9,6 +9,8 @@ import FtLoader from '../../components/FtLoader/FtLoader.vue'
 import FtRefreshWidget from '../../components/FtRefreshWidget/FtRefreshWidget.vue'
 import FtToggleChip from '../../components/FtToggleChip/FtToggleChip.vue'
 import Collections from './Collections.vue'
+import CollectionsVoteBadge from '../../components/CollectionsVoteBadge/CollectionsVoteBadge.vue'
+import { ThumbnailBadgeProbe } from '../../testing/thumbnailBadgeProbe'
 
 vi.mock('../../store/index', async () => {
   const { createFakeStore } = await import('../../testing/store')
@@ -34,6 +36,8 @@ vi.mock('../../store/index', async () => {
         getAiVerdicts: {},
         getAiChannels: '[]',
         getPeerTubeShowNsfw: false,
+        getCollectionSource: () => undefined,
+        getCollectionShare: () => undefined,
       },
     }),
   }
@@ -63,10 +67,14 @@ function share(index, votes) {
   return { _id: `hackertube|${videoId}`, sourceId: 'hackertube', videoId, title: `Title ${index}`, author: 'Channel', votes, sharedAt: 0 }
 }
 
-function mountCollections() {
+/**
+ * @param {object} [options]
+ * @param {import('vue').Component | true} [options.list] what stands in for the wall's list
+ */
+function mountCollections({ list = true } = {}) {
   return mountWithApp(Collections, {
     store,
-    stubs: { FtElementList: true, FtAutoLoadNextPageWrapper: false },
+    stubs: { FtElementList: list, FtAutoLoadNextPageWrapper: false },
   })
 }
 
@@ -101,6 +109,35 @@ describe('Collections', () => {
     store.setGetter('getPeerTubeShowNsfw', false)
     collectionsCrawlProgress.state = 'idle'
     vi.mocked(startCollectionsCrawl).mockClear()
+  })
+
+  it('gives every card the vote badge, saying on hover each source\'s votes, and none to a video without votes', async () => {
+    const LEMMY = { _id: 'lemmy:talks@programming.dev', kind: 'lemmy', url: 'https://programming.dev/c/talks', name: 'talks@programming.dev' }
+    const shares = [
+      share(1, 11.5),
+      { ...share(1, 6), _id: `${LEMMY._id}|video000001`, sourceId: LEMMY._id },
+      share(2, null),
+    ]
+    store.setGetter('getCollectionsReady', true)
+    store.setGetter('getCollectionSources', [HACKERTUBE, LEMMY])
+    store.setGetter('getCollectionShares', shares)
+    store.setGetter('getCollectionSource', id => [HACKERTUBE, LEMMY].find(source => source._id === id))
+    store.setGetter('getCollectionShare', id => shares.find(each => each._id === id))
+
+    const wrapper = mountCollections({ list: ThumbnailBadgeProbe })
+    await flushPromises()
+
+    const badges = wrapper.findAllComponents(CollectionsVoteBadge)
+    expect(badges.map(badge => [badge.props('video').videoId, badge.props('sourceId')])).toEqual([
+      ['video000001', null],
+      ['video000002', null],
+    ])
+    expect(wrapper.find('[data-video-id="video000001"] button.votes').text()).toBe('▲ 17.5')
+    expect(wrapper.findAll('[data-video-id="video000001"] .source').map(row => row.text())).toEqual(['HackerTube▲ 11.5', 'talks@programming.dev▲ 6'])
+    expect(wrapper.find('[data-video-id="video000002"] .collectionsVoteBadge').exists()).toBe(false)
+
+    store.setGetter('getCollectionSource', () => undefined)
+    store.setGetter('getCollectionShare', () => undefined)
   })
 
   it('opens Collections once the datastore has loaded, and not before', async () => {

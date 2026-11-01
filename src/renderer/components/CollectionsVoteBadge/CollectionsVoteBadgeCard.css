@@ -1,0 +1,11 @@
+/*
+ * The one rule the vote badge lays on the card around it, so not scoped: the
+ * card's Watched label shares the thumbnail's top left corner, and on a card
+ * with the badge it moves down by the badge's block size
+ * (CollectionsVoteBadge.css) to sit under it rather than behind it. A card
+ * without the badge, which is every card on every other wall, matches nothing
+ * here.
+ */
+.videoThumbnail:has(> .collectionsVoteBadge) > .videoWatched {
+  margin-block-start: 22px;
+}
