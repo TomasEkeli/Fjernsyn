@@ -146,10 +146,17 @@ const actions = {
    *
    * @param {any} context
    * @param {string} url
-   * @returns {Promise<{ outcome: 'followed', source: Source } | Exclude<import('../../helpers/collections/follow').SourceTrial, { outcome: 'followable' }>>}
+   * @returns {Promise<{ outcome: 'followed', source: Source } | { outcome: 'unavailable' } | Exclude<import('../../helpers/collections/follow').SourceTrial, { outcome: 'followable' }>>}
+   *   `unavailable` before the datastore is read, or when it could not be
    */
   async followCollectionSourceByUrl(context, url) {
     const { state, dispatch } = context
+
+    // What is held says nothing yet of what is followed
+    if (!state.collectionsReady || state.collectionsGrabFailed) {
+      return { outcome: 'unavailable' }
+    }
+
     const isFollowed = sourceId => Object.hasOwn(state.collectionSources, sourceId)
 
     const trial = await trySource(url, {
@@ -190,25 +197,53 @@ const actions = {
    * Unfollows a source: its record, its shares and its own data go, here
    * and in every other window. The videos' details stay.
    *
+   * Taken out of what is held at once, before main is asked, so that a
+   * refresh under way finds it unfollowed and writes nothing more of it;
+   * taken out again once main has removed it, for any share a write already
+   * on its way put back meanwhile; and put back as it was if main could not
+   * remove it.
+   *
    * @param {any} context
    * @param {string} sourceId
    */
-  async unfollowCollectionSource({ commit }, sourceId) {
-    await DBCollectionHandlers.removeSource(sourceId)
+  async unfollowCollectionSource({ state, commit }, sourceId) {
+    const held = {
+      source: state.collectionSources[sourceId],
+      shares: Object.values(state.collectionShares).filter(share => share.sourceId === sourceId),
+      sourceData: state.collectionSourceData[sourceId],
+    }
+
+    commit('removeCollectionSource', sourceId)
+
+    try {
+      await DBCollectionHandlers.removeSource(sourceId)
+    } catch (error) {
+      commit('restoreCollectionSource', held)
+      throw error
+    }
+
     commit('removeCollectionSource', sourceId)
   },
 
   /**
    * Adds the shares given, and updates those already kept; drops nothing.
+   * Only those main wrote are held, and only of a source still followed:
+   * main drops a share of a source with no record, and a source being
+   * unfollowed is already gone from what is held.
    *
    * @param {any} context
    * @param {Share[]} shares
    */
-  async putCollectionShares({ commit }, shares) {
+  async putCollectionShares({ state, commit }, shares) {
     if (shares.length === 0) { return }
 
-    await DBCollectionHandlers.putShares(shares)
-    commit('putCollectionShares', shares)
+    const put = await DBCollectionHandlers.putShares(shares)
+    const dropped = new Set(put?.dropped ?? [])
+
+    const kept = shares.filter(share => !dropped.has(share._id) && Object.hasOwn(state.collectionSources, share.sourceId))
+    if (kept.length > 0) {
+      commit('putCollectionShares', kept)
+    }
   },
 
   /**
@@ -217,9 +252,13 @@ const actions = {
    * @param {any} context
    * @param {{ _id: string }} record the source's id as `_id`, and its data
    */
-  async putCollectionSourceData({ commit }, record) {
-    await DBCollectionHandlers.putSourceData(record)
-    commit('putCollectionSourceData', record)
+  async putCollectionSourceData({ state, commit }, record) {
+    const put = await DBCollectionHandlers.putSourceData(record)
+
+    // Not for a source main does not follow, or one being unfollowed
+    if (put?.kept !== false && Object.hasOwn(state.collectionSources, record._id)) {
+      commit('putCollectionSourceData', record)
+    }
   },
 
   /**
@@ -258,16 +297,23 @@ const actions = {
 
   /**
    * Lays the fields given over a followed source's record as it is now, and
-   * does nothing for a source no longer followed.
+   * does nothing for a source no longer followed. An update, never a follow:
+   * main writes it only over a record it has (`updateSource`), so that a
+   * refresh cannot follow again a source unfollowed while it ran.
    *
    * @param {any} context
    * @param {{ sourceId: string, fields: Partial<Source> }} payload
    */
-  async updateCollectionSource({ state, dispatch }, { sourceId, fields }) {
+  async updateCollectionSource({ state, commit }, { sourceId, fields }) {
     const current = state.collectionSources[sourceId]
     if (current === undefined) { return }
 
-    await dispatch('followCollectionSource', { ...current, ...fields })
+    const record = { ...current, ...fields }
+    const { updated } = await DBCollectionHandlers.updateSource(record)
+
+    if (updated > 0 && Object.hasOwn(state.collectionSources, sourceId)) {
+      commit('upsertCollectionSource', record)
+    }
   },
 
   /**
@@ -365,10 +411,10 @@ async function openCollectionsOnce({ state, commit, dispatch }) {
 
     // Those already kept as the bundle has them need no writing again
     await dispatch('putCollectionShares', sharesToPut(state.collectionShares, shares))
-    // As it is now: another window may have written it while the bundle loaded
-    const current = state.collectionSources[HACKERTUBE_SOURCE_ID] ?? source
     await dispatch('putCollectionSourceData', { _id: HACKERTUBE_SOURCE_ID, generated: bundle.generated, taxonomy: bundle.taxonomy })
-    await dispatch('followCollectionSource', { ...current, dataGenerated: bundle.generated })
+    // Over the record as it is now, as another window may have written it
+    // while the bundle loaded; and only while it is followed
+    await dispatch('updateCollectionSource', { sourceId: HACKERTUBE_SOURCE_ID, fields: { dataGenerated: bundle.generated } })
   } catch (error) {
     console.error('Collections: could not load the HackerTube bundle', error)
     commit('setCollectionsLoadFailed', true)
@@ -542,6 +588,24 @@ const mutations = {
     }
 
     state.collectionShares = Object.fromEntries(Object.entries(state.collectionShares).filter(([, share]) => share.sourceId !== sourceId))
+  },
+
+  /**
+   * A source whose unfollowing main refused, put back as it was held
+   *
+   * @param {any} state
+   * @param {{ source?: Source, shares: Share[], sourceData?: Record<string, any> }} held
+   */
+  restoreCollectionSource(state, { source, shares, sourceData }) {
+    if (source !== undefined) {
+      mutations.upsertCollectionSource(state, source)
+    }
+
+    mutations.putCollectionShares(state, shares)
+
+    if (sourceData !== undefined) {
+      mutations.putCollectionSourceData(state, sourceData)
+    }
   },
 
   putCollectionSourceData(state, record) {

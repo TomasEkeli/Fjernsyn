@@ -18,6 +18,7 @@ vi.mock('../../../datastores/handlers/index', () => ({
     findSources: vi.fn(async () => []),
     findShares: vi.fn(async () => []),
     upsertSource: vi.fn(async () => {}),
+    updateSource: vi.fn(async () => ({ updated: 1 })),
     putShares: vi.fn(async () => ({ added: 0, updated: 0 })),
     findVideos: vi.fn(async () => []),
     putVideos: vi.fn(async () => {}),
@@ -97,6 +98,7 @@ const pathsAsked = fetch => fetch.mock.calls.map(([url]) => new URL(url).pathnam
 /** A state with HackerTube followed and the bundle's two videos loaded, as after the first open */
 async function loadedState() {
   const state = freshState()
+  state.collectionsReady = true
   await collections.actions.openCollections(contextFor(state))
   vi.clearAllMocks()
   return state
@@ -277,14 +279,17 @@ describe('the Collections store', () => {
       expect(DBCollectionHandlers.putSourceData).toHaveBeenCalledWith({ _id: 'hackertube', generated: '2026-10-31', taxonomy: { version: 'v', areas: [] } })
       expect(collections.getters.getCollectionSourceData(state)('hackertube')).toMatchObject({ generated: '2026-10-31', taxonomy: { version: 'v' } })
       // Followed first, then marked loaded once the shares are written
-      expect(DBCollectionHandlers.upsertSource.mock.calls.map(([source]) => source.dataGenerated)).toEqual([null, '2026-10-31'])
+      expect(DBCollectionHandlers.upsertSource.mock.calls.map(([source]) => source.dataGenerated)).toEqual([null])
+      // Marked loaded by an update, which would not follow it again had it been unfollowed meanwhile
+      expect(DBCollectionHandlers.updateSource.mock.calls.map(([source]) => source.dataGenerated)).toEqual(['2026-10-31'])
     })
 
     it('shows the loader from the start of the first open, the follow included', async () => {
       const state = freshState()
       const loadingAtFollow = []
       const noteLoading = async () => { loadingAtFollow.push(state.collectionsLoading) }
-      DBCollectionHandlers.upsertSource.mockImplementationOnce(noteLoading).mockImplementationOnce(noteLoading)
+      DBCollectionHandlers.upsertSource.mockImplementationOnce(noteLoading)
+      DBCollectionHandlers.updateSource.mockImplementationOnce(async () => { await noteLoading(); return { updated: 1 } })
 
       await collections.actions.openCollections(contextFor(state))
 
@@ -301,7 +306,7 @@ describe('the Collections store', () => {
 
       await collections.actions.openCollections(contextFor(state))
 
-      const [last] = DBCollectionHandlers.upsertSource.mock.calls.at(-1)
+      const [last] = DBCollectionHandlers.updateSource.mock.calls.at(-1)
       expect(last).toMatchObject({ name: 'Renamed elsewhere', dataGenerated: '2026-10-31' })
     })
 
@@ -486,7 +491,7 @@ describe('the Collections store', () => {
       await collections.actions.openCollections(contextFor(state))
       vi.clearAllMocks()
       // What the IPC does to a source on its way to main
-      DBCollectionHandlers.upsertSource.mockImplementation(async (source) => { structuredClone(source) })
+      DBCollectionHandlers.updateSource.mockImplementationOnce(async (source) => { structuredClone(source); return { updated: 1 } })
       vi.spyOn(console, 'warn').mockImplementation(() => {})
       stubHackerTube({ generated: '2026-10-31' })
 
@@ -884,6 +889,22 @@ describe('the Collections store', () => {
       expect(DBCollectionHandlers.putShares).not.toHaveBeenCalled()
     })
 
+    it('follows nothing, and asks nothing, before the datastore is read or after it could not be', async () => {
+      const fetch = stubInstances()
+
+      for (const fields of [{ collectionsReady: false }, { collectionsReady: true, collectionsGrabFailed: true }]) {
+        const state = { ...freshState(), ...fields }
+
+        const followed = await collections.actions.followCollectionSourceByUrl(contextFor(state), 'https://lemmy.cafe/c/mealtimevideos')
+
+        expect(followed, JSON.stringify(fields)).toEqual({ outcome: 'unavailable' })
+        expect(state.collectionSources).toEqual({})
+      }
+
+      expect(fetch).not.toHaveBeenCalled()
+      expect(DBCollectionHandlers.upsertSource).not.toHaveBeenCalled()
+    })
+
     it('follows nothing for a URL no source kind recognises', async () => {
       const state = await loadedState()
       const fetch = stubInstances()
@@ -964,14 +985,67 @@ describe('the Collections store', () => {
       expect(state.collectionVideos.aaaaaaaaaaa).toBeDefined()
     })
 
-    it('keeps everything when the datastore cannot remove it', async () => {
+    it('takes it off at once, and puts everything back when the datastore cannot remove it', async () => {
       const state = await bothState()
-      DBCollectionHandlers.removeSource.mockRejectedValueOnce(new Error('locked'))
+      const before = { sources: { ...state.collectionSources }, shares: { ...state.collectionShares } }
+      let fail
+      DBCollectionHandlers.removeSource.mockImplementationOnce(() => new Promise((resolve, reject) => { fail = reject }))
 
-      await expect(collections.actions.unfollowCollectionSource(contextFor(state), MEALTIME._id)).rejects.toThrow('locked')
+      const unfollow = collections.actions.unfollowCollectionSource(contextFor(state), MEALTIME._id)
 
-      expect(Object.keys(state.collectionSources).sort()).toEqual(['hackertube', MEALTIME._id])
-      expect(shareIds(state)).toHaveLength(3)
+      expect(Object.keys(state.collectionSources)).toEqual(['hackertube'])
+      expect(shareIds(state)).toEqual(['hackertube|aaaaaaaaaaa', 'hackertube|bbbbbbbbbbb'])
+
+      fail(new Error('locked'))
+      await expect(unfollow).rejects.toThrow('locked')
+
+      expect(state.collectionSources).toEqual(before.sources)
+      expect(state.collectionShares).toEqual(before.shares)
+    })
+
+    it('does not come back when a refresh was already writing its shares as it was unfollowed', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const state = await bothState()
+      const context = contextFor(state)
+      vi.stubGlobal('fetch', vi.fn(async (url) => {
+        if (new URL(url).host === 'lemmy.cafe') { return new Response(mealtimeTopWeek) }
+        return new Response(JSON.stringify({ generated: '2026-10-31' }))
+      }))
+      // The community's put held in main, past the refresh's own check that it is followed
+      let release
+      DBCollectionHandlers.putShares.mockImplementationOnce(() => new Promise((resolve) => { release = () => resolve({ added: 2, updated: 0, dropped: [] }) }))
+
+      try {
+        const refresh = collections.actions.refreshCollections(context)
+        await vi.waitFor(() => expect(release).toBeTypeOf('function'))
+
+        // Main answers the removal first, as a client cannot rely on the order of answers
+        const unfollow = collections.actions.unfollowCollectionSource(context, MEALTIME._id)
+        await unfollow
+        release()
+        await refresh
+
+        expect(Object.keys(state.collectionSources)).toEqual(['hackertube'])
+        expect(shareIds(state)).toEqual(['hackertube|aaaaaaaaaaa', 'hackertube|bbbbbbbbbbb'])
+        // Never followed again: not created, and not even asked to be updated
+        expect(DBCollectionHandlers.upsertSource.mock.calls.map(([source]) => source._id)).not.toContain(MEALTIME._id)
+        expect(DBCollectionHandlers.updateSource.mock.calls.map(([source]) => source._id)).not.toContain(MEALTIME._id)
+      } finally {
+        vi.unstubAllGlobals()
+      }
+    })
+
+    it('keeps only the shares main wrote, none of a source it no longer follows', async () => {
+      const state = await bothState()
+      DBCollectionHandlers.putShares.mockResolvedValueOnce({ added: 1, updated: 0, dropped: ['lemmy:gone@b.example|ccccccccccc'] })
+
+      await collections.actions.putCollectionShares(contextFor(state), [
+        { _id: `${MEALTIME._id}|ccccccccccc`, sourceId: MEALTIME._id, videoId: 'ccccccccccc' },
+        { _id: 'lemmy:gone@b.example|ccccccccccc', sourceId: 'lemmy:gone@b.example', videoId: 'ccccccccccc' },
+      ])
+
+      expect(shareIds(state)).toContain(`${MEALTIME._id}|ccccccccccc`)
+      expect(shareIds(state)).not.toContain('lemmy:gone@b.example|ccccccccccc')
     })
 
     it('does not bring its shares back when a refresh under way answers for it afterwards', async () => {
