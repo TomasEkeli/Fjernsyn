@@ -1076,6 +1076,8 @@ Settings:
         Settings: Settings
         Channels: Channel tags and Probe samples
         AI verdicts: AI labels already checked
+        Collection sources: Followed sources in Collections
+        Collection shares: Videos the Collections sources shared
       Restoring: Restoring the backup. Fjernsyn restarts when it is done.
       Failed: 'The restore failed: {error}. Some sections may already be replaced. Your data from before the restore is in {path}; restore that file to go back.'
       Failed before writing: 'The restore failed, and nothing was changed: {error}'

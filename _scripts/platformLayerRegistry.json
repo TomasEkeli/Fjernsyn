@@ -127,7 +127,7 @@
     },
     {
       "path": "static/locales/en-US.yaml",
-      "reason": "the fork-only PeerTube, Layer Search and Layer Surfaces strings; the Collections and Sources strings"
+      "reason": "the fork-only PeerTube, Layer Search and Layer Surfaces strings; the Collections and Sources strings, and the names of their two backup sections"
     }
   ],
   "shadowed": {
