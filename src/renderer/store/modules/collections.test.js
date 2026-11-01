@@ -761,6 +761,36 @@ describe('the Collections store', () => {
       expect(DBCollectionHandlers.putShares.mock.calls.flatMap(([shares]) => shares.map(share => share._id))).toEqual(['lemmy:mealtimevideos@lemmy.cafe|dTXl4RQimbY'])
     })
 
+    it('keeps a share\'s votes and why when a later feed lists its post with a header that cannot be read', async () => {
+      const state = await followedState()
+      stubBoth()
+      await collections.actions.refreshCollections(contextFor(state))
+      DBCollectionHandlers.putShares.mockClear()
+
+      stubBoth({ feed: FEED.replace('8 points |', '8 votes |') })
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(state.collectionShares['lemmy:mealtimevideos@lemmy.cafe|dTXl4RQimbY']).toMatchObject({ votes: 8, why: 'I recently stumbled across this channel and like a lot of what he does.' })
+      expect(DBCollectionHandlers.putShares).not.toHaveBeenCalled()
+    })
+
+    it('keeps every share and is marked failed when no header in its feed can be read, as after Lemmy rewords it', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const state = await followedState()
+      stubBoth()
+      await collections.actions.refreshCollections(contextFor(state))
+      const before = { ...state.collectionShares }
+      DBCollectionHandlers.putShares.mockClear()
+      Date.now.mockReturnValue(NOW + 2 * 60 * 60_000)
+
+      stubBoth({ feed: FEED.replaceAll(/(\d+) points \|/g, '$1 votes |') })
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(DBCollectionHandlers.putShares).not.toHaveBeenCalled()
+      expect(state.collectionShares).toEqual(before)
+      expect(state.collectionSources[MEALTIME._id]).toMatchObject({ failedAt: NOW + 2 * 60 * 60_000 })
+    })
+
     it('keeps its shares and is marked failed when its feed cannot be had, and HackerTube\'s refresh still works', async () => {
       vi.spyOn(console, 'warn').mockImplementation(() => {})
       const state = await followedState()

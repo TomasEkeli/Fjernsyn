@@ -31,6 +31,8 @@ import { isYouTubeHost, videoRefFromLink } from '../videoLinks.js'
  * @property {string} title the post's title
  * @property {string | null} link what the post shares; null for a post of text alone
  * @property {number | null} sharedAt when it was posted, in ms
+ * @property {boolean} headerRead whether its description's header could be
+ *   read; when not, its votes and why are unknown rather than none
  * @property {number | null} votes its points
  * @property {string | null} why its body, as plain text, one paragraph a line
  */
@@ -150,23 +152,6 @@ export function lemmyFeedUrl({ name, host }, sort) {
 }
 
 /**
- * A post's votes: the points in its description's header, and none when the
- * header does not say, as when Lemmy has changed its wording.
- *
- * @param {string} description the item's description, as HTML
- * @returns {number | null}
- */
-export function lemmyVotes(description) {
-  // The header's line, after a line break, never a number in the body
-  for (const line of description.split('<br>')) {
-    const points = POINTS.exec(line)
-    if (points !== null) { return Number(points[1]) }
-  }
-
-  return null
-}
-
-/**
  * The text of the nodes given, each paragraph on a line of its own, without
  * blank lines or runs of spaces
  *
@@ -200,28 +185,57 @@ function plainText(nodes) {
 }
 
 /**
- * Why a post shared its video: its body, as plain text, which Lemmy puts after
- * the header and the shared link; nothing when it has none, or when the header
- * cannot be found and so neither can where the body begins.
+ * What a post's description says of it, read from one parse: its votes, the
+ * points in its header, and why it shared its video, its body as plain text,
+ * which Lemmy puts after the header and the shared link (null when it has
+ * none). Nothing when the header cannot be found, as when Lemmy has changed
+ * its wording: then neither the votes nor where the body begins are known,
+ * which is not the same as none.
  *
  * @param {string} description the item's description, as HTML
- * @returns {string | null}
+ * @returns {{ votes: number, why: string | null } | null}
  */
-export function lemmyWhy(description) {
+export function lemmyDescription(description) {
   // Inert: nothing in a parsed document loads or runs
   const nodes = [...new DOMParser().parseFromString(description, 'text/html').body.childNodes]
 
-  const points = nodes.findIndex(node => node.nodeType === Node.TEXT_NODE && POINTS.test(node.textContent ?? ''))
-  if (points === -1) { return null }
+  // The header's line is a text node of the description's own, never a
+  // number of points in the body, which is inside a paragraph
+  const at = nodes.findIndex(node => node.nodeType === Node.TEXT_NODE && POINTS.test(node.textContent ?? ''))
+  if (at === -1) { return null }
 
-  let start = points + 1
+  const votes = Number(POINTS.exec(nodes[at].textContent ?? '')?.[1])
+
+  let start = at + 1
   // The comments link closes the header's line
   if (nodes[start]?.nodeName === 'A') { start++ }
   // The shared link, as its text or as its image, on a line of its own
   if (nodes[start]?.nodeName === 'BR' && nodes[start + 1]?.nodeName === 'A') { start += 2 }
 
   const why = plainText(nodes.slice(start))
-  return why === '' ? null : why
+  return { votes, why: why === '' ? null : why }
+}
+
+/**
+ * A post's votes: the points in its description's header, and none when the
+ * header cannot be read (`lemmyDescription`)
+ *
+ * @param {string} description the item's description, as HTML
+ * @returns {number | null}
+ */
+export function lemmyVotes(description) {
+  return lemmyDescription(description)?.votes ?? null
+}
+
+/**
+ * Why a post shared its video: its body, as plain text; none when it has
+ * none, or when the header cannot be read (`lemmyDescription`)
+ *
+ * @param {string} description the item's description, as HTML
+ * @returns {string | null}
+ */
+export function lemmyWhy(description) {
+  return lemmyDescription(description)?.why ?? null
 }
 
 /**
@@ -267,15 +281,16 @@ export function parseLemmyFeed(xml) {
 
     const enclosure = [...item.children].find(child => child.localName === 'enclosure')?.getAttribute('url')?.trim()
     const sharedAt = Date.parse(childText(item, 'pubDate') ?? '')
-    const description = childText(item, 'description') ?? ''
+    const described = lemmyDescription(childText(item, 'description') ?? '')
 
     posts.push({
       postUrl,
       title: childText(item, 'title') ?? '',
       link: enclosure || null,
       sharedAt: Number.isFinite(sharedAt) ? sharedAt : null,
-      votes: lemmyVotes(description),
-      why: lemmyWhy(description),
+      headerRead: described !== null,
+      votes: described?.votes ?? null,
+      why: described?.why ?? null,
     })
   }
 
@@ -303,18 +318,21 @@ export function mergeLemmyPosts(feeds) {
 }
 
 /**
- * Whether post `a` speaks for its video before post `b`: more votes first,
- * then the earlier
+ * Whether post `a` speaks for its video before post `b`: more votes first
+ * (a post whose votes are unknown counting as having none), then the earlier
  *
  * @param {LemmyPost} a
  * @param {LemmyPost} b
  * @returns {boolean}
  */
 function before(a, b) {
-  if (a.votes !== b.votes) {
-    if (a.votes === null) { return false }
-    if (b.votes === null) { return true }
-    return a.votes > b.votes
+  const aVotes = a.headerRead ? a.votes : null
+  const bVotes = b.headerRead ? b.votes : null
+
+  if (aVotes !== bVotes) {
+    if (aVotes === null) { return false }
+    if (bVotes === null) { return true }
+    return aVotes > bVotes
   }
 
   return (a.sharedAt ?? Infinity) < (b.sharedAt ?? Infinity)
@@ -323,9 +341,17 @@ function before(a, b) {
 /**
  * A community's posts as its shares: one per video a post links, made from
  * what the post says (its title until the video's own details are known, its
- * votes, its body as the why, its date, and the post as the discussion). A
- * video posted twice is one share, the post with the most votes, the earlier
- * on a tie. Posts that link no video the app plays are skipped.
+ * votes, its body as the why, its date, and the post as the discussion).
+ * Posts that link no video the app plays are skipped.
+ *
+ * A video posted more than once is one share. While the post a kept share
+ * came from is still listed, it stays that post, so that the share does not
+ * go back and forth as posts come and go; otherwise it is the post with the
+ * most votes, the earlier on a tie.
+ *
+ * A post whose header could not be read gives no votes and no why: a share
+ * without a field leaves the one kept as it is (`sharesToPut`, and main's
+ * put), so an unreadable header never wipes what was known.
  *
  * A post links a video when `videoRefFromLink` says so of its link. When
  * PeerTube links are recognised, the kind's `fetch` will have confirmed them
@@ -335,9 +361,10 @@ function before(a, b) {
  * @param {LemmyPost[]} posts
  * @param {string} sourceId
  * @param {number} seenAt
+ * @param {Record<string, Share>} [kept] the shares kept, by `_id`
  * @returns {Share[]}
  */
-export function lemmyShares(posts, sourceId, seenAt) {
+export function lemmyShares(posts, sourceId, seenAt, kept = {}) {
   /** @type {Map<string, { ref: { videoId: string }, post: LemmyPost }>} */
   const byShare = new Map()
 
@@ -346,25 +373,39 @@ export function lemmyShares(posts, sourceId, seenAt) {
     if (ref === null) { continue }
 
     const id = shareId(sourceId, ref)
-    const kept = byShare.get(id)
-    if (kept === undefined || before(post, kept.post)) {
+    const chosen = byShare.get(id)
+    const keptPost = Object.hasOwn(kept, id) ? kept[id].discussionUrl : undefined
+
+    if (chosen === undefined) {
+      byShare.set(id, { ref, post })
+    } else if (chosen.post.postUrl !== keptPost && (post.postUrl === keptPost || before(post, chosen.post))) {
       byShare.set(id, { ref, post })
     }
   }
 
-  return [...byShare.entries()].map(([id, { ref, post }]) => ({
-    _id: id,
-    sourceId,
-    videoId: ref.videoId,
-    title: post.title,
-    // Lemmy says who posted it, not whose channel it is
-    author: '',
-    votes: post.votes,
-    why: post.why,
-    sharedAt: post.sharedAt,
-    discussionUrl: post.postUrl,
-    seenAt,
-  }))
+  return [...byShare.entries()].map(([id, { ref, post }]) => {
+    /** @type {Share} */
+    const share = {
+      _id: id,
+      sourceId,
+      videoId: ref.videoId,
+      title: post.title,
+      // Lemmy says who posted it, not whose channel it is
+      author: '',
+      votes: post.votes,
+      why: post.why,
+      sharedAt: post.sharedAt,
+      discussionUrl: post.postUrl,
+      seenAt,
+    }
+
+    if (!post.headerRead) {
+      delete share.votes
+      delete share.why
+    }
+
+    return share
+  })
 }
 
 /**
@@ -379,11 +420,20 @@ async function fetchFeed(fetchFn, url) {
     throw new Error(`${url}: HTTP ${response.status}`)
   }
 
+  let posts
   try {
-    return parseLemmyFeed(await response.text())
+    posts = parseLemmyFeed(await response.text())
   } catch (error) {
     throw new Error(`${url}: ${error.message}`, { cause: error })
   }
+
+  // Not one header read: Lemmy has changed its wording, and every vote and
+  // why would be taken for none. Failing keeps what is kept, and says so.
+  if (posts.length > 0 && posts.every(post => !post.headerRead)) {
+    throw new Error(`${url}: no post's header could be read; has Lemmy changed its wording?`)
+  }
+
+  return posts
 }
 
 /**
@@ -414,5 +464,5 @@ export const lemmyKind = {
     return where === null ? null : lemmySource(where, now)
   },
   fetch: fetchItems,
-  toShares: (items, source, seenAt) => lemmyShares(items, source._id, seenAt),
+  toShares: (items, source, seenAt, kept) => lemmyShares(items, source._id, seenAt, kept),
 }

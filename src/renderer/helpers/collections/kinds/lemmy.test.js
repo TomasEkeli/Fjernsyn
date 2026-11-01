@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import {
   lemmyCommunity,
+  lemmyDescription,
   lemmyFeedUrl,
   lemmyKind,
   lemmyShares,
@@ -37,7 +38,7 @@ function header(points, url = null) {
  * @param {Partial<import('./lemmy').LemmyPost>} fields
  */
 function post(fields) {
-  return { postUrl: 'https://lemmy.cafe/post/1', title: 'T', link: 'https://youtu.be/vSHrY5xJsxg', sharedAt: NOW, votes: 1, why: null, ...fields }
+  return { postUrl: 'https://lemmy.cafe/post/1', title: 'T', link: 'https://youtu.be/vSHrY5xJsxg', sharedAt: NOW, headerRead: true, votes: 1, why: null, ...fields }
 }
 
 describe('a Lemmy post\'s votes', () => {
@@ -56,6 +57,10 @@ describe('a Lemmy post\'s votes', () => {
 
   it('are the header\'s, not a number of points the post\'s body mentions', () => {
     expect(lemmyVotes(`${header(8)}<p>He scored<br>40 points | twice</p>`)).toBe(8)
+  })
+
+  it('are read with the line break written either way', () => {
+    expect(lemmyVotes(header(12).replace('<br>12 points', '<br/>12 points'))).toBe(12)
   })
 
   it('are none when the description does not say, as when Lemmy changes its wording', () => {
@@ -96,6 +101,17 @@ describe('why a Lemmy post shared its video', () => {
   })
 })
 
+describe('a Lemmy post\'s description, read once', () => {
+  it('gives its votes and its why', () => {
+    expect(lemmyDescription(`${header(15, 'https://youtu.be/vSHrY5xJsxg')}<p>Why.</p>`)).toEqual({ votes: 15, why: 'Why.' })
+    expect(lemmyDescription(header(4))).toEqual({ votes: 4, why: null })
+  })
+
+  it('gives nothing when its header cannot be read, which is not the same as no votes and no why', () => {
+    expect(lemmyDescription('submitted by someone<br>15 votes | 1 comments<p>Body</p>')).toBe(null)
+  })
+})
+
 describe('a Lemmy community\'s RSS feed', () => {
   it('gives every post in it, with its link, title, date, votes and why', () => {
     const posts = parseLemmyFeed(mealtimeNew)
@@ -103,6 +119,7 @@ describe('a Lemmy community\'s RSS feed', () => {
     expect(posts).toHaveLength(8)
     expect(posts[0]).toEqual({
       postUrl: 'https://lemmy.cafe/post/42041782',
+      headerRead: true,
       title: 'Guardrails Are Life-Saving Machines (When They Work) | Road Guy Rob and Steve the Guardrail Guy [37:06]',
       link: 'https://www.youtube.com/watch?v=neGgUavFT0w',
       sharedAt: Date.parse('2026-10-31T21:30:56Z'),
@@ -130,6 +147,13 @@ describe('a Lemmy community\'s RSS feed', () => {
     expect(links).toContain('https://www.youtube.com/watch?v=H8YdOF1yXfM&pp=ygUMc2NvdHQgY2FybmV5')
     expect(links).toContain('https://m.youtube.com/watch?v=n9lHLdAJUDE')
     expect(links).toContain('https://youtu.be/vSHrY5xJsxg')
+  })
+
+  it('says of a post whose header it cannot read so, and gives it no votes and no why', () => {
+    const feed = mealtimeTopWeek.replace('15 points |', '15 votes |')
+
+    expect(parseLemmyFeed(feed)[0]).toMatchObject({ headerRead: false, votes: null, why: null })
+    expect(parseLemmyFeed(feed)[1]).toMatchObject({ headerRead: true, votes: 8 })
   })
 
   it('gives a post with a date it cannot read no date', () => {
@@ -214,6 +238,26 @@ describe('a Lemmy community\'s posts as shares', () => {
 
     expect(shares).toHaveLength(1)
     expect(shares[0]).toMatchObject({ votes: 30, discussionUrl: 'https://lemmy.cafe/post/2' })
+  })
+
+  it('leave out the votes and the why of a post whose header could not be read, so that those kept stay', () => {
+    const [share] = lemmyShares([post({ headerRead: false, votes: null, why: null })], SOURCE_ID, NOW)
+
+    expect(share).not.toHaveProperty('votes')
+    expect(share).not.toHaveProperty('why')
+    expect(share).toMatchObject({ videoId: 'vSHrY5xJsxg', discussionUrl: 'https://lemmy.cafe/post/1' })
+  })
+
+  it('stay with the post a kept share came from while the feed still lists it, rather than go back and forth', () => {
+    const kept = { [`${SOURCE_ID}|vSHrY5xJsxg`]: { _id: `${SOURCE_ID}|vSHrY5xJsxg`, discussionUrl: 'https://lemmy.cafe/post/1', votes: 3 } }
+    const posts = [
+      post({ postUrl: 'https://lemmy.cafe/post/1', votes: 3, sharedAt: 1 }),
+      post({ postUrl: 'https://lemmy.cafe/post/2', votes: 30, sharedAt: 2 }),
+    ]
+
+    expect(lemmyShares(posts, SOURCE_ID, NOW, kept)[0].discussionUrl).toBe('https://lemmy.cafe/post/1')
+    // Once that post has left the feed, the best of those listed
+    expect(lemmyShares(posts.slice(1), SOURCE_ID, NOW, kept)[0].discussionUrl).toBe('https://lemmy.cafe/post/2')
   })
 
   it('count a post with votes over one without', () => {
@@ -371,6 +415,20 @@ describe('Lemmy as a source kind', () => {
     await expect(lemmyKind.fetch(source, { fetch: fakeLemmy({ TopWeek: () => new Response('down', { status: 503 }) }) })).rejects.toThrow('503')
   })
 
+  it('fails when no post in a feed has a header it can read, as when Lemmy changes its wording, so that the votes and whys kept are not taken for none', async () => {
+    const reworded = mealtimeNew.replaceAll(/(\d+) points \|/g, '$1 votes |')
+
+    await expect(lemmyKind.fetch(source, { fetch: fakeLemmy({ New: () => new Response(reworded) }) })).rejects.toThrow('header')
+  })
+
+  it('does not fail on a feed with no posts, which has no header to read', async () => {
+    const empty = '<?xml version="1.0"?><rss version="2.0"><channel><title>Empty</title></channel></rss>'
+
+    const { items } = await lemmyKind.fetch(source, { fetch: fakeLemmy({ New: () => new Response(empty) }) })
+
+    expect(items).toHaveLength(2)
+  })
+
   it('fails when the instance answers with something that is not a feed', async () => {
     await expect(lemmyKind.fetch(source, { fetch: fakeLemmy({ New: () => new Response('<html><h1>503</h1></html>') }) })).rejects.toThrow()
   })
@@ -386,7 +444,7 @@ describe('Lemmy as a source kind', () => {
   })
 
   it('makes its posts the source\'s shares', () => {
-    const shares = lemmyKind.toShares(parseLemmyFeed(mealtimeNew), source, NOW)
+    const shares = lemmyKind.toShares(parseLemmyFeed(mealtimeNew), source, NOW, {})
 
     expect(shares).toHaveLength(6)
     expect(shares.every(share => share.sourceId === SOURCE_ID && share.seenAt === NOW)).toBe(true)
