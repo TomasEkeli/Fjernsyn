@@ -20,6 +20,10 @@ import {
 import mealtimeNew from './fixtures/lemmy.cafe--mealtimevideos-new.xml?raw'
 import mealtimeTopWeek from './fixtures/lemmy.cafe--mealtimevideos-topweek.xml?raw'
 import documentariesTopYear from './fixtures/lemmy.cafe--documentaries-topyear.xml?raw'
+// lemmy.world's peertube by New, trimmed to seven items: four PeerTube links
+// (/w/ with a short uuid twice, /w/ with a uuid, /videos/watch/), and a
+// GitHub release, a Mastodon post and a PieFed community. Fetched 2026-11-01.
+import peertubeNew from './fixtures/lemmy.world--peertube-new.xml?raw'
 
 const NOW = Date.parse('2026-11-01T12:00:00Z')
 
@@ -215,11 +219,42 @@ describe('a Lemmy community\'s posts as shares', () => {
     })
   })
 
-  it('skip a post without a link, and one to a PeerTube video, until PeerTube links are recognised', () => {
+  it('skip a post without a link, and one to a PeerTube video that was not confirmed', () => {
     const videoIds = lemmyShares(parseLemmyFeed(mealtimeNew), SOURCE_ID, NOW).map(share => share.videoId)
 
     expect(videoIds).not.toContain('059ca8df-3049-44a3-93a9-d603327f2e74')
     expect(videoIds).toHaveLength(6)
+  })
+
+  it('make a post whose PeerTube link was confirmed a share of that video, by its uuid and origin host', () => {
+    const ref = { platform: 'peertube', host: 'peertube.v1.root42.de', videoId: '059ca8df-3049-44a3-93a9-d603327f2e74' }
+    const [share] = lemmyShares([post({ link: 'https://fedi.video/w/1GcddTf1uzhyXscJ4ymdEG', ref, votes: 7 })], SOURCE_ID, NOW)
+
+    expect(share).toEqual({
+      _id: `${SOURCE_ID}|059ca8df-3049-44a3-93a9-d603327f2e74@peertube.v1.root42.de`,
+      sourceId: SOURCE_ID,
+      videoId: '059ca8df-3049-44a3-93a9-d603327f2e74',
+      platform: 'peertube',
+      host: 'peertube.v1.root42.de',
+      title: 'T',
+      author: '',
+      votes: 7,
+      why: null,
+      sharedAt: NOW,
+      discussionUrl: 'https://lemmy.cafe/post/1',
+      seenAt: NOW,
+    })
+  })
+
+  it('are one share for a PeerTube video linked on two instances, as its ref is the same', () => {
+    const ref = { platform: 'peertube', host: 'peertube.v1.root42.de', videoId: '059ca8df-3049-44a3-93a9-d603327f2e74' }
+    const shares = lemmyShares([
+      post({ postUrl: 'https://lemmy.cafe/post/1', link: 'https://fedi.video/w/1GcddTf1uzhyXscJ4ymdEG', ref, votes: 2 }),
+      post({ postUrl: 'https://lemmy.cafe/post/2', link: 'https://peertube.v1.root42.de/videos/watch/059ca8df-3049-44a3-93a9-d603327f2e74', ref, votes: 9 }),
+    ], SOURCE_ID, NOW)
+
+    expect(shares).toHaveLength(1)
+    expect(shares[0]).toMatchObject({ votes: 9, discussionUrl: 'https://lemmy.cafe/post/2' })
   })
 
   it('skip hosted clips, images, articles and torrents', () => {
@@ -441,6 +476,74 @@ describe('Lemmy as a source kind', () => {
 
   it('fails for a source whose URL is not a community', async () => {
     await expect(lemmyKind.fetch({ ...source, url: 'https://lemmy.cafe/' }, { fetch: fakeLemmy() })).rejects.toThrow()
+  })
+
+  describe('with PeerTube links', () => {
+    const PEERTUBE = { name: 'peertube', host: 'lemmy.world' }
+    const peertubeSource = lemmySource(PEERTUBE, NOW)
+    const feeds = () => vi.fn(async (url) => {
+      return new URL(url).pathname === '/feeds/c/peertube.xml'
+        ? new Response(peertubeNew)
+        : new Response('not found', { status: 404 })
+    })
+    // As the platform layer would confirm them: blender's and tilvids'
+    // videos are PeerTube's, at their origins; peertube.wtf is not
+    // PeerTube, and gianmarco's could not be asked
+    const confirmed = {
+      '309d37bf-2674-474d-a1e4-1eb05e6d9073': { platform: 'peertube', host: 'video.blender.org', videoId: '309d37bf-2674-474d-a1e4-1eb05e6d9073' },
+      'ef67ed68-de61-4c06-a9c0-90d1569bc9bf': { platform: 'peertube', host: 'origin.example', videoId: 'ef67ed68-de61-4c06-a9c0-90d1569bc9bf' },
+    }
+    const peertube = () => ({ refFor: vi.fn(async candidate => confirmed[candidate.videoId] ?? null) })
+
+    it('asks the platform layer about each link of PeerTube\'s shapes, and about nothing else', async () => {
+      const resolver = peertube()
+
+      await lemmyKind.fetch(peertubeSource, { fetch: feeds(), peertube: resolver })
+
+      expect(resolver.refFor.mock.calls.map(([candidate]) => candidate).sort((a, b) => a.host.localeCompare(b.host))).toEqual([
+        { host: 'peertube.wtf', videoId: expect.stringMatching(/^[\da-f-]{36}$/) },
+        { host: 'tilvids.com', videoId: 'ef67ed68-de61-4c06-a9c0-90d1569bc9bf' },
+        { host: 'video.blender.org', videoId: '309d37bf-2674-474d-a1e4-1eb05e6d9073' },
+        { host: 'videos.gianmarco.gg', videoId: expect.stringMatching(/^[\da-f-]{36}$/) },
+      ])
+    })
+
+    it('makes the confirmed ones shares, at their origins, and skips the rest', async () => {
+      const { items } = await lemmyKind.fetch(peertubeSource, { fetch: feeds(), peertube: peertube() })
+
+      const shares = lemmyKind.toShares(items, peertubeSource, NOW, {})
+
+      expect(shares.map(share => share._id).sort()).toEqual([
+        'lemmy:peertube@lemmy.world|309d37bf-2674-474d-a1e4-1eb05e6d9073@video.blender.org',
+        'lemmy:peertube@lemmy.world|ef67ed68-de61-4c06-a9c0-90d1569bc9bf@origin.example',
+      ])
+      expect(shares.every(share => share.platform === 'peertube')).toBe(true)
+    })
+
+    it('asks about no more than three links at a time', async () => {
+      let asking = 0
+      let most = 0
+      const slow = {
+        refFor: vi.fn(async () => {
+          most = Math.max(most, ++asking)
+          await new Promise(resolve => setTimeout(resolve, 1))
+          asking--
+          return null
+        }),
+      }
+
+      await lemmyKind.fetch(peertubeSource, { fetch: feeds(), peertube: slow })
+
+      expect(slow.refFor).toHaveBeenCalledTimes(4)
+      expect(most).toBeLessThanOrEqual(3)
+    })
+
+    it('takes no link for PeerTube without the layer to ask, and still gives every post', async () => {
+      const { items } = await lemmyKind.fetch(peertubeSource, { fetch: feeds() })
+
+      expect(items).toHaveLength(7)
+      expect(lemmyKind.toShares(items, peertubeSource, NOW, {})).toEqual([])
+    })
   })
 
   it('makes its posts the source\'s shares', () => {
