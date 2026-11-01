@@ -76,8 +76,12 @@ export function shareId(sourceId, ref) {
 /**
  * @param {unknown} a
  * @param {unknown} b
- * @returns {boolean} whether two field values are the same, arrays (a
- *   share's categories) element by element and in order
+ * Shallow: right for a share's fields, which are strings, numbers, null and
+ * arrays of strings (HackerTube's categories), and wrong for anything
+ * nested deeper, which no share holds.
+ *
+ * @returns {boolean} whether two field values are the same, arrays element
+ *   by element and in order
  */
 function sameValue(a, b) {
   if (Array.isArray(a) && Array.isArray(b)) {
