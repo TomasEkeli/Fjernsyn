@@ -4,8 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DBCollectionHandlers } from '../../../datastores/handlers/index'
 import { fetchHackerTubeBundle } from '../../helpers/collections/hackertubeBundle'
 import { hackerTubeShare } from '../../helpers/collections/hackertube'
+import { lemmySource } from '../../helpers/collections/kinds/lemmy'
+import { wallVideos } from '../../helpers/collections/shares'
+import { starterSources } from '../../helpers/collections/starterSet'
 import { SyncEvents } from '../../../constants'
 import collections from './collections'
+
+// A real feed of lemmy.cafe's mealtimevideos, trimmed to two posts
+import mealtimeTopWeek from '../../helpers/collections/kinds/fixtures/lemmy.cafe--mealtimevideos-topweek.xml?raw'
 
 vi.mock('../../../datastores/handlers/index', () => ({
   DBCollectionHandlers: {
@@ -22,6 +28,11 @@ vi.mock('../../../datastores/handlers/index', () => ({
 
 vi.mock('../../helpers/collections/hackertubeBundle', () => ({
   fetchHackerTubeBundle: vi.fn(),
+}))
+
+// HackerTube alone, but where a test follows more on the first open
+vi.mock('../../helpers/collections/starterSet', () => ({
+  starterSources: vi.fn(() => []),
 }))
 
 const NOW = Date.parse('2026-11-01T12:00:00Z')
@@ -643,6 +654,128 @@ describe('the Collections store', () => {
       expect(state.collectionSources.x.kind).toBe('lemmy')
       expect(shareIds(state)).toEqual(['x|aaaaaaaaaaa', 'x|bbbbbbbbbbb'])
       expect(state.collectionShares['x|aaaaaaaaaaa'].votes).toBe(7)
+    })
+  })
+
+  describe('a Lemmy community', () => {
+    const MEALTIME = lemmySource({ name: 'mealtimevideos', host: 'lemmy.cafe' }, NOW)
+
+    // Its first post (15 points) made a post of HackerTube's first video
+    const FEED = mealtimeTopWeek.replaceAll('neGgUavFT0w', 'aaaaaaaaaaa')
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    /**
+     * hackertube.org, with its export the one loaded, and lemmy.cafe, with
+     * the feed given for each sort, or down
+     *
+     * @param {{ feed?: string | null }} [options] null for an instance serving no feed
+     */
+    function stubBoth({ feed = FEED } = {}) {
+      const fetch = vi.fn(async (url) => {
+        const { origin, pathname } = new URL(url)
+        if (origin === 'https://hackertube.org' && pathname === '/api/export') {
+          return new Response(JSON.stringify({ generated: '2026-10-31' }))
+        }
+        if (origin === 'https://lemmy.cafe' && pathname === '/feeds/c/mealtimevideos.xml' && feed !== null) {
+          return new Response(feed)
+        }
+        return new Response('not found', { status: 404 })
+      })
+
+      vi.stubGlobal('fetch', fetch)
+      return fetch
+    }
+
+    /** As after the first open, with the community followed too */
+    async function followedState() {
+      const state = freshState()
+      starterSources.mockReturnValueOnce([MEALTIME])
+      await collections.actions.openCollections(contextFor(state))
+      vi.clearAllMocks()
+      return state
+    }
+
+    it('is followed on the first open with HackerTube, and not again on a later open', async () => {
+      const state = await followedState()
+
+      expect(collections.getters.getCollectionSources(state).map(source => source._id)).toEqual(['hackertube', 'lemmy:mealtimevideos@lemmy.cafe'])
+      expect(state.collectionSources[MEALTIME._id]).toEqual(MEALTIME)
+
+      starterSources.mockReturnValueOnce([MEALTIME])
+      await collections.actions.openCollections(contextFor(state))
+
+      expect(DBCollectionHandlers.upsertSource).not.toHaveBeenCalled()
+    })
+
+    it('is not followed over itself when it is already followed', async () => {
+      const state = freshState()
+      state.collectionSources[MEALTIME._id] = { ...MEALTIME, followedAt: 1, checkedAt: 2 }
+      starterSources.mockReturnValueOnce([MEALTIME])
+
+      await collections.actions.openCollections(contextFor(state))
+
+      expect(state.collectionSources[MEALTIME._id]).toMatchObject({ followedAt: 1, checkedAt: 2 })
+      expect(DBCollectionHandlers.upsertSource.mock.calls.map(([source]) => source._id)).not.toContain(MEALTIME._id)
+    })
+
+    it('has its YouTube posts made its shares on a refresh, and a video HackerTube shares too is one card with both', async () => {
+      const state = await followedState()
+      const fetch = stubBoth()
+
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(fetch.mock.calls.map(([url]) => url)).toEqual(expect.arrayContaining([
+        'https://lemmy.cafe/feeds/c/mealtimevideos.xml?sort=New&limit=50',
+        'https://lemmy.cafe/feeds/c/mealtimevideos.xml?sort=TopWeek&limit=50',
+      ]))
+      expect(state.collectionShares['lemmy:mealtimevideos@lemmy.cafe|aaaaaaaaaaa']).toMatchObject({ votes: 15, discussionUrl: 'https://lemmy.cafe/post/42041782' })
+      expect(state.collectionShares['lemmy:mealtimevideos@lemmy.cafe|dTXl4RQimbY']).toMatchObject({ votes: 8, title: expect.stringMatching(/^Looking at the architecture of Alhambra/) })
+      expect(state.collectionSources[MEALTIME._id]).toMatchObject({ checkedAt: NOW, failedAt: null })
+
+      const wall = wallVideos(collections.getters.getCollectionShares(state))
+      const both = wall.filter(video => video.videoId === 'aaaaaaaaaaa')
+      expect(both).toHaveLength(1)
+      expect(both[0].collection).toMatchObject({ votes: 25 + 15, sourceIds: ['hackertube', MEALTIME._id] })
+      expect(wall.map(video => video.videoId).sort()).toEqual(['aaaaaaaaaaa', 'bbbbbbbbbbb', 'dTXl4RQimbY'])
+    })
+
+    it('keeps its shares when a later feed no longer lists them, and updates the votes of one it lists again', async () => {
+      const state = await followedState()
+      stubBoth()
+      await collections.actions.refreshCollections(contextFor(state))
+      DBCollectionHandlers.putShares.mockClear()
+
+      // A week on: the first post has left both feeds, the second has 9 points
+      const later = FEED
+        .replace(/<item><title>Guardrails[\s\S]*?<\/item>/, '')
+        .replace('8 points |', '9 points |')
+      expect(later).not.toContain('aaaaaaaaaaa')
+      stubBoth({ feed: later })
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(state.collectionShares['lemmy:mealtimevideos@lemmy.cafe|aaaaaaaaaaa']).toMatchObject({ votes: 15 })
+      expect(state.collectionShares['lemmy:mealtimevideos@lemmy.cafe|dTXl4RQimbY']).toMatchObject({ votes: 9 })
+      expect(DBCollectionHandlers.putShares.mock.calls.flatMap(([shares]) => shares.map(share => share._id))).toEqual(['lemmy:mealtimevideos@lemmy.cafe|dTXl4RQimbY'])
+    })
+
+    it('keeps its shares and is marked failed when its feed cannot be had, and HackerTube\'s refresh still works', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const state = await followedState()
+      stubBoth()
+      await collections.actions.refreshCollections(contextFor(state))
+      const before = { ...state.collectionShares }
+      Date.now.mockReturnValue(NOW + 2 * 60 * 60_000)
+
+      stubBoth({ feed: null })
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(state.collectionShares).toEqual(before)
+      expect(state.collectionSources[MEALTIME._id]).toMatchObject({ checkedAt: NOW, failedAt: NOW + 2 * 60 * 60_000 })
+      expect(state.collectionSources.hackertube).toMatchObject({ checkedAt: NOW + 2 * 60 * 60_000, failedAt: null })
+      expect(collections.getters.getCollectionsRefreshFailures(state).map(source => source._id)).toEqual([MEALTIME._id])
     })
   })
 })
