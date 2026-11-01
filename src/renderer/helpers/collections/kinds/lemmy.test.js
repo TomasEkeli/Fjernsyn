@@ -355,6 +355,45 @@ describe('a Lemmy community, as it is written', () => {
   ])('does not read %s', (text) => {
     expect(lemmyCommunity(text)).toBe(null)
   })
+
+  it.each([
+    // Loopback, and anything resolving there
+    'https://127.0.0.1/c/videos',
+    'https://127.8.9.10:8536/c/videos',
+    'https://0.0.0.0/c/videos',
+    'https://foo.localhost/c/videos',
+    'https://localhost./c/videos',
+    '!videos@127.0.0.1',
+    // Written another way, still loopback
+    '!videos@127.1',
+    'https://2130706433/c/videos',
+    'https://0x7f.0.0.1/c/videos',
+    // Private
+    'https://10.0.0.5/c/videos',
+    'https://172.16.0.1/c/videos',
+    'https://172.31.255.255/feeds/c/videos.xml?sort=New',
+    'https://192.168.1.10/c/videos',
+    'https://lemmy.world/c/videos@192.168.1.10',
+    // Link-local
+    'https://169.254.169.254/c/videos',
+    // IPv6: loopback, link-local, unique-local
+    'https://[::1]/c/videos',
+    'https://[fe80::1]/c/videos',
+    'https://[fc00::1]/c/videos',
+    'https://[fd12:3456::1]/c/videos',
+    'https://[::ffff:127.0.0.1]/c/videos',
+  ])('refuses %s, a host on this machine or its network', (text) => {
+    expect(lemmyCommunity(text)).toBe(null)
+  })
+
+  it.each([
+    ['https://172.15.0.1/c/videos', '172.15.0.1'],
+    ['https://172.32.0.1/c/videos', '172.32.0.1'],
+    ['https://8.8.8.8/c/videos', '8.8.8.8'],
+    ['https://lemmy.localhost.example/c/videos', 'lemmy.localhost.example'],
+  ])('reads %s, a public host', (text, host) => {
+    expect(lemmyCommunity(text)).toEqual({ name: 'videos', host })
+  })
 })
 
 describe('a Lemmy community as a source', () => {
