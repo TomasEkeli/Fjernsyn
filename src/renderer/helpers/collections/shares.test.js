@@ -253,6 +253,13 @@ describe('which shares a fetch puts', () => {
     }
   })
 
+  it('puts nothing for categories given again as a new array with the same ids', () => {
+    const again = share('hackertube', 'aaaaaaaaaaa', { votes: 5, why: 'old why', categories: ['x', 'y'].slice(), seenAt: 9 })
+
+    expect(again.categories).not.toBe(kept[shareId('hackertube', { videoId: 'aaaaaaaaaaa' })].categories)
+    expect(sharesToPut(kept, [again])).toEqual([])
+  })
+
   it('puts a kept share whose why the source has since taken away', () => {
     const cleared = share('hackertube', 'aaaaaaaaaaa', { votes: 5, why: null, categories: ['x', 'y'], seenAt: 9 })
 

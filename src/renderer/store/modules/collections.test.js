@@ -387,6 +387,18 @@ describe('the Collections store', () => {
       })
     })
 
+    it('puts only the shares whose numbers changed when a newer export gives the same videos again', async () => {
+      const state = await loadedState()
+      const [a, b] = BUNDLE.videos
+      stubHackerTube({ generated: '2026-11-07', rows: [{ ...a }, { ...b, score: 4, hn: { ...b.hn, last_year: 2025 } }] })
+
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(DBCollectionHandlers.putShares).toHaveBeenCalledTimes(1)
+      expect(DBCollectionHandlers.putShares.mock.calls[0][0].map(share => share._id)).toEqual(['hackertube|bbbbbbbbbbb'])
+      expect(state.collectionShares['hackertube|bbbbbbbbbbb']).toMatchObject({ votes: 4, sharedAt: Date.UTC(2025, 0, 1) })
+    })
+
     it('keeps what is loaded and marks HackerTube failed when hackertube.org cannot be reached', async () => {
       vi.spyOn(console, 'warn').mockImplementation(() => {})
       const state = await loadedState()
