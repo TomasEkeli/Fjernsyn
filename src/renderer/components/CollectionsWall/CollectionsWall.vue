@@ -478,4 +478,5 @@ watch(() => opened.value && !loadFailed.value && store.getters.getCollectionShar
 </script>
 
 <style scoped src="../FtToggleChip/chipRow.css" />
+<style scoped src="../FtToggleChip/pickerSelect.css" />
 <style scoped src="./CollectionsWall.css" />

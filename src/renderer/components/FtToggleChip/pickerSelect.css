@@ -1,0 +1,40 @@
+/*
+ * A labelled select in a control row's far end: Explore's region, the
+ * collections walls' sort. A pill of a select, the height of the chips beside
+ * it, with its label quiet in front of it.
+ *
+ * Shared for the same reason as chipRow.css, and loaded the same way: as a
+ * scoped stylesheet by each page that has one, so the classes only reach
+ * that page's own markup.
+ */
+
+.picker {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.pickerLabel {
+  color: var(--tertiary-text-color);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.pickerSelect {
+  background-color: var(--card-bg-color);
+  border: 1px solid var(--tertiary-text-color);
+  border-radius: 999px;
+  color: var(--primary-text-color);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  padding-block: 6px;
+  padding-inline: 12px;
+}
+
+.pickerSelect:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}

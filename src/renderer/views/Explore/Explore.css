@@ -11,36 +11,8 @@
 /* The control row's far end, .pageControls, is shared with Subscriptions; it
    lives in components/FtToggleChip/chipRow.css. */
 
-.regionPicker {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 8px;
-}
-
-.regionLabel {
-  color: var(--tertiary-text-color);
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-.regionSelect {
-  background-color: var(--card-bg-color);
-  border: 1px solid var(--tertiary-text-color);
-  border-radius: 999px;
-  color: var(--primary-text-color);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 0.85rem;
-  line-height: 1.2;
-  padding-block: 6px;
-  padding-inline: 12px;
-}
-
-.regionSelect:focus-visible {
-  outline: 2px solid var(--primary-color);
-  outline-offset: 2px;
-}
+/* The region select's look is shared with the collections walls; it lives
+   in components/FtToggleChip/pickerSelect.css. */
 
 @media only screen and (width <= 680px) {
   .card {

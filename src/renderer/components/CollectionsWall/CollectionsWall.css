@@ -28,36 +28,3 @@
   font-size: 0.85rem;
   margin-block: 0;
 }
-
-/* A select in the row's far end, as Explore's region select (Explore.css):
-   the sort, and any later select beside it */
-.picker {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 8px;
-}
-
-.pickerLabel {
-  color: var(--tertiary-text-color);
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-.pickerSelect {
-  background-color: var(--card-bg-color);
-  border: 1px solid var(--tertiary-text-color);
-  border-radius: 999px;
-  color: var(--primary-text-color);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 0.85rem;
-  line-height: 1.2;
-  padding-block: 6px;
-  padding-inline: 12px;
-}
-
-.pickerSelect:focus-visible {
-  outline: 2px solid var(--primary-color);
-  outline-offset: 2px;
-}

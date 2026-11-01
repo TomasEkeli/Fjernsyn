@@ -37,10 +37,10 @@
           />
           <div
             v-if="regionNames.length > 0"
-            class="regionPicker"
+            class="picker"
           >
             <label
-              class="regionLabel"
+              class="pickerLabel"
               :for="regionSelectId"
             >
               {{ $t("Explore.Region") }}
@@ -48,7 +48,7 @@
             <select
               :id="regionSelectId"
               v-model="region"
-              class="regionSelect"
+              class="pickerSelect"
             >
               <option
                 v-for="(name, index) in regionNames"
@@ -418,4 +418,5 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped src="../../components/FtToggleChip/chipRow.css" />
+<style scoped src="../../components/FtToggleChip/pickerSelect.css" />
 <style scoped src="./Explore.css" />
