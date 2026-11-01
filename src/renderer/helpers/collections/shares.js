@@ -314,7 +314,11 @@ export function wallVideos(shares, details = {}, { shown = null, sort = DEFAULT_
   /** @type {Map<string, Share[]>} */
   const byVideo = new Map()
 
+  // Only the shown sources' shares are grouped, so that a source's page goes
+  // through its own few hundred and not every share there is
   for (const share of shares) {
+    if (shown !== null && !shown.has(share.sourceId)) { continue }
+
     const key = shareVideoKey(share)
     const group = byVideo.get(key)
 
@@ -340,15 +344,14 @@ export function wallVideos(shares, details = {}, { shown = null, sort = DEFAULT_
 
     if (known !== undefined && known.unavailable !== undefined) { continue }
 
-    const shownShares = shown === null ? group : group.filter(share => shown.has(share.sourceId))
-    const [first] = shownShares
+    const [first] = group
 
     /** @type {CollectionVideo} */
     const video = {
       type: 'video',
       videoId: first.videoId,
-      title: shownShares.find(share => typeof share.title === 'string' && share.title !== '')?.title ?? '',
-      author: shownShares.find(share => typeof share.author === 'string' && share.author !== '')?.author ?? '',
+      title: group.find(share => typeof share.title === 'string' && share.title !== '')?.title ?? '',
+      author: group.find(share => typeof share.author === 'string' && share.author !== '')?.author ?? '',
       lengthSeconds: '',
       collection,
     }
@@ -365,11 +368,12 @@ export function wallVideos(shares, details = {}, { shown = null, sort = DEFAULT_
     videos.push(video)
   }
 
-  const valueOf = SORT_VALUES[collectionSortOf(sort)]
+  const order = collectionSortOf(sort)
+  const valueOf = SORT_VALUES[order]
 
   return videos.sort((a, b) => {
     return mostFirst(valueOf(a), valueOf(b)) ||
-      mostFirst(a.collection.votes, b.collection.votes) ||
+      (order === 'votes' ? 0 : mostFirst(a.collection.votes, b.collection.votes)) ||
       mostFirst(a.collection.sharedAt, b.collection.sharedAt) ||
       (a.videoId < b.videoId ? -1 : a.videoId > b.videoId ? 1 : 0)
   })
