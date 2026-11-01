@@ -62,6 +62,9 @@ const IpcChannels = {
   SYNC_CHANNELS: 'sync-channels',
   SYNC_LATER: 'sync-later',
   SYNC_COLLECTIONS: 'sync-collections',
+  // The fork's Collections crawl: one window runs it at a time
+  COLLECTIONS_CRAWL_CLAIM: 'collections-crawl-claim',
+  COLLECTIONS_CRAWL_RELEASE: 'collections-crawl-release',
 
   // The fork's Later list: which window is the main one, whether a window is
   // shown, and the desktop notification of an armed event gone live

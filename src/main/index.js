@@ -31,6 +31,7 @@ import contextMenu from 'electron-context-menu'
 import packageDetails from '../../package.json'
 import { registerBackupHandlers } from './backup/ipc'
 import { registerKeeper } from './backup/keeperIpc'
+import { createCollectionsCrawlClaim } from './collectionsCrawlClaim'
 import { isStorableCollectionRecord } from './collectionsRecords'
 import { handleOpenInExternalPlayer } from './externalPlayer'
 import { holdFullscreen, isFullscreenHeld, releaseFullscreen } from './fullscreenHold'
@@ -2620,6 +2621,25 @@ function runApp() {
       if (typeof err === 'string') throw err
       else throw err.toString()
     }
+  })
+
+  // Collections: which window runs the crawl, one at a time
+  const collectionsCrawlClaim = createCollectionsCrawlClaim()
+
+  ipcMain.handle(IpcChannels.COLLECTIONS_CRAWL_CLAIM, (event) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      return false
+    }
+
+    return collectionsCrawlClaim.claim(event.sender)
+  })
+
+  ipcMain.on(IpcChannels.COLLECTIONS_CRAWL_RELEASE, (event) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      return
+    }
+
+    collectionsCrawlClaim.release(event.sender)
   })
 
   // *********** //

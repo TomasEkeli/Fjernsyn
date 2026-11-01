@@ -4,6 +4,7 @@ import ordinary from '../api/fixtures/local--player-ordinary.json'
 import privateVideo from '../api/fixtures/local--player-private.json'
 import noSuchVideo from '../api/fixtures/local--player-no-such-video.json'
 import { CRAWL_FAILURES_BEFORE_PAUSE, CRAWL_PAUSE_MS, CRAWL_QUEUED_AT_ONCE, createCollectionsCrawl } from './crawl'
+import { needsDetails, SIGHTINGS_APART_MS } from './details'
 
 /** A described answer for any video id */
 function described(videoId) {
@@ -24,11 +25,13 @@ const ids = count => Array.from({ length: count }, (_, index) => `video${String(
  * @param {(videoId: string) => any} [options.answer] what YouTube answers for each
  * @param {number | null} [options.limit]
  * @param {Map<string, any>} [options.kept] the datastore, shared to model a restart
+ * @param {(job: any) => boolean} [options.accept] whether the lane takes a job
+ * @param {number} [options.start] the clock at the start
  */
-function setup({ videos = ids(5), answer = described, limit = null, kept = new Map() } = {}) {
+function setup({ videos = ids(5), answer = described, limit = null, kept = new Map(), accept = () => true, start = 0 } = {}) {
   const lane = []
   const timers = []
-  let clock = 0
+  let clock = start
   const asked = []
   const changes = []
 
@@ -40,13 +43,18 @@ function setup({ videos = ids(5), answer = described, limit = null, kept = new M
   })
 
   const crawl = createCollectionsCrawl({
-    missing: () => videos.filter(id => !kept.has(id)),
-    hasDetails: id => kept.has(id),
+    missing: () => [...videos.filter(id => !kept.has(id)), ...videos.filter(id => kept.has(id) && needsDetails(kept.get(id), clock))],
+    isDone: id => !needsDetails(kept.get(id), clock),
+    recordFor: id => kept.get(id),
     request,
     record: async (records) => {
       for (const record of records) { kept.set(record._id, record) }
     },
-    schedule: job => lane.push(job),
+    schedule: (job) => {
+      if (!accept(job)) { return false }
+      lane.push(job)
+      return true
+    },
     unschedule: (keys) => {
       for (const key of keys) {
         const index = lane.findIndex(job => job.key === key)
@@ -159,22 +167,82 @@ describe('the crawl', () => {
     expect(t.kept.get(ids(5)[2])).toMatchObject({ unavailable: 'gone' })
   })
 
-  it('records a video that asks to sign in as private once a later video is answered, which a bot check would not be', async () => {
+  it('keeps a video that asks to sign in as a suspect, not hidden, however well the videos around it are answered', async () => {
     const t = setup({ answer: id => id === ids(5)[1] ? privateVideo.answer : described(id) })
 
     t.crawl.start()
     await t.drain()
 
-    expect(t.kept.get(ids(5)[1])).toMatchObject({ unavailable: 'private' })
+    expect(t.kept.get(ids(5)[1])).toMatchObject({ loginRequired: { count: 1 } })
+    expect(t.kept.get(ids(5)[1]).unavailable).toBeUndefined()
   })
 
-  it('records nothing for videos that ask to sign in when nothing after them is answered', async () => {
-    const t = setup({ videos: ids(2), answer: () => privateVideo.answer })
+  it('asks a suspect again on the next start, not in the same one, and never hides it for answers on the same day', async () => {
+    const kept = new Map()
+    const t = setup({ videos: ids(3), kept, answer: id => id === ids(3)[0] ? privateVideo.answer : described(id) })
+
+    t.crawl.start()
+    await t.drain()
+    expect(t.asked).toEqual(ids(3))
+
+    for (let again = 0; again < 5; again++) {
+      await t.advance(60 * 60 * 1000)
+      t.crawl.start()
+      await t.drain()
+    }
+
+    expect(t.asked.filter(id => id === ids(3)[0])).toHaveLength(6)
+    expect(kept.get(ids(3)[0]).unavailable).toBeUndefined()
+  })
+
+  it('takes a video for private after it asks to sign in on three starts at least twelve hours apart', async () => {
+    const kept = new Map()
+    const t = setup({ videos: ids(1), kept, answer: () => privateVideo.answer })
+
+    for (let start = 0; start < 3; start++) {
+      t.crawl.start()
+      await t.drain()
+      await t.advance(SIGHTINGS_APART_MS)
+    }
+
+    expect(kept.get(ids(1)[0])).toMatchObject({ unavailable: 'private' })
+  })
+
+  it('counts asking to sign in as a failure, so a bot check pauses it', async () => {
+    const t = setup({ videos: ids(10), answer: () => privateVideo.answer })
 
     t.crawl.start()
     await t.drain()
 
-    expect(t.kept.size).toBe(0)
+    expect(t.asked).toHaveLength(CRAWL_FAILURES_BEFORE_PAUSE)
+    expect(t.crawl.status().state).toBe('paused')
+  })
+
+  it('carries on past a job the lane would not take, without asking about it this start', async () => {
+    const t = setup({ accept: job => job.key !== `collection-details-${ids(5)[1]}` })
+
+    t.crawl.start()
+    await t.drain()
+
+    expect(t.asked).toEqual([ids(5)[0], ...ids(5).slice(2)])
+    expect(t.crawl.status().state).toBe('done')
+  })
+
+  it('schedules nothing more once a job is dropped while it is being scheduled', () => {
+    let calls = 0
+    const t = setup({
+      videos: ids(10),
+      accept: (job) => {
+        calls++
+        job.dropped()
+        return true
+      },
+    })
+
+    t.crawl.start()
+
+    expect(calls).toBe(1)
+    expect(t.crawl.status().state).toBe('stopped')
   })
 
   it('pauses after failures in a row, takes its queued jobs back off the lane, and carries on after the pause', async () => {

@@ -559,6 +559,19 @@ export default {
   },
 
   /**
+   * Asks main for the Collections crawl, which one window runs at a time
+   * @returns {Promise<boolean>} whether this window now runs it
+   */
+  claimCollectionsCrawl: () => {
+    return ipcRenderer.invoke(IpcChannels.COLLECTIONS_CRAWL_CLAIM)
+  },
+
+  /** Gives the Collections crawl back to main, for another window to run */
+  releaseCollectionsCrawl: () => {
+    ipcRenderer.send(IpcChannels.COLLECTIONS_CRAWL_RELEASE)
+  },
+
+  /**
    * Whether this window is the main one, which checks the Later list
    * @returns {Promise<boolean>}
    */

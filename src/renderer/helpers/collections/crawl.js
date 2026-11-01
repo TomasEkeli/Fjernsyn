@@ -1,4 +1,4 @@
-import { unavailableRecord, videoDetailsFromPlayerResponse, videoDetailsRecord } from './details'
+import { loginRequiredRecord, unavailableRecord, videoDetailsFromPlayerResponse, videoDetailsRecord } from './details'
 
 /**
  * The crawl: every collection video's own details, fetched once, in the
@@ -9,12 +9,12 @@ import { unavailableRecord, videoDetailsFromPlayerResponse, videoDetailsRecord }
  * Collections is opened and carries on while the app runs, whichever page is
  * shown, through the request manager's enrichment lane (ADR-0020).
  *
- * Progress is the datastore: a video with a record is done, whether it was
- * described or found unavailable, so a crawl stopped by quitting, by a
+ * Progress is the datastore: a video with a record is done (`needsDetails`
+ * in `details.js` names the exceptions), so a crawl stopped by quitting, by a
  * profile switch cancelling the lane, or by a pause after failures, resumes
- * from what is missing the next time it is started, and no video with a
- * record is ever asked about again. Within one start, a video is asked about
- * at most once; one that failed is left missing, for the next start.
+ * from what is missing the next time it is started. Within one start, a
+ * video is asked about at most once; one that failed is left missing, for the
+ * next start.
  *
  * It never holds more than a couple of jobs on the lane, queued or running,
  * and adds the next only when one is done. A job joins the lane at its back
@@ -23,24 +23,24 @@ import { unavailableRecord, videoDetailsFromPlayerResponse, videoDetailsRecord }
  * go first: the crawl only ever takes the turns nothing else wants.
  *
  * A video YouTube says is not there is recorded as gone. One that asks to sign
- * in may be private, or the request may have met a bot check, which answers
- * the same and cannot be told from it without reading YouTube's words, which
- * are in the interface language. So it is held as a suspect, counted as a
- * failure, and recorded as private only once a video after it is answered,
- * which a bot check would have refused too. A few failures in a row pause the
- * crawl for a while, as they do the AI lookups.
+ * in may be private, or the request may have met a bot check: it is recorded
+ * as a suspect (`loginRequiredRecord`), which only answers on several starts
+ * far apart turn into private, and counted as a failure. A few failures in a
+ * row pause the crawl for a while, as they do the AI lookups.
  *
  * Framework-free and built from what it is given, so that the rules are
  * tested without a network, a store or a request manager:
  *
- * - `missing()` answers the YouTube video ids still without a record, in the
- *   order to ask for them
- * - `hasDetails(videoId)` says whether one has a record now: another window
- *   may have fetched it, or the watch page
+ * - `missing()` answers the YouTube video ids to ask about, in the order to
+ *   ask for them
+ * - `isDone(videoId)` says whether one is no longer to be asked about:
+ *   another window may have fetched it meanwhile
+ * - `recordFor(videoId)` answers the record kept for it, if any
  * - `request(videoId)` answers the raw `/player` response, or throws
  * - `record(records)` keeps records (`details.js`)
  * - `schedule({ key, run, dropped })` queues `run` at the back of the lane,
- *   and calls `dropped` instead if it is taken out first
+ *   and calls `dropped` instead if it is taken out first; answers false when
+ *   the lane would not take it
  * - `unschedule(keys)` takes queued jobs back out, calling their `dropped`
  * - `limit` is the most requests the crawl may make while the app runs, or
  *   null for no limit: a development run's cap (`crawlLimit.js`)
@@ -48,10 +48,11 @@ import { unavailableRecord, videoDetailsFromPlayerResponse, videoDetailsRecord }
  *
  * @param {object} deps
  * @param {() => string[]} deps.missing
- * @param {(videoId: string) => boolean} deps.hasDetails
+ * @param {(videoId: string) => boolean} deps.isDone
+ * @param {(videoId: string) => import('./details').VideoDetails | undefined} deps.recordFor
  * @param {(videoId: string) => Promise<any>} deps.request
  * @param {(records: import('./details').VideoDetails[]) => Promise<void>} deps.record
- * @param {(job: { key: string, run: () => Promise<void>, dropped: () => void }) => void} deps.schedule
+ * @param {(job: { key: string, run: () => Promise<void>, dropped: () => void }) => boolean} deps.schedule
  * @param {(keys: string[]) => void} deps.unschedule
  * @param {number | null} [deps.limit]
  * @param {() => boolean} [deps.enabled]
@@ -62,7 +63,8 @@ import { unavailableRecord, videoDetailsFromPlayerResponse, videoDetailsRecord }
  */
 export function createCollectionsCrawl({
   missing,
-  hasDetails,
+  isDone,
+  recordFor,
   request,
   record,
   schedule,
@@ -85,7 +87,6 @@ export function createCollectionsCrawl({
    *   it was last used up
    * @property {Set<string>} asked
    * @property {Map<string, { running: boolean }>} pending queued or running
-   * @property {string[]} suspects asked to sign in, not yet known to be private
    */
 
   /** @type {Run | null} */
@@ -135,7 +136,7 @@ export function createCollectionsCrawl({
 
       const videoId = current.order[current.cursor++]
 
-      if (current.asked.has(videoId) || current.pending.has(videoId) || hasDetails(videoId)) { continue }
+      if (current.asked.has(videoId) || current.pending.has(videoId) || isDone(videoId)) { continue }
 
       current.refreshed = false
       return videoId
@@ -152,11 +153,21 @@ export function createCollectionsCrawl({
       if (videoId === null) { break }
 
       current.pending.set(videoId, { running: false })
-      schedule({
+
+      const added = schedule({
         key: CRAWL_KEY_PREFIX + videoId,
         run: () => ask(current, videoId),
         dropped: () => dropped(current, videoId),
       })
+
+      // Stopped while it was being scheduled
+      if (run !== current) { return }
+
+      if (!added) {
+        // Not taken, which nothing should cause: passed over this start
+        current.pending.delete(videoId)
+        current.asked.add(videoId)
+      }
     }
 
     if (current.pending.size === 0) {
@@ -196,9 +207,6 @@ export function createCollectionsCrawl({
     if (run !== current || current.state !== 'running') { return }
 
     current.state = 'paused'
-    // Whatever asked to sign in before the failures may have met the same
-    // refusal: not known to be private
-    current.suspects = []
     setState('paused')
 
     const queued = [...current.pending].filter(([, job]) => !job.running).map(([videoId]) => CRAWL_KEY_PREFIX + videoId)
@@ -224,7 +232,7 @@ export function createCollectionsCrawl({
 
     try {
       if (job === undefined || run !== current || current.state !== 'running') { return }
-      if (hasDetails(videoId)) { return }
+      if (isDone(videoId)) { return }
       // Never more than the limit, whatever was queued
       if (limit !== null && requests >= limit) { return }
 
@@ -241,23 +249,18 @@ export function createCollectionsCrawl({
 
       try {
         const answer = videoDetailsFromPlayerResponse(await request(videoId), videoId)
+        const at = now()
 
         if (answer.kind === 'login-required') {
-          current.suspects.push(videoId)
+          await record([loginRequiredRecord({ videoId }, recordFor(videoId), at)])
           onFailure(`Collections: ${videoId} asks to sign in; private, or refused`)
           failed(current, null)
           return
         }
 
-        const at = now()
-        const records = current.suspects.map(suspect => unavailableRecord({ videoId: suspect }, 'private', at))
-        current.suspects = []
-
-        records.push(answer.kind === 'gone'
+        await record([answer.kind === 'gone'
           ? unavailableRecord({ videoId }, 'gone', at)
-          : videoDetailsRecord({ videoId }, answer.details, at))
-
-        await record(records)
+          : videoDetailsRecord({ videoId }, answer.details, at)])
         failuresInARow = 0
       } catch (error) {
         onFailure(`Collections: fetching the details of ${videoId} failed; it is asked again on the next start`, error)
@@ -295,7 +298,6 @@ export function createCollectionsCrawl({
       refreshed: true,
       asked: new Set(),
       pending: new Map(),
-      suspects: [],
     }
 
     setState('running')
