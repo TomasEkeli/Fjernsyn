@@ -388,7 +388,7 @@ import { aiMarkOf, isChannelMarkedAi, markChannelAi, unmarkChannelAi } from '../
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
 import { cardShareOptions, describeCard, platformRecordFields, runCardShareOption } from '../../platform/cards'
 import { subscriptionEntryIsUpcoming, subscriptionEntryScheduledAt } from '../../../subscriptionFeedMerge'
-import { THUMBNAIL_BADGE } from '../../helpers/thumbnailBadge.js'
+import { THUMBNAIL_BADGE } from '../../helpers/thumbnailBadge'
 
 const props = defineProps({
   data: {
