@@ -196,6 +196,22 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
   }
 
   /**
+   * A PeerTube video as a list item has it (`VideoSummary`: title, channel,
+   * duration, views, publish date, thumbnail, live state, `nsfw`), from its
+   * origin, without the playback source, captions, chapters or storyboard
+   * `getVideo` asks for: one request, and one more when the instance asked
+   * says the video is not its own. For whatever needs a video's details
+   * without playing it (Collections). PeerTube only: any other ref rejects
+   * as `invalid`, without a request; failures are `getVideo`'s.
+   *
+   * @param {import('./shapes').PeerTubeVideoRef} ref
+   * @returns {Promise<import('./shapes').VideoSummary>}
+   */
+  function getVideoSummary(ref) {
+    return videos.getVideoSummary(ref)
+  }
+
+  /**
    * A page of YouTube's shorts sequence after a short: the shorts
    * youtube.com's shorts player moves down through, by id, the feed's ads
    * dropped (see `./youtube/shorts.js`). Local only, through the backend
@@ -484,6 +500,7 @@ export function createPlatformLayer({ fetch, peertubeClient, youtube = {}, confi
     describe: describeEntity,
     resolveUrl,
     getVideo,
+    getVideoSummary,
     listShortsSequence,
     getChannel,
     resolveChannel,

@@ -869,3 +869,72 @@ describe('getVideo (PeerTube)', () => {
     })
   })
 })
+
+describe('getVideoSummary (PeerTube)', () => {
+  it('is the summary getVideo starts from, from one request to the instance', async () => {
+    const { layer, fake } = setUp()
+
+    const video = await layer.getVideoSummary(refOf(blenderHls))
+
+    expect(video).toEqual({
+      type: 'video',
+      platform: 'peertube',
+      host: 'video.blender.org',
+      videoId: BLENDER_UUID,
+      title: 'OVERGROWN: a feature film project by Blender Studio',
+      author: 'Blender Studio',
+      authorId: 'blender_studio@video.blender.org',
+      lengthSeconds: 70,
+      published: Date.parse('2026-07-10T14:00:16.560Z'),
+      viewCount: 12697,
+      liveNow: false,
+      isUpcoming: false,
+      nsfw: false,
+      thumbnail: 'https://video.blender.org/lazy-static/thumbnails/057e35a6-c5b8-4fb4-8230-0f5df412ca50.jpg',
+    })
+    expect(fake.urls()).toEqual([`https://video.blender.org/api/v1/videos/${BLENDER_UUID}`])
+  })
+
+  it('is answered as the origin has it, for a video seen through another instance', async () => {
+    const remote = copy(blenderHls)
+    remote.url = `https://tilvids.com/api/v1/videos/${BLENDER_UUID}`
+    remote.body.isLocal = false
+    remote.body.name = 'As tilvids.com has it'
+    const { layer, fake } = setUp()
+    fake.respond(remote.url, remote)
+
+    const video = await layer.getVideoSummary({ platform: 'peertube', host: 'tilvids.com', videoId: BLENDER_UUID })
+
+    expect(video).toMatchObject({ host: 'video.blender.org', title: 'OVERGROWN: a feature film project by Blender Studio' })
+    expect(fake.urls()).toEqual([remote.url, `https://video.blender.org/api/v1/videos/${BLENDER_UUID}`])
+  })
+
+  it('has no duration for a live that is live now, which the card reads as live', async () => {
+    const { layer } = setUp()
+
+    const video = await layer.getVideoSummary(refOf(liveNow))
+
+    expect(video.liveNow).toBe(true)
+    expect(video).not.toHaveProperty('lengthSeconds')
+  })
+
+  it('fails as getVideo does', async () => {
+    const { layer } = setUp({ fixtures: [blenderNotFound, privateVideo] })
+
+    expect(await failure(layer.getVideoSummary({ platform: 'peertube', host: 'video.blender.org', videoId: '0d5c6a3e-9a7b-4f1e-8c2d-3b4a5e6f7a8b' })))
+      .toMatchObject({ kind: 'notFound' })
+    expect(await failure(layer.getVideoSummary({ platform: 'peertube', host: 'peertube.example', videoId: REFUSED_UUID })))
+      .toMatchObject({ kind: 'refused' })
+  })
+
+  it.each([
+    [null],
+    ['dQw4w9WgXcQ'],
+    [{ platform: 'peertube', host: 'video.blender.org', videoId: 'o3XdtSYTnv2LYxRsf8Mndz' }],
+  ])('refuses what is not a PeerTube video ref without a request: %j', async (badRef) => {
+    const { layer, fake } = setUp()
+
+    expect(await failure(layer.getVideoSummary(badRef))).toMatchObject({ kind: 'invalid' })
+    expect(fake.requests).toHaveLength(0)
+  })
+})
