@@ -212,9 +212,10 @@ import { KeyboardShortcuts } from '../../../constants'
  * upvotes, shared on community, video published or views. Which shares count
  * for the order is which sources are shown: the chips' on Collections, the
  * source's own on its page (`collectionValues` in helpers/collections/
- * shares.js). Last, while HackerTube's videos are on the wall, one of
- * HackerTube's categories, which leaves only the videos HackerTube put in it
- * (helpers/collections/category.js). The `header` slot comes above the row.
+ * shares.js). Last, on HackerTube's own page only, one of HackerTube's
+ * categories, which leaves only the videos HackerTube put in it
+ * (helpers/collections/category.js); Collections has none, and ignores a
+ * choice made there. The `header` slot comes above the row.
  *
  * Each card carries the vote badge, the votes that order the wall, quietly
  * at the top left of its thumbnail.
@@ -383,13 +384,14 @@ const taxonomy = computed(() => {
 const categoryGroups = computed(() => categoryAreas(taxonomy.value))
 
 /**
- * Whether HackerTube's videos are on this wall, which are the only ones with
- * categories: followed, and its chip on, or its own page
+ * Whether this is HackerTube's own page, followed, the one wall with the
+ * category select: on Collections, where its videos are among every other
+ * source's, it would take too much room for what it does
  *
  * @type {import('vue').ComputedRef<boolean>}
  */
 const hackerTubeShown = computed(() => {
-  return shownSources.value.has(HACKERTUBE_SOURCE_ID) &&
+  return props.sourceId === HACKERTUBE_SOURCE_ID &&
     store.getters.getCollectionSources.some(source => source._id === HACKERTUBE_SOURCE_ID)
 })
 
@@ -409,8 +411,7 @@ const categoryShown = computed(() => hackerTubeShown.value && categoryGroups.val
 const CATEGORY_KEY = 'collectionsCategory'
 
 /**
- * The category chosen, for the session, and the same on Collections and
- * HackerTube's page; '' is all
+ * The category chosen on HackerTube's page, for the session; '' is all
  */
 const chosenCategory = ref(sessionStorage.getItem(CATEGORY_KEY) ?? '')
 
@@ -435,8 +436,8 @@ const category = computed({
 const categorySelectId = useId()
 
 /**
- * The wall in the category chosen, while its select is shown: with HackerTube
- * off the wall the choice waits, and the wall is whole
+ * The wall in the category chosen, while its select is shown: elsewhere,
+ * Collections included, the choice waits, and the wall is whole
  *
  * @type {import('vue').ComputedRef<import('../../helpers/collections/shares').CollectionVideo[]>}
  */

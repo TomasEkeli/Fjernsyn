@@ -11,6 +11,7 @@ import FtLoader from '../../components/FtLoader/FtLoader.vue'
 import CollectionSource from './CollectionSource.vue'
 import CollectionsVoteBadge from '../../components/CollectionsVoteBadge/CollectionsVoteBadge.vue'
 import { ThumbnailBadgeProbe } from '../../testing/thumbnailBadgeProbe'
+import { shippedHackerTubeTaxonomy } from '../../helpers/collections/hackertubeBundle'
 
 vi.mock('../../store/index', async () => {
   const { createFakeStore } = await import('../../testing/store')
@@ -136,6 +137,79 @@ describe('a source\'s page', () => {
     const { wrapper: other } = await openSourcePage(MEALTIME._id)
     expect(other.find('select.categorySelect').exists()).toBe(false)
     expect(listed(other).map(video => video.videoId)).toEqual(['bbbbbbbbbbb'])
+  })
+
+  describe('HackerTube\'s category select', () => {
+    const TAXONOMY = {
+      version: 'v',
+      areas: [
+        { id: 'cs', name: 'Computing', categories: [{ id: 'compilers', name: 'Compilers' }, { id: 'databases', name: 'Databases' }] },
+        { id: 'sci', name: 'Science', categories: [{ id: 'physics', name: 'Physics' }] },
+      ],
+    }
+
+    beforeEach(() => {
+      store.setGetter('getCollectionSourceData', id => id === HACKERTUBE._id ? { _id: id, generated: 'g', taxonomy: TAXONOMY } : undefined)
+      store.setGetter('getCollectionShares', [
+        { ...share(HACKERTUBE, 'aaaaaaaaaaa', 20), categories: ['compilers'] },
+        { ...share(HACKERTUBE, 'ccccccccccc', 5), categories: ['physics'] },
+      ])
+    })
+
+    /** @param {import('@vue/test-utils').VueWrapper} wrapper */
+    const select = wrapper => wrapper.find('select.categorySelect')
+
+    it('lists HackerTube\'s categories by name, grouped by area, after All, which is chosen', async () => {
+      const { wrapper } = await openSourcePage(HACKERTUBE._id)
+
+      expect(select(wrapper).findAll('optgroup').map(group => [group.attributes('label'), group.findAll('option').map(option => option.text())])).toEqual([
+        ['Computing', ['Compilers', 'Databases']],
+        ['Science', ['Physics']],
+      ])
+      expect(select(wrapper).find('option').text()).toBe('All')
+      expect(select(wrapper).element.value).toBe('')
+      expect(wrapper.find(`label[for="${select(wrapper).attributes('id')}"]`).text()).toBe('Category')
+    })
+
+    it('keeps the choice for the session, and clears it on All', async () => {
+      const { wrapper } = await openSourcePage(HACKERTUBE._id)
+      await select(wrapper).setValue('physics')
+      expect(sessionStorage.getItem('collectionsCategory')).toBe('physics')
+      wrapper.unmount()
+
+      const { wrapper: again } = await openSourcePage(HACKERTUBE._id)
+      expect(select(again).element.value).toBe('physics')
+      expect(listed(again).map(video => video.videoId)).toEqual(['ccccccccccc'])
+
+      await select(again).setValue('')
+      expect(listed(again).map(video => video.videoId)).toEqual(['aaaaaaaaaaa', 'ccccccccccc'])
+      expect(sessionStorage.getItem('collectionsCategory')).toBeNull()
+    })
+
+    it('says so when nothing is in the category', async () => {
+      const { wrapper } = await openSourcePage(HACKERTUBE._id)
+      await select(wrapper).setValue('databases')
+
+      expect(wrapper.find('.message').text()).toBe('Nothing here is in this category.')
+    })
+
+    it('takes a choice the taxonomy no longer has for All', async () => {
+      sessionStorage.setItem('collectionsCategory', 'gone')
+      const { wrapper } = await openSourcePage(HACKERTUBE._id)
+
+      expect(select(wrapper).element.value).toBe('')
+      expect(listed(wrapper)).toHaveLength(2)
+    })
+
+    it('lists the shipped bundle\'s categories where none are kept', async () => {
+      store.setGetter('getCollectionSourceData', () => undefined)
+      vi.mocked(shippedHackerTubeTaxonomy).mockResolvedValueOnce(TAXONOMY)
+
+      const { wrapper } = await openSourcePage(HACKERTUBE._id)
+
+      expect(shippedHackerTubeTaxonomy).toHaveBeenCalled()
+      expect(select(wrapper).findAll('optgroup')).toHaveLength(2)
+    })
   })
 
   it('gives every card the vote badge of this source\'s share alone: its votes, and on hover its why and its discussion', async () => {
