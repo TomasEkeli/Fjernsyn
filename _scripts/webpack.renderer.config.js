@@ -201,6 +201,10 @@ const config = {
       // Simulates YouTube distrusting our PO token, so the SABR recovery
       // ladder can be exercised without waiting for the real thing
       'process.env.FT_SABR_WALL': JSON.stringify(process.env.FT_SABR_WALL ?? ''),
+      // Caps the Collections crawl's requests in a development run, so that
+      // trying it out does not ask YouTube about thousands of videos. Never
+      // baked into any other build (helpers/collections/crawlLimit.js)
+      'process.env.FT_COLLECTIONS_CRAWL_LIMIT': JSON.stringify(isDevMode ? (process.env.FT_COLLECTIONS_CRAWL_LIMIT ?? '') : ''),
       // Which build this is. Baked in because it can only be known here.
       'process.env.BUILD_STAMP': JSON.stringify(buildStamp),
       // The release this build is, as its tag (v0.1.214), set by the build
