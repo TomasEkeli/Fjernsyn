@@ -61,22 +61,31 @@ function freshState() {
 
 /**
  * The settings module's part, one per state, as one installation has one:
- * whether the starter set has been applied
+ * whether the starter set has been applied, and which sources' chips are off
  *
- * @type {WeakMap<object, { collectionsStarterSetDone: boolean }>}
+ * @type {WeakMap<object, { collectionsStarterSetDone: boolean, collectionsSourcesHidden: string[] }>}
  */
 const settingsOf = new WeakMap()
 
 /** @param {object} state */
 function settingsFor(state) {
   if (!settingsOf.has(state)) {
-    settingsOf.set(state, { collectionsStarterSetDone: false })
+    settingsOf.set(state, { collectionsStarterSetDone: false, collectionsSourcesHidden: [] })
   }
   return settingsOf.get(state)
 }
 
 /** The settings module's updater, which a test may make fail */
 const updateStarterSetDone = vi.fn(async (settings, value) => { settings.collectionsStarterSetDone = value })
+
+/** Likewise, for the sources whose chips are off */
+const updateSourcesHidden = vi.fn(async (settings, value) => { settings.collectionsSourcesHidden = value })
+
+/** The settings module's updaters, by action */
+const SETTINGS_UPDATERS = {
+  updateCollectionsStarterSetDone: updateStarterSetDone,
+  updateCollectionsSourcesHidden: updateSourcesHidden,
+}
 
 function contextFor(state) {
   const settings = settingsFor(state)
@@ -85,10 +94,11 @@ function contextFor(state) {
     getters: {},
     rootGetters: {
       get getCollectionsStarterSetDone() { return settings.collectionsStarterSetDone },
+      get getCollectionsSourcesHidden() { return settings.collectionsSourcesHidden },
     },
     commit: (type, payload) => collections.mutations[type](state, payload),
-    dispatch: (type, payload) => type === 'updateCollectionsStarterSetDone'
-      ? updateStarterSetDone(settings, payload)
+    dispatch: (type, payload) => Object.hasOwn(SETTINGS_UPDATERS, type)
+      ? SETTINGS_UPDATERS[type](settings, payload)
       : collections.actions[type](context, payload),
   }
   return context
@@ -1063,6 +1073,39 @@ describe('the Collections store', () => {
       ])
       // Asked once, by the trial: the shares are what it fetched
       expect(fetch).toHaveBeenCalledTimes(2)
+    })
+
+    it('follows a community with its chip on, though it was unfollowed with its chip off', async () => {
+      const state = await loadedState()
+      stubInstances()
+      settingsFor(state).collectionsSourcesHidden = ['hackertube', MEALTIME._id]
+
+      await collections.actions.followCollectionSourceByUrl(contextFor(state), 'https://lemmy.cafe/c/mealtimevideos')
+
+      expect(settingsFor(state).collectionsSourcesHidden).toEqual(['hackertube'])
+    })
+
+    it('writes no chip setting for a source whose chip was never off', async () => {
+      const state = await loadedState()
+      stubInstances()
+      updateSourcesHidden.mockClear()
+
+      await collections.actions.followCollectionSourceByUrl(contextFor(state), 'https://lemmy.cafe/c/mealtimevideos')
+
+      expect(updateSourcesHidden).not.toHaveBeenCalled()
+    })
+
+    it('follows the source even when its chip cannot be turned on', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      const state = await loadedState()
+      stubInstances()
+      settingsFor(state).collectionsSourcesHidden = [MEALTIME._id]
+      updateSourcesHidden.mockRejectedValueOnce(new Error('settings.db is gone'))
+
+      const followed = await collections.actions.followCollectionSourceByUrl(contextFor(state), 'https://lemmy.cafe/c/mealtimevideos')
+
+      expect(followed.outcome).toBe('followed')
+      expect(state.collectionSources[MEALTIME._id]).toBeDefined()
     })
 
     it('follows a community seen through another instance at its home instance', async () => {

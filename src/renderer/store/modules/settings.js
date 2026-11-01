@@ -427,6 +427,15 @@ const state = {
   // the followed sources, so a machine restoring one does not follow again
   // what the other machine unfollowed.
   collectionsStarterSetDone: false,
+  // The sources whose chips are off on Collections, by source id
+  // (helpers/collections/sourceChips.js). What is off rather than what is on,
+  // as `exploreCategoriesHidden`, so that a source followed later arrives
+  // with its chip on. Only what is shown: every source is fetched whatever
+  // these say.
+  collectionsSourcesHidden: [],
+  // The order of the collections walls: 'votes', 'shared', 'published' or
+  // 'views' (helpers/collections/shares.js, COLLECTION_SORTS)
+  collectionsSort: 'votes',
   generalAutoLoadMorePaginatedItemsEnabled: false,
   commentAutoLoadEnabled: true,
   hideToTrayOnMinimize: false,
