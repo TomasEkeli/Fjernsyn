@@ -36,7 +36,15 @@ const TIME_FIELDS = {
   playlists: 'lastUpdatedAt',
   searchHistory: 'lastUpdatedAt',
   aiVerdicts: 'checkedAt',
+  collectionShares: 'seenAt',
 }
+
+/**
+ * The setting that says the Collections starter set has been followed once,
+ * so that it is never followed again over the unfollows of a machine whose
+ * sources arrive here
+ */
+const STARTER_SET_DONE = 'collectionsStarterSetDone'
 
 /**
  * The key a record is told apart by: the video in the history, as each
@@ -171,5 +179,26 @@ export function mergeSections({ ancestor, theirs, ours }) {
     }
   }
 
+  if (theirs.collectionSources?.length > 0) {
+    markStarterSetDone(merged, toApply)
+  }
+
   return { merged, toApply, conflicts }
+}
+
+/**
+ * The starter set marked done in the merged settings and in what to apply,
+ * unless it is already
+ * @param {Sections} merged
+ * @param {Changes} toApply
+ */
+function markStarterSetDone(merged, toApply) {
+  const settings = merged.settings ?? []
+  if (settings.some(record => record._id === STARTER_SET_DONE && record.value === true)) { return }
+
+  const done = { _id: STARTER_SET_DONE, value: true }
+  merged.settings = [...settings.filter(record => record._id !== STARTER_SET_DONE), done]
+
+  const changes = toApply.settings ?? { put: [], remove: [] }
+  toApply.settings = { put: [...changes.put.filter(record => record._id !== STARTER_SET_DONE), done], remove: changes.remove }
 }
