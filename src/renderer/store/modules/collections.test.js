@@ -1,3 +1,4 @@
+import { reactive } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { DBCollectionHandlers } from '../../../datastores/handlers/index'
@@ -410,6 +411,21 @@ describe('the Collections store', () => {
 
       expect(DBCollectionHandlers.putShares).not.toHaveBeenCalled()
       expect(state.collectionSources.hackertube).toMatchObject({ dataGenerated: '2026-10-31', failedAt: NOW })
+    })
+
+    it('sends main a source it can copy, from state Vue has made reactive, as the store\'s is', async () => {
+      const state = reactive(freshState())
+      await collections.actions.openCollections(contextFor(state))
+      vi.clearAllMocks()
+      // What the IPC does to a source on its way to main
+      DBCollectionHandlers.upsertSource.mockImplementation(async (source) => { structuredClone(source) })
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      stubHackerTube({ generated: '2026-10-31' })
+
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(console.warn).not.toHaveBeenCalled()
+      expect(state.collectionSources.hackertube).toMatchObject({ checkedAt: NOW, failedAt: null, taxonomy: { version: 'v' } })
     })
 
     it('stops saying it failed once a refresh works', async () => {

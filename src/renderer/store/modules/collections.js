@@ -12,9 +12,10 @@ import { sharesToPut } from '../../helpers/collections/shares'
  * video's own details as the crawl fetched them, from `collection-videos.db`,
  * loaded at startup and written through on every change.
  *
- * Shares and details are frozen as they come in: there are thousands of
- * them, nothing edits one in place, and a frozen object is one Vue does not
- * make deeply reactive. A change replaces the record.
+ * Sources, shares and details are frozen as they come in: there are
+ * thousands of shares, nothing edits one in place, and a frozen object is
+ * one Vue does not make deeply reactive, which also keeps a record one the
+ * IPC to main can copy. A change replaces the record.
  *
  * The walls are worked out from the shares in `helpers/collections/shares.js`.
  *
@@ -357,7 +358,7 @@ const mutations = {
    */
   finishCollectionsGrab(state, read) {
     if (read !== null) {
-      state.collectionSources = Object.fromEntries(read.sources.map(source => [source._id, source]))
+      state.collectionSources = Object.fromEntries(read.sources.map(source => [source._id, Object.freeze({ ...source })]))
       state.collectionShares = withShares({}, read.shares)
       const videos = {}
       putVideos(videos, read.videos)
@@ -372,8 +373,16 @@ const mutations = {
     }
   },
 
+  /**
+   * Frozen, as the shares are, so that Vue leaves it as it is: a source with
+   * fields of its own (HackerTube's taxonomy) is otherwise read back with a
+   * reactive proxy inside, which the IPC to main cannot copy
+   *
+   * @param {any} state
+   * @param {Source} source
+   */
   upsertCollectionSource(state, source) {
-    state.collectionSources = { ...state.collectionSources, [source._id]: source }
+    state.collectionSources = { ...state.collectionSources, [source._id]: Object.freeze({ ...source }) }
   },
 
   putCollectionShares(state, shares) {
