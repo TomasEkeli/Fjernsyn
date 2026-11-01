@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { COLLECTIONS_CRAWL_LIMIT, crawlLimitFrom } from './crawlLimit'
+import { COLLECTIONS_CRAWL_LIMIT, crawlLimitFrom, DEVELOPMENT_CRAWL_LIMIT } from './crawlLimit'
 
 describe('the crawl\'s development limit', () => {
   it('is the number set, in a development build', () => {
@@ -8,9 +8,15 @@ describe('the crawl\'s development limit', () => {
     expect(crawlLimitFrom('0', 'development')).toBe(0)
   })
 
-  it('is no limit when nothing is set', () => {
-    expect(crawlLimitFrom('', 'development')).toBeNull()
-    expect(crawlLimitFrom(undefined, 'development')).toBeNull()
+  it('is a small default when nothing is set, so a development run never crawls in full by accident', () => {
+    expect(DEVELOPMENT_CRAWL_LIMIT).toBe(30)
+    expect(crawlLimitFrom('', 'development')).toBe(30)
+    expect(crawlLimitFrom(undefined, 'development')).toBe(30)
+  })
+
+  it('is lifted only when asked for in so many words', () => {
+    expect(crawlLimitFrom('none', 'development')).toBeNull()
+    expect(crawlLimitFrom('None', 'development')).toBe(0)
   })
 
   it('is no limit in any other build, whatever is set', () => {
