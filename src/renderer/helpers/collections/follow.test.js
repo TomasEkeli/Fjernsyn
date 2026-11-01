@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { trySource } from './follow'
 import { hackerTubeSource } from './hackertube'
-import { lemmySource } from './kinds/lemmy'
+import { lemmyKind, lemmySource } from './kinds/lemmy'
 
 // A real feed of lemmy.cafe's mealtimevideos, trimmed to two posts
 import mealtimeTopWeek from './kinds/fixtures/lemmy.cafe--mealtimevideos-topweek.xml?raw'
@@ -57,6 +57,19 @@ describe('trying a pasted URL before following it', () => {
       'https://lemmy.cafe/feeds/c/mealtimevideos.xml?sort=New&limit=50',
       'https://lemmy.cafe/feeds/c/mealtimevideos.xml?sort=TopWeek&limit=50',
     ])
+  })
+
+  it('hands the trial what confirms PeerTube links, so that a community followed keeps its PeerTube shares at once', async () => {
+    const spy = vi.spyOn(lemmyKind, 'fetch')
+    const peertube = { refFor: vi.fn(async () => null) }
+
+    try {
+      await trySource('https://lemmy.cafe/c/mealtimevideos', { now: NOW, fetch: stubInstances(), isFollowed: () => false, peertube })
+
+      expect(spy).toHaveBeenCalledWith(MEALTIME, expect.objectContaining({ peertube }))
+    } finally {
+      spy.mockRestore()
+    }
   })
 
   it('follows a community seen through another instance at its home instance', async () => {

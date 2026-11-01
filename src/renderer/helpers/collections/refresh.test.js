@@ -124,6 +124,15 @@ describe('a refresh', () => {
     expect(deps.fetch.mock.calls.map(([url]) => url).sort()).toEqual(['https://one.example', 'https://two.example'])
   })
 
+  it('hands each source\'s kind what confirms PeerTube links, when it is given', async () => {
+    const peertube = { refFor: vi.fn() }
+    const { deps } = harness({ deps: { peertube } })
+
+    await refreshCollectionSources(deps)
+
+    expect(deps.kinds.fake.fetch).toHaveBeenCalledWith(deps.sources[0], { fetch: deps.fetch, peertube })
+  })
+
   it('puts the shares a source gave that are new or changed, and only those', async () => {
     const { deps } = harness({
       kept: { 'one|same': { _id: 'one|same', sourceId: 'one', videoId: 'same', title: 'same', author: '', votes: 1, why: null, sharedAt: null, discussionUrl: null, seenAt: 0 } },

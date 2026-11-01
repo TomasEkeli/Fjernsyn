@@ -5,6 +5,7 @@ import { fetchHackerTubeBundle } from '../../helpers/collections/hackertubeBundl
 import { isNewerExport } from '../../helpers/collections/kinds/hackertube'
 import { SOURCE_KINDS_BY_KIND } from '../../helpers/collections/kinds/index'
 import { trySource } from '../../helpers/collections/follow'
+import { createHostMemory, createPeerTubeLinkResolver, knownPeerTubeVideos } from '../../helpers/collections/peertubeLinks'
 import { keepSourceFetch, lastAttemptOf, lastRefreshOf, refreshCollectionSources, refreshIsDue } from '../../helpers/collections/refresh'
 import { sharesToPut } from '../../helpers/collections/shares'
 import { hiddenSourcesWith } from '../../helpers/collections/sourceChips'
@@ -190,6 +191,7 @@ const actions = {
       // As it is when asked, so that a test can stand in for the network
       fetch: (...args) => fetch(...args),
       isFollowed,
+      peertube: peerTubeLinks(context),
     })
 
     if (trial.outcome !== 'followable') { return trial }
@@ -495,17 +497,52 @@ async function applyStarterSetOnce({ state, rootGetters, dispatch }) {
 }
 
 /**
+ * The platform layer, as it is now. Imported when first asked for: the
+ * wiring reaches the router and the store, which import this module.
+ */
+async function platformLayer() {
+  const { getPlatformLayer } = await import('../../platform/vue')
+  return getPlatformLayer()
+}
+
+/**
+ * What confirms the PeerTube links a source shares, for one refresh or one
+ * follow (`helpers/collections/peertubeLinks.js`): through the platform
+ * layer, while PeerTube is switched on; the videos kept known by uuid, and
+ * what each host was found to be remembered in this installation's
+ * localStorage; each confirmed video's details kept at once.
+ *
+ * @param {any} context
+ * @returns {import('../../helpers/collections/kinds/index').PeerTubeLinks}
+ */
+function peerTubeLinks({ state, dispatch, rootGetters }) {
+  return createPeerTubeLinkResolver({
+    enabled: () => rootGetters.getEnablePeerTube === true,
+    known: () => knownPeerTubeVideos(Object.values(state.collectionShares), state.collectionVideos),
+    hosts: createHostMemory(localStorage),
+    resolveUrl: async url => (await platformLayer()).resolveUrl(url),
+    getVideoSummary: async ref => (await platformLayer()).getVideoSummary(ref),
+    putDetails: records => dispatch('putCollectionVideos', records),
+    now: () => Date.now(),
+    onFailure: (message, error) => console.warn(message, error ?? ''),
+  })
+}
+
+/**
  * What a refresh, and the follow that keeps what its trial fetched, need of
  * the store (`helpers/collections/refresh.js`)
  *
  * @param {any} context
  * @returns {Omit<import('../../helpers/collections/refresh').RefreshDependencies, 'sources'>}
  */
-function refreshDependencies({ state, dispatch }) {
+function refreshDependencies(context) {
+  const { state, dispatch } = context
+
   return {
     kinds: SOURCE_KINDS_BY_KIND,
     // As it is when asked, so that a test can stand in for the network
     fetch: (...args) => fetch(...args),
+    peertube: peerTubeLinks(context),
     now: () => Date.now(),
     keptShares: () => state.collectionShares,
     isFollowed: sourceId => Object.hasOwn(state.collectionSources, sourceId),
