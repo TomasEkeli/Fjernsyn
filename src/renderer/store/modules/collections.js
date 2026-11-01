@@ -6,6 +6,7 @@ import { isNewerExport } from '../../helpers/collections/kinds/hackertube'
 import { SOURCE_KINDS_BY_KIND } from '../../helpers/collections/kinds/index'
 import { lastAttemptOf, lastRefreshOf, refreshCollectionSources, refreshIsDue } from '../../helpers/collections/refresh'
 import { sharesToPut } from '../../helpers/collections/shares'
+import { starterSources } from '../../helpers/collections/starterSet'
 
 /**
  * Collections: the sources followed and the shares they made, from
@@ -166,7 +167,9 @@ const actions = {
 
   /**
    * What opening Collections does first, once the datastore has loaded:
-   * HackerTube is followed if it is not, and while it is followed its shares
+   * HackerTube is followed if it is not, and with it the other sources the
+   * first open follows (`helpers/collections/starterSet.js`) that are not
+   * followed yet; and while HackerTube is followed its shares
    * are loaded from the bundle shipped with the app if they are not there,
    * which is the first open of all, or the first after a restore that brought
    * the source without its shares. Loaded means shares are there and the
@@ -261,6 +264,14 @@ async function openCollectionsOnce({ state, commit, dispatch }) {
     if (source == null) {
       source = hackerTubeSource(Date.now())
       await dispatch('followCollectionSource', source)
+
+      // The rest of what the first open follows, by the same rule, until
+      // the starter set has a rule of its own (`starterSet.js`)
+      for (const starter of starterSources(Date.now())) {
+        if (!Object.hasOwn(state.collectionSources, starter._id)) {
+          await dispatch('followCollectionSource', starter)
+        }
+      }
     }
 
     const loaded = source.dataGenerated != null &&

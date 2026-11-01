@@ -96,14 +96,15 @@ import { KeyboardShortcuts } from '../../../constants'
  * The cards are the ordinary ones, so every card action works here as on any
  * other wall, and a video opens on the ordinary watch page.
  *
- * The first open follows HackerTube and loads the copy of its data the app
- * ships with (store/modules/collections.js). Every open then refreshes, when
- * the last refresh was more than an hour ago, asking each followed source
- * what it shares now (helpers/collections/refresh.js); the refresh button and
- * R or F5 refresh at any time. Beside it the crawl starts, which fetches each
- * video's own details in the background (helpers/collections/crawl.js); as
- * they come in, the cards show duration, views and date, and link to their
- * channel.
+ * The first open follows HackerTube, and the Lemmy community followed beside
+ * it (helpers/collections/starterSet.js), and loads the copy of HackerTube's
+ * data the app ships with (store/modules/collections.js). Every open then
+ * refreshes, when the last refresh was more than an hour ago, asking each
+ * followed source what it shares now (helpers/collections/refresh.js); the
+ * refresh button and R or F5 refresh at any time. Beside it the crawl starts,
+ * which fetches each video's own details in the background
+ * (helpers/collections/crawl.js); as they come in, the cards show duration,
+ * views and date, and link to their channel.
  *
  * The control row is the subscriptions page's and Explore's: the refresh
  * widget says how fresh the wall is, or what is being done to it, the refresh

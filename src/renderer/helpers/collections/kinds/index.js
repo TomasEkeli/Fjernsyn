@@ -12,7 +12,9 @@
  *   in, and data of its own too large to rewrite with its record on every
  *   refresh, kept apart. It throws when the source cannot be reached or answers with
  *   something it cannot read; the refresh then keeps what the source had.
- * - `toShares` makes those items shares (`../hackertube.js` has the shape).
+ * - `toShares` makes those items shares (`../shares.js` has the shape),
+ *   given the shares kept, for a kind that chooses between items as it
+ *   chose before (Lemmy, between two posts of one video).
  *
  * The refresh (`../refresh.js`) asks every followed source through its kind.
  * Following by URL asks each kind in turn, in the order below, whether it
@@ -20,6 +22,7 @@
  */
 
 import { hackerTubeKind } from './hackertube.js'
+import { lemmyKind } from './lemmy.js'
 
 /**
  * @typedef {object} SourceFetch
@@ -38,7 +41,7 @@ import { hackerTubeKind } from './hackertube.js'
  * @property {string} kind the `kind` on a source's record
  * @property {(url: string, now: number) => import('../shares.js').Source | null} recognise
  * @property {(source: import('../shares.js').Source, deps: { fetch: typeof fetch }) => Promise<SourceFetch>} fetch
- * @property {(items: any[], source: import('../shares.js').Source, seenAt: number) => import('../shares.js').Share[]} toShares
+ * @property {(items: any[], source: import('../shares.js').Source, seenAt: number, kept: Record<string, import('../shares.js').Share>) => import('../shares.js').Share[]} toShares
  */
 
 /**
@@ -46,7 +49,7 @@ import { hackerTubeKind } from './hackertube.js'
  *
  * @type {readonly SourceKind[]}
  */
-export const SOURCE_KINDS = Object.freeze([hackerTubeKind])
+export const SOURCE_KINDS = Object.freeze([hackerTubeKind, lemmyKind])
 
 /**
  * The source kinds by their `kind`

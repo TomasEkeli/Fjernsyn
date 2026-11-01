@@ -19,8 +19,10 @@
  * @property {string} [host] PeerTube only: the video's origin
  * @property {string} title what the source calls it, until the video's own details are known
  * @property {string} author the channel name the source gives, likewise
- * @property {number | null} votes the source's votes for it; null where the source has none
- * @property {string | null} why the source's reason for it
+ * @property {number | null} votes the source's votes for it; null where the source has none.
+ *   A share given without it (Lemmy, from a post whose header could not be
+ *   read) leaves the votes kept as they are
+ * @property {string | null} why the source's reason for it; likewise
  * @property {number | null} sharedAt when it was shared, in ms
  * @property {string | null} discussionUrl where the source discusses it
  * @property {string[]} [categories] HackerTube's category ids

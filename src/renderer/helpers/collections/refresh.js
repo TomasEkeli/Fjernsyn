@@ -157,7 +157,8 @@ async function refreshSource(deps, source) {
   }
 
   const { items, sourceFields, sourceData } = await kind.fetch(source, { fetch: deps.fetch })
-  const shares = sharesToPut(deps.keptShares(), kind.toShares(items, source, deps.now()))
+  const kept = deps.keptShares()
+  const shares = sharesToPut(kept, kind.toShares(items, source, deps.now(), kept))
 
   // Unfollowed meanwhile: its shares went with it, and must not come back
   if (!deps.isFollowed(source._id)) { return 0 }

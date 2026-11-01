@@ -137,6 +137,15 @@ describe('a refresh', () => {
     expect(result).toEqual({ failed: [], put: 1 })
   })
 
+  it('gives the kind the shares kept when it makes its items shares, for it to choose between posts as it chose before', async () => {
+    const kept = { 'one|same': { _id: 'one|same', sourceId: 'one', videoId: 'same' } }
+    const { deps } = harness({ kept, answers: { one: { items: ['same'] } } })
+
+    await refreshCollectionSources(deps)
+
+    expect(deps.kinds.fake.toShares).toHaveBeenCalledWith(['same'], deps.sources[0], NOW, kept)
+  })
+
   it('puts nothing when a source has nothing new', async () => {
     const { deps } = harness()
 
