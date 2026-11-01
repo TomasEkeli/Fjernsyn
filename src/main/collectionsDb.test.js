@@ -8,12 +8,13 @@ function fakeHandlers() {
     findSources: vi.fn(async () => [{ _id: 'hackertube' }]),
     findShares: vi.fn(async () => []),
     upsertSource: vi.fn(async () => {}),
+    updateSource: vi.fn(async () => ({ updated: 1 })),
     removeSource: vi.fn(async () => ({ shares: 2 })),
-    putShares: vi.fn(async () => ({ added: 1, updated: 0 })),
+    putShares: vi.fn(async () => ({ added: 1, updated: 0, dropped: [] })),
     findVideos: vi.fn(async () => []),
     putVideos: vi.fn(async () => {}),
     findSourceData: vi.fn(async () => []),
-    putSourceData: vi.fn(async () => {}),
+    putSourceData: vi.fn(async () => ({ kept: true })),
   }
 }
 
@@ -21,8 +22,7 @@ function fakeHandlers() {
  * @param {number} action
  * @param {any} [data]
  */
-async function handle(action, data) {
-  const handlers = fakeHandlers()
+async function handle(action, data, handlers = fakeHandlers()) {
   const syncOthers = vi.fn()
   const answer = handleCollectionsDb(action, data, { handlers, syncOthers })
   return { handlers, syncOthers, answer }
@@ -41,14 +41,57 @@ describe('main\'s collections datastore actions', () => {
     const shares = [{ _id: 'hackertube|aaaaaaaaaaa', sourceId: 'hackertube' }]
     const { handlers, syncOthers, answer } = await handle(DBActions.COLLECTIONS.PUT_SHARES, shares)
 
-    expect(await answer).toEqual({ added: 1, updated: 0 })
+    expect(await answer).toEqual({ added: 1, updated: 0, dropped: [] })
     expect(handlers.putShares).toHaveBeenCalledWith(shares)
     expect(syncOthers).toHaveBeenCalledWith({ event: SyncEvents.COLLECTIONS.PUT_SHARES, data: shares })
+  })
+
+  it('passes on only the shares written, none of a source no longer followed', async () => {
+    const shares = [{ _id: 'hackertube|aaaaaaaaaaa', sourceId: 'hackertube' }, { _id: 'lemmy:gone@b.example|aaaaaaaaaaa', sourceId: 'lemmy:gone@b.example' }]
+    const handlers = fakeHandlers()
+    handlers.putShares.mockResolvedValueOnce({ added: 1, updated: 0, dropped: ['lemmy:gone@b.example|aaaaaaaaaaa'] })
+
+    const { syncOthers, answer } = await handle(DBActions.COLLECTIONS.PUT_SHARES, shares, handlers)
+
+    expect(await answer).toEqual({ added: 1, updated: 0, dropped: ['lemmy:gone@b.example|aaaaaaaaaaa'] })
+    expect(syncOthers).toHaveBeenCalledWith({ event: SyncEvents.COLLECTIONS.PUT_SHARES, data: [shares[0]] })
+
+    handlers.putShares.mockResolvedValueOnce({ added: 0, updated: 0, dropped: shares.map(share => share._id) })
+    const none = await handle(DBActions.COLLECTIONS.PUT_SHARES, shares, handlers)
+    await none.answer
+    expect(none.syncOthers).not.toHaveBeenCalled()
+  })
+
+  it('updates a followed source and passes it on, and passes on nothing when it was not followed', async () => {
+    const source = { _id: 'lemmy:a@b.example', name: 'a', checkedAt: 5 }
+    const handlers = fakeHandlers()
+
+    const followed = await handle(DBActions.COLLECTIONS.UPDATE_SOURCE, source, handlers)
+    expect(await followed.answer).toEqual({ updated: 1 })
+    expect(handlers.updateSource).toHaveBeenCalledWith(source)
+    expect(handlers.upsertSource).not.toHaveBeenCalled()
+    expect(followed.syncOthers).toHaveBeenCalledWith({ event: SyncEvents.COLLECTIONS.UPSERT_SOURCE, data: source })
+
+    handlers.updateSource.mockResolvedValueOnce({ updated: 0 })
+    const gone = await handle(DBActions.COLLECTIONS.UPDATE_SOURCE, source, handlers)
+    expect(await gone.answer).toEqual({ updated: 0 })
+    expect(gone.syncOthers).not.toHaveBeenCalled()
+  })
+
+  it('passes on a source\'s own data only when it was kept', async () => {
+    const handlers = fakeHandlers()
+    handlers.putSourceData.mockResolvedValueOnce({ kept: false })
+
+    const { syncOthers, answer } = await handle(DBActions.COLLECTIONS.PUT_SOURCE_DATA, { _id: 'lemmy:gone@b.example' }, handlers)
+
+    expect(await answer).toEqual({ kept: false })
+    expect(syncOthers).not.toHaveBeenCalled()
   })
 
   it('refuses a record it cannot store, and tells nobody', async () => {
     for (const [action, data] of [
       [DBActions.COLLECTIONS.UPSERT_SOURCE, { name: 'no id' }],
+      [DBActions.COLLECTIONS.UPDATE_SOURCE, { name: 'no id' }],
       [DBActions.COLLECTIONS.PUT_SHARES, [{ _id: 'x', $where: 1 }]],
       [DBActions.COLLECTIONS.PUT_VIDEOS, [{ _id: 'x' }]],
       [DBActions.COLLECTIONS.PUT_SOURCE_DATA, 'x'],

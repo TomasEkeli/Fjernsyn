@@ -182,6 +182,7 @@ const DBActions = {
     FIND_SOURCE_DATA: 26,
     PUT_SOURCE_DATA: 27,
     REMOVE_SOURCE: 28,
+    UPDATE_SOURCE: 29,
   },
 }
 

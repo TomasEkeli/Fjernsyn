@@ -33,6 +33,18 @@ export async function handleCollectionsDb(action, data, { handlers, syncOthers }
         syncOthers({ event: SyncEvents.COLLECTIONS.UPSERT_SOURCE, data })
         return null
 
+      case DBActions.COLLECTIONS.UPDATE_SOURCE: {
+        // Never creates the record, so a refresh cannot follow again a
+        // source unfollowed while it ran; other windows hear of it as of
+        // any write of a source, and only when there was one
+        refuseUnless(isStorableCollectionRecord(data))
+        const updated = await handlers.updateSource(data)
+        if (updated.updated > 0) {
+          syncOthers({ event: SyncEvents.COLLECTIONS.UPSERT_SOURCE, data })
+        }
+        return updated
+      }
+
       case DBActions.COLLECTIONS.REMOVE_SOURCE: {
         refuseUnless(typeof data === 'string' && data !== '')
         const removed = await handlers.removeSource(data)
@@ -43,7 +55,12 @@ export async function handleCollectionsDb(action, data, { handlers, syncOthers }
       case DBActions.COLLECTIONS.PUT_SHARES: {
         refuseUnless(Array.isArray(data) && data.every(share => isStorableCollectionRecord(share)))
         const counts = await handlers.putShares(data)
-        syncOthers({ event: SyncEvents.COLLECTIONS.PUT_SHARES, data })
+        // Not those of a source no longer followed, which were not written
+        const dropped = new Set(counts.dropped)
+        const written = dropped.size === 0 ? data : data.filter(share => !dropped.has(share._id))
+        if (written.length > 0) {
+          syncOthers({ event: SyncEvents.COLLECTIONS.PUT_SHARES, data: written })
+        }
         return counts
       }
 
@@ -59,11 +76,14 @@ export async function handleCollectionsDb(action, data, { handlers, syncOthers }
       case DBActions.COLLECTIONS.FIND_SOURCE_DATA:
         return await handlers.findSourceData()
 
-      case DBActions.COLLECTIONS.PUT_SOURCE_DATA:
+      case DBActions.COLLECTIONS.PUT_SOURCE_DATA: {
         refuseUnless(isStorableCollectionRecord(data))
-        await handlers.putSourceData(data)
-        syncOthers({ event: SyncEvents.COLLECTIONS.PUT_SOURCE_DATA, data })
-        return null
+        const put = await handlers.putSourceData(data)
+        if (put.kept) {
+          syncOthers({ event: SyncEvents.COLLECTIONS.PUT_SOURCE_DATA, data })
+        }
+        return put
+      }
 
       default:
         // eslint-disable-next-line no-throw-literal
