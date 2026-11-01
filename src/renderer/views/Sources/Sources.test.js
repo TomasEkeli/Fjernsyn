@@ -2,7 +2,7 @@ import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import store from '../../store/index'
-import { showToast } from '../../helpers/utils'
+import { readFileWithPicker, showToast, writeFileWithPicker } from '../../helpers/utils'
 import { mountWithApp } from '../../testing/mount'
 import { createTestRouter } from '../../testing/router'
 import FtInput from '../../components/FtInput/FtInput.vue'
@@ -25,6 +25,9 @@ vi.mock('../../store/index', async () => {
 
 vi.mock('../../helpers/utils', () => ({
   showToast: vi.fn(),
+  getTodayDateStrLocalTimezone: () => '2026-11-01',
+  readFileWithPicker: vi.fn(),
+  writeFileWithPicker: vi.fn(async () => true),
 }))
 
 const HACKERTUBE = { _id: 'hackertube', kind: 'hackertube', url: 'https://hackertube.org', name: 'HackerTube' }
@@ -254,5 +257,88 @@ describe('the Sources page', () => {
 
     expect(unfollowed()).toEqual([{ type: 'unfollowCollectionSource', payload: MEALTIME._id }])
     expect(showToast).toHaveBeenCalledWith('Unfollowed mealtimevideos@lemmy.cafe')
+  })
+
+  describe('export and import', () => {
+    /** The store's answer to an import, as `importCollectionSources` gives it */
+    function answerImport(answer) {
+      store.dispatch = vi.fn(async (type, payload) => {
+        if (type === 'getYoutubeUrlInfo') { return { urlType: 'invalid_url' } }
+        store.dispatched.push({ type, payload })
+        return type === 'importCollectionSources' ? answer : undefined
+      })
+    }
+
+    const imports = () => store.dispatched.filter(({ type }) => type === 'importCollectionSources')
+
+    beforeEach(() => {
+      vi.mocked(readFileWithPicker).mockReset()
+      vi.mocked(writeFileWithPicker).mockClear()
+    })
+
+    it('writes every followed source to a dated OPML file, and says so', async () => {
+      const wrapper = await mountSources()
+
+      await wrapper.find('.exportButton').trigger('click')
+      await flushPromises()
+
+      const [fileName, content, , mimeType, extension] = vi.mocked(writeFileWithPicker).mock.calls[0]
+      expect(fileName).toBe('fjernsyn-sources-2026-11-01.opml')
+      expect([mimeType, extension]).toEqual(['application/xml', '.opml'])
+      const xmlUrls = [...new DOMParser().parseFromString(content, 'application/xml').querySelectorAll('outline')].map(outline => outline.getAttribute('xmlUrl'))
+      expect(xmlUrls).toEqual(['https://lemmy.cafe/feeds/c/mealtimevideos.xml?sort=New&limit=50', 'https://hackertube.org/api/export'])
+      expect(showToast).toHaveBeenCalledWith('The followed sources have been exported')
+    })
+
+    it('has nothing to export when nothing is followed', async () => {
+      store.setGetter('getCollectionSources', [])
+      const wrapper = await mountSources()
+
+      expect(wrapper.find('.exportButton').attributes('disabled')).toBeDefined()
+    })
+
+    it('follows the feeds of an imported OPML file, and says how many were followed, followed already and refused', async () => {
+      answerImport({ outcome: 'imported', followed: 1, followedAlready: 1, refused: 1 })
+      vi.mocked(readFileWithPicker).mockResolvedValue({
+        filename: 'feeds.opml',
+        content: '<opml version="2.0"><body><outline xmlUrl="https://hackertube.org/api/export"/><outline xmlUrl="https://example.org/feed"/></body></opml>',
+      })
+      const wrapper = await mountSources()
+
+      await wrapper.find('.importButton').trigger('click')
+      await flushPromises()
+
+      expect(imports()).toEqual([{ type: 'importCollectionSources', payload: ['https://hackertube.org/api/export', 'https://example.org/feed'] }])
+      expect(showToast).toHaveBeenCalledWith('Imported: 1 followed, 1 followed already, 1 not recognised')
+    })
+
+    it('says a file that is not OPML is not, and follows nothing; and does nothing when the dialog is cancelled', async () => {
+      answerImport({ outcome: 'imported', followed: 0, followedAlready: 0, refused: 0 })
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.mocked(readFileWithPicker).mockResolvedValueOnce({ filename: 'feed.xml', content: '<rss version="2.0"><channel/></rss>' })
+      const wrapper = await mountSources()
+
+      await wrapper.find('.importButton').trigger('click')
+      await flushPromises()
+
+      expect(imports()).toEqual([])
+      expect(showToast).toHaveBeenCalledWith('This file is not an OPML file')
+
+      vi.mocked(showToast).mockClear()
+      vi.mocked(readFileWithPicker).mockResolvedValueOnce(null)
+      await wrapper.find('.importButton').trigger('click')
+      await flushPromises()
+
+      expect(imports()).toEqual([])
+      expect(showToast).not.toHaveBeenCalled()
+    })
+
+    it('imports nothing before the datastore is read', async () => {
+      store.setGetter('getCollectionsReady', false)
+      const wrapper = await mountSources()
+
+      expect(wrapper.find('.importButton').attributes('disabled')).toBeDefined()
+      expect(wrapper.find('.exportButton').attributes('disabled')).toBeDefined()
+    })
   })
 })

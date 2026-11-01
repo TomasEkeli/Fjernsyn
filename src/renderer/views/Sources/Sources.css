@@ -23,6 +23,14 @@
   color: var(--primary-text-color);
 }
 
+/* Export and import, as OPML */
+.exchange {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block-end: 16px;
+}
+
 .message {
   color: var(--tertiary-text-color);
 }

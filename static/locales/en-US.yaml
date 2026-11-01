@@ -403,6 +403,20 @@ Sources:
   # Sources page, named as the top bar names it
   Not Followed: 'This source is not followed. {sources} lists those that are.'
   Read Failed: The followed sources could not be read.
+  # The buttons that write the followed sources to an OPML file, and follow
+  # the sources an OPML file lists
+  Export: Export
+  Export Title: Export the followed sources as an OPML file
+  Import: Import
+  Import Title: Follow the sources an OPML file lists
+  # The kind of file, in the save and open dialogs
+  Sources File: Sources file
+  Exported: The followed sources have been exported
+  Export Failed: Could not write the file
+  # After an import. {refused} counts the feeds Fjernsyn cannot follow
+  Imported: 'Imported: {followed} followed, {followedAlready} followed already, {refused} not recognised'
+  Import Not OPML: This file is not an OPML file
+  Import Failed: Something went wrong while importing the file
   # What kind of place a source is
   Kinds:
     HackerTube: HackerTube
