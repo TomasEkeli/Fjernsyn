@@ -327,8 +327,9 @@ Collections:
   Crawl Paused: Video details paused
   # In the refresh widget while the followed sources are asked what they share now
   Refreshing: Asking the sources for new videos
-  # Beside the refresh widget when a source could not be refreshed; everything
-  # it had stays. {sources} is the sources' names, separated by commas
+  # Beside the refresh widget when the last refresh of a source failed, and
+  # still there after a restart until a refresh of it works; everything it had
+  # stays. {sources} is the sources' names, separated by commas
   Refresh Failed: 'Could not refresh {sources}'
 # The chip on the subscriptions and explore pages saying whether videos already
 # watched stay in the stream. It is the "Hide Videos on Watch" setting, the
