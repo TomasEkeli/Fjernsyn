@@ -281,6 +281,24 @@ class Later {
   }
 }
 
+class Collections {
+  static findSources() {
+    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.FIND_SOURCES)
+  }
+
+  static findShares() {
+    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.FIND_SHARES)
+  }
+
+  static upsertSource(source) {
+    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.UPSERT_SOURCE, source)
+  }
+
+  static putShares(shares) {
+    return window.ftElectron.dbCollections(DBActions.COLLECTIONS.PUT_SHARES, shares)
+  }
+}
+
 export {
   Settings as settings,
   History as history,
@@ -291,4 +309,5 @@ export {
   Channels as channels,
   AiVerdicts as aiVerdicts,
   Later as later,
+  Collections as collections,
 }

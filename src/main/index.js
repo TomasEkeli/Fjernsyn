@@ -2566,6 +2566,42 @@ function runApp() {
   })
 
   // *********** //
+  // Collections: the followed sources and their shares
+  ipcMain.handle(IpcChannels.DB_COLLECTIONS, async (event, { action, data }) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      return
+    }
+
+    try {
+      switch (action) {
+        case DBActions.COLLECTIONS.FIND_SOURCES:
+          return await baseHandlers.collections.findSources()
+
+        case DBActions.COLLECTIONS.FIND_SHARES:
+          return await baseHandlers.collections.findShares()
+
+        case DBActions.COLLECTIONS.UPSERT_SOURCE:
+          await baseHandlers.collections.upsertSource(data)
+          syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, { event: SyncEvents.COLLECTIONS.UPSERT_SOURCE, data })
+          return null
+
+        case DBActions.COLLECTIONS.PUT_SHARES: {
+          const counts = await baseHandlers.collections.putShares(data)
+          syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, { event: SyncEvents.COLLECTIONS.PUT_SHARES, data })
+          return counts
+        }
+
+        default:
+          // eslint-disable-next-line no-throw-literal
+          throw 'invalid collections db action'
+      }
+    } catch (err) {
+      if (typeof err === 'string') throw err
+      else throw err.toString()
+    }
+  })
+
+  // *********** //
   // Later list: which window checks, whether it is seen, and the desktop
   // notification of an armed event gone live while it is not
 
