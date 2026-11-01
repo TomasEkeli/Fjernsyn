@@ -557,16 +557,35 @@ describe('the Collections store', () => {
       expect(settingsFor(state).collectionsStarterSetDone).toBe(true)
     })
 
-    it('follows each one once when two pages apply it at the same time', async () => {
+    it('follows each one once when two pages apply it at the same time, however slow the datastore', async () => {
       const state = freshState()
       const context = contextFor(state)
+      // Each follow held in main for a while, so both would ask before either is held
+      DBCollectionHandlers.upsertSource.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 5)))
 
       await Promise.all([
         collections.actions.applyCollectionsStarterSet(context),
-        collections.actions.openCollections(context),
+        collections.actions.applyCollectionsStarterSet(context),
       ])
 
-      expect(followed().sort()).toEqual(['hackertube', MEALTIME._id, TALKS._id].sort())
+      expect(followed()).toEqual(['hackertube', MEALTIME._id, TALKS._id])
+      expect(updateStarterSetDone).toHaveBeenCalledOnce()
+      DBCollectionHandlers.upsertSource.mockImplementation(async () => {})
+    })
+
+    it('does not follow over one another window followed while the set was being followed', async () => {
+      const state = freshState()
+      const elsewhere = Object.freeze({ ...MEALTIME, followedAt: 1, checkedAt: 2 })
+      DBCollectionHandlers.upsertSource.mockImplementationOnce(async () => {
+        // While HackerTube is being followed here
+        collections.mutations.applyCollectionsSync(state, { event: SyncEvents.COLLECTIONS.UPSERT_SOURCE, data: elsewhere })
+      })
+
+      await collections.actions.applyCollectionsStarterSet(contextFor(state))
+
+      expect(followed()).toEqual(['hackertube', TALKS._id])
+      expect(state.collectionSources[MEALTIME._id]).toMatchObject({ followedAt: 1, checkedAt: 2 })
+      expect(settingsFor(state).collectionsStarterSetDone).toBe(true)
     })
 
     it('is not applied before the datastore is read, or over one that could not be', async () => {
