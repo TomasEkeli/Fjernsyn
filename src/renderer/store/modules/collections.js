@@ -3,7 +3,7 @@ import { SyncEvents } from '../../../constants'
 import { HACKERTUBE_SOURCE_ID, hackerTubeShare } from '../../helpers/collections/hackertube'
 import { fetchHackerTubeBundle } from '../../helpers/collections/hackertubeBundle'
 import { isNewerExport } from '../../helpers/collections/kinds/hackertube'
-import { SOURCE_KINDS_BY_KIND } from '../../helpers/collections/kinds/index'
+import { SOURCE_KINDS_BY_KIND, recogniseSource } from '../../helpers/collections/kinds/index'
 import { trySource } from '../../helpers/collections/follow'
 import { createHostMemory, createPeerTubeLinkResolver, knownPeerTubeVideos } from '../../helpers/collections/peertubeLinks'
 import { keepSourceFetch, lastAttemptOf, lastRefreshOf, refreshCollectionSources, refreshIsDue } from '../../helpers/collections/refresh'
@@ -233,6 +233,50 @@ const actions = {
     }
 
     return { outcome: 'followed', source }
+  },
+
+  /**
+   * Follows the sources an imported OPML file lists (`helpers/collections/opml.js`):
+   * each feed URL a kind recognises, unless its source is followed already
+   * (by an earlier line of the same file too). Nothing is asked of them
+   * first, as the starter set asks nothing: a trial of each would make a
+   * large file crawl, at up to 20 seconds a source that is down. Their videos
+   * come with the refresh the next wall opened makes, due for a source never
+   * asked; HackerTube's from the bundle, on that same open. A source that is
+   * down is then followed and marked failed, as any refresh marks it.
+   *
+   * A follow that cannot be written stops the import and rejects; what was
+   * followed before it stays followed.
+   *
+   * @param {any} context
+   * @param {string[]} urls the file's feed URLs, in its order
+   * @returns {Promise<{ outcome: 'imported', followed: number, followedAlready: number, refused: number } | { outcome: 'unavailable' }>}
+   *   `refused` counts the URLs no kind recognises; `unavailable` before the
+   *   datastore is read, or when it could not be
+   */
+  async importCollectionSources({ state, dispatch }, urls) {
+    // What is held says nothing yet of what is followed
+    if (!state.collectionsReady || state.collectionsGrabFailed) {
+      return { outcome: 'unavailable' }
+    }
+
+    const counts = { followed: 0, followedAlready: 0, refused: 0 }
+    const now = Date.now()
+
+    for (const url of urls) {
+      const source = recogniseSource(url, now)
+
+      if (source === null) {
+        counts.refused++
+      } else if (Object.hasOwn(state.collectionSources, source._id)) {
+        counts.followedAlready++
+      } else {
+        await dispatch('followCollectionSource', source)
+        counts.followed++
+      }
+    }
+
+    return { outcome: 'imported', ...counts }
   },
 
   /**
