@@ -138,7 +138,9 @@ export function sharesToPut(kept, shares) {
  * @property {'peertube'} [platform]
  * @property {string} [host]
  * @property {string} [authorId] the channel, once the details say: what the
- *   card links to, and what hidden and marked channels are matched by
+ *   card links to, and what hidden and marked channels are matched by; a
+ *   PeerTube channel's `name@host` handle
+ * @property {string} [thumbnail] PeerTube only, once the details say
  * @property {number} [viewCount]
  * @property {number} [published]
  * @property {true} [liveNow]
@@ -171,6 +173,12 @@ function withDetails(video, details) {
   if (details.isUpcoming === true) { video.isUpcoming = true }
   if (typeof details.premiereDate === 'number') { video.premiereDate = new Date(details.premiereDate) }
   if (typeof details.fetchedAt === 'number') { video.lastUpdatedAt = details.fetchedAt }
+
+  // PeerTube's own, as describe takes it from the video; a YouTube video's is
+  // worked out from its id
+  if (video.platform === 'peertube' && typeof details.thumbnail === 'string' && details.thumbnail !== '') {
+    video.thumbnail = details.thumbnail
+  }
 }
 
 /**
@@ -299,18 +307,20 @@ const SORT_VALUES = {
  * source sharing it is enough.
  *
  * A video's details, once the crawl has them, say what it says of itself:
- * its own title, its channel, duration, views and date. A video YouTube said
- * is unavailable is left off.
+ * its own title, its channel, duration, views and date, and for PeerTube its
+ * thumbnail. A video its platform said is unavailable is left off, and so is
+ * a PeerTube video its uploader marked NSFW, unless NSFW is to be shown.
  *
  * @param {Share[]} shares
  * @param {Record<string, any>} [details] the details kept, by the video's ref
  *   as one string (`shareVideoKey`)
- * @param {{ shown?: ReadonlySet<string> | null, sort?: CollectionSort | string }} [options]
+ * @param {{ shown?: ReadonlySet<string> | null, sort?: CollectionSort | string, showNsfw?: boolean }} [options]
  *   the ids of the sources shown, null (the default) for every one of them;
- *   the order, upvotes by default
+ *   the order, upvotes by default; whether a video marked NSFW is shown, as
+ *   the `peertubeShowNsfw` setting says, yes by default
  * @returns {CollectionVideo[]}
  */
-export function wallVideos(shares, details = {}, { shown = null, sort = DEFAULT_COLLECTION_SORT } = {}) {
+export function wallVideos(shares, details = {}, { shown = null, sort = DEFAULT_COLLECTION_SORT, showNsfw = true } = {}) {
   /** @type {Map<string, Share[]>} */
   const byVideo = new Map()
 
@@ -343,6 +353,7 @@ export function wallVideos(shares, details = {}, { shown = null, sort = DEFAULT_
     const known = Object.hasOwn(details, key) ? kept : undefined
 
     if (known !== undefined && known.unavailable !== undefined) { continue }
+    if (!showNsfw && known !== undefined && known.nsfw === true) { continue }
 
     const [first] = group
 

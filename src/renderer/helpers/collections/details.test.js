@@ -6,16 +6,21 @@ import liveStream from '../api/fixtures/local--player-live-stream.json'
 import finishedStream from '../api/fixtures/local--player-finished-stream.json'
 import privateVideo from '../api/fixtures/local--player-private.json'
 import noSuchVideo from '../api/fixtures/local--player-no-such-video.json'
+import { PlatformError } from '../../platform/errors'
 import {
   detailsProgress,
   loginRequiredRecord,
   missingDetails,
+  missingPeerTubeDetails,
   needsDetails,
+  peerTubeFailureRecord,
+  peerTubeRefOf,
   PRIVATE_AFTER_SIGHTINGS,
   SIGHTINGS_APART_MS,
   UNAVAILABLE_STALE_MS,
   LIVE_STALE_MS,
   unavailableRecord,
+  videoDetailsFromPeerTubeSummary,
   videoDetailsFromPlayerResponse,
   videoDetailsRecord,
 } from './details'
@@ -257,5 +262,125 @@ describe('which videos still need details', () => {
       aaaaaaaaaaa: loginRequiredRecord({ videoId: 'aaaaaaaaaaa' }, undefined, 1),
       unrelated00: { _id: 'unrelated00', videoId: 'unrelated00', fetchedAt: 1 },
     }, 1)).toEqual({ done: 2, total: 3 })
+  })
+})
+
+describe('a PeerTube video\'s details, from the platform layer\'s summary', () => {
+  // As the layer's getVideoSummary answers for video.blender.org's recording
+  // (platform/peertube/videos.test.js)
+  const summary = {
+    type: 'video',
+    platform: 'peertube',
+    host: 'video.blender.org',
+    videoId: '057e35a6-c5b8-4fb4-8230-0f5df412ca50',
+    title: 'OVERGROWN: a feature film project by Blender Studio',
+    author: 'Blender Studio',
+    authorId: 'blender_studio@video.blender.org',
+    lengthSeconds: 70,
+    published: Date.parse('2026-07-10T14:00:16.560Z'),
+    viewCount: 12697,
+    liveNow: false,
+    isUpcoming: false,
+    nsfw: false,
+    thumbnail: 'https://video.blender.org/lazy-static/thumbnails/057e35a6-c5b8-4fb4-8230-0f5df412ca50.jpg',
+  }
+
+  it('says what a YouTube video\'s say, with the channel as its handle, and its thumbnail', () => {
+    expect(videoDetailsFromPeerTubeSummary(summary)).toEqual({
+      title: 'OVERGROWN: a feature film project by Blender Studio',
+      author: 'Blender Studio',
+      authorId: 'blender_studio@video.blender.org',
+      lengthSeconds: 70,
+      viewCount: 12697,
+      published: Date.parse('2026-07-10T14:00:16.560Z'),
+      thumbnail: 'https://video.blender.org/lazy-static/thumbnails/057e35a6-c5b8-4fb4-8230-0f5df412ca50.jpg',
+    })
+  })
+
+  it('is kept by the video\'s uuid and origin host', () => {
+    expect(videoDetailsRecord(peerTubeRefOf(summary), videoDetailsFromPeerTubeSummary(summary), 5)).toMatchObject({
+      _id: '057e35a6-c5b8-4fb4-8230-0f5df412ca50@video.blender.org',
+      videoId: '057e35a6-c5b8-4fb4-8230-0f5df412ca50',
+      platform: 'peertube',
+      host: 'video.blender.org',
+      fetchedAt: 5,
+    })
+  })
+
+  it('flags a live that is live now, which has no duration', () => {
+    const { lengthSeconds: _, ...live } = { ...summary, liveNow: true }
+
+    expect(videoDetailsFromPeerTubeSummary(live)).toMatchObject({ liveNow: true, lengthSeconds: '' })
+  })
+
+  it('flags a live not yet started as upcoming, at its scheduled start when it has one', () => {
+    const at = Date.parse('2026-12-01T18:00:00Z')
+
+    expect(videoDetailsFromPeerTubeSummary({ ...summary, lengthSeconds: 0, isUpcoming: true, premiereDate: new Date(at) }))
+      .toMatchObject({ isUpcoming: true, premiereDate: at })
+    expect(videoDetailsFromPeerTubeSummary({ ...summary, lengthSeconds: 0, isUpcoming: true })).not.toHaveProperty('premiereDate')
+  })
+
+  it('keeps the uploader\'s NSFW mark, for the wall to honour the setting by', () => {
+    expect(videoDetailsFromPeerTubeSummary({ ...summary, nsfw: true })).toMatchObject({ nsfw: true })
+  })
+
+  it('answers nothing it cannot read rather than something wrong', () => {
+    expect(videoDetailsFromPeerTubeSummary({ ...summary, viewCount: undefined, published: undefined, thumbnail: '', author: undefined }))
+      .toMatchObject({ viewCount: null, published: null, author: '' })
+    expect(videoDetailsFromPeerTubeSummary({ ...summary, thumbnail: '' })).not.toHaveProperty('thumbnail')
+  })
+})
+
+describe('what a PeerTube video\'s failure is kept as', () => {
+  const ref = { platform: 'peertube', host: 'video.blender.org', videoId: '057e35a6-c5b8-4fb4-8230-0f5df412ca50' }
+
+  it('is gone when the instance has no such video', () => {
+    expect(peerTubeFailureRecord(ref, new PlatformError('notFound', 'no'), 3)).toEqual(unavailableRecord(ref, 'gone', 3))
+  })
+
+  it('is private when the instance refuses to show it, for whatever reason', () => {
+    expect(peerTubeFailureRecord(ref, new PlatformError('refused', 'no', { reason: 'password' }), 3)).toEqual(unavailableRecord(ref, 'private', 3))
+  })
+
+  it.each([
+    [new PlatformError('unavailable', 'down')],
+    [new PlatformError('rateLimited', 'slow down')],
+    [new PlatformError('invalid', 'bad')],
+    [new TypeError('Failed to fetch')],
+  ])('is nothing for a failure that says nothing of the video: %s', (error) => {
+    expect(peerTubeFailureRecord(ref, error, 3)).toBe(null)
+  })
+})
+
+describe('which PeerTube videos still need details', () => {
+  const share = (videoId, votes, host) => ({ _id: `s|${videoId}@${host}`, sourceId: 's', videoId, platform: 'peertube', host, title: '', author: '', votes, sharedAt: null, seenAt: 0 })
+  const a = '9c9de5e8-0a1e-484a-b099-e80766180a6d'
+  const b = '059ca8df-3049-44a3-93a9-d603327f2e74'
+  const c = '00e42c34-81d4-4744-a2e2-cf3b2b3c19d9'
+
+  const shares = [
+    share(a, 3, 'framatube.org'),
+    share(b, 30, 'peertube.v1.root42.de'),
+    share(c, 10, 'kolektiva.media'),
+    { _id: 's|dQw4w9WgXcQ', sourceId: 's', videoId: 'dQw4w9WgXcQ', title: '', author: '', votes: 99, sharedAt: null, seenAt: 0 },
+  ]
+
+  it('is every PeerTube video by its ref, the most voted first, those never asked about before the rest', () => {
+    const details = {
+      [`${c}@kolektiva.media`]: { _id: `${c}@kolektiva.media`, videoId: c, platform: 'peertube', host: 'kolektiva.media', fetchedAt: 1, liveNow: true },
+    }
+
+    expect(missingPeerTubeDetails(shares, details, 2 + LIVE_STALE_MS)).toEqual([
+      { platform: 'peertube', host: 'peertube.v1.root42.de', videoId: b },
+      { platform: 'peertube', host: 'framatube.org', videoId: a },
+      { platform: 'peertube', host: 'kolektiva.media', videoId: c },
+    ])
+    expect(missingPeerTubeDetails(shares, details, 1)).toHaveLength(2)
+  })
+
+  it('leaves out YouTube videos, which the crawl asks YouTube about', () => {
+    expect(missingDetails(shares, {}, 1)).toEqual(['dQw4w9WgXcQ'])
+    expect(missingPeerTubeDetails(shares, {}, 1).map(ref => ref.videoId)).not.toContain('dQw4w9WgXcQ')
   })
 })

@@ -33,6 +33,7 @@ vi.mock('../../store/index', async () => {
         getHideAiVideos: false,
         getAiVerdicts: {},
         getAiChannels: '[]',
+        getPeerTubeShowNsfw: false,
       },
     }),
   }
@@ -97,6 +98,7 @@ describe('Collections', () => {
     store.setGetter('getHistoryCacheById', {})
     store.setGetter('getHideAiVideos', false)
     store.setGetter('getAiVerdicts', {})
+    store.setGetter('getPeerTubeShowNsfw', false)
     collectionsCrawlProgress.state = 'idle'
     vi.mocked(startCollectionsCrawl).mockClear()
   })
@@ -112,6 +114,27 @@ describe('Collections', () => {
     await flushPromises()
 
     expect(store.dispatched.map(({ type }) => type)).toEqual(['openCollections', 'refreshCollectionsIfDue'])
+  })
+
+  it('leaves a PeerTube video its uploader marked NSFW off the wall unless NSFW is shown, and gives the card its thumbnail', async () => {
+    const uuid = '9c9de5e8-0a1e-484a-b099-e80766180a6d'
+    const key = `${uuid}@framatube.org`
+    const peerTube = { _id: `hackertube|${key}`, sourceId: 'hackertube', videoId: uuid, platform: 'peertube', host: 'framatube.org', title: 'Shared', author: '', votes: 5, sharedAt: 0 }
+    store.setGetter('getCollectionsReady', true)
+    store.setGetter('getCollectionShares', [peerTube, share(1, 1)])
+    store.setGetter('getCollectionVideos', {
+      [key]: { _id: key, videoId: uuid, platform: 'peertube', host: 'framatube.org', fetchedAt: 1, title: 'Own', authorId: 'f@framatube.org', lengthSeconds: 60, thumbnail: 'https://framatube.org/t.jpg', nsfw: true },
+    })
+
+    const wrapper = mountCollections()
+    await flushPromises()
+
+    expect(listed(wrapper).map(video => video.videoId)).toEqual(['video000001'])
+
+    store.setGetter('getPeerTubeShowNsfw', true)
+    await flushPromises()
+
+    expect(listed(wrapper)[0]).toMatchObject({ videoId: uuid, platform: 'peertube', host: 'framatube.org', thumbnail: 'https://framatube.org/t.jpg', authorId: 'f@framatube.org' })
   })
 
   it('shows a loader while the bundle loads', async () => {

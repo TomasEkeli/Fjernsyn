@@ -230,6 +230,48 @@ describe('the wall\'s videos, with their details', () => {
 
     expect(video.lengthSeconds).toBe(213)
   })
+
+  describe('a PeerTube video', () => {
+    const uuid = '9c9de5e8-0a1e-484a-b099-e80766180a6d'
+    const key = `${uuid}@framatube.org`
+    const peerTubeShare = (extra = {}) => share('a', uuid, { platform: 'peertube', host: 'framatube.org', _id: `a|${key}`, ...extra })
+    const peerTubeDetails = {
+      ...details,
+      _id: key,
+      videoId: uuid,
+      platform: 'peertube',
+      host: 'framatube.org',
+      authorId: 'framasoft@framatube.org',
+      thumbnail: 'https://framatube.org/lazy-static/thumbnails/x.jpg',
+    }
+
+    it('takes its thumbnail and its channel handle from its details, as describe and the card read them', () => {
+      const [video] = wallVideos([peerTubeShare()], { [key]: peerTubeDetails })
+
+      expect(video).toMatchObject({
+        platform: 'peertube',
+        host: 'framatube.org',
+        videoId: uuid,
+        authorId: 'framasoft@framatube.org',
+        thumbnail: 'https://framatube.org/lazy-static/thumbnails/x.jpg',
+      })
+    })
+
+    it('never takes a thumbnail for a YouTube video, whose thumbnail is worked out from its id', () => {
+      const [video] = wallVideos([share('hackertube', 'aaaaaaaaaaa')], { aaaaaaaaaaa: { ...details, thumbnail: 'https://elsewhere.example/x.jpg' } })
+
+      expect(video).not.toHaveProperty('thumbnail')
+    })
+
+    it('leaves one its uploader marked NSFW off the wall unless NSFW is shown, as every PeerTube wall does', () => {
+      const shares = [peerTubeShare(), share('a', 'bbbbbbbbbbb')]
+      const kept = { [key]: { ...peerTubeDetails, nsfw: true } }
+
+      expect(wallVideos(shares, kept, { showNsfw: false }).map(video => video.videoId)).toEqual(['bbbbbbbbbbb'])
+      expect(wallVideos(shares, kept, { showNsfw: true })).toHaveLength(2)
+      expect(wallVideos(shares, kept)).toHaveLength(2)
+    })
+  })
 })
 
 describe('a video\'s values, from its shares and the sources shown', () => {
