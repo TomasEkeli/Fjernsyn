@@ -174,6 +174,9 @@ export const hackerTubeKind = {
   // Its videos come with the app, in the bundle the first open loads
   shipped: true,
   recognise,
+  // What an OPML file lists it as: what is asked first on every refresh,
+  // and recognised as HackerTube again on import
+  feedUrl: () => HACKERTUBE_EXPORT_URL,
   fetch: fetchItems,
   toShares: (items, _source, seenAt) => items.map(video => hackerTubeShare(video, seenAt)).filter(share => share !== null),
 }

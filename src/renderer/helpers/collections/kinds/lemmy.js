@@ -509,6 +509,11 @@ export const lemmyKind = {
     const where = lemmyCommunity(url)
     return where === null ? null : lemmySource(where, now)
   },
+  // Its newest posts' feed, on its home instance
+  feedUrl: (source) => {
+    const where = lemmyCommunity(source.url)
+    return where === null ? source.url : lemmyFeedUrl(where, 'New')
+  },
   fetch: fetchItems,
   toShares: (items, source, seenAt, kept) => lemmyShares(items, source._id, seenAt, kept),
 }
