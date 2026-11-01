@@ -44,6 +44,9 @@ import { loginRequiredRecord, unavailableRecord, videoDetailsFromPlayerResponse,
  * - `unschedule(keys)` takes queued jobs back out, calling their `dropped`
  * - `limit` is the most requests the crawl may make while the app runs, or
  *   null for no limit: a development run's cap (`crawlLimit.js`)
+ * - `delayMs`, a development run's wait: when set, only one job is on the
+ *   lane at a time, and the next is queued that many ms after it finishes
+ *   (`crawlLimit.js`); null for none
  * - `enabled()` says whether it may ask at all, on this backend
  *
  * @param {object} deps
@@ -55,6 +58,7 @@ import { loginRequiredRecord, unavailableRecord, videoDetailsFromPlayerResponse,
  * @param {(job: { key: string, run: () => Promise<void>, dropped: () => void }) => boolean} deps.schedule
  * @param {(keys: string[]) => void} deps.unschedule
  * @param {number | null} [deps.limit]
+ * @param {number | null} [deps.delayMs]
  * @param {() => boolean} [deps.enabled]
  * @param {() => number} [deps.now]
  * @param {(fn: () => void, ms: number) => void} [deps.setTimer]
@@ -70,6 +74,7 @@ export function createCollectionsCrawl({
   schedule,
   unschedule,
   limit = null,
+  delayMs = null,
   enabled = () => true,
   now = () => Date.now(),
   setTimer = (fn, ms) => { setTimeout(fn, ms) },
@@ -110,6 +115,9 @@ export function createCollectionsCrawl({
     onChange(status())
   }
 
+  /** Its jobs on the lane at once: one while a development delay is set */
+  const atOnce = delayMs === null ? CRAWL_QUEUED_AT_ONCE : 1
+
   /** @param {Run} current */
   function limitReached(current) {
     return limit !== null && requests + current.pending.size >= limit
@@ -147,7 +155,7 @@ export function createCollectionsCrawl({
   function fill(current) {
     if (run !== current || current.state !== 'running') { return }
 
-    while (current.pending.size < CRAWL_QUEUED_AT_ONCE && !limitReached(current)) {
+    while (current.pending.size < atOnce && !limitReached(current)) {
       const videoId = nextCandidate(current)
 
       if (videoId === null) { break }
@@ -268,7 +276,12 @@ export function createCollectionsCrawl({
       }
     } finally {
       current.pending.delete(videoId)
-      fill(current)
+
+      if (delayMs === null) {
+        fill(current)
+      } else {
+        setTimer(() => fill(current), delayMs)
+      }
     }
   }
 

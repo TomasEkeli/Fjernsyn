@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { COLLECTIONS_CRAWL_LIMIT, crawlLimitFrom, DEVELOPMENT_CRAWL_LIMIT } from './crawlLimit'
+import { COLLECTIONS_CRAWL_DELAY_MS, COLLECTIONS_CRAWL_LIMIT, crawlDelayFrom, crawlLimitFrom, DEVELOPMENT_CRAWL_LIMIT } from './crawlLimit'
 
 describe('the crawl\'s development limit', () => {
   it('is the number set, in a development build', () => {
@@ -34,5 +34,30 @@ describe('the crawl\'s development limit', () => {
 
   it('is none under test, which is no development build', () => {
     expect(COLLECTIONS_CRAWL_LIMIT).toBeNull()
+  })
+})
+
+describe('the crawl\'s development delay', () => {
+  it('is the whole number of milliseconds set, in a development build', () => {
+    expect(crawlDelayFrom('2000', 'development')).toBe(2000)
+  })
+
+  it('is none when unset, or set to what cannot be read, or nought', () => {
+    expect(crawlDelayFrom(undefined, 'development')).toBeNull()
+    expect(crawlDelayFrom('', 'development')).toBeNull()
+    expect(crawlDelayFrom('two', 'development')).toBeNull()
+    expect(crawlDelayFrom('-5', 'development')).toBeNull()
+    expect(crawlDelayFrom('2.5', 'development')).toBeNull()
+    expect(crawlDelayFrom('0', 'development')).toBeNull()
+  })
+
+  it('is none in any other build, whatever is set', () => {
+    expect(crawlDelayFrom('2000', 'production')).toBeNull()
+    expect(crawlDelayFrom('2000', 'test')).toBeNull()
+    expect(crawlDelayFrom('2000', undefined)).toBeNull()
+  })
+
+  it('is none under test, which is no development build', () => {
+    expect(COLLECTIONS_CRAWL_DELAY_MS).toBeNull()
   })
 })

@@ -4,7 +4,7 @@ import store from '../../store/index'
 
 import { enqueueSubscriptionJobs, LANE_ENRICHMENT, removeSubscriptionJobs } from '../subscriptionWorker'
 import { createCollectionsCrawl } from './crawl'
-import { COLLECTIONS_CRAWL_LIMIT } from './crawlLimit'
+import { COLLECTIONS_CRAWL_DELAY_MS, COLLECTIONS_CRAWL_LIMIT } from './crawlLimit'
 import { detailsFor, missingDetails, missingPeerTubeDetails, needsDetails } from './details'
 import { createPeerTubeDetailsFill } from './peertubeDetails'
 
@@ -80,6 +80,7 @@ const crawl = createCollectionsCrawl({
   schedule: job => enqueueSubscriptionJobs(LANE_ENRICHMENT, [{ ...job, weight: 1 }]) > 0,
   unschedule: keys => removeSubscriptionJobs(LANE_ENRICHMENT, keys),
   limit: COLLECTIONS_CRAWL_LIMIT,
+  delayMs: COLLECTIONS_CRAWL_DELAY_MS,
   // Local only, as the AI lookups are; and never over a datastore that could
   // not be read, where every video would look missing
   enabled: () => !!process.env.SUPPORTS_LOCAL_API &&

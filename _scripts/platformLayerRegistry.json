@@ -11,7 +11,7 @@
     },
     {
       "path": "_scripts/webpack.renderer.config.js",
-      "reason": "bakes in FT_COLLECTIONS_CRAWL_LIMIT, the Collections crawl's cap on requests, in a development build only (src/renderer/helpers/collections/crawlLimit.js)"
+      "reason": "bakes in FT_COLLECTIONS_CRAWL_LIMIT, the Collections crawl's cap on requests, and FT_COLLECTIONS_CRAWL_DELAY_MS, its wait between requests, in a development build only (src/renderer/helpers/collections/crawlLimit.js)"
     },
     {
       "path": "src/constants.js",

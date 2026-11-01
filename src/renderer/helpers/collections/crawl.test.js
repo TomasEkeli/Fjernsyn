@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import ordinary from '../api/fixtures/local--player-ordinary.json'
 import privateVideo from '../api/fixtures/local--player-private.json'
@@ -27,8 +27,11 @@ const ids = count => Array.from({ length: count }, (_, index) => `video${String(
  * @param {Map<string, any>} [options.kept] the datastore, shared to model a restart
  * @param {(job: any) => boolean} [options.accept] whether the lane takes a job
  * @param {number} [options.start] the clock at the start
+ * @param {number | null} [options.delayMs] a development run's wait between jobs
+ * @param {boolean} [options.realTimers] the crawl's own default timer, for
+ *   vitest's fake timers, rather than the ones `advance` moves
  */
-function setup({ videos = ids(5), answer = described, limit = null, kept = new Map(), accept = () => true, start = 0 } = {}) {
+function setup({ videos = ids(5), answer = described, limit = null, kept = new Map(), accept = () => true, start = 0, delayMs = null, realTimers = false } = {}) {
   const lane = []
   const timers = []
   let clock = start
@@ -62,8 +65,9 @@ function setup({ videos = ids(5), answer = described, limit = null, kept = new M
       }
     },
     limit,
+    delayMs,
     now: () => clock,
-    setTimer: (fn, ms) => { timers.push({ at: clock + ms, fn }) },
+    ...(realTimers ? {} : { setTimer: (fn, ms) => { timers.push({ at: clock + ms, fn }) } }),
     onChange: status => changes.push(status.state),
   })
 
@@ -393,5 +397,51 @@ describe('the crawl\'s limit, for development runs', () => {
     await t.drain()
 
     expect(t.request).toHaveBeenCalledTimes(6)
+  })
+})
+
+describe('the crawl\'s delay, for development runs', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('keeps one job in flight, and queues the next only the delay after it finishes', async () => {
+    vi.useFakeTimers()
+    const t = setup({ videos: ids(3), delayMs: 1000, realTimers: true })
+
+    t.crawl.start()
+    expect(t.lane).toHaveLength(1)
+
+    await t.drain()
+    expect(t.asked).toEqual([ids(3)[0]])
+    expect(t.lane).toHaveLength(0)
+
+    vi.advanceTimersByTime(999)
+    expect(t.lane).toHaveLength(0)
+
+    vi.advanceTimersByTime(1)
+    expect(t.lane).toHaveLength(1)
+
+    await t.drain()
+    vi.advanceTimersByTime(1000)
+    await t.drain()
+    expect(t.asked).toEqual(ids(3))
+    expect(t.crawl.status().state).toBe('running')
+
+    vi.advanceTimersByTime(1000)
+    expect(t.lane).toHaveLength(0)
+    expect(t.crawl.status().state).toBe('done')
+  })
+
+  it('is no delay, and a couple of jobs at once, when none is set', async () => {
+    vi.useFakeTimers()
+    const t = setup({ videos: ids(5), realTimers: true })
+
+    t.crawl.start()
+    expect(t.lane).toHaveLength(CRAWL_QUEUED_AT_ONCE)
+
+    await t.drain()
+    expect(t.asked).toEqual(ids(5))
+    expect(vi.getTimerCount()).toBe(0)
   })
 })

@@ -205,6 +205,9 @@ const config = {
       // trying it out does not ask YouTube about thousands of videos. Never
       // baked into any other build (helpers/collections/crawlLimit.js)
       'process.env.FT_COLLECTIONS_CRAWL_LIMIT': JSON.stringify(isDevMode ? (process.env.FT_COLLECTIONS_CRAWL_LIMIT ?? '') : ''),
+      // Slows that crawl to one request at a time, this many ms apart, in a
+      // development run only, likewise
+      'process.env.FT_COLLECTIONS_CRAWL_DELAY_MS': JSON.stringify(isDevMode ? (process.env.FT_COLLECTIONS_CRAWL_DELAY_MS ?? '') : ''),
       // Which build this is. Baked in because it can only be known here.
       'process.env.BUILD_STAMP': JSON.stringify(buildStamp),
       // The release this build is, as its tag (v0.1.214), set by the build
