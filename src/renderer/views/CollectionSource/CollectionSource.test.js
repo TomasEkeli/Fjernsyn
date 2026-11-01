@@ -26,6 +26,8 @@ vi.mock('../../store/index', async () => {
         getCollectionsRefreshProgress: { done: 0, total: 0 },
         getCollectionsLastRefreshAt: null,
         getCollectionsRefreshFailures: [],
+        getCollectionsSourcesHidden: [],
+        getCollectionsSort: 'votes',
       },
     }),
   }
@@ -90,6 +92,8 @@ describe('a source\'s page', () => {
     store.setGetter('getCollectionsGrabFailed', false)
     store.setGetter('getCollectionsLoadFailed', false)
     store.setGetter('getCollectionSources', [HACKERTUBE, MEALTIME])
+    store.setGetter('getCollectionsSourcesHidden', [])
+    store.setGetter('getCollectionsSort', 'votes')
     store.setGetter('getCollectionShares', [
       share(HACKERTUBE, 'aaaaaaaaaaa', 20),
       share(MEALTIME, 'aaaaaaaaaaa', 100),
@@ -188,5 +192,39 @@ describe('a source\'s page', () => {
     const { wrapper } = await openSourcePage(MEALTIME._id)
 
     expect(listed(wrapper)).toHaveLength(2)
+  })
+
+  it('has the toolbar of Collections without the source chips: the refresh, the pills and the sort', async () => {
+    const { wrapper } = await openSourcePage(MEALTIME._id)
+
+    expect(wrapper.find('.chipRow').exists()).toBe(false)
+    expect(wrapper.find('.controlRow').classes()).toContain('withoutChips')
+    expect(wrapper.find('.pageControls').text()).toContain('Watched')
+    expect(wrapper.find('.pageControls').text()).toContain('AI')
+    expect(wrapper.find('select.sortSelect').element.value).toBe('votes')
+  })
+
+  it('shows its videos even with its chip off on Collections', async () => {
+    store.setGetter('getCollectionsSourcesHidden', [MEALTIME._id])
+
+    const { wrapper } = await openSourcePage(MEALTIME._id)
+
+    expect(listed(wrapper).map(video => video.videoId)).toEqual(['aaaaaaaaaaa', 'bbbbbbbbbbb'])
+  })
+
+  it('is in the order chosen by its own shares\' dates, not another source\'s', async () => {
+    store.setGetter('getCollectionsSort', 'shared')
+    store.setGetter('getCollectionShares', [
+      { ...share(MEALTIME, 'aaaaaaaaaaa', 1), sharedAt: 10 },
+      { ...share(HACKERTUBE, 'aaaaaaaaaaa', 1), sharedAt: 99 },
+      { ...share(MEALTIME, 'bbbbbbbbbbb', 1), sharedAt: 20 },
+    ])
+
+    const { wrapper } = await openSourcePage(MEALTIME._id)
+
+    expect(listed(wrapper).map(video => [video.videoId, video.collection.sharedAt])).toEqual([
+      ['bbbbbbbbbbb', 20],
+      ['aaaaaaaaaaa', 10],
+    ])
   })
 })

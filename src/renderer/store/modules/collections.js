@@ -7,6 +7,7 @@ import { SOURCE_KINDS_BY_KIND } from '../../helpers/collections/kinds/index'
 import { trySource } from '../../helpers/collections/follow'
 import { keepSourceFetch, lastAttemptOf, lastRefreshOf, refreshCollectionSources, refreshIsDue } from '../../helpers/collections/refresh'
 import { sharesToPut } from '../../helpers/collections/shares'
+import { hiddenSourcesWith } from '../../helpers/collections/sourceChips'
 import { starterSources, starterSourcesToFollow } from '../../helpers/collections/starterSet'
 
 /**
@@ -135,12 +136,28 @@ const actions = {
   },
 
   /**
+   * Follows a source, by every way there is to follow one. A source newly
+   * followed has its chip on Collections on, even one unfollowed earlier
+   * with its chip off (helpers/collections/sourceChips.js); a chip that
+   * cannot be turned on leaves the source followed.
+   *
    * @param {any} context
    * @param {Source} source
    */
-  async followCollectionSource({ commit }, source) {
+  async followCollectionSource({ commit, rootGetters, dispatch }, source) {
     await DBCollectionHandlers.upsertSource(source)
     commit('upsertCollectionSource', source)
+
+    const hidden = rootGetters.getCollectionsSourcesHidden
+    const shown = hiddenSourcesWith(hidden, source._id, true)
+
+    if (shown !== hidden) {
+      try {
+        await dispatch('updateCollectionsSourcesHidden', shown)
+      } catch (error) {
+        console.error(`Collections: followed ${source._id}, but could not turn its chip on`, error)
+      }
+    }
   },
 
   /**

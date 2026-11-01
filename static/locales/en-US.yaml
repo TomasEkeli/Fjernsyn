@@ -331,6 +331,19 @@ Collections:
   # still there after a restart until a refresh of it works; everything it had
   # stays. {sources} is the sources' names, separated by commas
   Refresh Failed: 'Could not refresh {sources}'
+  # For screen readers: the row of chips, one per followed source, saying
+  # whose videos are on the wall
+  Sources Shown: Sources shown
+  # Instead of the wall, when every source's chip is off
+  No Sources Shown: No source is shown. Switch one on above.
+  # Beside the select choosing the wall's order
+  Sort By: Sort by
+  # The wall's orders, each the most or the newest first
+  Sorts:
+    Published: Video published
+    Shared: Shared on community
+    Views: Views
+    Upvotes: Upvotes
 # The list of sources Collections follows (HackerTube, Lemmy communities), where
 # one is followed by pasting its address, and each source's own page
 Sources:

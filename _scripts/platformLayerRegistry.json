@@ -119,7 +119,7 @@
     },
     {
       "path": "src/renderer/store/modules/settings.js",
-      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw; the layer search page's: defaultSearchScope, searchRememberedParameters, searchLatched; the surface switch: enableLayerSurfaces; Collections' collectionsStarterSetDone, the mark that the starter set has been followed once"
+      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw; the layer search page's: defaultSearchScope, searchRememberedParameters, searchLatched; the surface switch: enableLayerSurfaces; Collections' collectionsStarterSetDone, the mark that the starter set has been followed once; collectionsSourcesHidden, the sources whose chips are off on Collections; collectionsSort, the order of the collections walls"
     },
     {
       "path": "src/renderer/views/Settings/Settings.vue",
