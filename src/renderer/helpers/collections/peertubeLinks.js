@@ -22,9 +22,10 @@
  *   sessions (`createHostMemory`, in `localStorage`: per installation, shared
  *   by its windows, never backed up, as nothing in it is more than a request
  *   saved). A host that is not PeerTube is skipped; one that is, is not asked
- *   for its config again before its video. Each answer is believed for
- *   `HOST_VERDICT_STALE_MS`, so a host that changes is found out; the memory
- *   keeps the `HOSTS_REMEMBERED` most recent.
+ *   for its config again before its video. A yes is believed for
+ *   `HOST_YES_STALE_MS`, a no for the shorter `HOST_NO_STALE_MS`, as a wrong
+ *   no hides videos; the memory keeps the `HOSTS_REMEMBERED` most recent. A
+ *   no the layer gave because PeerTube was switched off is not remembered.
  * - A host that could not be asked (down, refusing, rate limiting) is
  *   remembered as nothing, and its link is skipped this time only.
  *
@@ -37,8 +38,11 @@ import { needsDetails, peerTubeFailureRecord, peerTubeRefOf, videoDetailsFromPee
 /** @import { Share } from './shares.js' */
 /** @typedef {import('../../platform/shapes').PeerTubeVideoRef} PeerTubeVideoRef */
 
-/** How long what a host was found to be is believed */
-export const HOST_VERDICT_STALE_MS = 30 * 24 * 60 * 60 * 1000
+/** How long a host found to be PeerTube is believed: a wrong yes costs a request */
+export const HOST_YES_STALE_MS = 30 * 24 * 60 * 60 * 1000
+
+/** How long a host found not to be PeerTube is believed: a wrong no costs its videos */
+export const HOST_NO_STALE_MS = 7 * 24 * 60 * 60 * 1000
 
 /** How many hosts are remembered, the most recently asked */
 export const HOSTS_REMEMBERED = 500
@@ -91,7 +95,8 @@ export function readHostMemory(text) {
 export function hostVerdict(memory, host, now) {
   const verdict = Object.hasOwn(memory, host) ? memory[host] : undefined
 
-  if (verdict === undefined || verdict.at > now || now - verdict.at > HOST_VERDICT_STALE_MS) { return null }
+  if (verdict === undefined || verdict.at > now) { return null }
+  if (now - verdict.at > (verdict.peertube ? HOST_YES_STALE_MS : HOST_NO_STALE_MS)) { return null }
 
   return verdict.peertube
 }
@@ -253,7 +258,9 @@ export function createPeerTubeLinkResolver({ enabled, known, hosts, resolveUrl, 
       }
 
       if (resolution?.kind !== 'video') {
-        hosts.remember(host, false, now())
+        // The layer says no to every host while PeerTube is off, which says
+        // nothing of this one
+        if (enabled()) { hosts.remember(host, false, now()) }
         return null
       }
 

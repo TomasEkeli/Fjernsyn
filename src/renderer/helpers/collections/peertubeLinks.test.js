@@ -9,7 +9,8 @@ import { UNAVAILABLE_STALE_MS, unavailableRecord } from './details'
 import {
   createHostMemory,
   createPeerTubeLinkResolver,
-  HOST_VERDICT_STALE_MS,
+  HOST_NO_STALE_MS,
+  HOST_YES_STALE_MS,
   HOSTS_REMEMBERED,
   hostVerdict,
   knownPeerTubeVideos,
@@ -40,13 +41,21 @@ describe('the hosts remembered', () => {
       .toEqual({ 'b.example': { peertube: true, at: 2 } })
   })
 
-  it('believes what a host was found to be for thirty days, and then asks again', () => {
+  it('believes a host is PeerTube for thirty days, and then asks again', () => {
     const memory = withHostVerdict({}, 'tilvids.com', true, 1000)
 
-    expect(hostVerdict(memory, 'tilvids.com', 1000 + HOST_VERDICT_STALE_MS)).toBe(true)
-    expect(hostVerdict(memory, 'tilvids.com', 1001 + HOST_VERDICT_STALE_MS)).toBe(null)
-    expect(hostVerdict(withHostVerdict({}, 'github.com', false, 1000), 'github.com', 2000)).toBe(false)
+    expect(HOST_YES_STALE_MS).toBe(30 * 24 * 60 * 60 * 1000)
+    expect(hostVerdict(memory, 'tilvids.com', 1000 + HOST_YES_STALE_MS)).toBe(true)
+    expect(hostVerdict(memory, 'tilvids.com', 1001 + HOST_YES_STALE_MS)).toBe(null)
     expect(hostVerdict(memory, 'unknown.example', 1000)).toBe(null)
+  })
+
+  it('believes a host is not PeerTube for a week only, as a no costs a video and a yes a request', () => {
+    const memory = withHostVerdict({}, 'github.com', false, 1000)
+
+    expect(HOST_NO_STALE_MS).toBe(7 * 24 * 60 * 60 * 1000)
+    expect(hostVerdict(memory, 'github.com', 1000 + HOST_NO_STALE_MS)).toBe(false)
+    expect(hostVerdict(memory, 'github.com', 1001 + HOST_NO_STALE_MS)).toBe(null)
   })
 
   it('does not believe a verdict from the future, which only a clock put back explains', () => {
@@ -167,6 +176,21 @@ describe('confirming a PeerTube candidate', () => {
     expect(remembered).toEqual([['example.org', false]])
     expect(deps.getVideoSummary).not.toHaveBeenCalled()
     expect(deps.putDetails).not.toHaveBeenCalled()
+  })
+
+  it('remembers nothing of a host when the layer said no because PeerTube was switched off meanwhile', async () => {
+    let on = true
+    // A layer rebuilt with PeerTube off answers null for every PeerTube URL
+    const { remembered, resolver } = setUp({
+      enabled: () => on,
+      resolveUrl: vi.fn(async () => {
+        on = false
+        return null
+      }),
+    })
+
+    expect(await resolver.refFor({ host: 'tilvids.com', videoId: UUID })).toBe(null)
+    expect(remembered).toEqual([])
   })
 
   it('asks nothing of a host remembered as not PeerTube', async () => {
