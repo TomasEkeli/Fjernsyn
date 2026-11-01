@@ -7,6 +7,7 @@ import Popular from '../views/Popular/Popular.vue'
 import UserPlaylists from '../views/UserPlaylists/UserPlaylists.vue'
 import History from '../views/History/History.vue'
 import Later from '../views/Later/Later.vue'
+import Collections from '../views/Collections/Collections.vue'
 import Settings from '../views/Settings/Settings.vue'
 import About from '../views/About/About.vue'
 import LayerSearchPage from '../views/LayerSearchPage/LayerSearchPage.vue'
@@ -41,6 +42,14 @@ const router = createRouter({
         title: 'Channels'
       },
       component: ChannelsOverview
+    },
+    {
+      path: '/collections',
+      name: 'collections',
+      meta: {
+        title: 'Collections'
+      },
+      component: Collections
     },
     ...(process.env.SUPPORTS_LOCAL_API
       ? [{

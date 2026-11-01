@@ -101,6 +101,20 @@
         >{{ t('Channels.Channels') }}</span>
       </RouterLink>
       <RouterLink
+        class="navLink"
+        to="/collections"
+        :title="t('Collections.Collections')"
+      >
+        <FontAwesomeIcon
+          class="navIcon"
+          :icon="['fas', 'photo-film']"
+        />
+        <span
+          v-if="showLabels"
+          class="navLinkLabel"
+        >{{ t('Collections.Collections') }}</span>
+      </RouterLink>
+      <RouterLink
         v-if="exploreVisible"
         class="navLink"
         to="/explore"

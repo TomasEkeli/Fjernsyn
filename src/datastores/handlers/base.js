@@ -559,6 +559,69 @@ class Later {
   }
 }
 
+/**
+ * Collections: the followed sources, by source id, and their shares, by
+ * source id and video ref (`helpers/collections/shares.js`).
+ *
+ * Shares are only ever added or updated here, never dropped: a share that
+ * falls out of a feed stays. Putting shares writes the new ones in one insert,
+ * which is one append to the file however many there are, and updates the
+ * fields of those already there; put calls run one after another, so that two
+ * windows putting the same shares at once cannot both insert them.
+ */
+let collectionSharesQueue = Promise.resolve()
+
+class Collections {
+  static findSources() {
+    return db.collectionSources.findAsync({})
+  }
+
+  static findShares() {
+    return db.collectionShares.findAsync({})
+  }
+
+  static upsertSource(source) {
+    return db.collectionSources.updateAsync({ _id: source._id }, source, { upsert: true })
+  }
+
+  /**
+   * @param {{ _id: string }[]} shares
+   * @returns {Promise<{ added: number, updated: number }>}
+   */
+  static putShares(shares) {
+    const run = collectionSharesQueue.then(() => putCollectionShares(shares))
+    collectionSharesQueue = run.catch(() => {})
+    return run
+  }
+}
+
+/**
+ * @param {{ _id: string }[]} shares
+ * @returns {Promise<{ added: number, updated: number }>}
+ */
+async function putCollectionShares(shares) {
+  // The last of a share given twice wins, as it would one write after another
+  const byId = new Map(shares.map(share => [share._id, share]))
+  const ids = [...byId.keys()]
+
+  const known = new Set((await db.collectionShares.findAsync({ _id: { $in: ids } }, { _id: 1 })).map(share => share._id))
+
+  const fresh = ids.filter(id => !known.has(id)).map(id => byId.get(id))
+  if (fresh.length > 0) {
+    await db.collectionShares.insertAsync(fresh)
+  }
+
+  // One update, and one appended line, per share already kept: a refresh that
+  // sees the whole bundle again writes thousands. The update check (ticket 03)
+  // is to put only the shares that changed
+  for (const id of known) {
+    const { _id, ...fields } = byId.get(id)
+    await db.collectionShares.updateAsync({ _id }, { $set: fields })
+  }
+
+  return { added: fresh.length, updated: known.size }
+}
+
 function loadDatastores() {
   return Promise.allSettled([
     db.settings.loadDatabaseAsync(),
@@ -570,6 +633,8 @@ function loadDatastores() {
     db.channels.loadDatabaseAsync(),
     db.aiVerdicts.loadDatabaseAsync(),
     db.later.loadDatabaseAsync(),
+    db.collectionSources.loadDatabaseAsync(),
+    db.collectionShares.loadDatabaseAsync(),
   ])
 }
 
@@ -584,6 +649,8 @@ function compactAllDatastores() {
     db.channels.compactDatafileAsync(),
     db.aiVerdicts.compactDatafileAsync(),
     db.later.compactDatafileAsync(),
+    db.collectionSources.compactDatafileAsync(),
+    db.collectionShares.compactDatafileAsync(),
   ])
 }
 
@@ -597,6 +664,7 @@ export {
   Channels as channels,
   AiVerdicts as aiVerdicts,
   Later as later,
+  Collections as collections,
 
   loadDatastores,
   compactAllDatastores,

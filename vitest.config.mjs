@@ -82,7 +82,7 @@ export default defineConfig({
       {
         test: {
           name: 'main',
-          include: ['src/main/**/*.test.js', '_scripts/**/*.test.mjs'],
+          include: ['src/main/**/*.test.js', 'src/datastores/**/*.test.js', '_scripts/**/*.test.mjs'],
           environment: 'node',
         },
       },

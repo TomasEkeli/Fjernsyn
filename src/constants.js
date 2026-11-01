@@ -37,6 +37,8 @@ const IpcChannels = {
   DB_CHANNELS: 'db-channels',
   DB_AI_VERDICTS: 'db-ai-verdicts',
   DB_LATER: 'db-later',
+  // The fork's Collections: the followed sources and their shares
+  DB_COLLECTIONS: 'db-collections',
 
   // The fork's backup, see src/main/backup/: where the safety copies go, and the restore
   BACKUP_FOLDER: 'backup-folder',
@@ -59,6 +61,7 @@ const IpcChannels = {
   SYNC_SUBSCRIPTION_CACHE: 'sync-subscription-cache',
   SYNC_CHANNELS: 'sync-channels',
   SYNC_LATER: 'sync-later',
+  SYNC_COLLECTIONS: 'sync-collections',
 
   // The fork's Later list: which window is the main one, whether a window is
   // shown, and the desktop notification of an armed event gone live
@@ -165,6 +168,13 @@ const DBActions = {
     UPDATE_ALARM: 21,
     UPDATE_VIEW_COUNT: 22,
   },
+
+  COLLECTIONS: {
+    FIND_SOURCES: 20,
+    FIND_SHARES: 21,
+    UPSERT_SOURCE: 22,
+    PUT_SHARES: 23,
+  },
 }
 
 const SyncEvents = {
@@ -217,6 +227,11 @@ const SyncEvents = {
     UPDATE_POSITION: 20,
     UPDATE_ALARM: 21,
     UPDATE_VIEW_COUNT: 22,
+  },
+
+  COLLECTIONS: {
+    UPSERT_SOURCE: 20,
+    PUT_SHARES: 21,
   },
 }
 

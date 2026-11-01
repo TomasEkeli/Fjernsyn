@@ -49,3 +49,8 @@ export const aiVerdicts = createDatastore('ai-verdicts')
 // The Later list, one record per video, by the video's ref: what to watch
 // later, in an order of its own, and which upcoming events are armed
 export const later = createDatastore('later')
+// Collections: the followed sources, one record per source, and their
+// shares, one record per source per video; a share is never dropped while
+// its source is followed
+export const collectionSources = createDatastore('collection-sources')
+export const collectionShares = createDatastore('collection-shares')

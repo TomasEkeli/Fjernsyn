@@ -459,6 +459,15 @@ export default {
   },
 
   /**
+   * Collections: the followed sources and their shares
+   * @param {number} action
+   * @param {any} [data]
+   */
+  dbCollections: (action, data) => {
+    return ipcRenderer.invoke(IpcChannels.DB_COLLECTIONS, data ? { action, data } : { action })
+  },
+
+  /**
    * Where a restore writes its safety copy: `backups/` in the data folder
    * @returns {Promise<string>}
    */
@@ -701,6 +710,15 @@ export default {
    */
   handleSyncLater: (handler) => {
     ipcRenderer.on(IpcChannels.SYNC_LATER, (_, { event, data }) => {
+      handler(event, data)
+    })
+  },
+
+  /**
+   * @param {(event: number, data: any) => void} handler
+   */
+  handleSyncCollections: (handler) => {
+    ipcRenderer.on(IpcChannels.SYNC_COLLECTIONS, (_, { event, data }) => {
       handler(event, data)
     })
   },
