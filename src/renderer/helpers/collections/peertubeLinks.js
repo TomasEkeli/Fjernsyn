@@ -160,9 +160,14 @@ export function createHostMemory(storage) {
 
 /**
  * @typedef {object} KnownVideo what is kept of a PeerTube video, found by its uuid
- * @property {PeerTubeVideoRef} ref
+ * @property {PeerTubeVideoRef | null} ref where it is shared or described;
+ *   null when it is only known as unavailable
  * @property {boolean} shared whether a share names it
  * @property {VideoDetails} [record] its details, if any are kept
+ * @property {Record<string, VideoDetails>} unavailable by host, the marks of
+ *   the instances that said it is gone or private: each says so for itself
+ *   only, so that a 404 from an instance that merely linked it never hides it
+ *   at its origin
  */
 
 /**
@@ -177,18 +182,36 @@ export function knownPeerTubeVideos(shares, details) {
   /** @type {Map<string, KnownVideo>} */
   const known = new Map()
 
+  /** @param {string} videoId */
+  const entry = (videoId) => {
+    let video = known.get(videoId)
+    if (video === undefined) {
+      video = { ref: null, shared: false, unavailable: {} }
+      known.set(videoId, video)
+    }
+    return video
+  }
+
   for (const record of Object.values(details)) {
-    if (record?.platform === 'peertube' && typeof record.host === 'string') {
-      known.set(record.videoId, { ref: peerTubeRefOf(record), shared: false, record })
+    if (record?.platform !== 'peertube' || typeof record.host !== 'string') { continue }
+
+    const video = entry(record.videoId)
+
+    if (record.unavailable !== undefined) {
+      video.unavailable[record.host] = record
+    } else {
+      video.ref = peerTubeRefOf(record)
+      video.record = record
     }
   }
 
   for (const share of shares) {
     if (share.platform !== 'peertube' || typeof share.host !== 'string') { continue }
 
-    const kept = known.get(share.videoId)
     // A share names the video by its origin, as its details do
-    known.set(share.videoId, { ...kept, ref: peerTubeRefOf(share), shared: true })
+    const video = entry(share.videoId)
+    video.ref = peerTubeRefOf(share)
+    video.shared = true
   }
 
   return known
@@ -234,13 +257,11 @@ export function createPeerTubeLinkResolver({ enabled, known, hosts, resolveUrl, 
     kept ??= known()
     const video = kept.get(videoId)
 
-    if (video?.shared) { return video.ref }
+    if (video?.ref != null && (video.shared || video.record !== undefined)) { return video.ref }
 
-    if (video?.record !== undefined) {
-      if (video.record.unavailable === undefined) { return video.ref }
-      // Gone or private, until the mark is stale
-      if (!needsDetails(video.record, now())) { return null }
-    }
+    // Gone or private on this host, until the mark is stale
+    const mark = video !== undefined && Object.hasOwn(video.unavailable, host) ? video.unavailable[host] : undefined
+    if (mark !== undefined && !needsDetails(mark, now())) { return null }
 
     const verdict = hosts.verdict(host, now())
     if (verdict === false) { return null }
@@ -272,7 +293,10 @@ export function createPeerTubeLinkResolver({ enabled, known, hosts, resolveUrl, 
     try {
       summary = await getVideoSummary(ref)
     } catch (error) {
-      const record = peerTubeFailureRecord(ref, error, now())
+      // Under the host that said so, which may be the origin the link's host
+      // passed the request on to: a mark speaks for that instance only
+      const answered = typeof error?.host === 'string' && error.host !== '' ? error.host : ref.host
+      const record = peerTubeFailureRecord({ ...ref, host: answered }, error, now())
       if (record !== null) { await keep(record) }
       onFailure(`Collections: could not have ${videoId} from ${host}${record === null ? '; it is asked again next time' : `; kept as ${record.unavailable}`}`, error)
       return null

@@ -106,9 +106,19 @@ describe('the PeerTube videos kept, by uuid', () => {
   })
 
   it('knows a video by its details alone, not shared', () => {
-    const known = knownPeerTubeVideos([], { [`${UUID}@tilvids.com`]: unavailableRecord({ platform: 'peertube', host: 'tilvids.com', videoId: UUID }, 'gone', 1) })
+    const known = knownPeerTubeVideos([], { [`${UUID}@${ORIGIN}`]: { _id: `${UUID}@${ORIGIN}`, videoId: UUID, platform: 'peertube', host: ORIGIN, fetchedAt: 1 } })
 
-    expect(known.get(UUID)).toMatchObject({ ref: { host: 'tilvids.com' }, shared: false, record: { unavailable: 'gone' } })
+    expect(known.get(UUID)).toMatchObject({ ref: { host: ORIGIN }, shared: false, record: { fetchedAt: 1 } })
+  })
+
+  it('knows a video found unavailable by the host that said so, and by no other', () => {
+    const gone = unavailableRecord({ platform: 'peertube', host: 'tilvids.com', videoId: UUID }, 'gone', 1)
+    const known = knownPeerTubeVideos([], {
+      [`${UUID}@tilvids.com`]: gone,
+      [`${UUID}@${ORIGIN}`]: { _id: `${UUID}@${ORIGIN}`, videoId: UUID, platform: 'peertube', host: ORIGIN, fetchedAt: 2 },
+    })
+
+    expect(known.get(UUID)).toMatchObject({ ref: { host: ORIGIN }, record: { fetchedAt: 2 }, unavailable: { 'tilvids.com': gone } })
   })
 })
 
@@ -236,7 +246,7 @@ describe('confirming a PeerTube candidate', () => {
 
   it('skips a video kept as gone, and asks again once that mark is stale', async () => {
     const ref = { platform: 'peertube', host: 'tilvids.com', videoId: UUID }
-    const known = new Map([[UUID, { ref, shared: false, record: unavailableRecord(ref, 'gone', 50) }]])
+    const known = new Map([[UUID, { ref: null, shared: false, unavailable: { 'tilvids.com': unavailableRecord(ref, 'gone', 50) } }]])
 
     const fresh = setUp({ known })
     expect(await fresh.resolver.refFor({ host: 'tilvids.com', videoId: UUID })).toBe(null)
@@ -254,6 +264,33 @@ describe('confirming a PeerTube candidate', () => {
 
     expect(await resolver.refFor({ host: 'tilvids.com', videoId: UUID })).toBe(null)
     expect(deps.putDetails).toHaveBeenCalledWith([unavailableRecord({ platform: 'peertube', host: 'tilvids.com', videoId: UUID }, unavailable, 100)])
+  })
+
+  it('keeps the mark under the host that answered, so that a link to the video\'s real origin is still asked about', async () => {
+    const error = new PlatformError('notFound', 'no', { status: 404, host: 'tilvids.com', body: { title: 'Not Found', detail: 'Video not found', status: 404 } })
+    const first = setUp({ getVideoSummary: vi.fn(async () => { throw error }) })
+
+    await first.resolver.refFor({ host: 'tilvids.com', videoId: UUID })
+    const [[[mark]]] = first.deps.putDetails.mock.calls
+    expect(mark).toMatchObject({ _id: `${UUID}@tilvids.com`, host: 'tilvids.com', unavailable: 'gone' })
+
+    const known = knownPeerTubeVideos([], { [mark._id]: mark })
+
+    const elsewhere = setUp({ known })
+    expect(await elsewhere.resolver.refFor({ host: ORIGIN, videoId: UUID })).toMatchObject({ host: ORIGIN })
+
+    const same = setUp({ known })
+    expect(await same.resolver.refFor({ host: 'tilvids.com', videoId: UUID })).toBe(null)
+    expect(same.deps.resolveUrl).not.toHaveBeenCalled()
+  })
+
+  it('keeps the mark under the origin when the origin, asked after the link\'s host, said so', async () => {
+    const error = new PlatformError('notFound', 'no', { status: 404, host: ORIGIN, body: { title: 'Not Found', detail: 'Video not found', status: 404 } })
+    const { deps, resolver } = setUp({ getVideoSummary: vi.fn(async () => { throw error }) })
+
+    await resolver.refFor({ host: 'tilvids.com', videoId: UUID })
+
+    expect(deps.putDetails.mock.calls[0][0][0]).toMatchObject({ _id: `${UUID}@${ORIGIN}`, host: ORIGIN })
   })
 
   it('keeps nothing for a video that could not be had for a reason that says nothing of it', async () => {
