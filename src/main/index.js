@@ -2581,11 +2581,19 @@ function runApp() {
           return await baseHandlers.collections.findShares()
 
         case DBActions.COLLECTIONS.UPSERT_SOURCE:
+          if (typeof data?._id !== 'string') {
+            // eslint-disable-next-line no-throw-literal
+            throw 'invalid collections data'
+          }
           await baseHandlers.collections.upsertSource(data)
           syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, { event: SyncEvents.COLLECTIONS.UPSERT_SOURCE, data })
           return null
 
         case DBActions.COLLECTIONS.PUT_SHARES: {
+          if (!Array.isArray(data) || !data.every(share => typeof share?._id === 'string')) {
+            // eslint-disable-next-line no-throw-literal
+            throw 'invalid collections data'
+          }
           const counts = await baseHandlers.collections.putShares(data)
           syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, { event: SyncEvents.COLLECTIONS.PUT_SHARES, data })
           return counts
