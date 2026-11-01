@@ -334,21 +334,27 @@ describe('a PeerTube video\'s details, from the platform layer\'s summary', () =
 
 describe('what a PeerTube video\'s failure is kept as', () => {
   const ref = { platform: 'peertube', host: 'video.blender.org', videoId: '057e35a6-c5b8-4fb4-8230-0f5df412ca50' }
+  // PeerTube's own not-found, a problem document, as video.blender.org answers
+  const notFoundBody = { type: 'about:blank', title: 'Not Found', detail: 'Video not found', status: 404 }
 
-  it('is gone when the instance has no such video', () => {
-    expect(peerTubeFailureRecord(ref, new PlatformError('notFound', 'no'), 3)).toEqual(unavailableRecord(ref, 'gone', 3))
+  it('is gone when the instance itself says it has no such video', () => {
+    expect(peerTubeFailureRecord(ref, new PlatformError('notFound', 'no', { status: 404, body: notFoundBody }), 3)).toEqual(unavailableRecord(ref, 'gone', 3))
   })
 
-  it('is private when the instance refuses to show it, for whatever reason', () => {
-    expect(peerTubeFailureRecord(ref, new PlatformError('refused', 'no', { reason: 'password' }), 3)).toEqual(unavailableRecord(ref, 'private', 3))
+  it('is private when the instance refuses to show it and says why', () => {
+    expect(peerTubeFailureRecord(ref, new PlatformError('refused', 'no', { status: 401, reason: 'password' }), 3)).toEqual(unavailableRecord(ref, 'private', 3))
+    expect(peerTubeFailureRecord(ref, new PlatformError('refused', 'no', { status: 403, reason: 'private' }), 3)).toEqual(unavailableRecord(ref, 'private', 3))
   })
 
   it.each([
-    [new PlatformError('unavailable', 'down')],
-    [new PlatformError('rateLimited', 'slow down')],
-    [new PlatformError('invalid', 'bad')],
-    [new TypeError('Failed to fetch')],
-  ])('is nothing for a failure that says nothing of the video: %s', (error) => {
+    ['a bare 403, which a proxy or a firewall answers as readily', new PlatformError('refused', 'no', { status: 403 })],
+    ['an HTML 404, a proxy or a lapsed domain speaking', new PlatformError('notFound', 'no', { status: 404, body: undefined })],
+    ['a 404 whose JSON is not PeerTube\'s', new PlatformError('notFound', 'no', { status: 404, body: { error: 'nope' } })],
+    ['the instance down', new PlatformError('unavailable', 'down')],
+    ['a rate limit', new PlatformError('rateLimited', 'slow down')],
+    ['a bad request', new PlatformError('invalid', 'bad')],
+    ['a network failure', new TypeError('Failed to fetch')],
+  ])('is nothing, to be asked again, for %s', (_, error) => {
     expect(peerTubeFailureRecord(ref, error, 3)).toBe(null)
   })
 })

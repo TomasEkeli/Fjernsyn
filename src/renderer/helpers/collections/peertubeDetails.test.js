@@ -96,13 +96,32 @@ describe('filling in the details of PeerTube videos', () => {
   it('keeps a video its instance has not as gone, and one it refuses as private', async () => {
     const { kept, fill } = setUp({
       refs: [ref(1), ref(2)],
-      answer: async r => { throw new PlatformError(r.videoId === ref(1).videoId ? 'notFound' : 'refused', 'no') },
+      answer: async (r) => {
+        throw r.videoId === ref(1).videoId
+          ? new PlatformError('notFound', 'no', { status: 404, body: { title: 'Not Found', detail: 'Video not found', status: 404 } })
+          : new PlatformError('refused', 'no', { status: 403, reason: 'private' })
+      },
     })
 
     await fill.start()
 
     expect(kept[shareVideoKey(ref(1))]).toMatchObject({ unavailable: 'gone' })
     expect(kept[shareVideoKey(ref(2))]).toMatchObject({ unavailable: 'private' })
+  })
+
+  it('keeps nothing for a bare 403 or an HTML 404, which may be a proxy speaking, not the instance', async () => {
+    const { kept, fill } = setUp({
+      refs: [ref(1), ref(2)],
+      answer: async (r) => {
+        throw r.videoId === ref(1).videoId
+          ? new PlatformError('notFound', 'no', { status: 404, body: undefined })
+          : new PlatformError('refused', 'no', { status: 403 })
+      },
+    })
+
+    await fill.start()
+
+    expect(kept).toEqual({})
   })
 
   it('keeps nothing for a failure that says nothing of the video, asks it once in a start, and again on the next', async () => {

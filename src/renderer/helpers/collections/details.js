@@ -1,5 +1,6 @@
 import { liveStateFromPlayerResponse } from '../api/liveState'
 import { PlatformError } from '../../platform/errors'
+import { isPeerTubeNotFound } from '../../platform/peertube/feed'
 import { isPeerTubeVideoRef, isYouTubeVideoRef, platformOf, PLATFORM_PEERTUBE, PLATFORM_YOUTUBE } from '../../platform/refs'
 import { shareVideoKey, wallVideos } from './shares'
 
@@ -384,10 +385,12 @@ export function videoDetailsFromPeerTubeSummary(summary) {
 
 /**
  * What a PeerTube video whose details could not be had is kept as: gone when
- * its instance has no such video, private when it refuses to show it
- * (private, internal, password protected, blocked), and nothing when the
- * failure says nothing of the video (the instance down, rate limiting, or
- * answering nonsense), which is asked again on the next start.
+ * the instance itself says it has no such video (a 404 whose body is
+ * PeerTube's own not-found, `isPeerTubeNotFound`), private when it refuses to
+ * show it and says why (private, internal, password protected, blocked), and
+ * nothing for anything else, which is asked again on the next start: an HTML
+ * 404 or a bare 403 is as likely a proxy, a firewall or a lapsed domain as
+ * the instance, and a mark would hide a real video for a month.
  *
  * @param {import('../../platform/shapes').PeerTubeVideoRef} ref
  * @param {unknown} error
@@ -397,8 +400,8 @@ export function videoDetailsFromPeerTubeSummary(summary) {
 export function peerTubeFailureRecord(ref, error, at) {
   const kind = error instanceof PlatformError ? error.kind : null
 
-  if (kind === 'notFound') { return unavailableRecord(ref, 'gone', at) }
-  if (kind === 'refused') { return unavailableRecord(ref, 'private', at) }
+  if (kind === 'notFound' && isPeerTubeNotFound(error.body)) { return unavailableRecord(ref, 'gone', at) }
+  if (kind === 'refused' && error.reason != null) { return unavailableRecord(ref, 'private', at) }
 
   return null
 }

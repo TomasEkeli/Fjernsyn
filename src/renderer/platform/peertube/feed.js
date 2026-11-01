@@ -109,7 +109,7 @@ function handleOf(channelRef) {
  * @param {unknown} body
  * @returns {boolean}
  */
-function isPeerTubeNotFound(body) {
+export function isPeerTubeNotFound(body) {
   return typeof body === 'object' &&
     body !== null &&
     body.status === 404 &&

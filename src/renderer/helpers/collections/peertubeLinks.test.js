@@ -223,8 +223,8 @@ describe('confirming a PeerTube candidate', () => {
   })
 
   it.each([
-    [new PlatformError('notFound', 'no'), 'gone'],
-    [new PlatformError('refused', 'no'), 'private'],
+    [new PlatformError('notFound', 'no', { status: 404, host: 'tilvids.com', body: { title: 'Not Found', detail: 'Video not found', status: 404 } }), 'gone'],
+    [new PlatformError('refused', 'no', { status: 403, host: 'tilvids.com', reason: 'private' }), 'private'],
   ])('keeps a video its instance has no answer for as unavailable, and skips it: %s', async (error, unavailable) => {
     const { deps, resolver } = setUp({ getVideoSummary: vi.fn(async () => { throw error }) })
 
