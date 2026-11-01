@@ -516,6 +516,34 @@ describe('the Collections store', () => {
       expect(dispatched).toEqual([])
     })
 
+    it('stops saying the videos could not be loaded once a refresh brings HackerTube\'s export', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      fetchHackerTubeBundle.mockRejectedValueOnce(new Error('gone'))
+      const state = freshState()
+      await collections.actions.openCollections(contextFor(state))
+      expect(state.collectionsLoadFailed).toBe(true)
+      stubHackerTube({ generated: '2026-10-31' })
+
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(state.collectionSources.hackertube.dataGenerated).toBe('2026-10-31')
+      expect(shareIds(state)).toEqual(['hackertube|aaaaaaaaaaa', 'hackertube|bbbbbbbbbbb'])
+      expect(state.collectionsLoadFailed).toBe(false)
+    })
+
+    it('still says the videos could not be loaded when the refresh failed too', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      fetchHackerTubeBundle.mockRejectedValueOnce(new Error('gone'))
+      const state = freshState()
+      await collections.actions.openCollections(contextFor(state))
+      stubHackerTube({ down: true })
+
+      await collections.actions.refreshCollections(contextFor(state))
+
+      expect(state.collectionsLoadFailed).toBe(true)
+    })
+
     it('stops saying it failed once a refresh works', async () => {
       vi.spyOn(console, 'warn').mockImplementation(() => {})
       const state = await loadedState()

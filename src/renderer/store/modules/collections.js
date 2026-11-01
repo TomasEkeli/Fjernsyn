@@ -309,7 +309,7 @@ async function refreshCollectionsOnce({ state, commit, dispatch }) {
   commit('setCollectionsRefreshing', true)
 
   try {
-    await refreshCollectionSources({
+    const { failed } = await refreshCollectionSources({
       sources: Object.values(state.collectionSources),
       kinds: SOURCE_KINDS_BY_KIND,
       // As it is when asked, so that a test can stand in for the network
@@ -322,6 +322,13 @@ async function refreshCollectionsOnce({ state, commit, dispatch }) {
       updateSource: (sourceId, fields) => dispatch('updateCollectionSource', { sourceId, fields }),
       onProgress: progress => commit('setCollectionsRefreshProgress', progress),
     })
+
+    // The bundle could not be loaded, but HackerTube's export is in now
+    const hackerTube = state.collectionSources[HACKERTUBE_SOURCE_ID]
+    if (state.collectionsLoadFailed && hackerTube?.dataGenerated != null && !failed.includes(HACKERTUBE_SOURCE_ID) &&
+      Object.values(state.collectionShares).some(share => share.sourceId === HACKERTUBE_SOURCE_ID)) {
+      commit('setCollectionsLoadFailed', false)
+    }
   } finally {
     commit('setCollectionsRefreshing', false)
   }
