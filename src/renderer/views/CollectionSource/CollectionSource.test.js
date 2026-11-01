@@ -107,6 +107,11 @@ describe('a source\'s page', () => {
     ])
   })
 
+  afterEach(() => {
+    store.setGetter('getCollectionSource', () => undefined)
+    store.setGetter('getCollectionShare', () => undefined)
+  })
+
   it('gives every card the vote badge of this source\'s share alone: its votes, and on hover its why and its discussion', async () => {
     const shares = [
       { ...share(MEALTIME, 'aaaaaaaaaaa', 100), why: 'Worth a lunch', discussionUrl: 'https://lemmy.cafe/post/1' },
@@ -120,12 +125,10 @@ describe('a source\'s page', () => {
 
     expect(wrapper.findAllComponents(CollectionsVoteBadge).map(badge => badge.props('sourceId'))).toEqual([MEALTIME._id])
     expect(wrapper.find('button.votes').text()).toBe('▲ 100')
+    await wrapper.find('.collectionsVoteBadge').trigger('pointerenter')
     expect(wrapper.find('.why').text()).toBe('Worth a lunch')
     expect(wrapper.find('a.discussion').attributes('href')).toBe('https://lemmy.cafe/post/1')
     expect(wrapper.find('.sources').exists()).toBe(false)
-
-    store.setGetter('getCollectionSource', () => undefined)
-    store.setGetter('getCollectionShare', () => undefined)
   })
 
   it('is the wall of that source\'s videos alone, in the order of its own votes', async () => {

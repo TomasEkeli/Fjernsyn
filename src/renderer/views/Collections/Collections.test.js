@@ -111,6 +111,11 @@ describe('Collections', () => {
     vi.mocked(startCollectionsCrawl).mockClear()
   })
 
+  afterEach(() => {
+    store.setGetter('getCollectionSource', () => undefined)
+    store.setGetter('getCollectionShare', () => undefined)
+  })
+
   it('gives every card the vote badge, saying on hover each source\'s votes, and none to a video without votes', async () => {
     const LEMMY = { _id: 'lemmy:talks@programming.dev', kind: 'lemmy', url: 'https://programming.dev/c/talks', name: 'talks@programming.dev' }
     const shares = [
@@ -133,11 +138,9 @@ describe('Collections', () => {
       ['video000002', null],
     ])
     expect(wrapper.find('[data-video-id="video000001"] button.votes').text()).toBe('▲ 17.5')
+    await wrapper.find('[data-video-id="video000001"] .collectionsVoteBadge').trigger('pointerenter')
     expect(wrapper.findAll('[data-video-id="video000001"] .source').map(row => row.text())).toEqual(['HackerTube▲ 11.5', 'talks@programming.dev▲ 6'])
     expect(wrapper.find('[data-video-id="video000002"] .collectionsVoteBadge').exists()).toBe(false)
-
-    store.setGetter('getCollectionSource', () => undefined)
-    store.setGetter('getCollectionShare', () => undefined)
   })
 
   it('opens Collections once the datastore has loaded, and not before', async () => {

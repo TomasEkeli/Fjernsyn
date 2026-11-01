@@ -347,9 +347,12 @@ Collections:
   # The quiet badge at the top left of a card's thumbnail on Collections and
   # on a source's page, and what hovering it shows
   Vote Badge:
-    # The badge itself, and each source's votes on hovering it. {votes} is a
-    # number, as 35 or 22.5
-    Votes: ▲ {votes}
+    # The badge itself, and each source's votes on hovering it. {arrow} is
+    # the Arrow below, which screen readers skip; {votes} is a number, as 35
+    # or 22.5
+    Votes: '{arrow} {votes}'
+    # The upvote arrow in Votes
+    Arrow: ▲
     # For screen readers, in place of the badge's arrow and number
     Votes Label: '{votes} upvotes'
     # On a source's page: when the source shared the video. {date} is a day,

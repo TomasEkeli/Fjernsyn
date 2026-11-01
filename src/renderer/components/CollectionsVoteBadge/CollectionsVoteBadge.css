@@ -47,8 +47,9 @@
  * What hovering or focusing it shows: under the badge, touching it, so that
  * the pointer can move onto it (and the discussion link in it) without it
  * closing; on the same dark scrim as the card's text, a little denser so that
- * small type reads over any thumbnail. A moment's delay before it opens, so
- * that a pointer crossing the wall does not flash every card's.
+ * small type reads over any thumbnail. A moment's delay before hovering opens
+ * it, so that a pointer crossing the wall does not flash every card's; the
+ * keyboard's focus opens it at once.
  */
 .popover {
   position: absolute;
@@ -76,8 +77,12 @@
 
 .collectionsVoteBadge:is(:hover, :focus-within):not(.dismissed) .popover {
   opacity: 1;
-  transition: opacity 120ms 250ms, visibility 0s 250ms;
+  transition: opacity 120ms;
   visibility: visible;
+}
+
+.collectionsVoteBadge:hover:not(:focus-within, .dismissed) .popover {
+  transition: opacity 120ms 250ms, visibility 0s 250ms;
 }
 
 .sources {

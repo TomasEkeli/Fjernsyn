@@ -3,25 +3,41 @@
     v-if="votes !== null"
     class="collectionsVoteBadge"
     :class="{ dismissed }"
-    @mouseleave="dismissed = false"
+    @pointerenter="onPointerEnter"
+    @mouseleave="onPointerLeave"
+    @focusin="onFocusIn"
     @focusout="onFocusOut"
-    @keydown.esc="dismissed = true"
+    @keydown.esc="onEscape"
   >
     <button
+      ref="button"
       type="button"
       class="votes"
       :aria-label="t('Collections.Vote Badge.Votes Label', { votes: formattedVotes })"
       :aria-describedby="popoverId"
+      :aria-expanded="sourceId === null ? undefined : String(shown)"
     >
-      {{ t('Collections.Vote Badge.Votes', { votes: formattedVotes }) }}
+      <I18nT
+        keypath="Collections.Vote Badge.Votes"
+        scope="global"
+      >
+        <template #arrow>
+          <span aria-hidden="true">{{ t('Collections.Vote Badge.Arrow') }}</span>
+        </template>
+        <template #votes>
+          <span>{{ formattedVotes }}</span>
+        </template>
+      </I18nT>
     </button>
+    <!-- Always there, empty until first opened, so that aria-describedby
+         resolves while a wall of cards renders no popover it has not shown -->
     <div
       :id="popoverId"
       class="popover"
       :role="sourceId === null ? 'tooltip' : undefined"
     >
       <ul
-        v-if="sourceId === null"
+        v-if="opened && sourceId === null"
         class="sources"
       >
         <li
@@ -30,13 +46,23 @@
           class="source"
         >
           <span class="sourceName">{{ row.name }}</span>
-          <span
+          <I18nT
             v-if="row.votes !== null"
+            keypath="Collections.Vote Badge.Votes"
+            tag="span"
             class="sourceVotes"
-          >{{ t('Collections.Vote Badge.Votes', { votes: format(row.votes) }) }}</span>
+            scope="global"
+          >
+            <template #arrow>
+              <span aria-hidden="true">{{ t('Collections.Vote Badge.Arrow') }}</span>
+            </template>
+            <template #votes>
+              <span>{{ format(row.votes) }}</span>
+            </template>
+          </I18nT>
         </li>
       </ul>
-      <template v-else-if="context !== null">
+      <template v-else-if="opened && context !== null">
         <!-- The why is the source's own text: interpolated, never read as HTML -->
         <p
           v-if="context.why !== null"
@@ -45,10 +71,20 @@
           {{ context.why }}
         </p>
         <p class="facts">
-          <span
+          <I18nT
             v-if="context.votes !== null"
+            keypath="Collections.Vote Badge.Votes"
+            tag="span"
             class="shareVotes"
-          >{{ t('Collections.Vote Badge.Votes', { votes: format(context.votes) }) }}</span>
+            scope="global"
+          >
+            <template #arrow>
+              <span aria-hidden="true">{{ t('Collections.Vote Badge.Arrow') }}</span>
+            </template>
+            <template #votes>
+              <span>{{ format(context.votes) }}</span>
+            </template>
+          </I18nT>
           <span
             v-if="dateText !== ''"
             class="shareDate"
@@ -67,8 +103,8 @@
 </template>
 
 <script setup>
-import { computed, ref, useId } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { computed, ref, useId, useTemplateRef } from 'vue'
+import { Translation as I18nT, useI18n } from 'vue-i18n'
 
 import store from '../../store/index'
 
@@ -114,14 +150,55 @@ const { locale, t } = useI18n()
 
 const popoverId = useId()
 
+/** @type {import('vue').Ref<HTMLButtonElement | null>} */
+const button = useTemplateRef('button')
+
 /** Put away by Escape, until the pointer or the focus leaves */
 const dismissed = ref(false)
+
+/** Hovered or focused once: what it shows is only rendered from then on */
+const opened = ref(false)
+
+const hovered = ref(false)
+const focused = ref(false)
+
+/** Whether what hovering or focusing it shows is shown, for aria-expanded */
+const shown = computed(() => (hovered.value || focused.value) && !dismissed.value)
+
+function onPointerEnter() {
+  opened.value = true
+  hovered.value = true
+}
+
+function onPointerLeave() {
+  hovered.value = false
+  dismissed.value = false
+}
+
+function onFocusIn() {
+  opened.value = true
+  focused.value = true
+}
 
 /** @param {FocusEvent} event */
 function onFocusOut(event) {
   if (!(event.currentTarget instanceof Node) || !event.currentTarget.contains(/** @type {Node | null} */ (event.relatedTarget))) {
+    focused.value = false
     dismissed.value = false
   }
+}
+
+/**
+ * Escape from the discussion link first takes the focus back to the badge, so
+ * that putting the popover away does not hide the element that has the focus
+ *
+ * @param {KeyboardEvent} event
+ */
+function onEscape(event) {
+  if (button.value !== null && event.target !== button.value) {
+    button.value.focus()
+  }
+  dismissed.value = true
 }
 
 /** @type {import('vue').ComputedRef<string[]>} */

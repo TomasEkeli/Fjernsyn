@@ -70,8 +70,20 @@ const SHARED_TWICE = wallVideo({ votes: 17.5, sourceIds: ['hackertube', 'lemmy:t
  * @param {string | null} [sourceId]
  */
 function mountBadge(video, sourceId = null) {
-  const wrapper = mountWithApp(CollectionsVoteBadge, { store, props: { video, sourceId } })
+  const wrapper = mountWithApp(CollectionsVoteBadge, { store, props: { video, sourceId }, attachTo: document.body })
   mounted.push(wrapper)
+  return wrapper
+}
+
+/**
+ * Mounts the badge and hovers it, which renders what hovering shows
+ *
+ * @param {object} video
+ * @param {string | null} [sourceId]
+ */
+async function mountOpened(video, sourceId = null) {
+  const wrapper = mountBadge(video, sourceId)
+  await wrapper.find('.collectionsVoteBadge').trigger('pointerenter')
   return wrapper
 }
 
@@ -101,11 +113,39 @@ describe('the vote badge', () => {
     expect(mountBadge(wallVideo({ votes: 0, sourceIds: ['hackertube'] })).find('button.votes').text()).toBe('▲ 0')
   })
 
+  it('hides its arrow from a screen reader', () => {
+    const arrow = mountBadge(SHARED_TWICE).find('button.votes [aria-hidden="true"]')
+
+    expect(arrow.text()).toBe('▲')
+  })
+
   it('is described, for a screen reader, by what hovering it shows', () => {
     const wrapper = mountBadge(SHARED_TWICE)
 
     const popover = wrapper.find('.popover')
     expect(wrapper.find('button.votes').attributes('aria-describedby')).toBe(popover.attributes('id'))
+  })
+
+  it('renders what hovering it shows only once hovered or focused, the popover itself always there', async () => {
+    const wrapper = mountBadge(SHARED_TWICE)
+    const badge = wrapper.find('.collectionsVoteBadge')
+
+    expect(wrapper.find('.popover').exists()).toBe(true)
+    expect(wrapper.find('.popover').element.children).toHaveLength(0)
+
+    await badge.trigger('focusin')
+    expect(wrapper.findAll('.source')).toHaveLength(2)
+
+    await badge.trigger('mouseleave')
+    await badge.trigger('focusout', { relatedTarget: null })
+    expect(wrapper.findAll('.source')).toHaveLength(2)
+  })
+
+  it('renders what hovering it shows on the pointer entering it', async () => {
+    const wrapper = mountBadge(SHARED_TWICE)
+
+    await wrapper.find('.collectionsVoteBadge').trigger('pointerenter')
+    expect(wrapper.findAll('.source')).toHaveLength(2)
   })
 
   it('is put away by Escape until the pointer leaves it', async () => {
@@ -127,11 +167,17 @@ describe('the vote badge', () => {
     await badge.trigger('focusout', { relatedTarget: null })
     expect(badge.classes()).not.toContain('dismissed')
   })
+
+  it('says nothing of being expanded on Collections, where it is a tooltip', async () => {
+    const wrapper = await mountOpened(SHARED_TWICE)
+
+    expect(wrapper.find('button.votes').attributes('aria-expanded')).toBeUndefined()
+  })
 })
 
 describe('hovering it on Collections', () => {
-  it('lists the sources that shared the video, each with its own votes, and nothing else', () => {
-    const wrapper = mountBadge(SHARED_TWICE)
+  it('lists the sources that shared the video, each with its own votes, and nothing else', async () => {
+    const wrapper = await mountOpened(SHARED_TWICE)
     const popover = wrapper.find('.popover')
 
     expect(popover.attributes('role')).toBe('tooltip')
@@ -143,18 +189,19 @@ describe('hovering it on Collections', () => {
     expect(popover.find('.shareDate').exists()).toBe(false)
     expect(popover.find('a').exists()).toBe(false)
     expect(popover.text()).not.toContain('perennial')
+    expect(popover.findAll('.sourceVotes [aria-hidden="true"]').map(arrow => arrow.text())).toEqual(['▲', '▲'])
   })
 
-  it('lists only the sources shown', () => {
-    const wrapper = mountBadge(wallVideo({ votes: 6, sourceIds: ['lemmy:talks@programming.dev'] }))
+  it('lists only the sources shown', async () => {
+    const wrapper = await mountOpened(wallVideo({ votes: 6, sourceIds: ['lemmy:talks@programming.dev'] }))
 
     expect(wrapper.findAll('.sourceName').map(name => name.text())).toEqual(['talks@programming.dev'])
   })
 })
 
 describe('hovering it on a source\'s page', () => {
-  it('shows that share\'s why, date, votes and the discussion, and no other source', () => {
-    const wrapper = mountBadge(wallVideo({ votes: 6, sourceIds: ['lemmy:talks@programming.dev'] }), 'lemmy:talks@programming.dev')
+  it('shows that share\'s why, date, votes and the discussion, and no other source', async () => {
+    const wrapper = await mountOpened(wallVideo({ votes: 6, sourceIds: ['lemmy:talks@programming.dev'] }), 'lemmy:talks@programming.dev')
     const popover = wrapper.find('.popover')
 
     expect(wrapper.find('button.votes').text()).toBe('▲ 6')
@@ -166,8 +213,8 @@ describe('hovering it on a source\'s page', () => {
     expect(popover.text()).not.toContain('HackerTube')
   })
 
-  it('links the discussion as a plain external link, its text alone, which the app opens in the browser', () => {
-    const wrapper = mountBadge(wallVideo({ votes: 6, sourceIds: ['lemmy:talks@programming.dev'] }), 'lemmy:talks@programming.dev')
+  it('links the discussion as a plain external link, its text alone, which the app opens in the browser', async () => {
+    const wrapper = await mountOpened(wallVideo({ votes: 6, sourceIds: ['lemmy:talks@programming.dev'] }), 'lemmy:talks@programming.dev')
     const link = wrapper.find('a.discussion')
 
     expect(link.attributes('href')).toBe('https://programming.dev/post/1')
@@ -175,8 +222,8 @@ describe('hovering it on a source\'s page', () => {
     expect(link.text()).toBe('Open the discussion')
   })
 
-  it('dates a HackerTube share by its year alone, and shows its why as text, never as markup', () => {
-    const wrapper = mountBadge(wallVideo({ votes: 11.5, sourceIds: ['hackertube'] }), 'hackertube')
+  it('dates a HackerTube share by its year alone, and shows its why as text, never as markup', async () => {
+    const wrapper = await mountOpened(wallVideo({ votes: 11.5, sourceIds: ['hackertube'] }), 'hackertube')
     const why = wrapper.find('.why')
 
     expect(wrapper.find('.shareDate').text()).toBe('Shared 2026')
@@ -184,17 +231,49 @@ describe('hovering it on a source\'s page', () => {
     expect(why.find('b').exists()).toBe(false)
   })
 
-  it('links no discussion whose address is not a web address', () => {
+  it('links no discussion whose address is not a web address', async () => {
     const kept = SHARES[`hackertube|${VIDEO_ID}`]
     SHARES[`hackertube|${VIDEO_ID}`] = { ...kept, discussionUrl: 'javascript:alert(1)' }
 
     try {
-      const wrapper = mountBadge(wallVideo({ votes: 11.5, sourceIds: ['hackertube'] }), 'hackertube')
+      const wrapper = await mountOpened(wallVideo({ votes: 11.5, sourceIds: ['hackertube'] }), 'hackertube')
 
       expect(wrapper.find('a').exists()).toBe(false)
       expect(wrapper.find('.why').exists()).toBe(true)
     } finally {
       SHARES[`hackertube|${VIDEO_ID}`] = kept
     }
+  })
+
+  it('says whether what hovering it shows is shown', async () => {
+    const wrapper = mountBadge(wallVideo({ votes: 6, sourceIds: ['lemmy:talks@programming.dev'] }), 'lemmy:talks@programming.dev')
+    const badge = wrapper.find('.collectionsVoteBadge')
+    const button = wrapper.find('button.votes')
+
+    expect(button.attributes('aria-expanded')).toBe('false')
+
+    await badge.trigger('pointerenter')
+    expect(button.attributes('aria-expanded')).toBe('true')
+
+    await badge.trigger('keydown', { key: 'Escape' })
+    expect(button.attributes('aria-expanded')).toBe('false')
+
+    await badge.trigger('mouseleave')
+    await badge.trigger('focusin')
+    expect(button.attributes('aria-expanded')).toBe('true')
+
+    await badge.trigger('focusout', { relatedTarget: null })
+    expect(button.attributes('aria-expanded')).toBe('false')
+  })
+
+  it('takes the focus back to the badge on Escape from the discussion link, so that it is not lost with the popover', async () => {
+    const wrapper = await mountOpened(wallVideo({ votes: 6, sourceIds: ['lemmy:talks@programming.dev'] }), 'lemmy:talks@programming.dev')
+    const link = wrapper.find('a.discussion')
+
+    link.element.focus()
+    await link.trigger('keydown', { key: 'Escape' })
+
+    expect(document.activeElement).toBe(wrapper.find('button.votes').element)
+    expect(wrapper.find('.collectionsVoteBadge').classes()).toContain('dismissed')
   })
 })
