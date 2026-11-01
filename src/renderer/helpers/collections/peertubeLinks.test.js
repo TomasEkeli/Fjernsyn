@@ -15,6 +15,7 @@ import {
   hostVerdict,
   knownPeerTubeVideos,
   PEERTUBE_HOSTS_KEY,
+  PEERTUBE_LINK_TIMEOUT_MS,
   readHostMemory,
   withHostVerdict,
 } from './peertubeLinks'
@@ -291,6 +292,57 @@ describe('confirming a PeerTube candidate', () => {
     await resolver.refFor({ host: 'tilvids.com', videoId: UUID })
 
     expect(deps.putDetails.mock.calls[0][0][0]).toMatchObject({ _id: `${UUID}@${ORIGIN}`, host: ORIGIN })
+  })
+
+  describe('a host that fails, or says nothing', () => {
+    const OTHER = '11111111-2222-4333-8444-555555555555'
+
+    it('is skipped for the rest of the refresh once it could not be asked', async () => {
+      const { deps, resolver } = setUp({ resolveUrl: vi.fn(async () => { throw new PlatformError('unavailable', 'down', { host: 'tilvids.com' }) }) })
+
+      expect(await resolver.refFor({ host: 'tilvids.com', videoId: UUID })).toBe(null)
+      expect(await resolver.refFor({ host: 'tilvids.com', videoId: OTHER })).toBe(null)
+
+      expect(deps.resolveUrl).toHaveBeenCalledTimes(1)
+    })
+
+    it('is skipped for the rest of the refresh once it failed to give a video for a reason that says nothing of it', async () => {
+      const { deps, resolver } = setUp({ getVideoSummary: vi.fn(async () => { throw new PlatformError('rateLimited', 'slow', { host: 'tilvids.com' }) }) })
+
+      await resolver.refFor({ host: 'tilvids.com', videoId: UUID })
+      expect(await resolver.refFor({ host: 'tilvids.com', videoId: OTHER })).toBe(null)
+
+      expect(deps.getVideoSummary).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not keep another host from being asked', async () => {
+      const { deps, resolver } = setUp({
+        resolveUrl: vi.fn(async (url) => {
+          if (url.includes('tilvids.com')) { throw new PlatformError('unavailable', 'down', { host: 'tilvids.com' }) }
+          return { platform: 'peertube', kind: 'video', ref: { platform: 'peertube', host: ORIGIN, videoId: OTHER }, host: ORIGIN, timestamp: null }
+        }),
+      })
+
+      await resolver.refFor({ host: 'tilvids.com', videoId: UUID })
+
+      expect(await resolver.refFor({ host: ORIGIN, videoId: OTHER })).toMatchObject({ host: ORIGIN })
+      expect(deps.resolveUrl).toHaveBeenCalledTimes(2)
+    })
+
+    it('gives up on one that does not answer in time, as nothing, and skips it for the rest of the refresh', async () => {
+      const onFailure = vi.fn()
+      const { deps, resolver } = setUp({ resolveUrl: vi.fn(() => new Promise(() => {})), timeoutMs: 5, onFailure })
+
+      expect(await resolver.refFor({ host: 'tilvids.com', videoId: UUID })).toBe(null)
+      expect(await resolver.refFor({ host: 'tilvids.com', videoId: OTHER })).toBe(null)
+
+      expect(deps.resolveUrl).toHaveBeenCalledTimes(1)
+      expect(onFailure).toHaveBeenCalled()
+    })
+
+    it('waits twenty seconds by default', () => {
+      expect(PEERTUBE_LINK_TIMEOUT_MS).toBe(20_000)
+    })
   })
 
   it('keeps nothing for a video that could not be had for a reason that says nothing of it', async () => {

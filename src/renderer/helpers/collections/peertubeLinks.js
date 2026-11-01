@@ -47,6 +47,13 @@ export const HOST_NO_STALE_MS = 7 * 24 * 60 * 60 * 1000
 /** How many hosts are remembered, the most recently asked */
 export const HOSTS_REMEMBERED = 500
 
+/**
+ * How long one link is waited on, its host's config and its video together,
+ * before it is skipped this time: one instance that never answers must not
+ * hold up a community's refresh
+ */
+export const PEERTUBE_LINK_TIMEOUT_MS = 20_000
+
 /** Where the hosts are remembered */
 export const PEERTUBE_HOSTS_KEY = 'collectionsPeerTubeHosts'
 
@@ -232,19 +239,27 @@ export function knownPeerTubeVideos(shares, details) {
  * @property {(records: VideoDetails[]) => Promise<void>} putDetails keeps details
  * @property {() => number} now
  * @property {(message: string, error?: unknown) => void} [onFailure]
+ * @property {number} [timeoutMs] how long a link is waited on
+ *   (`PEERTUBE_LINK_TIMEOUT_MS`)
  */
 
 /**
  * The ref each PeerTube candidate is, asked of the platform layer as little
  * as can be (see the top of this file). One answer per uuid for the life of
  * the resolver, which is one refresh: a video posted twice is asked about
- * once.
+ * once. A host that could not be asked, failed to give a video for a reason
+ * that says nothing of it, or did not answer within `timeoutMs`, is skipped
+ * for the rest of the resolver's life, so that one silent instance costs a
+ * refresh one wait, not one per link.
  *
  * @param {PeerTubeLinkDependencies} deps
  */
-export function createPeerTubeLinkResolver({ enabled, known, hosts, resolveUrl, getVideoSummary, putDetails, now, onFailure = () => {} }) {
+export function createPeerTubeLinkResolver({ enabled, known, hosts, resolveUrl, getVideoSummary, putDetails, now, onFailure = () => {}, timeoutMs = PEERTUBE_LINK_TIMEOUT_MS }) {
   /** @type {Map<string, KnownVideo> | null} */
   let kept = null
+
+  /** @type {Set<string>} hosts that failed in this resolver's life, not asked again in it */
+  const failedHosts = new Set()
 
   /** @type {Map<string, Promise<PeerTubeVideoRef | null>>} */
   const answers = new Map()
@@ -263,6 +278,8 @@ export function createPeerTubeLinkResolver({ enabled, known, hosts, resolveUrl, 
     const mark = video !== undefined && Object.hasOwn(video.unavailable, host) ? video.unavailable[host] : undefined
     if (mark !== undefined && !needsDetails(mark, now())) { return null }
 
+    if (failedHosts.has(host)) { return null }
+
     const verdict = hosts.verdict(host, now())
     if (verdict === false) { return null }
 
@@ -274,7 +291,8 @@ export function createPeerTubeLinkResolver({ enabled, known, hosts, resolveUrl, 
       try {
         resolution = await resolveUrl(`https://${host}/videos/watch/${videoId}`)
       } catch (error) {
-        onFailure(`Collections: could not ask ${host} whether it is PeerTube; its link is skipped this time`, error)
+        failedHosts.add(host)
+        onFailure(`Collections: could not ask ${host} whether it is PeerTube; its links are skipped this time`, error)
         return null
       }
 
@@ -297,7 +315,14 @@ export function createPeerTubeLinkResolver({ enabled, known, hosts, resolveUrl, 
       // passed the request on to: a mark speaks for that instance only
       const answered = typeof error?.host === 'string' && error.host !== '' ? error.host : ref.host
       const record = peerTubeFailureRecord({ ...ref, host: answered }, error, now())
-      if (record !== null) { await keep(record) }
+
+      if (record !== null) {
+        await keep(record)
+      } else {
+        failedHosts.add(answered)
+        failedHosts.add(host)
+      }
+
       onFailure(`Collections: could not have ${videoId} from ${host}${record === null ? '; it is asked again next time' : `; kept as ${record.unavailable}`}`, error)
       return null
     }
@@ -322,6 +347,28 @@ export function createPeerTubeLinkResolver({ enabled, known, hosts, resolveUrl, 
     }
   }
 
+  /**
+   * The answer, or null once `timeoutMs` has passed without one, and the
+   * host is skipped from then on. The ask itself runs on: details it brings
+   * later are kept, and the next refresh knows the video.
+   *
+   * @param {Promise<PeerTubeVideoRef | null>} asking
+   * @param {string} host
+   * @returns {Promise<PeerTubeVideoRef | null>}
+   */
+  function inTime(asking, host) {
+    let timer
+    const late = new Promise((resolve) => {
+      timer = setTimeout(() => {
+        failedHosts.add(host)
+        onFailure(`Collections: ${host} did not answer within ${timeoutMs / 1000} s; its links are skipped this time`)
+        resolve(null)
+      }, timeoutMs)
+    })
+
+    return Promise.race([asking, late]).finally(() => clearTimeout(timer))
+  }
+
   return Object.freeze({
     /**
      * The ref a candidate is, the video's uuid and its origin host, or null
@@ -338,7 +385,7 @@ export function createPeerTubeLinkResolver({ enabled, known, hosts, resolveUrl, 
       let answer = answers.get(candidate.videoId)
 
       if (answer === undefined) {
-        answer = ask(candidate)
+        answer = inTime(ask(candidate), candidate.host)
         answers.set(candidate.videoId, answer)
       }
 
