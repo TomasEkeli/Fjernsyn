@@ -459,7 +459,7 @@ export default {
   },
 
   /**
-   * Collections: the followed sources and their shares
+   * Collections: the followed sources, their shares, and the videos' details
    * @param {number} action
    * @param {any} [data]
    */

@@ -560,8 +560,9 @@ class Later {
 }
 
 /**
- * Collections: the followed sources, by source id, and their shares, by
- * source id and video ref (`helpers/collections/shares.js`).
+ * Collections: the followed sources, by source id, their shares, by source
+ * id and video ref (`helpers/collections/shares.js`), and each collection
+ * video's own details, by video ref (`helpers/collections/details.js`).
  *
  * Shares are only ever added or updated here, never dropped: a share that
  * falls out of a feed stays. Putting shares writes the new ones in one insert,
@@ -592,6 +593,22 @@ class Collections {
     const run = collectionSharesQueue.then(() => putCollectionShares(shares))
     collectionSharesQueue = run.catch(() => {})
     return run
+  }
+
+  static findVideos() {
+    return db.collectionVideos.findAsync({})
+  }
+
+  /**
+   * Keeps each video's details, replacing what was kept for it
+   * (`helpers/collections/details.js`)
+   *
+   * @param {{ _id: string }[]} videos
+   */
+  static async putVideos(videos) {
+    for (const video of videos) {
+      await db.collectionVideos.updateAsync({ _id: video._id }, video, { upsert: true })
+    }
   }
 }
 
@@ -635,6 +652,7 @@ function loadDatastores() {
     db.later.loadDatabaseAsync(),
     db.collectionSources.loadDatabaseAsync(),
     db.collectionShares.loadDatabaseAsync(),
+    db.collectionVideos.loadDatabaseAsync(),
   ])
 }
 
@@ -651,6 +669,7 @@ function compactAllDatastores() {
     db.later.compactDatafileAsync(),
     db.collectionSources.compactDatafileAsync(),
     db.collectionShares.compactDatafileAsync(),
+    db.collectionVideos.compactDatafileAsync(),
   ])
 }
 

@@ -2566,7 +2566,7 @@ function runApp() {
   })
 
   // *********** //
-  // Collections: the followed sources and their shares
+  // Collections: the followed sources, their shares, and the videos' details
   ipcMain.handle(IpcChannels.DB_COLLECTIONS, async (event, { action, data }) => {
     if (!isFreeTubeUrl(event.senderFrame.url)) {
       return
@@ -2598,6 +2598,18 @@ function runApp() {
           syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, { event: SyncEvents.COLLECTIONS.PUT_SHARES, data })
           return counts
         }
+
+        case DBActions.COLLECTIONS.FIND_VIDEOS:
+          return await baseHandlers.collections.findVideos()
+
+        case DBActions.COLLECTIONS.PUT_VIDEOS:
+          if (!Array.isArray(data) || !data.every(video => typeof video?._id === 'string')) {
+            // eslint-disable-next-line no-throw-literal
+            throw 'invalid collections data'
+          }
+          await baseHandlers.collections.putVideos(data)
+          syncOtherWindows(IpcChannels.SYNC_COLLECTIONS, event, { event: SyncEvents.COLLECTIONS.PUT_VIDEOS, data })
+          return null
 
         default:
           // eslint-disable-next-line no-throw-literal

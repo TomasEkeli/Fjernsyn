@@ -54,3 +54,7 @@ export const later = createDatastore('later')
 // its source is followed
 export const collectionSources = createDatastore('collection-sources')
 export const collectionShares = createDatastore('collection-shares')
+// Collections: each collection video's own details, by the video's ref, as
+// the crawl fetched them; kept apart from the shares, which stay what their
+// sources said
+export const collectionVideos = createDatastore('collection-videos')

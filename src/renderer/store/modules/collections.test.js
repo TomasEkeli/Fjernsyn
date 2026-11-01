@@ -11,6 +11,8 @@ vi.mock('../../../datastores/handlers/index', () => ({
     findShares: vi.fn(async () => []),
     upsertSource: vi.fn(async () => {}),
     putShares: vi.fn(async () => ({ added: 0, updated: 0 })),
+    findVideos: vi.fn(async () => []),
+    putVideos: vi.fn(async () => {}),
   },
 }))
 
@@ -31,7 +33,7 @@ const BUNDLE = {
 }
 
 function freshState() {
-  return { collectionSources: {}, collectionShares: {}, collectionsReady: false, collectionsGrabFailed: false, collectionsSyncBuffer: null, collectionsLoading: false, collectionsLoadFailed: false }
+  return { collectionSources: {}, collectionShares: {}, collectionVideos: {}, collectionsReady: false, collectionsGrabFailed: false, collectionsSyncBuffer: null, collectionsLoading: false, collectionsLoadFailed: false }
 }
 
 function contextFor(state) {
@@ -63,6 +65,46 @@ describe('the Collections store', () => {
     expect(state.collectionsReady).toBe(true)
     expect(collections.getters.getCollectionSources(state).map(source => source._id)).toEqual(['hackertube'])
     expect(shareIds(state)).toEqual(['hackertube|aaaaaaaaaaa'])
+  })
+
+  it('loads the videos\' details the datastore holds, by the video\'s ref', async () => {
+    DBCollectionHandlers.findVideos.mockResolvedValueOnce([{ _id: 'aaaaaaaaaaa', videoId: 'aaaaaaaaaaa', fetchedAt: 1, lengthSeconds: 60 }])
+    const state = freshState()
+
+    await collections.actions.grabCollections(contextFor(state))
+
+    expect(collections.getters.getCollectionVideos(state)).toEqual({ aaaaaaaaaaa: { _id: 'aaaaaaaaaaa', videoId: 'aaaaaaaaaaa', fetchedAt: 1, lengthSeconds: 60 } })
+    expect(Object.isFrozen(state.collectionVideos.aaaaaaaaaaa)).toBe(true)
+  })
+
+  it('says the read failed when the details cannot be read, so the crawl does not take every video for missing', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    DBCollectionHandlers.findVideos.mockRejectedValueOnce(new Error('locked'))
+    const state = freshState()
+
+    await collections.actions.grabCollections(contextFor(state))
+
+    expect(collections.getters.getCollectionsGrabFailed(state)).toBe(true)
+  })
+
+  it('keeps a video\'s details through the datastore, replacing what it held', async () => {
+    const state = freshState()
+    state.collectionVideos.aaaaaaaaaaa = Object.freeze({ _id: 'aaaaaaaaaaa', videoId: 'aaaaaaaaaaa', fetchedAt: 1, viewCount: 5 })
+    const record = { _id: 'aaaaaaaaaaa', videoId: 'aaaaaaaaaaa', fetchedAt: 2, unavailable: 'gone' }
+
+    await collections.actions.putCollectionVideos(contextFor(state), [record])
+
+    expect(DBCollectionHandlers.putVideos).toHaveBeenCalledWith([record])
+    expect(state.collectionVideos.aaaaaaaaaaa).toEqual(record)
+  })
+
+  it('takes another window\'s details', () => {
+    const state = freshState()
+    const record = { _id: 'aaaaaaaaaaa', videoId: 'aaaaaaaaaaa', fetchedAt: 2, lengthSeconds: 9 }
+
+    collections.mutations.applyCollectionsSync(state, { event: SyncEvents.COLLECTIONS.PUT_VIDEOS, data: [record] })
+
+    expect(state.collectionVideos.aaaaaaaaaaa).toEqual(record)
   })
 
   it('is ready when the datastore cannot be read, and says the read failed', async () => {
