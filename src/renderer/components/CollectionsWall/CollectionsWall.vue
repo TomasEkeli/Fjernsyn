@@ -66,6 +66,39 @@
             </option>
           </select>
         </div>
+        <div
+          v-if="categoryShown"
+          class="picker"
+        >
+          <label
+            class="pickerLabel"
+            :for="categorySelectId"
+          >
+            {{ $t('Collections.Category') }}
+          </label>
+          <select
+            :id="categorySelectId"
+            v-model="category"
+            class="pickerSelect categorySelect"
+          >
+            <option value="">
+              {{ $t('Collections.All Categories') }}
+            </option>
+            <optgroup
+              v-for="area in categoryGroups"
+              :key="area.id"
+              :label="area.name"
+            >
+              <option
+                v-for="option in area.categories"
+                :key="option.id"
+                :value="option.id"
+              >
+                {{ option.name }}
+              </option>
+            </optgroup>
+          </select>
+        </div>
       </div>
     </div>
     <FtLoader
@@ -82,6 +115,12 @@
       class="message"
     >
       {{ bundleFailed ? $t('Collections.Load Failed') : $t('Collections.Nothing Shared') }}
+    </p>
+    <p
+      v-else-if="categoryVideos.length === 0"
+      class="message"
+    >
+      {{ $t('Collections.Nothing In Category') }}
     </p>
     <p
       v-else-if="shownVideos.length === 0"
@@ -128,7 +167,9 @@ import store from '../../store/index'
 
 import { collectionsCrawlProgress, startCollectionsCrawl } from '../../helpers/collections/crawlRunner'
 import { detailsProgress } from '../../helpers/collections/details'
+import { categoryAreas, categoryOf, withCategory } from '../../helpers/collections/category'
 import { HACKERTUBE_SOURCE_ID } from '../../helpers/collections/hackertube'
+import { shippedHackerTubeTaxonomy } from '../../helpers/collections/hackertubeBundle'
 import { collectionSortOf, wallVideos } from '../../helpers/collections/shares'
 import { hiddenSourcesWith, shownSourceIds, sourcesByName } from '../../helpers/collections/sourceChips'
 import { aiIsShown, withAiPreference } from '../../helpers/aiShown'
@@ -171,7 +212,9 @@ import { KeyboardShortcuts } from '../../../constants'
  * upvotes, shared on community, video published or views. Which shares count
  * for the order is which sources are shown: the chips' on Collections, the
  * source's own on its page (`collectionValues` in helpers/collections/
- * shares.js). The `header` slot comes above the row.
+ * shares.js). Last, while HackerTube's videos are on the wall, one of
+ * HackerTube's categories, which leaves only the videos HackerTube put in it
+ * (helpers/collections/category.js). The `header` slot comes above the row.
  *
  * Each card carries the vote badge, the votes that order the wall, quietly
  * at the top left of its thumbnail.
@@ -324,6 +367,85 @@ const videos = computed(() => {
 })
 
 /**
+ * HackerTube's taxonomy: the one kept with its data, or for an installation
+ * that loaded its data before that was kept, the shipped bundle's
+ *
+ * @type {import('vue').Ref<import('../../helpers/collections/hackertube').HackerTubeTaxonomy | null>}
+ */
+const shippedTaxonomy = ref(null)
+
+/** @type {import('vue').ComputedRef<import('../../helpers/collections/hackertube').HackerTubeTaxonomy | null>} */
+const taxonomy = computed(() => {
+  return store.getters.getCollectionSourceData(HACKERTUBE_SOURCE_ID)?.taxonomy ?? shippedTaxonomy.value
+})
+
+/** @type {import('vue').ComputedRef<import('../../helpers/collections/hackertube').HackerTubeTaxonomy['areas']>} */
+const categoryGroups = computed(() => categoryAreas(taxonomy.value))
+
+/**
+ * Whether HackerTube's videos are on this wall, which are the only ones with
+ * categories: followed, and its chip on, or its own page
+ *
+ * @type {import('vue').ComputedRef<boolean>}
+ */
+const hackerTubeShown = computed(() => {
+  return shownSources.value.has(HACKERTUBE_SOURCE_ID) &&
+    store.getters.getCollectionSources.some(source => source._id === HACKERTUBE_SOURCE_ID)
+})
+
+watch(() => hackerTubeShown.value && taxonomy.value === null, (wanted) => {
+  if (wanted) {
+    shippedHackerTubeTaxonomy().then((shipped) => {
+      shippedTaxonomy.value = shipped
+    }, (error) => {
+      console.error('Collections: could not read the categories of the HackerTube bundle', error)
+    })
+  }
+}, { immediate: true })
+
+/** @type {import('vue').ComputedRef<boolean>} */
+const categoryShown = computed(() => hackerTubeShown.value && categoryGroups.value.length > 0)
+
+const CATEGORY_KEY = 'collectionsCategory'
+
+/**
+ * The category chosen, for the session, and the same on Collections and
+ * HackerTube's page; '' is all
+ */
+const chosenCategory = ref(sessionStorage.getItem(CATEGORY_KEY) ?? '')
+
+/**
+ * The select's value: the category chosen while the taxonomy has it, else
+ * all
+ *
+ * @type {import('vue').WritableComputedRef<string>}
+ */
+const category = computed({
+  get: () => categoryOf(chosenCategory.value, taxonomy.value) ?? '',
+  set: (value) => {
+    chosenCategory.value = value
+    if (value === '') {
+      sessionStorage.removeItem(CATEGORY_KEY)
+    } else {
+      sessionStorage.setItem(CATEGORY_KEY, value)
+    }
+  },
+})
+
+const categorySelectId = useId()
+
+/**
+ * The wall in the category chosen, while its select is shown: with HackerTube
+ * off the wall the choice waits, and the wall is whole
+ *
+ * @type {import('vue').ComputedRef<import('../../helpers/collections/shares').CollectionVideo[]>}
+ */
+const categoryVideos = computed(() => {
+  const chosen = categoryShown.value ? categoryOf(chosenCategory.value, taxonomy.value) : null
+  return withCategory(videos.value, store.getters.getCollectionShares, chosen)
+})
+
+/**
  * Whether what has been watched stays on the wall: the same setting, and the
  * same pill, as on the subscriptions page and Explore
  * (helpers/watchedShown.js)
@@ -337,7 +459,7 @@ function toggleWatched() {
 }
 
 /** @type {import('vue').ComputedRef<import('../../helpers/collections/shares').CollectionVideo[]>} */
-const unwatchedVideos = computed(() => withWatchedPreference(videos.value))
+const unwatchedVideos = computed(() => withWatchedPreference(categoryVideos.value))
 
 /**
  * The wall as shown: less what has been watched, while the Watched pill is

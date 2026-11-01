@@ -344,6 +344,13 @@ Collections:
     Shared: Shared on community
     Views: Views
     Upvotes: Upvotes
+  # Beside the select of HackerTube's categories, which shows only the videos
+  # HackerTube put in the one chosen
+  Category: Category
+  # The category select's first choice, which shows every video
+  All Categories: All
+  # Instead of the wall, when no video shown is in the category chosen
+  Nothing In Category: Nothing here is in this category.
   # The quiet badge at the top left of a card's thumbnail on Collections and
   # on a source's page, and what hovering it shows
   Vote Badge:
