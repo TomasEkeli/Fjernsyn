@@ -165,7 +165,8 @@ describe('Collections', () => {
     expect(wrapper.find('.message').text()).toContain('could not be loaded')
   })
 
-  it('starts the crawl once Collections is open', async () => {
+  it('starts the crawl once Collections is open and has videos', async () => {
+    store.setGetter('getCollectionShares', [share(1, 1)])
     mountCollections()
     await flushPromises()
     expect(startCollectionsCrawl).not.toHaveBeenCalled()
@@ -176,6 +177,33 @@ describe('Collections', () => {
     expect(startCollectionsCrawl).toHaveBeenCalledTimes(1)
   })
 
+  it('starts the crawl without waiting for the refresh, but after the bundle is in', async () => {
+    store.setGetter('getCollectionShares', [share(1, 1)])
+    const dispatch = store.dispatch
+    let finishOpen
+    store.dispatch = (type, payload) => {
+      dispatch(type, payload)
+      if (type === 'openCollections') { return new Promise((resolve) => { finishOpen = resolve }) }
+      // A refresh that never ends
+      return new Promise(() => {})
+    }
+
+    try {
+      store.setGetter('getCollectionsReady', true)
+      mountCollections()
+      await flushPromises()
+      expect(startCollectionsCrawl).not.toHaveBeenCalled()
+
+      finishOpen()
+      await flushPromises()
+
+      expect(store.dispatched.map(({ type }) => type)).toEqual(['openCollections', 'refreshCollectionsIfDue'])
+      expect(startCollectionsCrawl).toHaveBeenCalledTimes(1)
+    } finally {
+      store.dispatch = dispatch
+    }
+  })
+
   it('does not start the crawl when the videos could not be loaded', async () => {
     store.setGetter('getCollectionsReady', true)
     store.setGetter('getCollectionsLoadFailed', true)
@@ -184,6 +212,19 @@ describe('Collections', () => {
     await flushPromises()
 
     expect(startCollectionsCrawl).not.toHaveBeenCalled()
+  })
+
+  it('starts the crawl once a refresh brings the videos the bundle could not', async () => {
+    store.setGetter('getCollectionsReady', true)
+    store.setGetter('getCollectionsLoadFailed', true)
+    mountCollections()
+    await flushPromises()
+
+    store.setGetter('getCollectionsLoadFailed', false)
+    store.setGetter('getCollectionShares', [share(1, 1)])
+    await flushPromises()
+
+    expect(startCollectionsCrawl).toHaveBeenCalledTimes(1)
   })
 
   it('shows the crawl in the refresh widget while it runs, with how many videos have their details, and nothing once it is done', async () => {

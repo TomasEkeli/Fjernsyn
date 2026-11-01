@@ -100,7 +100,7 @@ import { KeyboardShortcuts } from '../../../constants'
  * ships with (store/modules/collections.js). Every open then refreshes, when
  * the last refresh was more than an hour ago, asking each followed source
  * what it shares now (helpers/collections/refresh.js); the refresh button and
- * R or F5 refresh at any time. Then the crawl starts, which fetches each
+ * R or F5 refresh at any time. Beside it the crawl starts, which fetches each
  * video's own details in the background (helpers/collections/crawl.js); as
  * they come in, the cards show duration, views and date, and link to their
  * channel.
@@ -265,22 +265,29 @@ function increaseLimit() {
   sessionStorage.setItem('collectionsLimit', dataLimit.value.toFixed(0))
 }
 
+/** Whether this page's open has run, which loads the bundle the first time */
+const opened = ref(false)
+
 // Once the datastore has loaded, which on a page opened at startup is a
-// moment after the page is; then a refresh, if one is due, so that a newer
-// HackerTube export is in; and then the crawl
+// moment after the page is: the bundle, the first time; then a refresh, if
+// one is due, which the crawl does not wait for, as it starts again by
+// itself on the shares the refresh brings
 watch(ready, async (isReady) => {
-  if (isReady) {
+  if (isReady && !opened.value) {
     await store.dispatch('openCollections')
+    opened.value = true
 
-    try {
-      await store.dispatch('refreshCollectionsIfDue')
-    } catch (error) {
+    store.dispatch('refreshCollectionsIfDue').catch((error) => {
       console.error('Collections: the refresh on open failed', error)
-    }
+    })
+  }
+}, { immediate: true })
 
-    if (!loadFailed.value) {
-      startCollectionsCrawl()
-    }
+// The crawl, once the page is open and has videos: at once, or when a refresh
+// brings the videos a failed bundle load could not
+watch(() => opened.value && !loadFailed.value && store.getters.getCollectionShares.length > 0, (canCrawl) => {
+  if (canCrawl) {
+    startCollectionsCrawl()
   }
 }, { immediate: true })
 </script>
