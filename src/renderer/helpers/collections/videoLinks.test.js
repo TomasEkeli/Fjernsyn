@@ -189,8 +189,8 @@ describe('a short uuid', () => {
     expect(uuidFromShortUuid(short)).toBe(uuid)
   })
 
-  // Worked out with short-uuid's own algorithm: PeerTube imports videos from
-  // other software keeping their uuids, so any RFC version may turn up
+  // Worked out with short-uuid's algorithm. PeerTube makes version 4 today;
+  // any RFC version is accepted, should another turn up
   it.each([
     ['1bZLJsfkhvwWHrj4Y3h5Hv', '01890a5d-ac96-774b-bcce-b302099a8057', 'a version 7'],
     ['pYS2jSFSajW9yjUPN76fcG', 'c232ab00-9414-11ec-b3c8-9f6bdeced846', 'a version 1'],

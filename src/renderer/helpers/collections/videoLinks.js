@@ -112,9 +112,9 @@ export function videoRefFromLink(link) {
 const UUID = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i
 
 /**
- * A uuid of one of RFC 9562's versions, 1 to 8, with its variant bits: what
- * PeerTube makes (version 4) and what it keeps for a video imported with a
- * uuid of its own
+ * A uuid of one of RFC 9562's versions, 1 to 8, with its variant bits.
+ * PeerTube makes version 4 today; the others are accepted so that a change of
+ * version there, or a video from elsewhere carrying its own, is not lost
  */
 const RFC_UUID = /^[\da-f]{8}-[\da-f]{4}-[1-8][\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/
 
