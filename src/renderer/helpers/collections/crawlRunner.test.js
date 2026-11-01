@@ -13,6 +13,7 @@ vi.mock('../../store/index', async () => {
         getBackendPreference: 'local',
         getCollectionsReady: true,
         getCollectionsGrabFailed: false,
+        getEnablePeerTube: false,
       },
     }),
   }
@@ -29,6 +30,10 @@ vi.mock('../subscriptionWorker', () => ({
   }),
   removeSubscriptionJobs: vi.fn(),
 }))
+
+// The platform layer, which the PeerTube path asks
+const fakeLayer = vi.hoisted(() => ({ getVideoSummary: vi.fn() }))
+vi.mock('../../platform/vue', () => ({ getPlatformLayer: () => fakeLayer }))
 
 vi.mock('../api/local', () => ({
   getLocalPlayerResponse: vi.fn(async () => ordinary.answer),
@@ -50,6 +55,8 @@ async function freshRunner() {
   store.setGetter('getCollectionShares', [share('aaaaaaaaaaa'), share('bbbbbbbbbbb'), share('ccccccccccc')])
   store.setGetter('getCollectionVideos', {})
   store.setGetter('getBackendPreference', 'local')
+  store.setGetter('getEnablePeerTube', false)
+  store.dispatched.length = 0
   runner = await import('./crawlRunner')
   return runner
 }
@@ -138,5 +145,40 @@ describe('the crawl runner', () => {
     store.setGetter('getBackendPreference', 'local')
     await vi.waitFor(() => expect(lane.length).toBeGreaterThan(0))
     expect(collectionsCrawlProgress.state).toBe('running')
+  })
+
+  describe('its PeerTube path', () => {
+    const UUID = '059ca8df-3049-44a3-93a9-d603327f2e74'
+    const peerTubeShare = { _id: `lemmy:peertube@lemmy.world|${UUID}@tilvids.com`, sourceId: 'lemmy:peertube@lemmy.world', videoId: UUID, platform: 'peertube', host: 'tilvids.com', title: '', author: '', votes: 1, sharedAt: null, seenAt: 0 }
+
+    beforeEach(() => {
+      fakeLayer.getVideoSummary.mockReset()
+      fakeLayer.getVideoSummary.mockImplementation(async ref => ({ type: 'video', platform: 'peertube', host: ref.host, videoId: ref.videoId, title: 'T', author: 'C', authorId: `c@${ref.host}`, lengthSeconds: 60, liveNow: false, isUpcoming: false, nsfw: false, thumbnail: '' }))
+    })
+
+    it('fills in a PeerTube video\'s details from the platform layer, off the lane, while PeerTube is on', async () => {
+      const { startCollectionsCrawl } = await freshRunner()
+      store.setGetter('getCollectionShares', [peerTubeShare])
+      store.setGetter('getEnablePeerTube', true)
+
+      await startCollectionsCrawl()
+      await vi.waitFor(() => expect(store.dispatched.some(({ type }) => type === 'putCollectionVideos')).toBe(true))
+
+      expect(fakeLayer.getVideoSummary).toHaveBeenCalledWith({ platform: 'peertube', host: 'tilvids.com', videoId: UUID })
+      expect(store.dispatched.find(({ type }) => type === 'putCollectionVideos').payload).toEqual([expect.objectContaining({ _id: `${UUID}@tilvids.com`, lengthSeconds: 60 })])
+      expect(lane).toHaveLength(0)
+    })
+
+    it('asks nothing while PeerTube is off, and starts once it is switched on', async () => {
+      const { startCollectionsCrawl } = await freshRunner()
+      store.setGetter('getCollectionShares', [peerTubeShare])
+
+      await startCollectionsCrawl()
+      await flushPromises()
+      expect(fakeLayer.getVideoSummary).not.toHaveBeenCalled()
+
+      store.setGetter('getEnablePeerTube', true)
+      await vi.waitFor(() => expect(fakeLayer.getVideoSummary).toHaveBeenCalled())
+    })
   })
 })
