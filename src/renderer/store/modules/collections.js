@@ -23,6 +23,12 @@ const state = {
   /** @type {Record<string, Share>} by `_id` */
   collectionShares: {},
   collectionsReady: false,
+  // The last read of the datastore failed, so what is held says nothing about
+  // what is followed: nothing may be followed or loaded on the strength of it
+  collectionsGrabFailed: false,
+  // Other windows' writes that arrived while the datastore was being read,
+  // applied once the read is in; null while no read is under way
+  collectionsSyncBuffer: null,
   // The bundle being loaded into the datastore, the first time Collections is opened
   collectionsLoading: false,
   collectionsLoadFailed: false,
@@ -43,17 +49,28 @@ const getters = {
 let opening = null
 
 const actions = {
+  /**
+   * Reads what the datastore holds, which replaces what is held. Another
+   * window's writes that arrive during the read are kept aside and applied
+   * after it, so that a read which began before them cannot undo them.
+   *
+   * @param {any} context
+   */
   async grabCollections({ commit }) {
+    commit('startCollectionsGrab')
+
     try {
       const [sources, shares] = await Promise.all([
         DBCollectionHandlers.findSources(),
         DBCollectionHandlers.findShares(),
       ])
 
-      commit('setCollectionSources', sources)
-      commit('setCollectionShares', shares)
+      commit('finishCollectionsGrab', { sources, shares })
+      commit('setCollectionsGrabFailed', false)
     } catch (error) {
       console.error(error)
+      commit('finishCollectionsGrab', null)
+      commit('setCollectionsGrabFailed', true)
     } finally {
       commit('setCollectionsReady', true)
     }
@@ -88,7 +105,9 @@ const actions = {
    * which is the first open of all, or the first after a restore that brought
    * the source without its shares. Loaded means shares are there and the
    * source says which export they came from. Anything that fails is tried
-   * again on the next open; putting shares twice duplicates nothing.
+   * again on the next open; putting shares twice duplicates nothing. After a
+   * failed read of the datastore it is read again first, and nothing more is
+   * done while it still cannot be read.
    *
    * @param {any} context
    * @returns {Promise<void>}
@@ -109,9 +128,23 @@ const actions = {
  * @param {any} context
  */
 async function openCollectionsOnce({ state, commit, dispatch }) {
+  if (state.collectionsGrabFailed) {
+    await dispatch('grabCollections')
+  }
+
+  // What is held may be empty only because it could not be read: following
+  // HackerTube then would overwrite its record, and load the bundle again
+  if (state.collectionsGrabFailed) {
+    commit('setCollectionsLoadFailed', true)
+    return
+  }
+
   let source = state.collectionSources[HACKERTUBE_SOURCE_ID]
 
   try {
+    commit('setCollectionsLoading', true)
+    commit('setCollectionsLoadFailed', false)
+
     if (source == null) {
       source = hackerTubeSource(Date.now())
       await dispatch('followCollectionSource', source)
@@ -122,15 +155,14 @@ async function openCollectionsOnce({ state, commit, dispatch }) {
 
     if (loaded) { return }
 
-    commit('setCollectionsLoading', true)
-    commit('setCollectionsLoadFailed', false)
-
     const bundle = await fetchHackerTubeBundle()
     const seenAt = Date.now()
     const shares = bundle.videos.map(video => hackerTubeShare(video, seenAt)).filter(share => share !== null)
 
     await dispatch('putCollectionShares', shares)
-    await dispatch('followCollectionSource', { ...source, dataGenerated: bundle.generated })
+    // As it is now: another window may have written it while the bundle loaded
+    const current = state.collectionSources[HACKERTUBE_SOURCE_ID] ?? source
+    await dispatch('followCollectionSource', { ...current, dataGenerated: bundle.generated })
   } catch (error) {
     console.error('Collections: could not load the HackerTube bundle', error)
     commit('setCollectionsLoadFailed', true)
@@ -168,16 +200,34 @@ const mutations = {
     state.collectionsLoadFailed = value
   },
 
-  setCollectionSources(state, sources) {
-    state.collectionSources = Object.fromEntries(sources.map(source => [source._id, source]))
+  setCollectionsGrabFailed(state, value) {
+    state.collectionsGrabFailed = value
+  },
+
+  startCollectionsGrab(state) {
+    state.collectionsSyncBuffer ??= []
+  },
+
+  /**
+   * @param {any} state
+   * @param {{ sources: Source[], shares: Share[] } | null} read null when the read failed
+   */
+  finishCollectionsGrab(state, read) {
+    if (read !== null) {
+      state.collectionSources = Object.fromEntries(read.sources.map(source => [source._id, source]))
+      state.collectionShares = withShares({}, read.shares)
+    }
+
+    const buffered = state.collectionsSyncBuffer ?? []
+    state.collectionsSyncBuffer = null
+
+    for (const write of buffered) {
+      mutations.applyCollectionsSync(state, write)
+    }
   },
 
   upsertCollectionSource(state, source) {
     state.collectionSources = { ...state.collectionSources, [source._id]: source }
-  },
-
-  setCollectionShares(state, shares) {
-    state.collectionShares = withShares({}, shares)
   },
 
   putCollectionShares(state, shares) {
@@ -190,6 +240,11 @@ const mutations = {
    * @param {{ event: number, data: any }} payload
    */
   applyCollectionsSync(state, { event, data }) {
+    if (state.collectionsSyncBuffer !== null) {
+      state.collectionsSyncBuffer.push({ event, data })
+      return
+    }
+
     switch (event) {
       case SyncEvents.COLLECTIONS.UPSERT_SOURCE:
         mutations.upsertCollectionSource(state, data)

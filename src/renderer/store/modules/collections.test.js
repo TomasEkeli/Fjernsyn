@@ -31,7 +31,7 @@ const BUNDLE = {
 }
 
 function freshState() {
-  return { collectionSources: {}, collectionShares: {}, collectionsReady: false, collectionsLoading: false, collectionsLoadFailed: false }
+  return { collectionSources: {}, collectionShares: {}, collectionsReady: false, collectionsGrabFailed: false, collectionsSyncBuffer: null, collectionsLoading: false, collectionsLoadFailed: false }
 }
 
 function contextFor(state) {
@@ -65,7 +65,7 @@ describe('the Collections store', () => {
     expect(shareIds(state)).toEqual(['hackertube|aaaaaaaaaaa'])
   })
 
-  it('is ready even when the datastore cannot be read, with nothing in it', async () => {
+  it('is ready when the datastore cannot be read, and says the read failed', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     DBCollectionHandlers.findShares.mockRejectedValueOnce(new Error('locked'))
     const state = freshState()
@@ -73,7 +73,67 @@ describe('the Collections store', () => {
     await collections.actions.grabCollections(contextFor(state))
 
     expect(state.collectionsReady).toBe(true)
+    expect(state.collectionsGrabFailed).toBe(true)
     expect(shareIds(state)).toEqual([])
+  })
+
+  it('does not follow HackerTube or load the bundle over a datastore it could not read', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    // The read at startup, and the read again on open
+    DBCollectionHandlers.findShares.mockRejectedValueOnce(new Error('locked')).mockRejectedValueOnce(new Error('locked'))
+    const state = freshState()
+    const context = contextFor(state)
+    await collections.actions.grabCollections(context)
+
+    await collections.actions.openCollections(context)
+
+    expect(DBCollectionHandlers.upsertSource).not.toHaveBeenCalled()
+    expect(DBCollectionHandlers.putShares).not.toHaveBeenCalled()
+    expect(fetchHackerTubeBundle).not.toHaveBeenCalled()
+    expect(state.collectionsLoadFailed).toBe(true)
+    expect(state.collectionsLoading).toBe(false)
+  })
+
+  it('reads the datastore again on open after a failed read, and goes no further when HackerTube is loaded', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    DBCollectionHandlers.findShares.mockRejectedValueOnce(new Error('locked'))
+    const state = freshState()
+    const context = contextFor(state)
+    await collections.actions.grabCollections(context)
+
+    DBCollectionHandlers.findSources.mockResolvedValueOnce([{ _id: 'hackertube', kind: 'hackertube', followedAt: 1, dataGenerated: '2026-10-31' }])
+    DBCollectionHandlers.findShares.mockResolvedValueOnce([{ _id: 'hackertube|aaaaaaaaaaa', sourceId: 'hackertube', videoId: 'aaaaaaaaaaa' }])
+    await collections.actions.openCollections(context)
+
+    expect(state.collectionsGrabFailed).toBe(false)
+    expect(state.collectionsLoadFailed).toBe(false)
+    expect(DBCollectionHandlers.upsertSource).not.toHaveBeenCalled()
+    expect(fetchHackerTubeBundle).not.toHaveBeenCalled()
+  })
+
+  it('keeps another window\'s writes that arrive while the datastore is being read', async () => {
+    const state = freshState()
+    DBCollectionHandlers.findSources.mockResolvedValueOnce([{ _id: 'x', kind: 'lemmy', name: 'Old' }])
+    DBCollectionHandlers.findShares.mockImplementationOnce(async () => {
+      collections.mutations.applyCollectionsSync(state, { event: SyncEvents.COLLECTIONS.UPSERT_SOURCE, data: { _id: 'x', kind: 'lemmy', name: 'New' } })
+      collections.mutations.applyCollectionsSync(state, { event: SyncEvents.COLLECTIONS.PUT_SHARES, data: [{ _id: 'x|aaaaaaaaaaa', sourceId: 'x', videoId: 'aaaaaaaaaaa', votes: 7 }] })
+      return [{ _id: 'x|aaaaaaaaaaa', sourceId: 'x', videoId: 'aaaaaaaaaaa', votes: 1 }, { _id: 'x|bbbbbbbbbbb', sourceId: 'x', videoId: 'bbbbbbbbbbb', votes: 2 }]
+    })
+
+    await collections.actions.grabCollections(contextFor(state))
+
+    expect(state.collectionSources.x.name).toBe('New')
+    expect(shareIds(state)).toEqual(['x|aaaaaaaaaaa', 'x|bbbbbbbbbbb'])
+    expect(state.collectionShares['x|aaaaaaaaaaa'].votes).toBe(7)
+    expect(state.collectionsSyncBuffer).toBeNull()
+  })
+
+  it('applies another window\'s writes at once when no read is under way', () => {
+    const state = freshState()
+
+    collections.mutations.applyCollectionsSync(state, { event: SyncEvents.COLLECTIONS.UPSERT_SOURCE, data: { _id: 'x', kind: 'lemmy' } })
+
+    expect(state.collectionSources.x.kind).toBe('lemmy')
   })
 
   describe('opening Collections the first time', () => {
@@ -91,6 +151,31 @@ describe('the Collections store', () => {
       expect(state.collectionSources.hackertube).toMatchObject({ kind: 'hackertube', followedAt: NOW, dataGenerated: '2026-10-31' })
       // Followed first, then marked loaded once the shares are written
       expect(DBCollectionHandlers.upsertSource.mock.calls.map(([source]) => source.dataGenerated)).toEqual([null, '2026-10-31'])
+    })
+
+    it('shows the loader from the start of the first open, the follow included', async () => {
+      const state = freshState()
+      const loadingAtFollow = []
+      const noteLoading = async () => { loadingAtFollow.push(state.collectionsLoading) }
+      DBCollectionHandlers.upsertSource.mockImplementationOnce(noteLoading).mockImplementationOnce(noteLoading)
+
+      await collections.actions.openCollections(contextFor(state))
+
+      expect(loadingAtFollow).toEqual([true, true])
+      expect(state.collectionsLoading).toBe(false)
+    })
+
+    it('marks loaded the source as it is when the load ends, not as it was when it began', async () => {
+      const state = freshState()
+      fetchHackerTubeBundle.mockImplementationOnce(async () => {
+        collections.mutations.upsertCollectionSource(state, { ...state.collectionSources.hackertube, name: 'Renamed elsewhere' })
+        return BUNDLE
+      })
+
+      await collections.actions.openCollections(contextFor(state))
+
+      const [last] = DBCollectionHandlers.upsertSource.mock.calls.at(-1)
+      expect(last).toMatchObject({ name: 'Renamed elsewhere', dataGenerated: '2026-10-31' })
     })
 
     it('does not load it again on a later open, or a later start', async () => {
