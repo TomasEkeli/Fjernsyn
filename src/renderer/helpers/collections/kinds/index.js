@@ -32,9 +32,9 @@ import { hackerTubeKind } from './hackertube.js'
 /**
  * @typedef {object} SourceKind
  * @property {string} kind the `kind` on a source's record
- * @property {(url: string, now: number) => import('../hackertube.js').Source | null} recognise
- * @property {(source: import('../hackertube.js').Source, deps: { fetch: typeof fetch }) => Promise<SourceFetch>} fetch
- * @property {(items: any[], source: import('../hackertube.js').Source, seenAt: number) => import('../hackertube.js').Share[]} toShares
+ * @property {(url: string, now: number) => import('../shares.js').Source | null} recognise
+ * @property {(source: import('../shares.js').Source, deps: { fetch: typeof fetch }) => Promise<SourceFetch>} fetch
+ * @property {(items: any[], source: import('../shares.js').Source, seenAt: number) => import('../shares.js').Share[]} toShares
  */
 
 /**
@@ -57,7 +57,7 @@ export const SOURCE_KINDS_BY_KIND = Object.freeze(Object.fromEntries(SOURCE_KIND
  *
  * @param {string} url
  * @param {number} now when it is followed
- * @returns {import('../hackertube.js').Source | null}
+ * @returns {import('../shares.js').Source | null}
  */
 export function recogniseSource(url, now) {
   for (const kind of SOURCE_KINDS) {

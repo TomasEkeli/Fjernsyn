@@ -25,7 +25,7 @@ import { sharesToPut } from '../../helpers/collections/shares'
  * failed.
  */
 
-/** @import { Share, Source } from '../../helpers/collections/hackertube' */
+/** @import { Share, Source } from '../../helpers/collections/shares' */
 /** @import { VideoDetails } from '../../helpers/collections/details' */
 
 const state = {

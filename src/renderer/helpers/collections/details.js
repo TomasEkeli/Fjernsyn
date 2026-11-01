@@ -264,7 +264,7 @@ export function detailsFor(details, key) {
  * first, so that the top of the wall fills in first. PeerTube videos are not
  * among them: their details come through the platform layer, not YouTube.
  *
- * @param {import('./hackertube').Share[]} shares
+ * @param {import('./shares').Share[]} shares
  * @param {Record<string, VideoDetails>} details by the video's ref as one string
  * @param {number} now
  * @returns {string[]}
@@ -292,7 +292,7 @@ export function missingDetails(shares, details, now) {
  * How far the crawl has got: of the YouTube videos the shares name, how many
  * are not to be asked about. Cheap, for a count shown as each answer comes in.
  *
- * @param {import('./hackertube').Share[]} shares
+ * @param {import('./shares').Share[]} shares
  * @param {Record<string, VideoDetails>} details by the video's ref as one string
  * @param {number} now
  * @returns {{ done: number, total: number }}

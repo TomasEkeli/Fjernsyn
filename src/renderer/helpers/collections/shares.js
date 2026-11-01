@@ -1,13 +1,48 @@
 /**
- * Shares, and the wall made of them.
+ * Sources and shares, the shapes every source kind makes, and the wall made
+ * of them.
  *
- * A share is one occurrence of a video in a source (see `hackertube.js` for
- * its shape). A video shared by three sources has three shares and is one
+ * A share is one occurrence of a video in a source (`Share` below). A video shared by three sources has three shares and is one
  * card on a wall: shares are keyed by source and video ref, and the wall
  * groups them by the video ref alone.
  *
  * Framework-free and import-free, so that the build script can run it in
  * Node as it is.
+ */
+
+/**
+ * @typedef {object} Share one occurrence of a video in a source
+ * @property {string} _id the source id and the video's ref, see `shareId`
+ * @property {string} sourceId
+ * @property {string} videoId a YouTube video id, or a PeerTube video's uuid
+ * @property {'peertube'} [platform] PeerTube only, as on every stored video
+ * @property {string} [host] PeerTube only: the video's origin
+ * @property {string} title what the source calls it, until the video's own details are known
+ * @property {string} author the channel name the source gives, likewise
+ * @property {number | null} votes the source's votes for it; null where the source has none
+ * @property {string | null} why the source's reason for it
+ * @property {number | null} sharedAt when it was shared, in ms
+ * @property {string | null} discussionUrl where the source discusses it
+ * @property {string[]} [categories] HackerTube's category ids
+ * @property {number} seenAt when the source was first seen to carry it, or
+ *   last seen to change it, in ms (see `sharesToPut`)
+ */
+
+/**
+ * @typedef {object} Source one followed place that shares videos
+ * @property {string} _id
+ * @property {string} kind
+ * @property {string} url
+ * @property {string} name
+ * @property {number} followedAt
+ * @property {string | null} [dataGenerated] HackerTube only: the `generated`
+ *   of the data loaded into this installation's shares, null before any is
+ * @property {import('./hackertube.js').HackerTubeTaxonomy} [taxonomy] HackerTube only: the taxonomy of
+ *   that export, its categories by area
+ * @property {number | null} [checkedAt] when a refresh last asked it, in ms,
+ *   whether or not it answered; absent before the first refresh
+ * @property {number | null} [failedAt] when it last failed to answer a
+ *   refresh, in ms, while that is its last refresh; null once one works
  */
 
 /**
@@ -63,12 +98,12 @@ function sameValue(a, b) {
  * on every fetch: a share is put with the time it was first seen, or last
  * seen changed. Given twice, the last of them counts.
  *
- * @param {Record<string, import('./hackertube').Share>} kept the shares kept, by `_id`
- * @param {import('./hackertube').Share[]} shares the shares the source gave
- * @returns {import('./hackertube').Share[]}
+ * @param {Record<string, Share>} kept the shares kept, by `_id`
+ * @param {Share[]} shares the shares the source gave
+ * @returns {Share[]}
  */
 export function sharesToPut(kept, shares) {
-  /** @type {Map<string, import('./hackertube').Share>} */
+  /** @type {Map<string, Share>} */
   const given = new Map()
 
   for (const share of shares) {
@@ -156,7 +191,7 @@ function mostFirst(a, b) {
  * its own title, its channel, duration, views and date. A video YouTube said
  * is unavailable is left off.
  *
- * @param {import('./hackertube').Share[]} shares
+ * @param {Share[]} shares
  * @param {Record<string, any>} [details] the details kept, by the video's ref
  *   as one string (`shareVideoKey`)
  * @returns {CollectionVideo[]}

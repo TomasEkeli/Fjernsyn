@@ -124,7 +124,7 @@ export async function downloadHackerTubeExport(fetchFn, generated) {
  *
  * @param {string} url
  * @param {number} now
- * @returns {import('../hackertube.js').Source | null}
+ * @returns {import('../shares.js').Source | null}
  */
 function recognise(url, now) {
   const text = url.trim()
@@ -148,7 +148,7 @@ function recognise(url, now) {
  * taxonomy to keep on the source once they are in; nothing when the export
  * is the one loaded, which costs one small request.
  *
- * @param {import('../hackertube.js').Source} source
+ * @param {import('../shares.js').Source} source
  * @param {{ fetch: typeof fetch }} deps
  * @returns {Promise<import('./index.js').SourceFetch>}
  */

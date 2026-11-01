@@ -15,6 +15,8 @@
 
 import { shareId } from './shares.js'
 
+/** @import { Share, Source } from './shares.js' */
+
 export const HACKERTUBE_SOURCE_ID = 'hackertube'
 export const HACKERTUBE_URL = 'https://hackertube.org'
 
@@ -49,23 +51,6 @@ const YOUTUBE_VIDEO_ID = /^[\w-]{11}$/
  * @property {string} generated the export's date, as HackerTube gives it (`2026-10-31`)
  * @property {HackerTubeTaxonomy} taxonomy
  * @property {HackerTubeVideo[]} videos
- */
-
-/**
- * @typedef {object} Share one occurrence of a video in a source
- * @property {string} _id the source id and the video's ref, see `shareId`
- * @property {string} sourceId
- * @property {string} videoId a YouTube video id, or a PeerTube video's uuid
- * @property {'peertube'} [platform] PeerTube only, as on every stored video
- * @property {string} [host] PeerTube only: the video's origin
- * @property {string} title what the source calls it, until the video's own details are known
- * @property {string} author the channel name the source gives, likewise
- * @property {number | null} votes the source's votes for it; null where the source has none
- * @property {string | null} why the source's reason for it
- * @property {number | null} sharedAt when it was shared, in ms
- * @property {string | null} discussionUrl where the source discusses it
- * @property {string[]} [categories] HackerTube's category ids
- * @property {number} seenAt when the source was last seen to carry it, in ms
  */
 
 /**
@@ -227,23 +212,6 @@ export function hackerTubeShare(row, seenAt) {
     seenAt,
   }
 }
-
-/**
- * @typedef {object} Source one followed place that shares videos
- * @property {string} _id
- * @property {string} kind
- * @property {string} url
- * @property {string} name
- * @property {number} followedAt
- * @property {string | null} [dataGenerated] HackerTube only: the `generated`
- *   of the data loaded into this installation's shares, null before any is
- * @property {HackerTubeTaxonomy} [taxonomy] HackerTube only: the taxonomy of
- *   that export, its categories by area
- * @property {number | null} [checkedAt] when a refresh last asked it, in ms,
- *   whether or not it answered; absent before the first refresh
- * @property {number | null} [failedAt] when it last failed to answer a
- *   refresh, in ms, while that is its last refresh; null once one works
- */
 
 /**
  * HackerTube as a followed source, before any of its data is loaded.

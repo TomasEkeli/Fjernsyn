@@ -63,13 +63,13 @@ export function lastRefreshOf(sources) {
 
 /**
  * @typedef {object} RefreshDependencies
- * @property {import('./hackertube').Source[]} sources the sources to ask
+ * @property {import('./shares.js').Source[]} sources the sources to ask
  * @property {Record<string, import('./kinds/index.js').SourceKind>} kinds by kind
  * @property {typeof fetch} fetch what every request goes through
  * @property {() => number} now
- * @property {() => Record<string, import('./hackertube').Share>} keptShares the shares kept now, by `_id`
+ * @property {() => Record<string, import('./shares.js').Share>} keptShares the shares kept now, by `_id`
  * @property {(sourceId: string) => boolean} isFollowed whether the source is still followed
- * @property {(shares: import('./hackertube').Share[]) => Promise<void>} putShares
+ * @property {(shares: import('./shares.js').Share[]) => Promise<void>} putShares
  * @property {(sourceId: string, fields: object) => Promise<void>} updateSource
  *   lays the fields given over the source's record as it is now
  * @property {(progress: { done: number, total: number }) => void} [onProgress]
@@ -115,7 +115,7 @@ export async function refreshCollectionSources(deps) {
 
 /**
  * @param {RefreshDependencies} deps
- * @param {import('./hackertube').Source} source
+ * @param {import('./shares.js').Source} source
  * @returns {Promise<number>} how many shares were put
  */
 async function refreshSource(deps, source) {
