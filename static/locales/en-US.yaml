@@ -344,6 +344,23 @@ Collections:
     Shared: Shared on community
     Views: Views
     Upvotes: Upvotes
+  # The quiet badge at the top left of a card's thumbnail on Collections and
+  # on a source's page, and what hovering it shows
+  Vote Badge:
+    # The badge itself, and each source's votes on hovering it. {arrow} is
+    # the Arrow below, which screen readers skip; {votes} is a number, as 35
+    # or 22.5
+    Votes: '{arrow} {votes}'
+    # The upvote arrow in Votes
+    Arrow: ▲
+    # For screen readers, in place of the badge's arrow and number
+    Votes Label: '{votes} upvotes'
+    # On a source's page: when the source shared the video. {date} is a day,
+    # or for HackerTube a year
+    Shared: Shared {date}
+    # On a source's page: the link to the post or comment that shared the
+    # video, which opens in the browser
+    Discussion: Open the discussion
 # The list of sources Collections follows (HackerTube, Lemmy communities), where
 # one is followed by pasting its address, and each source's own page
 Sources:

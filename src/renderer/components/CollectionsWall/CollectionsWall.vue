@@ -111,10 +111,11 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
+import { computed, h, onBeforeUnmount, onMounted, provide, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import AiChip from '../AiChip/AiChip.vue'
+import CollectionsVoteBadge from '../CollectionsVoteBadge/CollectionsVoteBadge.vue'
 import FtAutoLoadNextPageWrapper from '../FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../FtButton/FtButton.vue'
 import FtElementList from '../FtElementList/FtElementList.vue'
@@ -132,6 +133,7 @@ import { collectionSortOf, wallVideos } from '../../helpers/collections/shares'
 import { hiddenSourcesWith, shownSourceIds, sourcesByName } from '../../helpers/collections/sourceChips'
 import { aiIsShown, withAiPreference } from '../../helpers/aiShown'
 import { setWatchedShown, watchedIsShown, withWatchedPreference } from '../../helpers/watchedShown'
+import { THUMBNAIL_BADGE } from '../../helpers/thumbnailBadge'
 import { KeyboardShortcuts } from '../../../constants'
 
 /**
@@ -170,6 +172,9 @@ import { KeyboardShortcuts } from '../../../constants'
  * for the order is which sources are shown: the chips' on Collections, the
  * source's own on its page (`collectionValues` in helpers/collections/
  * shares.js). The `header` slot comes above the row.
+ *
+ * Each card carries the vote badge, the votes that order the wall, quietly
+ * at the top left of its thumbnail.
  */
 
 const props = defineProps({
@@ -186,6 +191,21 @@ const props = defineProps({
 })
 
 const { t } = useI18n()
+
+/**
+ * The vote badge on every card of this wall, told whose page it is on, which
+ * decides what hovering it shows (components/CollectionsVoteBadge). Cards
+ * draw what a wall provides (helpers/thumbnailBadge.js), so that nothing
+ * between here and them has to hand it down, and no other wall has one.
+ *
+ * @param {{ video: object }} badgeProps
+ */
+function VoteBadge(badgeProps) {
+  return h(CollectionsVoteBadge, { video: badgeProps.video, sourceId: props.sourceId })
+}
+VoteBadge.props = ['video']
+
+provide(THUMBNAIL_BADGE, VoteBadge)
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const ready = computed(() => store.getters.getCollectionsReady)

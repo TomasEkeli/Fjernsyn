@@ -9,6 +9,8 @@ import { createTestRouter } from '../../testing/router'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
 import CollectionSource from './CollectionSource.vue'
+import CollectionsVoteBadge from '../../components/CollectionsVoteBadge/CollectionsVoteBadge.vue'
+import { ThumbnailBadgeProbe } from '../../testing/thumbnailBadgeProbe'
 
 vi.mock('../../store/index', async () => {
   const { createFakeStore } = await import('../../testing/store')
@@ -28,6 +30,8 @@ vi.mock('../../store/index', async () => {
         getCollectionsRefreshFailures: [],
         getCollectionsSourcesHidden: [],
         getCollectionsSort: 'votes',
+        getCollectionSource: () => undefined,
+        getCollectionShare: () => undefined,
       },
     }),
   }
@@ -60,8 +64,9 @@ function share(source, videoId, votes) {
  * Opens a source's page as the app would host it, in a router view
  *
  * @param {string} sourceId
+ * @param {import('vue').Component | true} [list] what stands in for the wall's list
  */
-async function openSourcePage(sourceId) {
+async function openSourcePage(sourceId, list = true) {
   const router = createTestRouter([
     { path: '/sources/:sourceId', name: 'collectionSource', component: CollectionSource },
     { path: '/sources', name: 'sources' },
@@ -71,7 +76,7 @@ async function openSourcePage(sourceId) {
   const wrapper = mount({ render: () => h(RouterView) }, {
     global: {
       plugins: [createTestI18n(), router, store],
-      stubs: { FtElementList: true },
+      stubs: { FtElementList: list },
     },
   })
   await flushPromises()
@@ -100,6 +105,30 @@ describe('a source\'s page', () => {
       share(MEALTIME, 'bbbbbbbbbbb', 3),
       share(HACKERTUBE, 'ccccccccccc', 5),
     ])
+  })
+
+  afterEach(() => {
+    store.setGetter('getCollectionSource', () => undefined)
+    store.setGetter('getCollectionShare', () => undefined)
+  })
+
+  it('gives every card the vote badge of this source\'s share alone: its votes, and on hover its why and its discussion', async () => {
+    const shares = [
+      { ...share(MEALTIME, 'aaaaaaaaaaa', 100), why: 'Worth a lunch', discussionUrl: 'https://lemmy.cafe/post/1' },
+      share(HACKERTUBE, 'aaaaaaaaaaa', 20),
+    ]
+    store.setGetter('getCollectionShares', shares)
+    store.setGetter('getCollectionSource', id => [HACKERTUBE, MEALTIME].find(source => source._id === id))
+    store.setGetter('getCollectionShare', id => shares.find(each => each._id === id))
+
+    const { wrapper } = await openSourcePage(MEALTIME._id, ThumbnailBadgeProbe)
+
+    expect(wrapper.findAllComponents(CollectionsVoteBadge).map(badge => badge.props('sourceId'))).toEqual([MEALTIME._id])
+    expect(wrapper.find('button.votes').text()).toBe('▲ 100')
+    await wrapper.find('.collectionsVoteBadge').trigger('pointerenter')
+    expect(wrapper.find('.why').text()).toBe('Worth a lunch')
+    expect(wrapper.find('a.discussion').attributes('href')).toBe('https://lemmy.cafe/post/1')
+    expect(wrapper.find('.sources').exists()).toBe(false)
   })
 
   it('is the wall of that source\'s videos alone, in the order of its own votes', async () => {
