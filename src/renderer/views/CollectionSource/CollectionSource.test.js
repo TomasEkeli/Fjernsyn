@@ -31,6 +31,7 @@ vi.mock('../../store/index', async () => {
         getCollectionsRefreshFailures: [],
         getCollectionsSourcesHidden: [],
         getCollectionsSort: 'votes',
+        getCollectionsSortDescending: true,
         getCollectionSource: () => undefined,
         getCollectionShare: () => undefined,
         getCollectionSourceData: () => undefined,
@@ -105,6 +106,7 @@ describe('a source\'s page', () => {
     store.setGetter('getCollectionSources', [HACKERTUBE, MEALTIME])
     store.setGetter('getCollectionsSourcesHidden', [])
     store.setGetter('getCollectionsSort', 'votes')
+    store.setGetter('getCollectionsSortDescending', true)
     store.setGetter('getCollectionShares', [
       share(HACKERTUBE, 'aaaaaaaaaaa', 20),
       share(MEALTIME, 'aaaaaaaaaaa', 100),

@@ -65,6 +65,18 @@
               {{ option.label }}
             </option>
           </select>
+          <button
+            type="button"
+            class="sortDirection"
+            :aria-label="sortDirectionLabel"
+            :title="sortDirectionLabel"
+            @click="descending = !descending"
+          >
+            <FontAwesomeIcon
+              :icon="['fas', descending ? 'arrow-down' : 'arrow-up']"
+              fixed-width
+            />
+          </button>
         </div>
         <div
           v-if="categoryShown"
@@ -152,6 +164,7 @@
 <script setup>
 import { computed, h, onBeforeUnmount, onMounted, provide, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 import AiChip from '../AiChip/AiChip.vue'
 import CollectionsVoteBadge from '../CollectionsVoteBadge/CollectionsVoteBadge.vue'
@@ -209,7 +222,8 @@ import { KeyboardShortcuts } from '../../../constants'
  * wall is, or what is being done to it, the refresh or the crawl, with how
  * far along it is. At the far end the Watched and AI pills, the same
  * settings as on every wall that has them, and the order the wall is in:
- * upvotes, shared on community, video published or views. Which shares count
+ * upvotes, shared on community, video published or views, with a button
+ * beside it that reverses it. Which shares count
  * for the order is which sources are shown: the chips' on Collections, the
  * source's own on its page (`collectionValues` in helpers/collections/
  * shares.js). Last, on HackerTube's own page only, one of HackerTube's
@@ -341,6 +355,30 @@ const sort = computed({
 const sortSelectId = useId()
 
 /**
+ * Whether the wall's order is descending, the most or the newest first, or
+ * reversed; a setting as the order is. Anything but false is descending
+ *
+ * @type {import('vue').WritableComputedRef<boolean>}
+ */
+const descending = computed({
+  get: () => store.getters.getCollectionsSortDescending !== false,
+  set: (value) => {
+    store.dispatch('updateCollectionsSortDescending', value).catch((error) => {
+      console.error('Collections: could not keep the direction of the wall\'s order', error)
+    })
+  },
+})
+
+/**
+ * The direction button's name, which says the direction the wall is in
+ *
+ * @type {import('vue').ComputedRef<string>}
+ */
+const sortDirectionLabel = computed(() => {
+  return descending.value ? t('Collections.Sort Descending') : t('Collections.Sort Ascending')
+})
+
+/**
  * The orders on offer, in the order the spec names them. Spelled out, as a
  * message's key may not be built
  *
@@ -362,6 +400,7 @@ const videos = computed(() => {
   return wallVideos(store.getters.getCollectionShares, store.getters.getCollectionVideos, {
     shown: shownSources.value,
     sort: sort.value,
+    descending: descending.value,
     // As every PeerTube wall: what its uploader marked NSFW only when asked for
     showNsfw: store.getters.getPeerTubeShowNsfw,
   })

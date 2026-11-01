@@ -450,6 +450,46 @@ describe('the wall\'s sorts', () => {
   it('takes a sort it does not know as upvotes', () => {
     expect(wallVideos(shares, kept, { sort: 'nonsense' }).map(video => video.videoId)).toEqual(order('votes'))
   })
+
+  describe('ascending', () => {
+    const ascending = sort => wallVideos(shares, kept, { sort, descending: false }).map(video => video.videoId)
+
+    it('is descending unless asked otherwise', () => {
+      for (const sort of COLLECTION_SORTS) {
+        expect(wallVideos(shares, kept, { sort, descending: true }).map(video => video.videoId)).toEqual(order(sort))
+      }
+    })
+
+    it('by upvotes: fewest first, a video without votes still last', () => {
+      expect(ascending('votes')).toEqual(['bbbbbbbbbbb', 'ddddddddddd', 'aaaaaaaaaaa', 'ccccccccccc'])
+    })
+
+    it('by shared on community: the earliest first, a video with no date still last', () => {
+      expect(ascending('shared')).toEqual(['aaaaaaaaaaa', 'ccccccccccc', 'bbbbbbbbbbb', 'ddddddddddd'])
+    })
+
+    it('by video published: oldest first, those without a date still last, in the same order', () => {
+      expect(ascending('published')).toEqual(['aaaaaaaaaaa', 'ccccccccccc', 'ddddddddddd', 'bbbbbbbbbbb'])
+    })
+
+    it('by views: fewest first, a video without details still last', () => {
+      expect(ascending('views')).toEqual(['ccccccccccc', 'aaaaaaaaaaa', 'bbbbbbbbbbb', 'ddddddddddd'])
+    })
+
+    it('breaks a tie as descending does: by votes, then the latest share, then the video id', () => {
+      const tied = [
+        share('a', 'bbbbbbbbbbb', { votes: 1, sharedAt: Date.UTC(2020, 0, 1) }),
+        share('a', 'aaaaaaaaaaa', { votes: 1, sharedAt: Date.UTC(2020, 0, 1) }),
+        share('a', 'ccccccccccc', { votes: 1, sharedAt: Date.UTC(2021, 0, 1) }),
+        share('a', 'ddddddddddd', { votes: 2, sharedAt: Date.UTC(2020, 0, 1) }),
+      ]
+
+      expect(wallVideos(tied, {}, { sort: 'views', descending: false }).map(video => video.videoId))
+        .toEqual(['ddddddddddd', 'ccccccccccc', 'aaaaaaaaaaa', 'bbbbbbbbbbb'])
+      expect(wallVideos(tied, {}, { sort: 'shared', descending: false }).map(video => video.videoId))
+        .toEqual(['ddddddddddd', 'aaaaaaaaaaa', 'bbbbbbbbbbb', 'ccccccccccc'])
+    })
+  })
 })
 
 describe('a stored sort', () => {

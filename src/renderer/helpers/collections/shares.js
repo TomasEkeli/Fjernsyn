@@ -273,14 +273,15 @@ export function collectionSortOf(value) {
 /**
  * @param {number | null | undefined} a
  * @param {number | null | undefined} b
- * @returns {number} most first, nothing last
+ * @param {boolean} [descending] most first (the default), else fewest first
+ * @returns {number} in that order, nothing last either way
  */
-function mostFirst(a, b) {
+function mostFirst(a, b, descending = true) {
   const aKnown = isNumber(a)
   const bKnown = isNumber(b)
 
   if (!aKnown || !bKnown) { return aKnown === bKnown ? 0 : aKnown ? -1 : 1 }
-  return b - a
+  return descending ? b - a : a - b
 }
 
 /**
@@ -298,10 +299,11 @@ const SORT_VALUES = {
 /**
  * The wall: one video per video ref among the shares of the sources shown,
  * with the values those shares give it (`collectionValues`), in the order
- * asked for, the most or the newest first. A video missing the value sorted
- * on (details not yet known, no shown source with votes) comes after every
- * one that has it. Ties go to the votes, then to the latest shared, then to
- * the video id, so that the order is the same every time.
+ * asked for, the most or the newest first, or, not descending, the fewest or
+ * the oldest first. A video missing the value sorted on (details not yet
+ * known, no shown source with votes) comes after every one that has it,
+ * either way. Ties go to the votes, then to the latest shared, then to the
+ * video id, the same either way, so that the order is the same every time.
  *
  * A video none of whose shares is of a source shown is left off; one shown
  * source sharing it is enough.
@@ -314,13 +316,14 @@ const SORT_VALUES = {
  * @param {Share[]} shares
  * @param {Record<string, any>} [details] the details kept, by the video's ref
  *   as one string (`shareVideoKey`)
- * @param {{ shown?: ReadonlySet<string> | null, sort?: CollectionSort | string, showNsfw?: boolean }} [options]
+ * @param {{ shown?: ReadonlySet<string> | null, sort?: CollectionSort | string, descending?: boolean, showNsfw?: boolean }} [options]
  *   the ids of the sources shown, null (the default) for every one of them;
- *   the order, upvotes by default; whether a video marked NSFW is shown, as
+ *   the order, upvotes by default, and whether it is descending, as by
+ *   default; whether a video marked NSFW is shown, as
  *   the `peertubeShowNsfw` setting says, yes by default
  * @returns {CollectionVideo[]}
  */
-export function wallVideos(shares, details = {}, { shown = null, sort = DEFAULT_COLLECTION_SORT, showNsfw = true } = {}) {
+export function wallVideos(shares, details = {}, { shown = null, sort = DEFAULT_COLLECTION_SORT, descending = true, showNsfw = true } = {}) {
   /** @type {Map<string, Share[]>} */
   const byVideo = new Map()
 
@@ -383,7 +386,7 @@ export function wallVideos(shares, details = {}, { shown = null, sort = DEFAULT_
   const valueOf = SORT_VALUES[order]
 
   return videos.sort((a, b) => {
-    return mostFirst(valueOf(a), valueOf(b)) ||
+    return mostFirst(valueOf(a), valueOf(b), descending) ||
       (order === 'votes' ? 0 : mostFirst(a.collection.votes, b.collection.votes)) ||
       mostFirst(a.collection.sharedAt, b.collection.sharedAt) ||
       (a.videoId < b.videoId ? -1 : a.videoId > b.videoId ? 1 : 0)

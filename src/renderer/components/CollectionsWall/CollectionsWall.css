@@ -38,3 +38,24 @@
   font-size: 0.85rem;
   margin-block: 0;
 }
+
+/* Beside the sort select, the pill's height, and reversing its order */
+.sortDirection {
+  align-items: center;
+  background-color: var(--card-bg-color);
+  border: 1px solid var(--tertiary-text-color);
+  border-radius: 999px;
+  color: var(--primary-text-color);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  margin-inline-start: -4px;
+  padding-block: 6px;
+  padding-inline: 8px;
+}
+
+.sortDirection:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}

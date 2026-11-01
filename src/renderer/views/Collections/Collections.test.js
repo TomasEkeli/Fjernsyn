@@ -30,6 +30,7 @@ vi.mock('../../store/index', async () => {
         getCollectionsRefreshFailures: [],
         getCollectionsSourcesHidden: [],
         getCollectionsSort: 'votes',
+        getCollectionsSortDescending: true,
         getHideWatchedSubs: false,
         getHistoryCacheById: {},
         getHideAiVideos: false,
@@ -108,6 +109,7 @@ describe('Collections', () => {
     store.setGetter('getCollectionsRefreshFailures', [])
     store.setGetter('getCollectionsSourcesHidden', [])
     store.setGetter('getCollectionsSort', 'votes')
+    store.setGetter('getCollectionsSortDescending', true)
     store.setGetter('getHideWatchedSubs', false)
     store.setGetter('getHistoryCacheById', {})
     store.setGetter('getHideAiVideos', false)
@@ -615,6 +617,25 @@ describe('Collections', () => {
 
       // The latest shown share first: Z's (4), HackerTube's (3), a's (2)
       expect(order(wrapper)).toEqual(['video000003', 'video000001', 'video000002'])
+    })
+
+    it('reverses the order with the button beside the sort, which says the direction, and keeps it in the setting', async () => {
+      const wrapper = mountCollections()
+      await flushPromises()
+      store.dispatched.length = 0
+
+      const button = wrapper.find('.picker button.sortDirection')
+      expect(button.attributes('aria-label')).toBe('Descending, the most or newest first. Click to reverse')
+
+      await button.trigger('click')
+      expect(store.dispatched).toEqual([{ type: 'updateCollectionsSortDescending', payload: false }])
+
+      const descending = order(wrapper)
+      store.setGetter('getCollectionsSortDescending', false)
+      await flushPromises()
+
+      expect(order(wrapper)).toEqual([...descending].reverse())
+      expect(wrapper.find('button.sortDirection').attributes('aria-label')).toBe('Ascending, the fewest or oldest first. Click to reverse')
     })
 
     it('orders by video published and views from the details, a video without them last', async () => {

@@ -436,6 +436,9 @@ const state = {
   // The order of the collections walls: 'votes', 'shared', 'published' or
   // 'views' (helpers/collections/shares.js, COLLECTION_SORTS)
   collectionsSort: 'votes',
+  // Whether that order is descending, the most or the newest first, or
+  // reversed; a video without the value sorted on is last either way
+  collectionsSortDescending: true,
   generalAutoLoadMorePaginatedItemsEnabled: false,
   commentAutoLoadEnabled: true,
   hideToTrayOnMinimize: false,
