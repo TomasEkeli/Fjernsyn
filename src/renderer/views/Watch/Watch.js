@@ -147,8 +147,6 @@ export default defineComponent({
       sabrData: null,
       legacyFormats: [],
       captions: [],
-      /** @type {import('youtubei.js').Misc.Format[]} */
-      hlsAudioMetadata: [],
       /** @type {'EQUIRECTANGULAR' | 'EQUIRECTANGULAR_THREED_TOP_BOTTOM' | 'MESH'| null} */
       vrProjection: null,
       autoplayNextRecommendedVideo: false,
@@ -679,7 +677,6 @@ export default defineComponent({
 
         this.videoChapters = chapters
         this.videoChaptersKind = chaptersKind
-        this.hlsAudioMetadata = []
 
         // The apostrophe is intentionally that one (char code 8217), because that is the one YouTube uses
         const BOT_MESSAGE = 'Sign in to confirm you’re not a bot'
@@ -741,15 +738,34 @@ export default defineComponent({
         }
 
         if ((this.isLive || this.isPostLiveDvr) && !this.isUpcoming) {
-          if (result.streaming_data.dash_manifest_url) {
-            this.manifestSrc = result.streaming_data.dash_manifest_url
-            this.manifestMimeType = MANIFEST_TYPE_DASH
-          } else {
-            this.manifestSrc = result.streaming_data.hls_manifest_url
-            this.manifestMimeType = MANIFEST_TYPE_HLS
+          let useRemoteManifest = true
 
-            this.hlsAudioMetadata = result.streaming_data.adaptive_formats
-              .filter((format) => format.mime_type.startsWith('audio/mp4'))
+          if (this.isPostLiveDvr) {
+            // I wasn't able to get SABR working with Post-Live-DVR yet, so for the moment we'll use YouTube's provided DASH manifest instead.
+            // It only contains the last 4 hours of the stream, instead of starting from the beginning but that is better than nothing.
+            if (
+              result.streaming_data.adaptive_formats[0]?.url ||
+              result.streaming_data.adaptive_formats[0]?.signature_cipher ||
+              result.streaming_data.adaptive_formats[0]?.cipher
+            ) {
+              try {
+                this.manifestSrc = await this.createLocalDashManifest(result, true)
+                this.manifestMimeType = MANIFEST_TYPE_DASH
+                useRemoteManifest = false
+              } catch (error) {
+                console.error(`Failed to generate DASH manifest for this Post Live DVR video ${this.videoId}, falling back to using YouTube's provided one...`, error)
+              }
+            }
+          }
+
+          if (useRemoteManifest) {
+            if (result.streaming_data.dash_manifest_url) {
+              this.manifestSrc = result.streaming_data.dash_manifest_url
+              this.manifestMimeType = MANIFEST_TYPE_DASH
+            } else {
+              this.manifestSrc = result.streaming_data.hls_manifest_url
+              this.manifestMimeType = MANIFEST_TYPE_HLS
+            }
           }
 
           this.streamingDataExpiryDate = result.streaming_data.expires
@@ -1070,7 +1086,6 @@ export default defineComponent({
           }
           this.videoChapters = chapters
           this.videoChaptersKind = 'chapters'
-          this.hlsAudioMetadata = []
 
           if (this.isLive || this.isPostLiveDvr) {
             // The live DASH manifest is currently unusable as it returns 403s after 1 minute of playback

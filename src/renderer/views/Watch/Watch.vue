@@ -25,7 +25,6 @@
           :legacy-formats="legacyFormats"
           :start-time="startTimeSeconds"
           :captions="captions"
-          :hls-audio-metadata="hlsAudioMetadata"
           :storyboard-src="videoStoryboardSrc"
           :format="activeFormat"
           :thumbnail="thumbnail"

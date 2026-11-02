@@ -17,7 +17,6 @@ import {
   findMostSimilarAudioBandwidth,
   getSponsorBlockSegments,
   logShakaError,
-  patchLiveHlsMainManifest,
   repairInvidiousManifest,
   translateSponsorBlockCategory
 } from '../../helpers/player/utils'
@@ -93,11 +92,6 @@ export default defineComponent({
       default: null
     },
     captions: {
-      type: Array,
-      default: () => ([])
-    },
-    /** @type {import('vue').PropType<import('youtubei.js').Misc.Format[]>} */
-    hlsAudioMetadata: {
       type: Array,
       default: () => ([])
     },
@@ -312,25 +306,8 @@ export default defineComponent({
       })
     })
 
-    const seekingIsPossible = computed(() => {
-      if (props.manifestMimeType !== 'application/x-mpegurl') {
-        return true
-      }
-
-      const match = props.manifestSrc.match(/\/(?:manifest|playlist)_duration\/(\d+)\//)
-
-      // Post live DVR HLS manifests URLs contain /force_finished/1
-      return props.manifestSrc.includes('/force_finished/1') ||
-        // Check how many seconds we are allowed to seek, 30 is too short, 3600 is an hour which is great
-        (match != null && parseInt(match[1] || '0') > 30)
-    })
-
     /** @type {import('vue').ComputedRef<number>} */
     const defaultPlaybackRate = computed(() => {
-      if (!seekingIsPossible.value) {
-        return 1
-      }
-
       return store.getters.getDefaultPlayback
     })
 
@@ -391,7 +368,7 @@ export default defineComponent({
 
     /** @type {import('vue').ComputedRef<boolean>} */
     const videoPlaybackRateMouseScroll = computed(() => {
-      return store.getters.getVideoPlaybackRateMouseScroll && seekingIsPossible.value
+      return store.getters.getVideoPlaybackRateMouseScroll
     })
 
     /** @type {import('vue').ComputedRef<boolean>} */
@@ -621,6 +598,17 @@ export default defineComponent({
     // #endregion SponsorBlock
 
     // #region player config
+
+    const seekingIsPossible = computed(() => {
+      if (props.manifestMimeType !== 'application/x-mpegurl') {
+        return true
+      }
+
+      const match = props.manifestSrc.match(/\/(?:manifest|playlist)_duration\/(\d+)\//)
+
+      // Check how many seconds we are allowed to seek, 30 is too short, 3600 is an hour which is great
+      return match != null && parseInt(match[1] || '0') > 30
+    })
 
     /**
      * @param {'dash'|'audio'|'legacy'} format
@@ -921,10 +909,6 @@ export default defineComponent({
         removeFromArrayIfExists(uiConfig.overflowMenuButtons, 'chapter')
       }
 
-      if (!seekingIsPossible.value) {
-        removeFromArrayIfExists(uiConfig.overflowMenuButtons, 'playback_rate')
-      }
-
       return uiConfig
     })
 
@@ -1022,13 +1006,13 @@ export default defineComponent({
         //
 
         if (event.ctrlKey || event.metaKey) {
-          if (videoPlaybackRateMouseScroll.value && canSeek()) {
+          if (videoPlaybackRateMouseScroll.value) {
             mouseScrollPlaybackRateHandler(event)
           }
         } else {
           if (videoVolumeMouseScroll.value) {
             mouseScrollVolumeHandler(event)
-          } else if (videoSkipMouseScroll.value && canSeek()) {
+          } else if (videoSkipMouseScroll.value) {
             mouseScrollSkipHandler(event)
           }
         }
@@ -1061,7 +1045,7 @@ export default defineComponent({
           controlsContainer.addEventListener('wheel', handleControlsContainerWheel)
         }
 
-        if (videoPlaybackRateMouseScroll.value && canSeek()) {
+        if (videoPlaybackRateMouseScroll.value) {
           controlsContainer.addEventListener('click', handleControlsContainerClick, true)
         }
       }
@@ -1426,12 +1410,6 @@ export default defineComponent({
             response.data = new TextEncoder().encode(cleaned).buffer
           }
         }
-      } else if (type === RequestType.MANIFEST && context.type === AdvancedRequestType.MASTER_PLAYLIST) {
-        const result = patchLiveHlsMainManifest(response.data, props.hlsAudioMetadata)
-
-        if (result !== response.data) {
-          response.data = result
-        }
       } else if (type === RequestType.MANIFEST && context.type === AdvancedRequestType.MEDIA_PLAYLIST) {
         const url = new URL(response.uri)
 
@@ -1646,24 +1624,32 @@ export default defineComponent({
 
       stats.bitrate = (newTrack.bandwidth / 1000).toFixed(2)
 
-      const isHls = newTrack.audioMimeType === 'video/mp2t'
+      // Combined audio and video HLS streams
+      if (newTrack.videoCodec?.includes(',')) {
+        stats.codecs.audioItag = ''
+        stats.codecs.videoItag = ''
 
-      stats.codecs.audioCodec = newTrack.audioCodec
+        const [audioCodec, videoCodec] = newTrack.videoCodec.split(',')
 
-      stats.codecs.audioItag = isHls
-        ? ''
-        : newTrack.originalAudioId.split('-', 1)[0]
-
-      if (props.format === 'dash') {
-        stats.codecs.videoCodec = newTrack.videoCodec
+        stats.codecs.audioCodec = audioCodec
+        stats.codecs.videoCodec = videoCodec
 
         stats.resolution.frameRate = newTrack.frameRate
         stats.resolution.width = newTrack.width
         stats.resolution.height = newTrack.height
+      } else {
+        stats.codecs.audioItag = newTrack.originalAudioId.split('-', 1)[0]
+        stats.codecs.audioCodec = newTrack.audioCodec
 
-        stats.codecs.videoItag = isHls
-          ? ''
-          : newTrack.originalVideoId.split('-', 1)[0]
+        if (props.format === 'dash') {
+          stats.resolution.frameRate = newTrack.frameRate
+
+          stats.codecs.videoItag = newTrack.originalVideoId.split('-', 1)[0]
+          stats.codecs.videoCodec = newTrack.videoCodec
+
+          stats.resolution.width = newTrack.width
+          stats.resolution.height = newTrack.height
+        }
       }
     }
 
@@ -2135,7 +2121,7 @@ export default defineComponent({
 
       const seekRange = player.seekRange()
 
-      // Seeking not possible e.g. with live HLS
+      // Seeking not possible e.g. with HLS
       if (seekRange.start === seekRange.end || !seekingIsPossible.value) {
         return false
       }
