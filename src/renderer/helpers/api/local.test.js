@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { Parser, YTNodes } from 'youtubei.js'
 
-import { extractLocalContentDisclosures, parseLocalPlaylistVideo, parseLocalPlaylistVideos } from './local'
+import { extractLocalContentDisclosures, parseLocalChannelAboutLinks, parseLocalPlaylistVideo, parseLocalPlaylistVideos } from './local'
 
 import madeWithAi from '../aiMarker/fixtures/local--next-made-with-ai.json'
 import autoDubbed from '../aiMarker/fixtures/local--next-auto-dubbed.json'
@@ -218,5 +218,35 @@ describe('extractLocalContentDisclosures', () => {
 
   it('is none for a video without the section', () => {
     expect(extractLocalContentDisclosures(infoOf(ordinary))).toBeNull()
+  })
+})
+
+// Synthetic: the shape youtubei.js gives a channel's About links, only the
+// fields `parseLocalChannelAboutLinks` reads.
+describe('parseLocalChannelAboutLinks', () => {
+  function aboutWithLinks(...urls) {
+    return {
+      primary_links: urls.map(url => ({
+        endpoint: { toURL: () => url },
+        title: { text: 'Shop' },
+        icon: []
+      }))
+    }
+  }
+
+  it('opens the destination of YouTube\'s redirect without its tracking parameters', () => {
+    const redirect = `https://www.youtube.com/redirect?event=channel_header&q=${encodeURIComponent('https://example.org/shop?item=1&utm_source=youtube&fbclid=x')}`
+
+    expect(parseLocalChannelAboutLinks(aboutWithLinks(redirect))).toEqual([{
+      title: 'Shop',
+      url: 'https://example.org/shop?item=1',
+      displayUrl: 'example.org/shop?item=1',
+      iconUrl: ''
+    }])
+  })
+
+  it('strips a direct link as well', () => {
+    expect(parseLocalChannelAboutLinks(aboutWithLinks('https://example.org/?utm_campaign=x'))[0].url)
+      .toBe('https://example.org/')
   })
 })

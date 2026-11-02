@@ -10,7 +10,8 @@ import { defineConfig } from 'vitest/config'
 // Tests sit beside the module they test, as `*.test.js`, in two projects run
 // by the one `pnpm test`:
 //
-// - `main`: the main-process modules under `src/main/`, in plain Node, and
+// - `main`: the main-process modules under `src/main/` and the modules at
+//   `src/` itself that both processes share, in plain Node, and
 //   the build scripts' own tests under `_scripts/` (`*.test.mjs`).
 // - `renderer`: renderer code under `src/renderer/`, including mounted Vue
 //   components, in a simulated DOM (jsdom). It mirrors what
@@ -84,7 +85,7 @@ export default defineConfig({
       {
         test: {
           name: 'main',
-          include: ['src/main/**/*.test.js', 'src/datastores/**/*.test.js', '_scripts/**/*.test.mjs'],
+          include: ['src/*.test.js', 'src/main/**/*.test.js', 'src/datastores/**/*.test.js', '_scripts/**/*.test.mjs'],
           environment: 'node',
         },
       },

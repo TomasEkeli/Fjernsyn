@@ -18,14 +18,8 @@ import {
   getRelativeTimeFromDate,
 } from '../utils'
 import { parseVideoClipsParams } from './shared'
+import { stripTrackingParams } from '../../../trackingParams'
 
-const TRACKING_PARAM_NAMES = [
-  'utm_source',
-  'utm_medium',
-  'utm_campaign',
-  'utm_term',
-  'utm_content',
-]
 const ALLOWED_LINK_PROTOCOLS = ['http:', 'https:']
 const SCHEMELESS_DOMAIN_URL_PATTERN = /^(?:\/\/)?[^./?#:@\s]+(?:\.[^./?#:@\s]+)+(?::\d+)?(?:[/?#]|$)/
 const YOUTUBE_REDIRECT_HOSTS = ['youtube.com', 'www.youtube.com']
@@ -1778,7 +1772,7 @@ function getDirectChannelAboutUrl(endpoint) {
       url = new URL(destination)
     }
 
-    return ALLOWED_LINK_PROTOCOLS.includes(url.protocol) ? url.href : null
+    return ALLOWED_LINK_PROTOCOLS.includes(url.protocol) ? stripTrackingParams(url.href) : null
   } catch {
     return null
   }
@@ -2975,23 +2969,10 @@ export function parseLocalTextRuns(runs, emojiSize = 16, options = { looseChanne
             const url = new URL((endpoint.dialog?.type === 'ConfirmDialog' && endpoint.dialog.confirm_button.endpoint.payload.url) || endpoint.payload.url)
             const redirectTarget = getYouTubeRedirectTarget(url)
             if (redirectTarget != null) {
-              // remove utm tracking parameters
-              const realURL = new URL(redirectTarget)
-              let urlChanged = false
-
-              TRACKING_PARAM_NAMES.forEach((paramName) => {
-                if (!realURL.searchParams.has(paramName)) { return }
-
-                realURL.searchParams.delete(paramName)
-                urlChanged = true
-              })
-
-              // `searchParams.delete` changes query string unnecessarily
-              // Using original unless there is any change
-              parsedRuns.push(urlChanged ? realURL.toString() : redirectTarget)
+              parsedRuns.push(stripTrackingParams(redirectTarget))
             } else {
               // this is probably a special YouTube URL like http://www.youtube.com/approachingnirvana
-              parsedRuns.push(endpoint.payload.url)
+              parsedRuns.push(stripTrackingParams(endpoint.payload.url))
             }
             break
           }
