@@ -589,6 +589,7 @@ function showSuperChatComment(comment) {
  * @param {boolean} [isScrollEnd]
  */
 function onScroll(event, isScrollEnd = false) {
+  const SCROLL_BOTTOM_THRESHOLD_PX = 20
   const liveChatComments = commentsRef.value
   if (event.wheelDelta >= 0 && stayAtBottom) {
     stayAtBottom = false
@@ -596,7 +597,11 @@ function onScroll(event, isScrollEnd = false) {
     if (liveChatComments.scrollHeight > liveChatComments.clientHeight) {
       showScrollToBottom.value = true
     }
-  } else if ((isScrollEnd || event.wheelDelta < 0) && !stayAtBottom && (liveChatComments.scrollHeight - liveChatComments.scrollTop) === liveChatComments.clientHeight) {
+  } else if (
+    (isScrollEnd || event.wheelDelta < 0) &&
+    !stayAtBottom &&
+    liveChatComments.scrollHeight - liveChatComments.scrollTop - liveChatComments.clientHeight <= SCROLL_BOTTOM_THRESHOLD_PX
+  ) {
     scrollToBottom()
   }
 }

@@ -48,6 +48,7 @@ import {
   trackWindow as trackWindowSize
 } from './windowGeometry'
 import { isRendererWritableYtDlpSetting, registerYtDlpHandlers } from './ytdlp/ipc'
+import { stripTrackingParams } from '../trackingParams'
 
 const brotliDecompressAsync = promisify(brotliDecompress)
 
@@ -253,7 +254,7 @@ function runApp() {
           label: 'Copy Lin&k',
           visible: visible && !isInAppUrl,
           click: async () => {
-            await copy(parameters.linkURL)
+            await copy(stripTrackingParams(parameters.linkURL))
           }
         },
         {
@@ -1225,7 +1226,8 @@ function runApp() {
           // Donation links on the about page
           (url.protocol === 'bitcoin:' && url.pathname === ABOUT_BITCOIN_ADDRESS)
         ) {
-          shell.openExternal(details.url)
+          // Every external link leaves through here, whatever page or platform it came from
+          shell.openExternal(stripTrackingParams(details.url))
         }
       }
 
