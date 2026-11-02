@@ -2,7 +2,7 @@
 
 <img src="_icons/fjernsyn.svg" alt="Fjernsyn logo" align="center" width="128">
 
-Fjernsyn is a desktop YouTube client for Windows, macOS and Linux. It talks to YouTube directly, or through an Invidious instance, and keeps your subscriptions, profiles, history and playlists in files on your own machine. There is no account and no login.
+Fjernsyn is a desktop YouTube client for Windows and Linux. It talks to YouTube directly, or through an Invidious instance, and keeps your subscriptions, profiles, history and playlists in files on your own machine. There is no account and no login.
 
 I built it around how I watch. Everything my subscriptions publish goes into one stream, and I can keep a few hundred channels sorted into profiles. Playback recovers when YouTube stops trusting a session, comments load as I scroll, and the download button hands the video to yt-dlp.
 
@@ -10,7 +10,7 @@ Fjernsyn is Norwegian (and Danish) for television, literally "far-sight", tele-v
 
 ## Download
 
-Every push to `main` is a release, built for Windows, macOS and Linux. Download the file for your platform from the [latest release](https://github.com/TomasEkeli/Fjernsyn/releases/latest): an installer or a portable build for Windows, a disk image for macOS, and an AppImage, a portable archive or a package (deb, rpm, pacman) for Linux. The builds are unsigned, so Windows and macOS warn you the first time you open them.
+Every push to `main` is a release, built for Windows and Linux. Download the file for your platform from the [latest release](https://github.com/TomasEkeli/Fjernsyn/releases/latest): an installer or a portable build for Windows, and an AppImage, a portable archive or a package (deb, rpm, pacman) for Linux. The builds are unsigned, so Windows warns you the first time you open them.
 
 ## Where it comes from
 

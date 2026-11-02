@@ -91,20 +91,15 @@ jobs:
           - linux-arm64
           - win-x64
           - win-arm64
-          - osx-x64
-          - osx-arm64
+        # No macOS: hosted macOS runners went unassigned for hours and held
+        # back the release, and nobody runs this fork on a Mac. The Mac upload
+        # steps below stay, inert, to keep the diff to upstream small.
         include:
         - runtime: linux-x64
           os: ubuntu-latest
 
         - runtime: linux-arm64
           os: ubuntu-latest
-
-        - runtime: osx-x64
-          os: macOS-latest
-
-        - runtime: osx-arm64
-          os: macOS-latest
 
         - runtime: win-x64
           os: windows-latest
