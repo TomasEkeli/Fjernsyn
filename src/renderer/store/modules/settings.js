@@ -421,11 +421,16 @@ const state = {
   // list (composables/useLaterTakeover.js), so that a playlist named Watch
   // Later made afterwards, which upstream gives the same id, stays a playlist
   laterTakeoverDone: false,
-  // Set once Communities' starter set has been followed
-  // (helpers/communities/starterSet.js), so that it is never followed again
-  // and a starter source unfollowed stays unfollowed. Goes in a backup with
-  // the followed sources, so a machine restoring one does not follow again
-  // what the other machine unfollowed.
+  // The ids of Communities' starter sources offered already, followed or not
+  // (helpers/communities/starterSet.js), so that each is followed once per
+  // installation and one unfollowed stays unfollowed, while a starter added
+  // to the set later is offered too. Goes in a backup with the followed
+  // sources, so a machine restoring one does not follow again what the other
+  // machine unfollowed.
+  communitiesStarterSourcesOffered: [],
+  // The mark the starter set was applied, before the list above: it stands
+  // for the original six offered. No longer written, kept so that settings
+  // files and backups that have it are read.
   communitiesStarterSetDone: false,
   // The sources whose chips are off on Communities, by source id
   // (helpers/communities/sourceChips.js). What is off rather than what is on,

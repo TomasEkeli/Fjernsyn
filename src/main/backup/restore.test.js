@@ -6,6 +6,8 @@ import path from 'node:path'
 import Datastore from '@seald-io/nedb'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { STARTER_SOURCE_IDS } from '../../renderer/helpers/communities/starterSet'
+
 import { backupsFolder, ensureInstallationId, restoreBackup, SAFETY_COPIES_KEPT, safetyCopyName } from './restore'
 
 // The restore on a temporary data folder, with real datastores and files
@@ -184,7 +186,7 @@ describe('restoreBackup', () => {
     }
   })
 
-  it('replaces the followed sources and their shares, HackerTube\'s included, and marks the starter set done', async () => {
+  it('replaces the followed sources and their shares, HackerTube\'s included, and marks every starter offered, keeping those offered already', async () => {
     const datastores = await openDatastores()
     await populate(datastores)
     await datastores.communitySources.insertAsync([
@@ -201,24 +203,26 @@ describe('restoreBackup', () => {
     const communityShares = [{ _id: 'lemmy:new@lemmy.example|newVideo001', sourceId: 'lemmy:new@lemmy.example', videoId: 'newVideo001', votes: 4, seenAt: 2 }]
     const result = await restore({
       safetyCopy: SAFETY_COPY,
-      sections: { settings: [{ _id: 'communitiesStarterSetDone', value: false }], communitySources, communityShares },
+      sections: { settings: [{ _id: 'communitiesStarterSourcesOffered', value: ['lemmy:gone@lemmy.example'] }], communitySources, communityShares },
     })
 
     expect(result.ok).toBe(true)
     expect(relaunch).toHaveBeenCalledOnce()
     expect(await onDisk('communitySources')).toEqual(communitySources)
     expect(await onDisk('communityShares')).toEqual(communityShares)
-    expect(await onDisk('settings', { _id: 'communitiesStarterSetDone' })).toEqual([{ _id: 'communitiesStarterSetDone', value: true }])
+    expect(await onDisk('settings', { _id: 'communitiesStarterSourcesOffered' })).toEqual([
+      { _id: 'communitiesStarterSourcesOffered', value: [...STARTER_SOURCE_IDS, 'lemmy:gone@lemmy.example'].sort() },
+    ])
   })
 
-  it('leaves the starter set\'s mark alone when it restores no source', async () => {
+  it('leaves the starter sources offered alone when it restores no source', async () => {
     const datastores = await openDatastores()
     await populate(datastores)
     const { restore } = setup(datastores)
 
-    await restore({ safetyCopy: SAFETY_COPY, sections: { settings: [{ _id: 'communitiesStarterSetDone', value: false }], communitySources: [] } })
+    await restore({ safetyCopy: SAFETY_COPY, sections: { settings: [{ _id: 'communitiesStarterSourcesOffered', value: [] }], communitySources: [] } })
 
-    expect(await onDisk('settings', { _id: 'communitiesStarterSetDone' })).toEqual([{ _id: 'communitiesStarterSetDone', value: false }])
+    expect(await onDisk('settings', { _id: 'communitiesStarterSourcesOffered' })).toEqual([{ _id: 'communitiesStarterSourcesOffered', value: [] }])
   })
 
   it('upserts the settings rather than clearing them: a setting the backup does not mention keeps its value', async () => {

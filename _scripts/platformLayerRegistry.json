@@ -119,7 +119,7 @@
     },
     {
       "path": "src/renderer/store/modules/settings.js",
-      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw; the layer search page's: defaultSearchScope, searchRememberedParameters, searchLatched; the surface switch: enableLayerSurfaces; Communities' communitiesStarterSetDone, the mark that the starter set has been followed once; communitiesSourcesHidden, the sources whose chips are off on Communities; communitiesSort, the order of the communities walls; communitiesSortDescending, whether that order is reversed"
+      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw; the layer search page's: defaultSearchScope, searchRememberedParameters, searchLatched; the surface switch: enableLayerSurfaces; Communities' communitiesStarterSourcesOffered, the starter sources offered once already; communitiesStarterSetDone, the old mark for the original six, read but no longer written; communitiesSourcesHidden, the sources whose chips are off on Communities; communitiesSort, the order of the communities walls; communitiesSortDescending, whether that order is reversed"
     },
     {
       "path": "src/renderer/views/Settings/Settings.vue",

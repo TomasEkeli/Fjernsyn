@@ -23,6 +23,7 @@
  */
 
 import { BACKUP_SECTIONS, sortKeys } from './backup'
+import { withEveryStarterOffered } from './communities/starterSet.js'
 
 /** @typedef {import('./keptBackup').Sections} Sections */
 /** @typedef {import('./keptBackup').Changes} Changes */
@@ -40,11 +41,11 @@ const TIME_FIELDS = {
 }
 
 /**
- * The setting that says the Communities starter set has been followed once,
- * so that it is never followed again over the unfollows of a machine whose
- * sources arrive here
+ * The setting that lists the Communities starter sources offered already, so
+ * that none is followed again over the unfollows of a machine whose sources
+ * arrive here. It only grows: a merge takes both sides' lists.
  */
-const STARTER_SET_DONE = 'communitiesStarterSetDone'
+const STARTER_SOURCES_OFFERED = 'communitiesStarterSourcesOffered'
 
 /**
  * The key a record is told apart by: the video in the history, as each
@@ -183,9 +184,7 @@ export function mergeSections({ ancestor, theirs, ours }) {
     dropUnfollowedShares(merged, toApply)
   }
 
-  if (theirs.communitySources?.length > 0) {
-    markStarterSetDone(merged, toApply)
-  }
+  mergeStarterSourcesOffered(merged, toApply, { theirs, ours })
 
   return { merged, toApply, conflicts }
 }
@@ -216,18 +215,34 @@ function dropUnfollowedShares(merged, toApply) {
 }
 
 /**
- * The starter set marked done in the merged settings and in what to apply,
- * unless it is already
+ * The starter sources offered, as both sides' lists together, in the merged
+ * settings and in what to apply; and every starter of the set among them
+ * when the folder brings a followed source, as a restore does
  * @param {Sections} merged
  * @param {Changes} toApply
+ * @param {{ theirs: Sections, ours: Sections }} sides
  */
-function markStarterSetDone(merged, toApply) {
-  const settings = merged.settings ?? []
-  if (settings.some(record => record._id === STARTER_SET_DONE && record.value === true)) { return }
+function mergeStarterSourcesOffered(merged, toApply, { theirs, ours }) {
+  const valueIn = sections => sections.settings?.find(record => record._id === STARTER_SOURCES_OFFERED)?.value
+  const listIn = sections => Array.isArray(valueIn(sections)) ? valueIn(sections) : []
 
-  const done = { _id: STARTER_SET_DONE, value: true }
-  merged.settings = [...settings.filter(record => record._id !== STARTER_SET_DONE), done]
+  const both = [...new Set([...listIn(theirs), ...listIn(ours)])].sort()
+  const value = theirs.communitySources?.length > 0 ? withEveryStarterOffered(both) : both
+
+  const ourValue = valueIn(ours)
+  if (value.length === 0 && ourValue === undefined && valueIn(theirs) === undefined) { return }
+
+  const record = { _id: STARTER_SOURCES_OFFERED, value }
+  const others = records => records.filter(other => other._id !== STARTER_SOURCES_OFFERED)
+
+  merged.settings = [...others(merged.settings ?? []), record]
 
   const changes = toApply.settings ?? { put: [], remove: [] }
-  toApply.settings = { put: [...changes.put.filter(record => record._id !== STARTER_SET_DONE), done], remove: changes.remove }
+  const put = JSON.stringify(ourValue) === JSON.stringify(value) ? others(changes.put) : [...others(changes.put), record]
+
+  if (put.length === 0 && changes.remove.length === 0) {
+    delete toApply.settings
+  } else {
+    toApply.settings = { put, remove: changes.remove }
+  }
 }
