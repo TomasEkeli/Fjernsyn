@@ -5,6 +5,8 @@ import path from 'node:path'
 import Datastore from '@seald-io/nedb'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { STARTER_SOURCE_IDS } from '../../renderer/helpers/communities/starterSet'
+
 import { createKeeper, watchDatastores } from './keeper'
 import { runKeeperJob } from './keeperWorker'
 
@@ -196,12 +198,12 @@ describe('two machines running at once, following sources', () => {
     ])
     await m.datastores.communityShares.insertAsync([share('hackertube', 'hackertube1'), share(LEMMY._id, 'lemmyvideo1')])
     await m.datastores.communitySourceData.insertAsync({ _id: 'hackertube', generated: '2026-10-31', taxonomy: { areas: [] } })
-    await m.datastores.settings.insertAsync({ _id: 'communitiesStarterSetDone', value: true })
+    await m.datastores.settings.insertAsync({ _id: 'communitiesStarterSourcesOffered', value: [...STARTER_SOURCE_IDS].sort() })
   }
 
   const ids = async datastore => (await datastore.findAsync({})).map(record => record._id).sort()
 
-  it('Desktop follows what Laptop followed, without HackerTube\'s shares or Laptop\'s refresh times, and marks the starter set done', async () => {
+  it('Desktop follows what Laptop followed, without HackerTube\'s shares or Laptop\'s refresh times, and marks every starter offered', async () => {
     const desktop = await machine('Desktop')
     await desktop.keeper.start()
     await desktop.keeper.tick()
@@ -215,7 +217,7 @@ describe('two machines running at once, following sources', () => {
 
     expect(await desktop.datastores.communitySources.findAsync({}).sort({ _id: 1 })).toEqual([HACKERTUBE, LEMMY])
     expect(await ids(desktop.datastores.communityShares)).toEqual([`${LEMMY._id}|lemmyvideo1`])
-    expect(await desktop.datastores.settings.findOneAsync({ _id: 'communitiesStarterSetDone' })).toMatchObject({ value: true })
+    expect(await desktop.datastores.settings.findOneAsync({ _id: 'communitiesStarterSourcesOffered' })).toMatchObject({ value: [...STARTER_SOURCE_IDS].sort() })
     expect(desktop.dataChanged.map(sections => [...sections].sort())).toEqual([['communityShares', 'communitySources', 'settings']])
   })
 

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
+import { withEveryStarterOffered } from '../../renderer/helpers/communities/starterSet.js'
 import { isRendererWritableYtDlpSetting } from '../ytdlp/settings'
 
 /**
@@ -40,11 +41,11 @@ const SECTION_DATASTORES = Object.freeze([
 ])
 
 /**
- * Written true by a restore that brings a followed source, so that the
- * Communities starter set is never followed over the unfollows of the
- * machine the backup came from
+ * Given every starter source by a restore that brings a followed source, so
+ * that no Communities starter is followed over the unfollows of the machine
+ * the backup came from
  */
-const STARTER_SET_DONE = 'communitiesStarterSetDone'
+const STARTER_SOURCES_OFFERED = 'communitiesStarterSourcesOffered'
 
 /**
  * Settings a restore never writes, whatever the request says. The paths only
@@ -156,7 +157,9 @@ export async function restoreBackup({ datastores, dataFolder, relaunch, now = ()
     }
 
     if (request.sections.communitySources?.length > 0) {
-      await datastores.settings.updateAsync({ _id: STARTER_SET_DONE }, { _id: STARTER_SET_DONE, value: true }, { upsert: true })
+      const offered = await datastores.settings.findOneAsync({ _id: STARTER_SOURCES_OFFERED })
+      const value = withEveryStarterOffered(offered?.value)
+      await datastores.settings.updateAsync({ _id: STARTER_SOURCES_OFFERED }, { _id: STARTER_SOURCES_OFFERED, value }, { upsert: true })
       if (!written.includes(datastores.settings)) { written.push(datastores.settings) }
     }
 

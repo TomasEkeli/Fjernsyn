@@ -7,7 +7,7 @@ import { hackerTubeShare, hackerTubeSource } from '../../helpers/communities/hac
 import { lemmySource } from '../../helpers/communities/kinds/lemmy'
 import { opmlFeedUrls, sourcesOpml } from '../../helpers/communities/opml'
 import { wallVideos } from '../../helpers/communities/shares'
-import { starterSources } from '../../helpers/communities/starterSet'
+import { STARTER_SOURCE_IDS, starterSources } from '../../helpers/communities/starterSet'
 import { SyncEvents } from '../../../constants'
 import communities from './communities'
 
@@ -66,29 +66,30 @@ function freshState() {
 
 /**
  * The settings module's part, one per state, as one installation has one:
- * whether the starter set has been applied, and which sources' chips are off
+ * which starter sources have been offered, the old mark that the set was
+ * applied, and which sources' chips are off
  *
- * @type {WeakMap<object, { communitiesStarterSetDone: boolean, communitiesSourcesHidden: string[] }>}
+ * @type {WeakMap<object, { communitiesStarterSourcesOffered: string[], communitiesStarterSetDone: boolean, communitiesSourcesHidden: string[] }>}
  */
 const settingsOf = new WeakMap()
 
 /** @param {object} state */
 function settingsFor(state) {
   if (!settingsOf.has(state)) {
-    settingsOf.set(state, { communitiesStarterSetDone: false, communitiesSourcesHidden: [] })
+    settingsOf.set(state, { communitiesStarterSourcesOffered: [], communitiesStarterSetDone: false, communitiesSourcesHidden: [] })
   }
   return settingsOf.get(state)
 }
 
 /** The settings module's updater, which a test may make fail */
-const updateStarterSetDone = vi.fn(async (settings, value) => { settings.communitiesStarterSetDone = value })
+const updateStarterSourcesOffered = vi.fn(async (settings, value) => { settings.communitiesStarterSourcesOffered = value })
 
 /** Likewise, for the sources whose chips are off */
 const updateSourcesHidden = vi.fn(async (settings, value) => { settings.communitiesSourcesHidden = value })
 
 /** The settings module's updaters, by action */
 const SETTINGS_UPDATERS = {
-  updateCommunitiesStarterSetDone: updateStarterSetDone,
+  updateCommunitiesStarterSourcesOffered: updateStarterSourcesOffered,
   updateCommunitiesSourcesHidden: updateSourcesHidden,
 }
 
@@ -98,6 +99,7 @@ function contextFor(state) {
     state,
     getters: {},
     rootGetters: {
+      get getCommunitiesStarterSourcesOffered() { return settings.communitiesStarterSourcesOffered },
       get getCommunitiesStarterSetDone() { return settings.communitiesStarterSetDone },
       get getCommunitiesSourcesHidden() { return settings.communitiesSourcesHidden },
     },
@@ -473,19 +475,21 @@ describe('the Communities store', () => {
     })
 
     const followed = () => DBCommunityHandlers.upsertSource.mock.calls.map(([source]) => source._id)
+    const offered = state => [...settingsFor(state).communitiesStarterSourcesOffered].sort()
+    const STARTER_IDS = STARTERS.map(source => source._id).sort()
 
-    it('is followed whole on the first open of a fresh installation, and then marked applied', async () => {
+    it('is followed whole on the first open of a fresh installation, and then each one marked offered', async () => {
       const state = freshState()
       const order = []
       DBCommunityHandlers.upsertSource.mockImplementation(async (source) => { order.push(source._id) })
-      updateStarterSetDone.mockImplementationOnce(async (settings, value) => { order.push('marked'); settings.communitiesStarterSetDone = value })
+      updateStarterSourcesOffered.mockImplementationOnce(async (settings, value) => { order.push('marked'); settings.communitiesStarterSourcesOffered = value })
 
       await communities.actions.openCommunities(contextFor(state))
 
       expect(Object.keys(state.communitySources).sort()).toEqual(['hackertube', MEALTIME._id, TALKS._id].sort())
       // Marked only once every one is followed, so a follow that fails is tried again
       expect(order).toEqual(['hackertube', MEALTIME._id, TALKS._id, 'marked'])
-      expect(settingsFor(state).communitiesStarterSetDone).toBe(true)
+      expect(offered(state)).toEqual(STARTER_IDS)
       // HackerTube's videos from the bundle, the communities' left to the refresh
       expect(shareIds(state)).toEqual(['hackertube|aaaaaaaaaaa', 'hackertube|bbbbbbbbbbb'])
       DBCommunityHandlers.upsertSource.mockImplementation(async () => {})
@@ -495,7 +499,7 @@ describe('the Communities store', () => {
       // HackerTube alone, as an installation from before the starter set, and a community followed since
       starterSources.mockImplementationOnce(onlyHackerTube)
       const state = await loadedState()
-      settingsFor(state).communitiesStarterSetDone = false
+      settingsFor(state).communitiesStarterSourcesOffered = []
       state.communitySources[MEALTIME._id] = Object.freeze({ ...MEALTIME, followedAt: 1, checkedAt: 2 })
 
       await communities.actions.openCommunities(contextFor(state))
@@ -504,26 +508,29 @@ describe('the Communities store', () => {
       expect(state.communitySources.hackertube.dataGenerated).toBe('2026-10-31')
       expect(state.communitySources[MEALTIME._id]).toMatchObject({ followedAt: 1, checkedAt: 2 })
       expect(fetchHackerTubeBundle).not.toHaveBeenCalled()
-      expect(settingsFor(state).communitiesStarterSetDone).toBe(true)
+      expect(offered(state)).toEqual(STARTER_IDS)
 
       vi.clearAllMocks()
       await communities.actions.openCommunities(contextFor(state))
       expect(followed()).toEqual([])
     })
 
-    it('follows nothing once it has been applied, though none of it is followed', async () => {
-      const state = freshState()
-      settingsFor(state).communitiesStarterSetDone = true
+    it('follows nothing once each one has been offered, though none of it is followed, or the old mark says the original six were', async () => {
+      for (const settings of [{ communitiesStarterSourcesOffered: STARTER_IDS }, { communitiesStarterSetDone: true }]) {
+        const state = freshState()
+        Object.assign(settingsFor(state), settings)
 
-      await communities.actions.openCommunities(contextFor(state))
+        await communities.actions.openCommunities(contextFor(state))
 
-      expect(state.communitySources).toEqual({})
+        expect(state.communitySources).toEqual({})
+        // HackerTube not followed: no bundle to load, and nothing failed
+        expect(state.communitiesLoadFailed).toBe(false)
+        expect(state.communitiesLoading).toBe(false)
+      }
+
       expect(DBCommunityHandlers.upsertSource).not.toHaveBeenCalled()
-      expect(updateStarterSetDone).not.toHaveBeenCalled()
-      // HackerTube not followed: no bundle to load, and nothing failed
+      expect(updateStarterSourcesOffered).not.toHaveBeenCalled()
       expect(fetchHackerTubeBundle).not.toHaveBeenCalled()
-      expect(state.communitiesLoadFailed).toBe(false)
-      expect(state.communitiesLoading).toBe(false)
     })
 
     it('does not follow again a starter source unfollowed, HackerTube included, on a later open', async () => {
@@ -540,7 +547,7 @@ describe('the Communities store', () => {
       expect(fetchHackerTubeBundle).not.toHaveBeenCalled()
     })
 
-    it('is not marked applied when a follow fails, and the next open follows the rest', async () => {
+    it('is not marked offered when a follow fails, and the next open follows the rest', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {})
       const state = freshState()
       DBCommunityHandlers.upsertSource.mockImplementation(async (source) => {
@@ -549,7 +556,7 @@ describe('the Communities store', () => {
 
       await communities.actions.openCommunities(contextFor(state))
 
-      expect(settingsFor(state).communitiesStarterSetDone).toBe(false)
+      expect(offered(state)).toEqual([])
       expect(Object.keys(state.communitySources)).toEqual(['hackertube'])
       // HackerTube's videos are loaded all the same
       expect(state.communitySources.hackertube.dataGenerated).toBe('2026-10-31')
@@ -559,19 +566,19 @@ describe('the Communities store', () => {
       await communities.actions.openCommunities(contextFor(state))
 
       expect(followed()).toEqual([MEALTIME._id, TALKS._id])
-      expect(settingsFor(state).communitiesStarterSetDone).toBe(true)
+      expect(offered(state)).toEqual(STARTER_IDS)
     })
 
     it('loads HackerTube all the same when the mark cannot be written, and the next open follows nothing twice', async () => {
       const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
       const state = freshState()
       const locked = new Error('locked')
-      updateStarterSetDone.mockRejectedValueOnce(locked)
+      updateStarterSourcesOffered.mockRejectedValueOnce(locked)
 
       await communities.actions.openCommunities(contextFor(state))
 
       // Told apart from a follow that failed
-      expect(logged).toHaveBeenCalledWith('Communities: followed the starter set, but could not mark it done', locked)
+      expect(logged).toHaveBeenCalledWith('Communities: followed the starter set, but could not mark it offered', locked)
       expect(state.communitiesLoadFailed).toBe(false)
       expect(state.communitySources.hackertube.dataGenerated).toBe('2026-10-31')
 
@@ -579,7 +586,7 @@ describe('the Communities store', () => {
       await communities.actions.openCommunities(contextFor(state))
 
       expect(followed()).toEqual([])
-      expect(settingsFor(state).communitiesStarterSetDone).toBe(true)
+      expect(offered(state)).toEqual(STARTER_IDS)
     })
 
     it('follows each one once when two pages apply it at the same time, however slow the datastore', async () => {
@@ -594,7 +601,7 @@ describe('the Communities store', () => {
       ])
 
       expect(followed()).toEqual(['hackertube', MEALTIME._id, TALKS._id])
-      expect(updateStarterSetDone).toHaveBeenCalledOnce()
+      expect(updateStarterSourcesOffered).toHaveBeenCalledOnce()
       DBCommunityHandlers.upsertSource.mockImplementation(async () => {})
     })
 
@@ -610,7 +617,7 @@ describe('the Communities store', () => {
 
       expect(followed()).toEqual(['hackertube', TALKS._id])
       expect(state.communitySources[MEALTIME._id]).toMatchObject({ followedAt: 1, checkedAt: 2 })
-      expect(settingsFor(state).communitiesStarterSetDone).toBe(true)
+      expect(offered(state)).toEqual(STARTER_IDS)
     })
 
     it('is not applied before the datastore is read, or over one that could not be', async () => {
@@ -620,10 +627,54 @@ describe('the Communities store', () => {
         await communities.actions.applyCommunitiesStarterSet(contextFor(state))
 
         expect(state.communitySources, JSON.stringify(fields)).toEqual({})
-        expect(settingsFor(state).communitiesStarterSetDone).toBe(false)
+        expect(offered(state)).toEqual([])
       }
 
       expect(DBCommunityHandlers.upsertSource).not.toHaveBeenCalled()
+    })
+
+    describe('as it is now, nineteen starters', () => {
+      beforeEach(async () => {
+        const { starterSources: actual } = await vi.importActual('../../helpers/communities/starterSet')
+        starterSources.mockReset()
+        starterSources.mockImplementation(actual)
+      })
+
+      it('is followed whole on a fresh installation', async () => {
+        const state = freshState()
+
+        await communities.actions.applyCommunitiesStarterSet(contextFor(state))
+
+        expect(followed()).toEqual(STARTER_SOURCE_IDS)
+        expect(followed()).toHaveLength(19)
+        expect(offered(state)).toEqual([...STARTER_SOURCE_IDS].sort())
+      })
+
+      it('follows only the thirteen added since on an installation the old mark says applied the original six', async () => {
+        const state = freshState()
+        settingsFor(state).communitiesStarterSetDone = true
+
+        await communities.actions.applyCommunitiesStarterSet(contextFor(state))
+
+        expect(followed()).toEqual(STARTER_SOURCE_IDS.slice(6))
+        expect(followed()).toHaveLength(13)
+        expect(offered(state)).toEqual([...STARTER_SOURCE_IDS].sort())
+      })
+
+      it('does not follow again a new starter unfollowed, and applying again does nothing', async () => {
+        const state = freshState()
+        settingsFor(state).communitiesStarterSetDone = true
+        await communities.actions.applyCommunitiesStarterSet(contextFor(state))
+        await communities.actions.unfollowCommunitySource(contextFor(state), 'lemmy:metal@lemmy.world')
+        vi.clearAllMocks()
+
+        await communities.actions.applyCommunitiesStarterSet(contextFor(state))
+        await communities.actions.applyCommunitiesStarterSet(contextFor(state))
+
+        expect(followed()).toEqual([])
+        expect(updateStarterSourcesOffered).not.toHaveBeenCalled()
+        expect(Object.hasOwn(state.communitySources, 'lemmy:metal@lemmy.world')).toBe(false)
+      })
     })
   })
 

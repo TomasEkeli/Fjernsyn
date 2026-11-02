@@ -9,7 +9,7 @@ import { createHostMemory, createPeerTubeLinkResolver, knownPeerTubeVideos } fro
 import { keepSourceFetch, lastAttemptOf, lastRefreshOf, refreshCommunitySources, refreshIsDue } from '../../helpers/communities/refresh'
 import { sharesToPut } from '../../helpers/communities/shares'
 import { hiddenSourcesWith } from '../../helpers/communities/sourceChips'
-import { starterSources, starterSourcesToFollow } from '../../helpers/communities/starterSet'
+import { starterSources, starterSourcesOffered, starterSourcesToFollow } from '../../helpers/communities/starterSet'
 
 /**
  * Communities: the sources followed and the shares they made, from
@@ -34,10 +34,10 @@ import { starterSources, starterSourcesToFollow } from '../../helpers/communitie
  * (`attemptedAt`), and `failedAt` while its last refresh failed.
  *
  * The first open of Communities or a source's page (`openCommunities`), or
- * the first visit to the Sources page, follows the starter set once per
- * installation (`applyCommunitiesStarterSet`), marked done in the
- * `communitiesStarterSetDone` setting. Only a wall's open loads HackerTube's
- * bundle.
+ * the first visit to the Sources page, follows the starter set, each
+ * starter once per installation (`applyCommunitiesStarterSet`), listed as
+ * offered in the `communitiesStarterSourcesOffered` setting. Only a wall's
+ * open loads HackerTube's bundle.
  *
  * A source is followed by a URL pasted on the Sources page, once asking it
  * has shown it can be (`helpers/communities/follow.js`), and unfollowed
@@ -369,14 +369,16 @@ const actions = {
   },
 
   /**
-   * Follows the starter set (`helpers/communities/starterSet.js`), once per
-   * installation: each starter source not followed already, and then the
-   * `communitiesStarterSetDone` setting says it is done, so that nothing of
-   * it is followed again and a starter source unfollowed stays unfollowed.
-   * Nothing is asked of the sources: the refresh that opening a wall makes
-   * brings their videos. A follow that fails leaves the set unmarked, for the
-   * next open to follow the rest. Nothing before the datastore has been read,
-   * or over one that could not be. One at a time: a second call joins it.
+   * Follows the starter set (`helpers/communities/starterSet.js`), each
+   * starter once per installation: each one neither offered nor followed
+   * already, and then the `communitiesStarterSourcesOffered` setting lists
+   * every starter as offered, so that none is followed again and a starter
+   * source unfollowed stays unfollowed, while one added to the set later is
+   * offered on the next open. Nothing is asked of the sources: the refresh
+   * that opening a wall makes brings their videos. A follow that fails leaves
+   * the list as it was, for the next open to follow the rest. Nothing before
+   * the datastore has been read, or over one that could not be. One at a
+   * time: a second call joins it.
    *
    * @param {any} context
    * @returns {Promise<void>}
@@ -388,7 +390,7 @@ const actions = {
 
   /**
    * What opening Communities does first, once the datastore has loaded: the
-   * starter set is followed, if it never has been; and while HackerTube is
+   * starter sources not offered yet are followed; and while HackerTube is
    * followed its shares are loaded from the bundle shipped with the app if
    * they are not there, which is the first open of all, or the first after a
    * restore that brought the source without its shares. Loaded means shares
@@ -532,12 +534,14 @@ async function applyStarterSetOnce({ state, rootGetters, dispatch }) {
   // What is held says nothing yet of what is followed
   if (!state.communitiesReady || state.communitiesGrabFailed) { return }
 
-  // Applied: not even the mark is written again
-  const applied = rootGetters.getCommunitiesStarterSetDone === true
-  if (applied) { return }
+  const offered = starterSourcesOffered(rootGetters.getCommunitiesStarterSourcesOffered, rootGetters.getCommunitiesStarterSetDone === true)
+  const starters = starterSources(Date.now())
 
-  const toFollow = starterSourcesToFollow(starterSources(Date.now()), {
-    applied,
+  // Every one offered: not even the list is written again
+  if (starters.every(source => offered.has(source._id))) { return }
+
+  const toFollow = starterSourcesToFollow(starters, {
+    offered,
     isFollowed: sourceId => Object.hasOwn(state.communitySources, sourceId),
   })
 
@@ -548,17 +552,17 @@ async function applyStarterSetOnce({ state, rootGetters, dispatch }) {
       await dispatch('followCommunitySource', source)
     }
   } catch (error) {
-    // Unmarked, the next open follows what is still not followed
+    // Not listed, the next open follows what is still not followed
     console.error('Communities: could not follow the starter set', error)
     return
   }
 
   try {
-    await dispatch('updateCommunitiesStarterSetDone', true)
+    await dispatch('updateCommunitiesStarterSourcesOffered', [...new Set([...offered, ...starters.map(source => source._id)])])
   } catch (error) {
-    // Unmarked, the next open applies it again, which follows nothing twice,
+    // Not listed, the next open applies it again, which follows nothing twice,
     // but follows again any of it unfollowed meanwhile
-    console.error('Communities: followed the starter set, but could not mark it done', error)
+    console.error('Communities: followed the starter set, but could not mark it offered', error)
   }
 }
 
