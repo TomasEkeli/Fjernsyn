@@ -11,7 +11,6 @@ const IpcChannels = {
   NATIVE_THEME_UPDATE: 'native-theme-update',
   APP_READY: 'app-ready',
   RELAUNCH_REQUEST: 'relaunch-request',
-  SET_WINDOW_TITLE: 'set-window-title',
   // The fork's long press move of a frameless window, see src/main/windowGeometry.js
   WINDOW_MOVE_START: 'window-move-start',
   WINDOW_MOVE_END: 'window-move-end',
@@ -417,6 +416,12 @@ const DARK_BASE_THEMES = [
   'solarizedDark',
 ]
 
+const UI_SCALE = {
+  MIN: 50,
+  MAX: 300,
+  STEP: 5,
+}
+
 export {
   IpcChannels,
   DBActions,
@@ -433,4 +438,5 @@ export {
   ABOUT_BITCOIN_ADDRESS,
   LIGHT_BASE_THEMES,
   DARK_BASE_THEMES,
+  UI_SCALE,
 }

@@ -244,6 +244,8 @@ export default defineComponent({
       /** @type {Date|null} */
       streamingDataExpiryDate: null,
       currentPlaybackRate: null,
+
+      isReloadingView: false,
     }
   },
   computed: {
@@ -335,14 +337,8 @@ export default defineComponent({
     hideChapters: function () {
       return this.$store.getters.getHideChapters
     },
-    channelsHidden() {
-      return JSON.parse(this.$store.getters.getChannelsHidden).map((ch) => {
-        // Legacy support
-        if (typeof ch === 'string') {
-          return { name: ch, preferredName: '', icon: '' }
-        }
-        return ch
-      })
+    channelsHiddenIdSet() {
+      return this.$store.getters.getChannelsHiddenIdSet
     },
     forbiddenTitles() {
       return JSON.parse(this.$store.getters.getForbiddenTitles.toLowerCase())
@@ -361,7 +357,7 @@ export default defineComponent({
     },
     nextRecommendedVideo: function () {
       return this.recommendedVideos.find((video) =>
-        !this.isHiddenVideo(this.forbiddenTitles, this.channelsHidden, video)
+        !this.isHiddenVideo(this.forbiddenTitles, this.channelsHiddenIdSet, video)
       )
     },
     startTimeSeconds: function () {
@@ -446,31 +442,39 @@ export default defineComponent({
   },
   methods: {
     async reloadView() {
-      await this.handleRouteChange()
+      if (this.isReloadingView) { return }
 
-      if (this.$refs.player) {
-        await this.destroyPlayer()
-      }
+      try {
+        this.isReloadingView = true
 
-      // react to route changes...
-      this.videoId = this.$route.params.id
-      this.resetVideoState()
+        await this.handleRouteChange()
 
-      this.firstLoad = true
-      this.videoPlayerLoaded = false
-      this.activeFormat = this.defaultVideoFormat
+        if (this.$refs.player) {
+          await this.destroyPlayer()
+        }
 
-      this.checkIfTimestamp()
-      this.checkIfPlaylist()
-      this.setViewingModeOnRouteChange()
+        // react to route changes...
+        this.videoId = this.$route.params.id
+        this.resetVideoState()
 
-      switch (this.backendPreference) {
-        case 'local':
-          await this.getVideoInformationLocal()
-          break
-        case 'invidious':
-          this.getVideoInformationInvidious()
-          break
+        this.firstLoad = true
+        this.videoPlayerLoaded = false
+        this.activeFormat = this.defaultVideoFormat
+
+        this.checkIfTimestamp()
+        this.checkIfPlaylist()
+        this.setViewingModeOnRouteChange()
+
+        switch (this.backendPreference) {
+          case 'local':
+            await this.getVideoInformationLocal()
+            break
+          case 'invidious':
+            this.getVideoInformationInvidious()
+            break
+        }
+      } finally {
+        this.isReloadingView = false
       }
     },
 
@@ -616,7 +620,8 @@ export default defineComponent({
         const playabilityStatus = result.playability_status
         this.playabilityStatus = playabilityStatus.status
 
-        if (playabilityStatus.status === 'LOGIN_REQUIRED' && playabilityStatus.error_screen?.reason?.text === 'Private video') {
+        if (playabilityStatus.status === 'LOGIN_REQUIRED' &&
+            (playabilityStatus.error_screen?.reason?.text === 'Private video' || playabilityStatus.reason === 'Private video')) {
           // Private videos cannot be played in FreeTube, as they require to be logged as the owner of the video
           // so there is no point continuing or trying any other backends as it will always fail
           this.errorMessage = this.t('Video.Private')
@@ -2290,9 +2295,10 @@ export default defineComponent({
       this.setAppTitle(this.videoTitle)
     },
 
-    isHiddenVideo: function (forbiddenTitles, channelsHidden, video) {
-      return channelsHidden.some(ch => ch.name === video.authorId || (video.collaborators?.length > 0 && ch.name === video.collaborators[0].id)) ||
-        channelsHidden.some(ch => ch.name === video.author) ||
+    isHiddenVideo: function (forbiddenTitles, channelsHiddenIdSet, video) {
+      return channelsHiddenIdSet.has(video.authorId) ||
+      (video.collaborators?.length > 0 && channelsHiddenIdSet.has(video.collaborators[0].id)) ||
+        channelsHiddenIdSet.has(video.author) ||
         forbiddenTitles.some((text) => video.title?.toLowerCase().includes(text)) ||
         forbiddenTitles.some((text) => video.author?.toLowerCase().includes(text))
     },

@@ -81,6 +81,7 @@ Search Filters:
     4K: 4K
     Location: Məkan
   Clear Filters: Filtrləri Təmizlə
+  No results found: Nəticə tapılmadı. Fərqli açar sözlər sına və ya axtarış filtrlərini tənzimlə
 Subscriptions:
     # On Subscriptions Page
   Subscriptions: 'Abunəliklər'
@@ -538,6 +539,8 @@ Settings:
     Hide Subscriptions Live: Abunəliklər Canlı Yayımını Gizlət
     Add: Əlavə et
     Remove: Sil
+    Hide Channel Shows: Kanal "Verilişlər" Bölməsini Gizlət
+    More Items Count: +{count} daha çox…
   Data Settings:
     Data Settings: Məlumatlar
     Select Export Type: Köçürmə Növünü Seç
@@ -571,7 +574,6 @@ Settings:
     All watched history has been successfully imported: Bütün izlənilən tarixçə uğurla idxal edildi
     All watched history has been successfully exported: Bütün izlənilən tarixçə uğurla ixrac edildi
     Playlist insufficient data: '"{playlist}" pleylisti üçün məlumat kifayət deyil, element ötürülür'
-    All playlists has been successfully imported: Bütün pleylistlər uğurla idxal edildi
     All playlists has been successfully exported: Bütün pleylistlər uğurla ixrac edildi
     All search history has been successfully imported: Bütün axtarış tarixçəsi uğurla idxal edildi
     All search history has been successfully exported: Bütün axtarış tarixçəsi uğurla ixrac edildi
@@ -585,6 +587,7 @@ Settings:
     Non-transferable setting key: 'Köçürülə bilməyən tənzimləmə açarı: {key}'
     How do I import my subscriptions?: Abunəliklərimi necə idxal edə bilərəm?
     Manage Subscriptions: Abunəlikləri İdarə Et
+    Playlists have been successfully imported: 1/{total} pleylist uğurla idxal edildi | {count}/{total} pleylist uğurla idxal edildi
   Proxy Settings:
     Proxy Settings: Proksi
     Proxy Warning: FreeTube tərkibində daxili proksi yoxdur, lakin cihazınızda icra olunan Tor və ya bəzi VPN-lərin təqdim etdiyi SOCKS5 kimi xarici proksiyə qoşula bilir. Aktivdirsə, proksi/Tor tənzimləmələrinin doğruluğunu yoxlayın, əks halda FreeTube hər hansı məlumat əldə edə bilməyəcək.
@@ -622,6 +625,9 @@ Settings:
     Set Password To Prevent Access: Tənzimləmələrə girişi məhdudlaşdırmaq üçün parol təyin et
     Set Password: Parol Təyin Et
     Remove Password: Parolu Sil
+  Search Settings: Tənzimləmələri Axtar
+  Settings found: 1 tənzimləmə tapıldı | {count} tənzimləmə tapıldı
+  No Matching Settings: Axtarışınıza uyğun heç bir tənzimləmə yoxdur.
 Channel:
   Videos:
     Videos: Videolar
@@ -684,6 +690,9 @@ Channel:
     Reveal Answers: Cavabları Göstərin
     Hide Answers: Cavabları Gizlət
     Video hidden by FreeTube: FreeTube tərəfindən gizlədilən video
+  Shows:
+    Shows: Verilişlər
+    This channel does not currently have any shows: Bu kanalın hazırda heç bir verilişi yoxdur
 Video:
   External Player:
     OpenInTemplate: '{externalPlayer}-də Aç'

@@ -27,6 +27,7 @@ const SETTINGS = vi.hoisted(() => ({
   getHidePlaylists: false,
   getPlaylist: () => undefined,
   getChannelsHidden: '[]',
+  getChannelsHiddenIdSet: new Set(),
   getUseSponsorBlock: true,
   getSponsorBlockExcludedChannels: '[]',
   getHideSharingActions: false,

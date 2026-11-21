@@ -651,7 +651,7 @@ describe('the Fjernsyn playlist import', () => {
     expect(addedPlaylists()).toEqual([
       { playlistName: 'Mixed', description: '', videos: [YOUTUBE_PLAYLIST_ITEM, PEERTUBE_PLAYLIST_ITEM], _id: 'mixed', createdAt: 1 },
     ])
-    expect(toasts()).toEqual(['All playlists has been successfully imported'])
+    expect(toasts()).toEqual(['1/1 playlist has been successfully imported'])
   })
 
   it('keeps a YouTube item exactly as it was in the file, whatever it carries', async () => {

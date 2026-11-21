@@ -597,6 +597,7 @@ function handleDragStart(event) {
           case 'releases':
           case 'podcasts':
           case 'courses':
+          case 'shows':
           case 'playlists':
           case 'about':
             transformedURL.pathname += `/${pathParts[2]}`
