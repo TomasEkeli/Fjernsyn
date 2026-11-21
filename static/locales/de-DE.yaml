@@ -85,6 +85,7 @@ Search Filters:
     Creative Commons: Creative-Commons
     Location: Region
   Clear Filters: Suchfilter zurücksetzen
+  No results found: Keine Ergebnisse gefunden. Probieren Sie verschiedene Schlüsselwörter aus oder passen Sie die Suchfilter an
 Subscriptions:
     # On Subscriptions Page
   Subscriptions: Abos
@@ -419,7 +420,7 @@ Settings:
         Forbidden Characters: Unerlaubte Zeichen
         Empty File Name: Leerer Dateiname
       File Name Tooltip: Du kannst die folgenden Variablen verwenden. %Y Jahr 4-stellig. %M Monat 2 Ziffern. %D Tag 2 Ziffern. %H Stunde 2 Ziffern. %N Minute 2 Ziffern. %S Sekunde 2 Ziffern. %T Millisekunde 3 Ziffern. %s Video-Sekunde. %t Video Millisekunde 3 Ziffern. %i Video-ID.
-      Mode: Screenshot-Modus
+      Mode: Bildschirmfoto-Modus
     Enter Fullscreen on Display Rotate: Beim Drehen des Bildschirms zu Vollbild wechseln
     Skip by Scrolling Over Video Player: Überspringen durch Scrollen
     Autoplay Interruption Timer: Abbruch-Timer für Automatische Wiedergabe
@@ -493,7 +494,6 @@ Settings:
     Export Playlists: Playlists exportieren
     Import Playlists: Playlists importieren
     Playlist insufficient data: Unzureichende Daten für die Playlist „{playlist}“, Element wird übersprungen
-    All playlists has been successfully imported: Alle Playlists wurden erfolgreich importiert
     All playlists has been successfully exported: Alle Playlists wurden erfolgreich exportiert
     Playlist File: Playlist-Datei
     Subscription File: Abo-Datei
@@ -516,6 +516,7 @@ Settings:
     Setting object has insufficient data, skipping item: Das Objekt enthält unzureichende Daten, Element wird übersprungen
     Unknown setting key: 'Unbekannter Einstellungsschlüssel: {key}'
     Non-transferable setting key: 'Nicht übertragbarer Einstellungsschlüssel: {key}'
+    Playlists have been successfully imported: 1/{total} Wiedergabeliste wurde erfolgreich importiert | {count}/{total} Wiedergabelisten wurden erfolgreich importiert
   Distraction Free Settings:
     Hide Live Chat: Live-Chat ausblenden
     Hide Popular Videos: Beliebte Videos ausblenden
@@ -566,6 +567,8 @@ Settings:
     Hide Subscriptions Posts: Beiträge aus Abos ausblenden
     Add: Hinzufügen
     Remove: Entfernen
+    Hide Channel Shows: Kanal "Shows" Tab ausblenden
+    More Items Count: +{count} weitere…
   The app needs to restart for changes to take effect. Restart and apply change?: Die App muss neu gestartet werden, damit die Änderungen wirksam werden. Neu starten und Änderung übernehmen?
   Proxy Settings:
     Ip: IP-Adresse
@@ -635,6 +638,9 @@ Settings:
     Set Password: Passwort festlegen
   Sort Settings Sections (A-Z): Einstellungsabschnitte sortieren (A–Z)
   Return to Settings Menu: Zurück zum Einstellungsmenü
+  Search Settings: Einstellungen durchsuchen
+  Settings found: 1 Einstellung gefunden | {count} Einstellungen gefunden
+  No Matching Settings: Es wurden keine Einstellungen gefunden, die Ihrer Suche entsprechen.
 About:
   #On About page
   About: Über
@@ -726,6 +732,9 @@ Channel:
     This channel does not currently have any courses: Dieser Kanal hat derzeit keine Kurse
     Courses: Kurse
   View All: Alles anzeigen
+  Shows:
+    Shows: Shows
+    This channel does not currently have any shows: Dieser Kanal hat derzeit keine Shows
 Video:
   Open in YouTube: In YouTube öffnen
   Copy YouTube Link: YouTube-Link kopieren

@@ -136,6 +136,7 @@ Search Filters:
   Search Results: Search Results
   Fetching results. Please wait: Fetching results. Please wait
   Fetch more results: Fetch more results
+  No results found: No results found. Try different keywords or adjust search filters
   There are no more results for this search: There are no more results for this search
   Clear Filters: Clear Filters
 # Sidebar
@@ -604,6 +605,9 @@ History:
 Settings:
   # On Settings Page
   Settings: Settings
+  Search Settings: Search Settings
+  Settings found: '1 setting found | {count} settings found'
+  No Matching Settings: No settings match your search.
   Sort Settings Sections (A-Z): Sort Settings Sections (A-Z)
   Return to Settings Menu: Return to Settings Menu
   The app needs to restart for changes to take effect. Restart and apply change?: The
@@ -983,11 +987,13 @@ Settings:
     Hide Channel Podcasts: Hide Channel "Podcasts" Tab
     Hide Channel Releases: Hide Channel "Releases" Tab
     Hide Channel Courses: Hide Channel "Courses" Tab
+    Hide Channel Shows: Hide Channel "Shows" Tab
     Hide Videos, Playlists and Channels Containing Text: Hide Videos, Playlists and Channels Containing Text
     Hide Videos, Playlists and Channels Containing Text Placeholder: Word, Word Fragment, or Phrase
     Show Added Items: Show Added Items
     Add: Add
     Remove: Remove
+    More Items Count: '+{count} more…'
   Data Settings:
     Data Settings: Data
     Select Export Type: Select Export Type
@@ -1028,8 +1034,7 @@ Settings:
     All watched history has been successfully exported: All watched history has been
       successfully exported
     Playlist insufficient data: Insufficient data for "{playlist}" playlist, skipping item
-    All playlists has been successfully imported: All playlists has been
-      successfully imported
+    Playlists have been successfully imported: 1/{total} playlist has been successfully imported | {count}/{total} playlists have been successfully imported
     All playlists has been successfully exported: All playlists has been
       successfully exported
     All search history has been successfully imported: All search history has been
@@ -1332,6 +1337,9 @@ Channel:
   Courses:
     Courses: Courses
     This channel does not currently have any courses: This channel does not currently have any courses
+  Shows:
+    Shows: Shows
+    This channel does not currently have any shows: This channel does not currently have any shows
   About:
     About: About
     Channel Description: Channel Description

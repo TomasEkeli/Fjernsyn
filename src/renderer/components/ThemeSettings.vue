@@ -52,9 +52,9 @@
         <FtSlider
           :label="$t('Settings.Theme Settings.UI Scale')"
           :default-value="uiScale"
-          :min-value="50"
-          :max-value="300"
-          :step="5"
+          :min-value="UI_SCALE.MIN"
+          :max-value="UI_SCALE.MAX"
+          :step="UI_SCALE.STEP"
           value-extension="%"
           @change="updateUiScale"
         />
@@ -113,6 +113,7 @@ import FtFlexBox from './ft-flex-box/ft-flex-box.vue'
 import FtPrompt from './FtPrompt/FtPrompt.vue'
 
 import store from '../store/index'
+import { UI_SCALE } from '../../constants.js'
 
 import { colors } from '../helpers/colors'
 import { useColorTranslations } from '../composables/colors'

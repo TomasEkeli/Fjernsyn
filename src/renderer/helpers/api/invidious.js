@@ -125,7 +125,7 @@ export async function invidiousGetChannelId(url) {
  *  description: string,
  *  descriptionHtml: string,
  *  allowedRegions: string[],
- *  tabs: ('home' | 'videos' | 'shorts' | 'live' | 'podcasts' | 'releases' | 'courses' | 'playlists' | 'community')[],
+ *  tabs: ('home' | 'videos' | 'shorts' | 'live' | 'podcasts' | 'releases' | 'courses' | 'shows' | 'playlists' | 'community')[],
  *  latestVideos: InvidiousVideoType[],
  *  relatedChannels: InvidiousChannelObject[]
  * }>}
@@ -299,6 +299,19 @@ export async function getInvidiousChannelCourses(channelId, continuation) {
     coursePlaylist.isCourse = true
   }
   return courses
+}
+
+/**
+ * @param {string} channelId
+ * @param {string | undefined | null} continuation
+ */
+export async function getInvidiousChannelShows(channelId, continuation) {
+  /** @type {{continuation: string?, playlists: InvidiousPlaylistObject[]}} */
+  const shows = await getInvidiousChannelTab('shows', channelId, continuation)
+  for (const showPlaylist of shows.playlists) {
+    showPlaylist.isShow = true
+  }
+  return shows
 }
 
 /**
@@ -655,7 +668,7 @@ export async function getInvidiousSearchResults(query, page, searchSettings) {
     over_twenty_mins: 'long',
   }
 
-  /** @type {Promise<(InvidiousChannelObject | InvidiousPlaylistObject | InvidiousVideoType | InvidiousHashtagObject)[] | null>} */
+  /** @type {(InvidiousChannelObject | InvidiousPlaylistObject | InvidiousVideoType | InvidiousHashtagObject)[] | null} */
   let results = await invidiousAPICall({
     resource: 'search',
     id: '',
@@ -671,9 +684,14 @@ export async function getInvidiousSearchResults(query, page, searchSettings) {
   })
 
   if (!results) {
-    return null
+    return {
+      results: null,
+      validResultsCount: 0,
+      rawResultsCount: 0,
+    }
   }
 
+  const rawResultsCount = results.length
   results = results.filter((item) => {
     return item.type === 'video' || item.type === 'channel' || item.type === 'playlist' || item.type === 'hashtag'
   })
@@ -685,7 +703,11 @@ export async function getInvidiousSearchResults(query, page, searchSettings) {
     }
   })
 
-  return results
+  return {
+    results,
+    validResultsCount: results.length,
+    rawResultsCount,
+  }
 }
 
 /**
