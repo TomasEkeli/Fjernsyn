@@ -57,7 +57,7 @@ function dbToPercent(db) {
  */
 export class VolumeBar extends shaka.ui.RangeElement {
   /**
-   * @param {import('../ft-shaka-video-player').VolumeState} state
+   * @param {import('../FtShakaVideoPlayer.vue').VolumeState} state
    * @param {EventTarget} events
    * @param {!HTMLElement} parent
    * @param {!shaka.ui.Controls} controls

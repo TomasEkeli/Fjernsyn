@@ -310,7 +310,7 @@ import FtAgeRestricted from '../../components/FtAgeRestricted/FtAgeRestricted.vu
 import FtButton from '../../components/FtButton/FtButton.vue'
 import FtIconButton from '../../components/FtIconButton/FtIconButton.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
-import FtShakaVideoPlayer from '../../components/ft-shaka-video-player/ft-shaka-video-player.vue'
+import FtShakaVideoPlayer from '../../components/FtShakaVideoPlayer/FtShakaVideoPlayer.vue'
 import FtSponsorBlockExcludeChannelButton from '../../components/FtSponsorBlockExcludeChannelButton/FtSponsorBlockExcludeChannelButton.vue'
 import FtYtDlpDownloadButton from '../../components/FtYtDlpDownloadButton/FtYtDlpDownloadButton.vue'
 import LayerComments from '../../components/LayerComments/LayerComments.vue'

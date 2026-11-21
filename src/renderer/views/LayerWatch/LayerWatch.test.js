@@ -25,7 +25,7 @@ import FtIconButton from '../../components/FtIconButton/FtIconButton.vue'
 // it resolves
 const player = vi.hoisted(() => ({ hasLoaded: false, currentTime: 0, seekedTo: [], paused: false, events: [], destroyGate: undefined, fullWindow: false }))
 
-vi.mock('../../components/ft-shaka-video-player/ft-shaka-video-player.vue', async () => {
+vi.mock('../../components/FtShakaVideoPlayer/FtShakaVideoPlayer.vue', async () => {
   const { defineComponent, h, onBeforeUnmount } = await import('vue')
 
   return {
