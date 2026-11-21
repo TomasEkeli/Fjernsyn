@@ -94,7 +94,7 @@
       "reason": "the next-video preview of a PeerTube item is its own thumbnail, or the placeholder; next, previous, loop and shuffle step over PeerTube items, which open on their own watch page, unless the optional `crossPlatform` prop (the layer's watch page) takes them in, each on its own watch route with the playlist query"
     },
     {
-      "path": "src/renderer/components/ft-shaka-video-player/ft-shaka-video-player.js",
+      "path": "src/renderer/components/FtShakaVideoPlayer/FtShakaVideoPlayer.vue",
       "reason": "optional `platform` prop: no SponsorBlock and no YouTube HLS seek rule for other platforms; lowest variant when none is at or below the preferred quality"
     },
     {
