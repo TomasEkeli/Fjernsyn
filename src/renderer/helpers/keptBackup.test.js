@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { BACKUP_SECTIONS } from './backup'
+import { BACKUP_FORMAT, BACKUP_SECTIONS, readBackup, writeBackup } from './backup'
 import {
   LINEAGE_LENGTH,
   REBASE_THRESHOLD,
@@ -9,12 +9,15 @@ import {
   SYNC_FORMAT_VERSION,
   applyChanges,
   baseFileName,
+  chooseArchive,
   computeChanges,
   contentText,
   isBaseFileName,
   lineageEntry,
+  readArchiveHeader,
   readSyncFile,
   rebaseNeeded,
+  writeArchive,
   writeSyncFile,
 } from './keptBackup'
 
@@ -556,6 +559,85 @@ describe('the kept backup format', () => {
       expect(rebaseNeeded('x'.repeat(REBASE_THRESHOLD - 1))).toBe(false)
       expect(rebaseNeeded('x'.repeat(REBASE_THRESHOLD))).toBe(false)
       expect(rebaseNeeded('x'.repeat(REBASE_THRESHOLD + 1))).toBe(true)
+    })
+  })
+
+  describe('the archive', () => {
+    const SECTIONS = { history: [YOUTUBE_HISTORY], settings: [{ _id: 'maxVolume', value: 500 }] }
+
+    it('writes the cut in the header and reads it back', () => {
+      const cut = { '9b0c': 41207, '4e71': 318 }
+      const text = writeArchive({ ...HEADER, cut, sections: SECTIONS })
+
+      expect(readArchiveHeader(text)).toEqual({
+        ok: true,
+        formatVersion: 1,
+        appVersion: HEADER.appVersion,
+        installationId: HEADER.installationId,
+        machineName: HEADER.machineName,
+        cut,
+      })
+    })
+
+    it('writes the cut with its machines in a fixed order, so two machines folding the same state write the same bytes', () => {
+      const one = writeArchive({ ...HEADER, cut: { '9b0c': 41207, '4e71': 318 }, sections: SECTIONS })
+      const other = writeArchive({ ...HEADER, cut: { '4e71': 318, '9b0c': 41207 }, sections: SECTIONS })
+
+      expect(one).toBe(other)
+    })
+
+    it('reads an archive written before the cut existed as an empty cut', () => {
+      const text = writeBackup({ ...HEADER, sections: SECTIONS })
+
+      expect(readArchiveHeader(text)).toEqual({ ...readArchiveHeader(writeArchive({ ...HEADER, cut: {}, sections: SECTIONS })), cut: {} })
+      expect(readArchiveHeader(text).cut).toEqual({})
+    })
+
+    it('drops what is no machine and no sequence number from the cut', () => {
+      const header = cut => readArchiveHeader(JSON.stringify({ ...JSON.parse(writeBackup({ ...HEADER, sections: SECTIONS })), cut }))
+
+      for (const cut of [null, 'none', ['9b0c', 7], 5]) {
+        expect(header(cut).cut, JSON.stringify(cut)).toEqual({})
+      }
+
+      expect(header({ '9b0c': 7, '4e71': -1, aaaa: 1.5, bbbb: 'nine', cccc: null, '': 3 }).cut).toEqual({ '9b0c': 7 })
+    })
+
+    it('stays a backup a restore can read', () => {
+      const text = writeArchive({ ...HEADER, cut: { '9b0c': 41207 }, sections: SECTIONS })
+      const read = readBackup(text, { machineBoundSettings: [], keepUnknownSettings: true })
+
+      expect(read.ok).toBe(true)
+      expect(read.sections.history).toEqual([YOUTUBE_HISTORY])
+    })
+
+    it('refuses text that is not JSON, and JSON that is no archive', () => {
+      expect(readArchiveHeader('{')).toEqual({ ok: false, reason: 'notJson' })
+      expect(readArchiveHeader(JSON.stringify({ format: 'something else', formatVersion: 1 }))).toEqual({ ok: false, reason: 'notArchive' })
+      expect(readArchiveHeader(JSON.stringify({ format: BACKUP_FORMAT, formatVersion: 99 })))
+        .toEqual({ ok: false, reason: 'newerVersion', formatVersion: 99 })
+    })
+  })
+
+  describe('chooseArchive', () => {
+    it('chooses the archive with the most folded in', () => {
+      expect(chooseArchive([{ hash: 'a', cut: { m1: 10 } }, { hash: 'b', cut: { m1: 4, m2: 9 } }])).toBe('b')
+    })
+
+    it('chooses the same archive on both machines when two cuts cannot be compared', () => {
+      const one = { hash: 'aa', cut: { m1: 10, m2: 0 } }
+      const other = { hash: 'bb', cut: { m1: 0, m2: 10 } }
+
+      expect(chooseArchive([one, other])).toBe('bb')
+      expect(chooseArchive([other, one])).toBe('bb')
+    })
+
+    it('chooses nothing when the folder has no archive', () => {
+      expect(chooseArchive([])).toBe(null)
+    })
+
+    it('chooses an archive that has folded nothing in over none at all', () => {
+      expect(chooseArchive([{ hash: 'a', cut: {} }])).toBe('a')
     })
   })
 })

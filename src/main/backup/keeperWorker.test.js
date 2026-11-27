@@ -3,7 +3,8 @@ import { gunzipSync } from 'node:zlib'
 
 import { describe, expect, it } from 'vitest'
 
-import { baseFileName, readSyncFile, writeSyncFile } from '../../renderer/helpers/keptBackup'
+import { writeBackup } from '../../renderer/helpers/backup'
+import { baseFileName, readArchiveHeader, writeSyncFile } from '../../renderer/helpers/keptBackup'
 import { runKeeperJob } from './keeperWorker'
 
 // The worker's entry point, run inline: the same function the worker thread runs
@@ -19,42 +20,43 @@ function entry(id, timeWatched) {
 }
 
 describe('runKeeperJob', () => {
-  it('turns sections into a sync file: on a new base when there is none, then as changes against it', () => {
+  it('turns sections into an archive when there is none, then into the state records against it', () => {
     const sections = { profiles: [PROFILE], history: [entry('h1', 1)], settings: [{ _id: 'maxVolume', value: 100 }] }
+    const cut = { 'installation-w': 7 }
 
-    const lineage = ['0123456789abcdef']
-    const first = runKeeperJob({ type: 'build', sections, header: HEADER, lineage, base: null, lastContentHash: null })
+    const first = runKeeperJob({ type: 'build', sections, header: HEADER, cut, archive: null, at: 5, lastContentHash: null })
 
-    const { newBase } = first
-    const baseText = gunzipSync(newBase.gz).toString('utf8')
-    expect(baseText).toBe(newBase.text)
-    expect(hashOf(baseText)).toBe(newBase.sha256)
-    expect(newBase.file).toBe(baseFileName(newBase.sha256))
-    expect(JSON.parse(baseText)).toMatchObject({ machineName: 'MACHINE-w', sections: { history: [entry('h1', 1)] } })
+    const { newArchive } = first
+    const text = gunzipSync(newArchive.gz).toString('utf8')
+    expect(text).toBe(newArchive.text)
+    expect(hashOf(text)).toBe(newArchive.sha256)
+    expect(newArchive.file).toBe(baseFileName(newArchive.sha256))
+    expect(JSON.parse(text)).toMatchObject({ machineName: 'MACHINE-w', sections: { history: [entry('h1', 1)] } })
+    expect(readArchiveHeader(text)).toMatchObject({ ok: true, cut })
 
-    expect(first.syncHash).toBe(hashOf(first.syncText))
-    expect(readSyncFile(first.syncText)).toEqual({
-      ok: true,
-      header: { formatVersion: 1, ...HEADER, lineage },
-      base: { file: newBase.file, sha256: newBase.sha256 },
-      changes: {},
-    })
+    // A new archive has every state field, so nothing is a delta against it
+    expect(first.records).toEqual({})
 
-    const base = { file: newBase.file, sha256: newBase.sha256, text: baseText }
+    const archive = { sha256: newArchive.sha256, text }
     const second = runKeeperJob({
       type: 'build',
       sections: { ...sections, history: [entry('h1', 1), entry('h2', 2)] },
       header: HEADER,
-      base,
+      archive,
+      at: 9,
       lastContentHash: first.contentHash,
     })
 
-    expect(second).toMatchObject({ unchanged: false, newBase: null })
-    expect(readSyncFile(second.syncText)).toMatchObject({ base: { file: newBase.file }, changes: { history: { put: [entry('h2', 2)], remove: [] } } })
+    expect(second).toMatchObject({ unchanged: false, newArchive: null })
+    expect(second.records).toEqual({ 'history/h2': { at: 9, fields: entry('h2', 2) } })
 
     // the content as last written: nothing to write
-    expect(runKeeperJob({ type: 'build', sections, header: HEADER, base, lastContentHash: first.contentHash }))
+    expect(runKeeperJob({ type: 'build', sections, header: HEADER, archive, at: 9, lastContentHash: first.contentHash }))
       .toEqual({ contentHash: first.contentHash, unchanged: true })
+
+    // past the threshold: a new archive, whatever the content did
+    expect(runKeeperJob({ type: 'build', sections, header: HEADER, archive, at: 9, lastContentHash: first.contentHash, wantArchive: true }).newArchive)
+      .not.toBeNull()
   })
 
   describe('merge', () => {
@@ -63,10 +65,13 @@ describe('runKeeperJob', () => {
       return { ...entry(id, timeWatched), published: 1700000000000, description: '', viewCount: 10, lengthSeconds: 60, watchProgress: 30, isLive: false }
     }
 
-    /** The folder's state as a sync file on a base, as another machine wrote it */
+    /** The folder's state as a sync file on a base, as a machine on the old layout wrote it */
     function folderState(sections) {
-      const built = runKeeperJob({ type: 'build', sections, header: { ...HEADER, machineName: 'MACHINE-z' }, base: null, lastContentHash: null })
-      return { syncText: built.syncText, baseText: gunzipSync(built.newBase.gz).toString('utf8') }
+      const header = { ...HEADER, machineName: 'MACHINE-z' }
+      const baseText = writeBackup({ ...header, sections })
+      const sha256 = hashOf(baseText)
+
+      return { syncText: writeSyncFile({ ...header, base: { file: baseFileName(sha256), sha256 }, changes: {} }), baseText }
     }
 
     const ours = { profiles: [PROFILE], history: [watched('h1', 1)], settings: [{ _id: 'maxVolume', value: 100 }] }

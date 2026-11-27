@@ -2,9 +2,10 @@ import Datastore from '@seald-io/nedb'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import * as db from '../index'
-import { communities } from './base'
+import { communities, inLaterQueue, later } from './base'
 
-// The datastores as main opens them, in memory: only the communities ones are used here
+// The datastores as main opens them, in memory: only the communities ones and
+// the Later list are used here
 vi.mock('../index', async () => {
   const { default: Datastore } = await import('@seald-io/nedb')
   return {
@@ -12,6 +13,7 @@ vi.mock('../index', async () => {
     communityShares: new Datastore({ inMemoryOnly: true }),
     communityVideos: new Datastore({ inMemoryOnly: true }),
     communitySourceData: new Datastore({ inMemoryOnly: true }),
+    later: new Datastore({ inMemoryOnly: true }),
   }
 })
 
@@ -242,6 +244,40 @@ describe('unfollowing a community source', () => {
   })
 })
 
+describe('the order of Later writes', () => {
+  const item = { _id: 'aaaaaaaaaaa', videoId: 'aaaaaaaaaaa', title: 'A', position: 1, viewCount: 10, alarm: null }
+
+  beforeEach(async () => {
+    await db.later.removeAsync({}, { multi: true })
+    await db.later.insertAsync({ ...item })
+  })
+
+  it('holds back every write of the list while a take in has the queue, and lets them all through after it', async () => {
+    // The keeper's take in is what else joins this queue: it reads the list,
+    // folds another machine's events onto its own copy and writes the records
+    // one at a time (`main/backup/keeper.js`)
+    let release
+    const takeIn = inLaterQueue(() => new Promise((resolve) => { release = resolve }))
+
+    const writes = [
+      later.upsert({ _id: 'bbbbbbbbbbb', videoId: 'bbbbbbbbbbb', title: 'B', position: 2 }),
+      later.updatePosition('aaaaaaaaaaa', 7),
+      later.updateAlarm('aaaaaaaaaaa', { at: 1764170000000, armedAt: 1764160000000 }),
+      later.updateViewCount('aaaaaaaaaaa', 99),
+      later.delete('aaaaaaaaaaa'),
+      later.deleteAll(),
+    ]
+    await new Promise(resolve => setImmediate(resolve))
+
+    expect(await db.later.findAsync({})).toEqual([item])
+
+    release()
+    await Promise.all([takeIn, ...writes])
+
+    expect(await db.later.findAsync({})).toEqual([])
+  })
+})
+
 describe('putting a community source\'s own data', () => {
   beforeEach(async () => {
     await db.communitySourceData.removeAsync({}, { multi: true })
@@ -253,5 +289,24 @@ describe('putting a community source\'s own data', () => {
     await communities.putSourceData({ _id: 'hackertube', generated: '2026-11-07', taxonomy: { version: 'b', areas: [] } })
 
     expect(await communities.findSourceData()).toEqual([{ _id: 'hackertube', generated: '2026-11-07', taxonomy: { version: 'b', areas: [] } }])
+  })
+})
+
+describe('writing every Later position at once', () => {
+  beforeEach(async () => {
+    await db.later.removeAsync({}, { multi: true })
+
+    for (const [_id, position] of [['a', -5], ['b', -4], ['c', 0.1]]) {
+      await later.upsert({ _id, videoId: _id, position, title: `The ${_id}` })
+    }
+  })
+
+  it('writes each position, and leaves the fields it does not name', async () => {
+    await later.updatePositions([{ _id: 'a', position: 0 }, { _id: 'b', position: 1 }, { _id: 'c', position: 2 }])
+
+    const records = (await later.find()).sort((one, other) => one.position - other.position)
+
+    expect(records.map(record => [record._id, record.position])).toEqual([['a', 0], ['b', 1], ['c', 2]])
+    expect(records.map(record => record.title)).toEqual(['The a', 'The b', 'The c'])
   })
 })

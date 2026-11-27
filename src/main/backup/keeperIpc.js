@@ -9,20 +9,19 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 
 import packageDetails from '../../../package.json'
 import { IpcChannels, SyncEvents } from '../../constants'
-import { inCommunitiesQueue } from '../../datastores/handlers/base'
+import * as handlers from '../../datastores/handlers/base'
 import * as datastores from '../../datastores/index'
 import { isFreeTubeUrl } from '../utils'
+import { watchIntents } from './intents'
 import { createKeeper, TICK_MS, watchDatastores } from './keeper'
 import { runKeeperJob } from './keeperWorker'
 
 /**
- * The keeper wired into main: the datastores watched for writes, the startup
- * check begun before the first window opens, a tick every minute on a timer
- * no window affects, and the IPC the Backup group and the notices use.
+ * The keeper wired into main: the datastores watched for writes, the handler
+ * classes watched for intents, the startup check begun before the first
+ * window opens, a tick every minute on a timer no window affects, and the IPC
+ * the Backup group and the notices use.
  */
-
-/** @type {ReadonlySet<import('./keeper').KeeperAnswer>} */
-const ANSWERS = new Set(['overwrite', 'notNow'])
 
 /**
  * The keeper's jobs in a worker thread, started on the first job and again
@@ -123,15 +122,42 @@ export function registerKeeper({ installationId, chooseDefaultFolder }) {
     appVersion: packageDetails.version,
     installationId: () => installationId,
     machineName: os.hostname(),
+    hostName: os.hostname(),
     runJob: createWorkerRunner(),
     onStatus: status => sendToAllWindows(IpcChannels.KEEPER_STATUS_CHANGED, status),
     // Every window loads the merged sections again, as it loads them at startup
     onDataChanged: changes => sendToAllWindows(IpcChannels.KEEPER_DATA_CHANGED, changes),
-    // A merged unfollow or follow in turn with the Communities handler's writes
-    inCommunitiesQueue,
+    // A take in of Later in turn with the Later handler's writes, so that a
+    // local write made while it runs is not written over by it
+    inLaterQueue: handlers.inLaterQueue,
   })
 
   watchDatastores(datastores, () => keeper.markChanged())
+
+  let firstLoadFinished = false
+
+  // The first load seeds the default profile and the default playlists and
+  // makes the `favorites` id fixup (`store/modules/playlists.js:310-333`).
+  // None of them is an intent, so the seam records nothing until that load is
+  // over, which the window says itself once it has loaded every section
+  // (`App.vue`). There is no window to act in before then, so no real intent
+  // falls inside the gate.
+  ipcMain.on(IpcChannels.KEEPER_FIRST_LOAD_DONE, (event) => {
+    if (isFreeTubeUrl(event.senderFrame.url)) {
+      firstLoadFinished = true
+    }
+  })
+
+  watchIntents(handlers, {
+    read: (section, id) => id === undefined
+      ? datastores[section].findAsync({})
+      : datastores[section].findOneAsync({ _id: id }),
+    onIntent: (intent) => {
+      if (!firstLoadFinished) { return }
+
+      keeper.recordEvent({ at: Date.now(), ...intent })
+    },
+  })
 
   keeper.start()
 
@@ -191,14 +217,6 @@ export function registerKeeper({ installationId, chooseDefaultFolder }) {
     })
 
     return status
-  })
-
-  ipcMain.handle(IpcChannels.KEEPER_ANSWER, async (event, answer) => {
-    if (!isFreeTubeUrl(event.senderFrame.url) || !ANSWERS.has(answer)) {
-      return null
-    }
-
-    return await keeper.answer(answer)
   })
 
   return {

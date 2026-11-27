@@ -890,6 +890,10 @@ const customActions = {
             commit('setLaterPosition', data)
             break
 
+          case SyncEvents.LATER.UPDATE_POSITIONS:
+            for (const item of data) { commit('setLaterPosition', item) }
+            break
+
           case SyncEvents.LATER.UPDATE_ALARM:
             commit('setLaterAlarm', data)
             break

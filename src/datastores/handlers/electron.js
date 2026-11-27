@@ -264,6 +264,10 @@ class Later {
     return window.ftElectron.dbLater(DBActions.LATER.UPDATE_POSITION, { _id, position })
   }
 
+  static updatePositions(positions) {
+    return window.ftElectron.dbLater(DBActions.LATER.UPDATE_POSITIONS, positions)
+  }
+
   static updateAlarm(_id, alarm, premiereDate) {
     return window.ftElectron.dbLater(DBActions.LATER.UPDATE_ALARM, { _id, alarm, premiereDate })
   }

@@ -1114,25 +1114,7 @@ Settings:
         Could not write: "Couldn't write: {message}"
         Another machine: another machine
         Unknown time: an unknown time
-        Refused reasons:
-          Not JSON: it is not JSON
-          Not a sync file: it is not a Fjernsyn sync file
-          Malformed changes: its changes are malformed
-          Base mismatch: its base file does not match it
-          Base unreadable: "its base file can't be read"
-        Arriving: 'Waiting for the backup {machine} wrote at {time} to arrive; nothing is written until it does.'
         Took in: 'Took in changes from {machine} at {time}'
-        Paused:
-          Refused: "Paused: the backup in the folder can't be read ({reason})."
-          Refused without reason: "Paused: the backup in the folder can't be read."
-          Newer: 'Paused: the backup was written by a newer Fjernsyn. Update Fjernsyn to keep it.'
-        Prompt:
-          Refused: "The backup in the folder can't be read ({reason}). Overwrite it with this machine's data?"
-          Refused without reason: "The backup in the folder can't be read. Overwrite it with this machine's data?"
-          Newer: "The backup in the folder was written by a newer Fjernsyn, which this version can't read. Update Fjernsyn to keep it."
-        Overwrite with this data: "Overwrite with this machine's data"
-        Not now: Not now
-        Restored: 'Took in the changes {machine} wrote at {time}'
         Failed: "Couldn't write the kept backup: {message}"
   Proxy Settings:
     Proxy Settings: Proxy

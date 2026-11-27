@@ -522,18 +522,50 @@ class AiVerdicts {
  * YouTube). Every write touches one record and only the fields it names, so
  * the scheduler changing an alarm and another window moving an item never
  * overwrite each other.
+ *
+ * Every write of the list runs in one queue, in the order asked, and the
+ * keeper's take in of another machine's intents joins it
+ * (`main/backup/keeper.js`). A take in reads the list, folds the events onto
+ * its own copy and writes the records one at a time, so without the queue a
+ * local write made between the read and those writes is written over by the
+ * copy the fold started from.
  */
+let laterQueue = Promise.resolve()
+
+/**
+ * @template T
+ * @param {() => Promise<T>} write
+ * @returns {Promise<T>}
+ */
+function inLaterQueue(write) {
+  const run = laterQueue.then(write)
+  laterQueue = run.catch(() => {})
+  return run
+}
+
 class Later {
   static find() {
     return db.later.findAsync({})
   }
 
   static upsert(item) {
-    return db.later.updateAsync({ _id: item._id }, item, { upsert: true })
+    return inLaterQueue(() => db.later.updateAsync({ _id: item._id }, item, { upsert: true }))
   }
 
   static updatePosition(_id, position) {
-    return db.later.updateAsync({ _id }, { $set: { position } })
+    return inLaterQueue(() => db.later.updateAsync({ _id }, { $set: { position } }))
+  }
+
+  /**
+   * Every position of a renumber in one call: written one at a time, the list
+   * passes through orders it was never in, which a watcher of this class
+   * cannot tell from a move.
+   * @param {{ _id: string, position: number }[]} positions
+   */
+  static async updatePositions(positions) {
+    for (const { _id, position } of positions) {
+      await db.later.updateAsync({ _id }, { $set: { position } })
+    }
   }
 
   /**
@@ -543,19 +575,19 @@ class Later {
    */
   static updateAlarm(_id, alarm, premiereDate) {
     const fields = typeof premiereDate === 'number' ? { alarm, premiereDate } : { alarm }
-    return db.later.updateAsync({ _id }, { $set: fields })
+    return inLaterQueue(() => db.later.updateAsync({ _id }, { $set: fields }))
   }
 
   static updateViewCount(_id, viewCount) {
-    return db.later.updateAsync({ _id }, { $set: { viewCount } })
+    return inLaterQueue(() => db.later.updateAsync({ _id }, { $set: { viewCount } }))
   }
 
   static delete(_id) {
-    return db.later.removeAsync({ _id })
+    return inLaterQueue(() => db.later.removeAsync({ _id }))
   }
 
   static deleteAll() {
-    return db.later.removeAsync({}, { multi: true })
+    return inLaterQueue(() => db.later.removeAsync({}, { multi: true }))
   }
 }
 
@@ -785,6 +817,7 @@ export {
   Communities as communities,
 
   inCommunitiesQueue,
+  inLaterQueue,
   loadDatastores,
   compactAllDatastores,
 }

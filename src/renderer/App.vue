@@ -200,6 +200,7 @@ onMounted(async () => {
       document.addEventListener('auxclick', handleAuxClick)
       enableOpenUrl()
       store.dispatch('getExternalPlayerCmdArgumentsData')
+      window.ftElectron.keeperFirstLoadDone()
     }
 
     dataReady.value = true

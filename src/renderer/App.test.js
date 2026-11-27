@@ -93,6 +93,7 @@ beforeEach(() => {
     handleMainWindowChanged: vi.fn(),
     handleOpenLaterItem: vi.fn(),
     keeperReady: vi.fn(async () => {}),
+    keeperFirstLoadDone: vi.fn(),
   }
   window.matchMedia ??= () => ({ matches: false })
   store.dispatched.length = 0
@@ -260,5 +261,27 @@ describe('the start screen', () => {
 
     expect(startScreen().exists()).toBe(false)
     expect(page().exists()).toBe(true)
+  })
+
+  it('tells main the first load is over once the sections have loaded, and not before', async () => {
+    // The gate the keeper's seam hangs on: what is written before this is the
+    // defaults seeding and the `favorites` id fixup, and neither is an intent
+    // (`main/backup/keeperIpc.js`)
+    const profiles = deferred()
+    const dispatch = store.dispatch
+    store.dispatch = (type, payload) => {
+      const result = dispatch(type, payload)
+      return type === 'grabAllProfiles' ? profiles.promise : result
+    }
+    onTestFinished(() => { store.dispatch = dispatch })
+
+    await mountStarting()
+
+    expect(window.ftElectron.keeperFirstLoadDone).not.toHaveBeenCalled()
+
+    profiles.resolve()
+    await flushPromises()
+
+    expect(window.ftElectron.keeperFirstLoadDone).toHaveBeenCalledTimes(1)
   })
 })

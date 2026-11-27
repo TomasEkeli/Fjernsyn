@@ -508,6 +508,16 @@ export default {
   },
 
   /**
+   * The window has loaded every section, so what is written from here is a
+   * deliberate act and the keeper records it as an intent. The defaults
+   * seeding and the `favorites` id fixup run inside that load, and neither is
+   * one.
+   */
+  keeperFirstLoadDone: () => {
+    ipcRenderer.send(IpcChannels.KEEPER_FIRST_LOAD_DONE)
+  },
+
+  /**
    * Main's folder dialog; the keeper starts on the folder chosen
    * @returns {Promise<import('../main/backup/keeper').KeeperStatus>}
    */
@@ -521,14 +531,6 @@ export default {
    */
   stopKeeping: () => {
     return ipcRenderer.invoke(IpcChannels.KEEPER_STOP)
-  },
-
-  /**
-   * @param {import('../main/backup/keeper').KeeperAnswer} answer
-   * @returns {Promise<import('../main/backup/keeper').KeeperStatus>}
-   */
-  answerKeeper: (answer) => {
-    return ipcRenderer.invoke(IpcChannels.KEEPER_ANSWER, answer)
   },
 
   /**

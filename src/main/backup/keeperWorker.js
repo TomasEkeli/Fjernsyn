@@ -2,29 +2,28 @@ import { createHash } from 'node:crypto'
 import { gzipSync } from 'node:zlib'
 import { parentPort, workerData } from 'node:worker_threads'
 
-import { readBackup, writeBackup } from '../../renderer/helpers/backup'
+import { BACKUP_SECTIONS, readBackup, writeBackup } from '../../renderer/helpers/backup'
 import { mergeSections } from '../../renderer/helpers/keptMerge'
 import {
   applyChanges,
   baseFileName,
-  computeChanges,
   contentText,
   readSyncFile,
-  rebaseNeeded,
-  writeSyncFile,
+  writeArchive,
 } from '../../renderer/helpers/keptBackup'
+import { stateChangesSince } from '../../renderer/helpers/stateFile'
 
 /**
- * The kept backup's heavy work, off main's thread: building the content and
- * the changes against the base, writing a new base and gzipping it, and
- * merging what another machine wrote with this one's data. On Tomas's data a
- * stringify is a third of a second and a gzip most of one, which on main's
- * thread would freeze every window (spec, "Where the work runs").
+ * The kept backup's heavy work, off main's thread: building this machine's
+ * state records against the archive, writing a new archive and gzipping it,
+ * and merging what another machine wrote with this one's data. On a full data
+ * folder a stringify is a third of a second and a gzip most of one, which on
+ * main's thread would freeze every window (spec, "Where the work runs").
  *
  * Each job is a plain function of its input, so the keeper's tests run the
  * same code inline (`runKeeperJob`) where the app runs it in a worker thread.
- * The worker keeps the last base it was given, parsed, so that a tick does
- * not parse 30 MB again when the base has not changed.
+ * The worker keeps the last archive it was given, parsed, so that a tick does
+ * not parse 30 MB again when the archive has not changed.
  */
 
 /**
@@ -37,19 +36,19 @@ import {
  * @property {'build'} type
  * @property {Sections} sections this machine's content, every section
  * @property {KeeperHeader} header
- * @property {string[]} [lineage] the sync files this state builds on, newest first
- * @property {{ file: string, sha256: string, text: string } | null} base the base the sync file builds on; null to write a new one
- * @property {string | null} lastContentHash the content last written or taken in, when the sync file in the folder is that one
- * @property {boolean} [forceRebase]
+ * @property {import('../../renderer/helpers/keptBackup').Cut} [cut] what a new archive has folded in
+ * @property {{ sha256: string, text: string } | null} archive the archive the state file is a delta against, null to write a new one
+ * @property {number} at the time this machine last changed the state fields it names
+ * @property {string | null} lastContentHash the content last written
+ * @property {boolean} [wantArchive] the segment and the state file have grown past the threshold
  */
 
 /**
  * @typedef {{ contentHash: string, unchanged: true } | {
  *   contentHash: string,
  *   unchanged: false,
- *   syncText: string,
- *   syncHash: string,
- *   newBase: { file: string, sha256: string, text: string, gz: Uint8Array } | null,
+ *   records: Record<string, import('../../renderer/helpers/stateFile').StateRecord>,
+ *   newArchive: { file: string, sha256: string, text: string, gz: Uint8Array } | null,
  * }} BuildResult
  */
 
@@ -59,8 +58,8 @@ export function sha256(text) {
 }
 
 /**
- * The last two bases parsed, by hash: a merge reads the shared state's base
- * and the folder's, which are often one and the same
+ * The last two archives parsed, by hash. An archive is a backup with a cut in
+ * its header, so a base of the old layout parses as readily.
  * @type {Map<string, Sections>}
  */
 const parsedBases = new Map()
@@ -103,40 +102,53 @@ function baseSections(base) {
 }
 
 /**
+ * What this machine has to say about every section's state fields, by the
+ * key an event names the record by
+ * @param {Sections} sections
+ * @param {Sections} archived
+ * @param {number} at
+ */
+function stateRecords(sections, archived, at) {
+  const records = {}
+
+  for (const section of BACKUP_SECTIONS) {
+    Object.assign(records, stateChangesSince(section, sections[section] ?? [], archived[section] ?? [], at))
+  }
+
+  return records
+}
+
+/**
  * @param {BuildJob} job
  * @returns {BuildResult}
  */
-function build({ sections, header, lineage = [], base, lastContentHash, forceRebase = false }) {
+function build({ sections, header, cut = {}, archive, at, lastContentHash, wantArchive = false }) {
   const contentHash = sha256(contentText(sections))
 
-  if (lastContentHash !== null && contentHash === lastContentHash) {
+  // An archive is wanted because the segment and the state file have grown,
+  // which an appended intent does without changing a record here
+  if (!wantArchive && lastContentHash !== null && contentHash === lastContentHash) {
     return { contentHash, unchanged: true }
   }
 
-  const onBase = base !== null && !forceRebase ? baseSections(base) : null
+  const folded = archive !== null && !wantArchive ? baseSections(archive) : null
 
-  if (onBase !== null) {
-    const syncText = writeSyncFile({ ...header, lineage, base: { file: base.file, sha256: base.sha256 }, changes: computeChanges(onBase, sections) })
-
-    if (!rebaseNeeded(syncText)) {
-      return { contentHash, unchanged: false, syncText, syncHash: sha256(syncText), newBase: null }
-    }
+  if (folded !== null) {
+    return { contentHash, unchanged: false, records: stateRecords(sections, folded, at), newArchive: null }
   }
 
-  // A rebase: a new base of everything, and a sync file with no changes on it
-  const text = writeBackup({ ...header, sections })
+  const text = writeArchive({ ...header, cut, sections })
   const hash = sha256(text)
-  const file = baseFileName(hash)
-  const syncText = writeSyncFile({ ...header, lineage, base: { file, sha256: hash }, changes: {} })
 
   rememberBase(hash, sections)
 
   return {
     contentHash,
     unchanged: false,
-    syncText,
-    syncHash: sha256(syncText),
-    newBase: { file, sha256: hash, text, gz: gzipSync(text) },
+    // A new archive has every state field there is, so nothing is a delta
+    // against it yet
+    records: stateRecords(sections, sections, at),
+    newArchive: { file: baseFileName(hash), sha256: hash, text, gz: gzipSync(text) },
   }
 }
 

@@ -73,13 +73,6 @@ async function callKeeper(name, call) {
   }
 }
 
-/**
- * @param {import('../../main/backup/keeper').KeeperAnswer} answer
- */
-export function answerKeeper(answer) {
-  return callKeeper(`the answer ${answer}`, () => window.ftElectron.answerKeeper(answer))
-}
-
 /** Main's folder dialog; a cancelled one leaves the status as it is */
 export function chooseKeeperFolder() {
   return callKeeper('a folder', () => window.ftElectron.chooseKeeperFolder())
@@ -112,7 +105,7 @@ export function keeperTimeText(ms, now = Date.now()) {
 
 /**
  * The words the Backup group and the notices share about what the keeper
- * says: who wrote the file, when, and why it was refused
+ * says: who wrote the file, and when
  */
 export function useKeeperWords() {
   const { t } = useI18n()
@@ -123,26 +116,5 @@ export function useKeeperWords() {
 
     /** @param {number | null} ms */
     time: ms => ms === null ? t('Settings.Data Settings.Backup.Keeper.Unknown time') : keeperTimeText(ms),
-
-    /**
-     * @param {string | null} detail
-     * @returns {string | null} null for a reason this version does not know
-     */
-    refusedReason: (detail) => {
-      switch (detail) {
-        case 'notJson':
-          return t('Settings.Data Settings.Backup.Keeper.Refused reasons.Not JSON')
-        case 'notSyncFile':
-          return t('Settings.Data Settings.Backup.Keeper.Refused reasons.Not a sync file')
-        case 'malformedChanges':
-          return t('Settings.Data Settings.Backup.Keeper.Refused reasons.Malformed changes')
-        case 'baseMismatch':
-          return t('Settings.Data Settings.Backup.Keeper.Refused reasons.Base mismatch')
-        case 'baseUnreadable':
-          return t('Settings.Data Settings.Backup.Keeper.Refused reasons.Base unreadable')
-        default:
-          return null
-      }
-    },
   }
 }
