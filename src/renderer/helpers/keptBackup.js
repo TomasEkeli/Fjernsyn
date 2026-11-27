@@ -18,7 +18,7 @@
  * hash of the text tells one machine's write from another's.
  */
 
-import { BACKUP_SECTIONS, compareStrings, orderSections, sortKeys } from './backup'
+import { BACKUP_FORMAT, BACKUP_FORMAT_VERSION, BACKUP_SECTIONS, compareStrings, orderSections, sortKeys } from './backup'
 
 export const SYNC_FORMAT = 'fjernsyn-sync'
 
@@ -333,6 +333,111 @@ export function rebaseNeeded(syncText) {
   return syncText.length > REBASE_THRESHOLD
 }
 
+// #region the archive
+
+/**
+ * What an archive has folded in: the last sequence number it saw of each
+ * machine, by installation id. Per machine, so that a segment still in flight
+ * when the archive was written is above the cut and still applies.
+ * @typedef {Record<string, number>} Cut
+ */
+
+/**
+ * @typedef {{ ok: false, reason: 'notJson' | 'notArchive' } |
+ *   { ok: false, reason: 'newerVersion', formatVersion: number } |
+ *   { ok: true, formatVersion: number, appVersion: string | null, installationId: string | null, machineName: string | null, cut: Cut }} ArchiveHeader
+ */
+
+/**
+ * An archive's text: a backup as Export backup writes one, with the cut in
+ * its header. A restore reads it as any other backup, since a reader that
+ * does not know the cut ignores it.
+ *
+ * @param {object} archive
+ * @param {string} archive.appVersion
+ * @param {string} archive.installationId
+ * @param {string | null} [archive.machineName]
+ * @param {Cut} [archive.cut]
+ * @param {Partial<Record<BackupSection, Record<string, any>[]>>} archive.sections
+ * @returns {string}
+ */
+export function writeArchive({ appVersion, installationId, machineName = null, cut = {}, sections }) {
+  const document = {
+    format: BACKUP_FORMAT,
+    formatVersion: BACKUP_FORMAT_VERSION,
+    appVersion,
+    installationId,
+    machineName,
+    // Sorted, as two machines folding the same state write the same file and
+    // are named by its hash
+    cut: sortKeys(cut),
+    sections: orderSections(sections),
+  }
+
+  return JSON.stringify(document, null, 2) + '\n'
+}
+
+/**
+ * An archive's header alone, without parsing its sections, which are tens of
+ * megabytes: what it is, and what it has folded in
+ *
+ * @param {string} text
+ * @returns {ArchiveHeader}
+ */
+export function readArchiveHeader(text) {
+  let document
+  try {
+    document = JSON.parse(text)
+  } catch {
+    return { ok: false, reason: 'notJson' }
+  }
+
+  if (!isPlainObject(document) || document.format !== BACKUP_FORMAT || !Number.isInteger(document.formatVersion) ||
+    document.formatVersion < 1) {
+    return { ok: false, reason: 'notArchive' }
+  }
+
+  if (document.formatVersion > BACKUP_FORMAT_VERSION) {
+    return { ok: false, reason: 'newerVersion', formatVersion: document.formatVersion }
+  }
+
+  return {
+    ok: true,
+    formatVersion: document.formatVersion,
+    appVersion: typeof document.appVersion === 'string' ? document.appVersion : null,
+    installationId: typeof document.installationId === 'string' ? document.installationId : null,
+    machineName: typeof document.machineName === 'string' && document.machineName !== '' ? document.machineName : null,
+    cut: readCut(document.cut),
+  }
+}
+
+/**
+ * Which of the folder's archives to read. Any of them is correct, so this
+ * only decides how much is left to apply: the one that has folded the most
+ * in, by the sum of its cut, and the greater hash where two cannot be told
+ * apart, so that both machines land on the same one.
+ *
+ * @param {{ hash: string, cut: Cut }[]} headers
+ * @returns {string | null} null when the folder has no archive
+ */
+export function chooseArchive(headers) {
+  let chosen = null
+  let most = -1
+
+  for (const { hash, cut } of headers) {
+    const total = Object.values(cut ?? {}).reduce((sum, seq) => sum + seq, 0)
+
+    if (total > most || (total === most && compareStrings(hash, chosen) > 0)) {
+      chosen = hash
+      most = total
+    }
+  }
+
+  return chosen
+}
+
+// #endregion the archive
+
 // #region helpers
 
 /**
@@ -387,6 +492,28 @@ function readSectionChanges(input) {
   }
 
   return { put, remove }
+}
+
+/**
+ * An archive's cut, checked: a whole sequence number under each machine's
+ * installation id. An archive written before the cut existed has none, and
+ * reads as having folded nothing in, which is what it is as far as the
+ * segments go.
+ * @param {unknown} input
+ * @returns {Cut}
+ */
+function readCut(input) {
+  if (!isPlainObject(input)) { return {} }
+
+  const cut = {}
+
+  for (const [installationId, seq] of Object.entries(input)) {
+    if (installationId !== '' && Number.isInteger(seq) && seq >= 0) {
+      cut[installationId] = seq
+    }
+  }
+
+  return cut
 }
 
 /**

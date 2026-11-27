@@ -1,31 +1,33 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
-import fsp from 'node:fs/promises'
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
 import Datastore from '@seald-io/nedb'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { isBaseFileName, SYNC_FILE_NAME } from '../../renderer/helpers/keptBackup'
-import { createKeeper, LOCK_FILE_NAME, STATE_FILE_NAME, TEMP_PREFIX, watchDatastores } from './keeper'
+import { parseSegmentName, readSegment, segmentName } from '../../renderer/helpers/intentLog'
+import { isBaseFileName } from '../../renderer/helpers/keptBackup'
+import { createKeeper, TEMP_PREFIX, watchDatastores } from './keeper'
 import { runKeeperJob } from './keeperWorker'
 
-// Several keepers on one folder, and crashes (spec, "Testing decisions").
-// Each keeper has its own data folder, datastores, state file and clock, and
-// a file system that can hold one of its operations at a chosen step: released,
-// another keeper acts in between; never released, it is a crash, and a fresh
-// keeper on the same data folder is the restart. Nothing waits on real time:
-// ages are set on the files' modified times, against clocks near the real one.
-// So every age set is far past its limit, in case the real clock is stepped
-// back during a run; and as every test does real file and datastore work, the
-// slowest take over three seconds of the default five on a loaded machine.
-
-const MINUTE = 60_000
-const DAY = 24 * 60 * MINUTE
-/** A lock this old is stale by any clock: the limit is two minutes */
-const STALE = 60 * MINUTE
-/** Each test opens three or more machines of eight datastores and gzips bases */
-const SLOW = { timeout: 30_000 }
+// Two and three keepers on one folder, each with its own data folder,
+// datastores, state file and segments, and a sync tool that takes as long as
+// it takes (spec, "Delivery is slow and out of order").
+//
+// Each machine sees the folder as a copy of its own, which is what two
+// machines behind Syncthing have: a carry takes each machine's own files to
+// the others, a file held back waits the carries it was given, and a file
+// carried half way is the tail of a segment that is still being appended to.
+// Nothing waits on real time. A test drives every tick itself.
 
 const DATASTORE_FILES = {
   settings: 'settings',
@@ -43,612 +45,602 @@ const DATASTORE_FILES = {
 
 const MAIN_PROFILE = { _id: 'allChannels', name: 'All Channels', bgColor: '#000000', textColor: '#FFFFFF', subscriptions: [] }
 
-const OLD = ['h1']
-const NEW = ['h1', 'h2']
+/** Each test opens several machines of eleven datastores, and gzips archives */
+const SLOW = { timeout: 60_000 }
+
+const T = 1764160000000
 
 let root
 let keepers
 
 beforeEach(() => {
-  root = mkdtempSync(path.join(os.tmpdir(), 'fjernsyn-keepers-'))
+  root = mkdtempSync(path.join(os.tmpdir(), 'fjernsyn-delivery-'))
   keepers = []
 })
 
 afterEach(async () => {
-  // A crashed keeper's log is not held, so every log can be let finish
   await Promise.all(keepers.map(keeper => keeper.flushLog()))
   rmSync(root, { recursive: true, force: true })
 })
 
 // #region the harness
 
-function historyEntry(videoId) {
-  return { videoId, title: `Video ${videoId}`, author: 'Synthetic Channel', authorId: 'UCsynthetic', published: 1700000000000, description: 'A synthetic description', viewCount: 10, lengthSeconds: 60, watchProgress: 30, timeWatched: 1, isLive: false, type: 'video' }
+const idOf = name => `installation-${name}`
+const folderOf = (home, name) => path.join(home, `kept-${name}`)
+const backupsOf = m => path.join(m.dataFolder, 'backups')
+const stateOf = m => JSON.parse(readFileSync(path.join(backupsOf(m), 'keeper-state.json'), 'utf8'))
+const indexOf = m => JSON.parse(readFileSync(path.join(backupsOf(m), 'intent-index.json'), 'utf8'))
+const archivesIn = m => readdirSync(m.folder).filter(isBaseFileName).sort()
+const segmentIn = (m, who, index) => path.join(m.folder, segmentName(idOf(who), index))
+
+/** Every wait never ends: a test drives the ticks itself */
+function untimed() {
+  return new Promise(() => {})
+}
+
+function historyEntry(videoId, extra = {}) {
+  return {
+    _id: videoId,
+    videoId,
+    title: `Video ${videoId}`,
+    author: 'Synthetic Channel',
+    authorId: 'UCsynthetic',
+    published: 1700000000000,
+    description: 'A synthetic description',
+    viewCount: 10,
+    lengthSeconds: 60,
+    watchProgress: 30,
+    timeWatched: 1,
+    isLive: false,
+    type: 'video',
+    ...extra,
+  }
 }
 
 /**
- * node:fs/promises, where an operation matching a hold stops before or after
- * it runs until the hold is released
- */
-function heldFileSystem() {
-  const holds = []
-
-  async function gate(when, op, args) {
-    const index = holds.findIndex(hold => hold.when === when && hold.match(op, args))
-    if (index === -1) { return }
-
-    const [hold] = holds.splice(index, 1)
-    hold.arrive()
-    await hold.released
-  }
-
-  const fileSystem = {}
-  for (const [op, original] of Object.entries(fsp)) {
-    fileSystem[op] = typeof original !== 'function'
-      ? original
-      : async (...args) => {
-        await gate('before', op, args)
-        const result = await original(...args)
-        await gate('after', op, args)
-        return result
-      }
-  }
-
-  /**
-   * @param {'before' | 'after'} when
-   * @param {(op: string, args: any[]) => boolean} match
-   */
-  function hold(when, match) {
-    const entry = { when, match }
-    const reached = new Promise((resolve) => { entry.arrive = resolve })
-    let release
-    entry.released = new Promise((resolve) => { release = resolve })
-    holds.push(entry)
-    return { reached, release }
-  }
-
-  return { fileSystem, hold }
-}
-
-const named = (file, test) => typeof file === 'string' && test(path.basename(file))
-const inBackupFolder = file => path.basename(path.dirname(file)) !== 'backups'
-
-/** The steps a write can be held at, by operation and path */
-const at = {
-  lockMade: (op, [file, , options]) => op === 'writeFile' && named(file, name => name === LOCK_FILE_NAME) && options?.flag === 'wx',
-  lockOverwritten: (op, [file, , options]) => op === 'writeFile' && named(file, name => name === LOCK_FILE_NAME) && options?.flag !== 'wx',
-  lockRemoved: (op, [file]) => op === 'rm' && named(file, name => name === LOCK_FILE_NAME),
-  /** @param {'base' | 'sync'} kind the base's is gzipped bytes, the sync file's text */
-  tempWritten: kind => (op, [file, data]) => op === 'writeFile' && named(file, name => name.startsWith(TEMP_PREFIX)) && inBackupFolder(file) && (typeof data === 'string') === (kind === 'sync'),
-  baseRenamed: (op, [, to]) => op === 'rename' && named(to, isBaseFileName),
-  baseRemoved: (op, [file]) => op === 'rm' && named(file, isBaseFileName),
-  syncRead: (op, [file]) => op === 'readFile' && named(file, name => name === SYNC_FILE_NAME),
-  syncRenamed: (op, [, to]) => op === 'rename' && named(to, name => name === SYNC_FILE_NAME),
-  /** After the state file is renamed into place, with what it says */
-  stateSaved: test => (op, [, to]) => op === 'rename' && named(to, name => name === STATE_FILE_NAME) && test(JSON.parse(readFileSync(to, 'utf8'))),
-}
-
-/**
- * A machine: its data folder, made the first time and opened again after, as
- * a restart does, with a keeper of its own on the backup folder
+ * A machine: its own data folder, its own datastores, and its own copy of the
+ * backup folder, which the sync tool fills
  * @param {string} name
- * @param {{ folder?: string, history?: string[], clockOffset?: number }} [options]
+ * @param {object} [options]
+ * @param {string} [options.home] the world this machine lives in, for a test that runs several
  */
-async function machine(name, { folder = 'kept', history = [], clockOffset = 0 } = {}) {
-  const dataFolder = path.join(root, name)
-  const fresh = !existsSync(dataFolder)
+async function machine(name, { home = root, ...options } = {}) {
+  const dataFolder = path.join(home, name)
+  const folder = folderOf(home, name)
   const datastores = {}
+
+  mkdirSync(folder, { recursive: true })
 
   for (const [section, file] of Object.entries(DATASTORE_FILES)) {
     datastores[section] = new Datastore({ filename: path.join(dataFolder, `${file}.db`) })
     await datastores[section].loadDatabaseAsync()
   }
 
-  if (fresh) {
-    mkdirSync(path.join(root, folder), { recursive: true })
-    await datastores.profiles.insertAsync(MAIN_PROFILE)
-    await datastores.settings.insertAsync({ _id: 'backupFolder', value: path.join(root, folder) })
-    await datastores.history.insertAsync(history.map(historyEntry))
+  await datastores.profiles.insertAsync(MAIN_PROFILE)
+  await datastores.settings.insertAsync({ _id: 'backupFolder', value: folder })
+
+  const m = { datastores, dataFolder, folder, id: idOf(name), keeper: null }
+
+  /** A new keeper on the same data, as after a restart of the app */
+  m.restart = ({ sleep = untimed } = {}) => {
+    m.keeper = createKeeper({
+      datastores,
+      dataFolder,
+      appVersion: '0.1.0',
+      installationId: idOf(name),
+      machineName: `MACHINE-${name}`,
+      runJob: async job => runKeeperJob(job),
+      sleep,
+    })
+    keepers.push(m.keeper)
+    return m.keeper
   }
 
-  const { fileSystem, hold } = heldFileSystem()
-
-  const m = { name, dataFolder, datastores, hold, rebase: false }
-  m.keeper = createKeeper({
-    datastores,
-    dataFolder,
-    appVersion: '0.1.0',
-    installationId: `installation-${name}`,
-    machineName: `MACHINE-${name}`,
-    // A rebase on request, as the worker does once the sync file is too large
-    runJob: async job => runKeeperJob(m.rebase && job.type === 'build' ? { ...job, forceRebase: true } : job),
-    fileSystem,
-    now: () => Date.now() + clockOffset,
-    sleep: async () => {},
-  })
-
+  m.restart(options)
   watchDatastores(datastores, () => m.keeper.markChanged())
-  keepers.push(m.keeper)
 
   return m
 }
 
-/** A machine that has written its history to the folder */
-async function written(name = 'a', history = OLD) {
-  const m = await machine(name, { history })
-  await m.keeper.start()
+/**
+ * The sync tool. A carry takes each machine's own files to the other
+ * machines, so a machine reads only what has reached it. A file held back
+ * waits the carries it was given, which is how a newer file arrives before an
+ * older one, and a file given a length is carried that far, which is a
+ * segment copied while its owner was still appending to it.
+ * @param {...object} machines
+ */
+function sync(...machines) {
+  const held = new Map()
+  const halfway = new Map()
+
+  function carried(name, owner) {
+    if (name.startsWith(TEMP_PREFIX)) { return false }
+
+    return isBaseFileName(name) || parseSegmentName(name)?.installationId === owner || name === `state-${owner}.json`
+  }
+
+  return {
+    /**
+     * @param {string} name
+     * @param {number} carries how many carries this file waits
+     */
+    hold(name, carries) {
+      held.set(name, carries)
+    },
+
+    /**
+     * @param {string} name
+     * @param {number} chars how much of it the next carry takes
+     */
+    half(name, chars) {
+      halfway.set(name, chars)
+    },
+
+    carry() {
+      for (const from of machines) {
+        for (const name of readdirSync(from.folder)) {
+          if (!carried(name, from.id)) { continue }
+
+          const waiting = held.get(name) ?? 0
+          if (waiting > 0) {
+            held.set(name, waiting - 1)
+            continue
+          }
+
+          const chars = halfway.get(name)
+          halfway.delete(name)
+
+          for (const to of machines) {
+            if (to === from) { continue }
+
+            if (chars === undefined) {
+              copyFileSync(path.join(from.folder, name), path.join(to.folder, name))
+            } else {
+              writeFileSync(path.join(to.folder, name), readFileSync(path.join(from.folder, name), 'utf8').slice(0, chars))
+            }
+          }
+        }
+      }
+    },
+  }
+}
+
+/**
+ * @param {object[]} machines
+ * @param {{ carry: () => void }} carrier
+ * @param {number} count
+ */
+async function ticks(machines, carrier, count) {
+  for (let round = 0; round < count; round++) {
+    for (const m of machines) {
+      await m.keeper.tick()
+    }
+    carrier.carry()
+  }
+}
+
+/**
+ * A video put in Later, at the front as the app does: the record on this
+ * machine, and the intent that travels
+ * @param {object} m
+ * @param {string} videoId
+ * @param {number} at
+ */
+async function addLater(m, videoId, at) {
+  const positions = (await m.datastores.later.findAsync({})).map(record => record.position)
+  const position = positions.length === 0 ? 0 : Math.min(...positions) - 1
+
+  await m.datastores.later.insertAsync({ _id: videoId, videoId, position, title: `Video ${videoId}` })
+  m.keeper.recordEvent({ at, type: 'later.added', key: `later/${videoId}`, data: { after: null } })
+}
+
+/**
+ * @param {object} m
+ * @param {string} videoId
+ * @param {number} at
+ */
+async function removeLater(m, videoId, at) {
+  await m.datastores.later.removeAsync({ _id: videoId }, {})
+  m.keeper.recordEvent({ at, type: 'later.removed', key: `later/${videoId}`, data: {} })
+}
+
+/**
+ * This machine's Later list, in the order it is in
+ * @param {object} m
+ * @returns {Promise<string[]>}
+ */
+async function laterOrder(m) {
+  const records = await m.datastores.later.findAsync({})
+
+  return records
+    .sort((one, other) => (one.position - other.position) || (one._id < other._id ? -1 : 1))
+    .map(record => record._id)
+}
+
+/**
+ * Both machines running on a folder each has an archive of, which is where
+ * every test but the first meeting starts: the archive a machine writes at
+ * its first tick is its own, so the one that arrives next is never merged in
+ * as a first meeting.
+ * @param {object[]} machines
+ * @param {{ carry: () => void }} carrier
+ */
+async function settled(machines, carrier) {
+  for (const m of machines) {
+    await m.keeper.start()
+  }
+
+  await ticks(machines, carrier, 2)
+}
+
+/**
+ * Past the archiving threshold and over it: the first tick writes a state
+ * file too big to leave alone, the second writes the archive and starts a new
+ * segment. Three long records, as a 2 MB one would not fit a datastore line.
+ * @param {object} m
+ * @param {string} mark what to call them, so two rounds of this do not collide
+ */
+async function archiveNow(m, mark) {
+  const long = 'x'.repeat(800_000)
+
+  for (const videoId of [`${mark}1`, `${mark}2`, `${mark}3`]) {
+    await m.datastores.history.insertAsync(historyEntry(videoId, { description: long }))
+  }
+
   await m.keeper.tick()
-  return m
-}
 
-/** a has written, b has taken it in, and both have a change of their own */
-async function both() {
-  const a = await written()
-  const b = await machine('b')
-  await b.keeper.start()
-  await a.datastores.history.insertAsync(historyEntry('a2'))
-  await b.datastores.history.insertAsync(historyEntry('b2'))
-  return { a, b }
-}
-
-async function watched(m) {
-  return (await m.datastores.history.findAsync({})).map(entry => entry.videoId).sort()
-}
-
-async function logOf(m) {
-  await m.keeper.flushLog()
-  return readFileSync(path.join(m.dataFolder, 'backups', 'keeper.log'), 'utf8')
-}
-
-let readers = 0
-
-/** What a keeper starting now takes in from the folder */
-async function readerSees() {
-  const reader = await machine(`reader-${++readers}`)
-  await reader.keeper.start()
-  expect(reader.keeper.status()).toMatchObject({ ready: true, arriving: null, pause: null })
-  return watched(reader)
-}
-
-const folderPath = (folder = 'kept') => path.join(root, folder)
-const files = (folder = 'kept') => readdirSync(folderPath(folder)).sort()
-const syncText = (folder = 'kept') => readFileSync(path.join(folderPath(folder), SYNC_FILE_NAME), 'utf8')
-const lockFile = () => path.join(folderPath(), LOCK_FILE_NAME)
-
-function kindOf(name) {
-  if (name === LOCK_FILE_NAME) { return 'lock' }
-  if (name.startsWith(TEMP_PREFIX)) { return 'temp' }
-  return isBaseFileName(name) ? 'base' : name
-}
-
-/** @param {string} file @param {number} ms how old its modified time makes it */
-function age(file, ms) {
-  const time = (Date.now() - ms) / 1000
-  utimesSync(file, time, time)
-}
-
-/** As a sync tool carries a folder: every file copied over, times kept */
-function syncTool(from, to) {
-  cpSync(folderPath(from), folderPath(to), { recursive: true, preserveTimestamps: true })
+  await m.datastores.searchHistory.insertAsync({ _id: `search-${mark}`, name: mark })
+  await m.keeper.tick()
 }
 
 // #endregion the harness
 
-describe('reading while another keeper writes', SLOW, () => {
-  it.each([
-    ['after the lock is made', 'after', at.lockMade, OLD],
-    ['after the new base\'s temporary file', 'after', at.tempWritten('base'), OLD],
-    ['after the new base is renamed into place', 'after', at.baseRenamed, OLD],
-    ['after the pending hash is recorded', 'after', at.stateSaved(state => state.pending !== null), OLD],
-    ['after the sync file\'s temporary file', 'after', at.tempWritten('sync'), OLD],
-    ['after the sync file is renamed into place', 'after', at.syncRenamed, NEW],
-    ['after last seen is saved', 'after', at.stateSaved(state => state.pending === null), NEW],
-    ['before the lock is removed', 'before', at.lockRemoved, NEW],
-    ['before the old base is removed', 'before', at.baseRemoved, NEW],
-  ])('a keeper starting %s takes in one whole state', async (_, when, match, sees) => {
-    const a = await written()
-    await a.datastores.history.insertAsync(historyEntry('h2'))
-    a.rebase = true
+describe('several machines on one folder', () => {
+  describe('delivery', () => {
+    /**
+     * The same intents on both machines, made one at a time with each
+     * machine's state carried over, under a delivery of the test's choosing
+     * @param {string} home
+     * @param {Record<string, number>} delays
+     */
+    async function bothMachines(home, delays) {
+      const a = await machine('a', { home })
+      const b = await machine('b', { home })
+      const carrier = sync(a, b)
 
-    const held = a.hold(when, match)
-    const writing = a.keeper.tick()
-    await held.reached
+      for (const [name, carries] of Object.entries(delays)) {
+        carrier.hold(name, carries)
+      }
 
-    expect(await readerSees()).toEqual(sees)
-
-    held.release()
-    await writing
-
-    expect(a.keeper.status()).toMatchObject({ pause: null, failure: null })
-    expect(await readerSees()).toEqual(NEW)
-  })
-
-  it('the old base removed between reading the sync file and its base: reads the sync file again and takes in the new pair, without waiting', async () => {
-    const a = await written()
-    const [oldBase] = files().filter(isBaseFileName)
-    await a.datastores.history.insertAsync(historyEntry('h2'))
-    a.rebase = true
-
-    const reader = await machine('reader')
-    const held = reader.hold('after', at.syncRead)
-    const starting = reader.keeper.start()
-    await held.reached
-
-    await a.keeper.tick()
-    expect(files()).not.toContain(oldBase)
-
-    held.release()
-    await starting
-
-    expect(reader.keeper.status()).toMatchObject({ ready: true, arriving: null, pause: null, tookIn: { machineName: 'MACHINE-a' } })
-    expect(await watched(reader)).toEqual(NEW)
-    expect(await logOf(reader)).not.toMatch(/not in the folder/)
-  })
-})
-
-describe('writers at once', SLOW, () => {
-  it.each([
-    ['b ticks while a holds the lock', /lock held by MACHINE-a; skipping this tick/, async (a, b) => {
-      const held = a.hold('after', at.lockMade)
-      const writing = a.keeper.tick()
-      await held.reached
-      await b.keeper.tick()
-      held.release()
-      await writing
-    }],
-    ['b reaches the lock while a holds it', /lock held by MACHINE-a; not writing/, async (a, b) => {
-      const bHeld = b.hold('before', at.lockMade)
-      const bTick = b.keeper.tick()
-      await bHeld.reached
-      const aHeld = a.hold('after', at.lockMade)
-      const aTick = a.keeper.tick()
-      await aHeld.reached
-      bHeld.release()
-      await bTick
-      aHeld.release()
-      await aTick
-    }],
-    ['a writes between b reading the sync file and b taking the lock', /sync file changed while building/, async (a, b) => {
-      const bHeld = b.hold('before', at.lockMade)
-      const bTick = b.keeper.tick()
-      await bHeld.reached
-      await a.keeper.tick()
-      bHeld.release()
-      await bTick
-    }],
-  ])('two keepers ticking together, %s: one writes, the other does not, merges it on its next tick and writes the two', async (_, logged, play) => {
-    const { a, b } = await both()
-
-    await play(a, b)
-
-    expect(JSON.parse(syncText()).machineName).toBe('MACHINE-a')
-    expect(b.keeper.status().pause).toBeNull()
-    expect(await logOf(b)).toMatch(logged)
-
-    await b.keeper.tick()
-    expect(JSON.parse(syncText()).machineName).toBe('MACHINE-b')
-    await a.keeper.tick()
-
-    for (const m of [a, b]) {
-      expect(m.keeper.status()).toMatchObject({ pause: null, failure: null })
-      expect(await watched(m)).toEqual(['a2', 'b2', 'h1'])
-    }
-    expect(b.keeper.status().mergedFrom).toMatchObject({ machineName: 'MACHINE-a' })
-    expect(await logOf(b)).toMatch(/by MACHINE-a against the shared state/)
-  })
-
-  it.each(['a', 'b'])('two keepers taking over one stale lock at once: only the last to overwrite it goes on (%s reads it back first)', async (first) => {
-    const { a, b } = await both()
-    writeFileSync(lockFile(), JSON.stringify({ token: 'gone', installationId: 'installation-gone', machineName: 'MACHINE-gone', time: new Date().toISOString() }))
-    age(lockFile(), 3 * MINUTE)
-
-    const holds = {}
-    const ticks = {}
-    for (const m of [a, b]) {
-      holds[m.name] = { before: m.hold('before', at.lockOverwritten), after: m.hold('after', at.lockOverwritten) }
-      ticks[m.name] = m.keeper.tick()
-      await holds[m.name].before.reached
-    }
-
-    // Both have found the lock stale; both overwrite it, b last, before either reads it back
-    for (const m of [a, b]) {
-      holds[m.name].before.release()
-      await holds[m.name].after.reached
-    }
-
-    for (const name of first === 'a' ? ['a', 'b'] : ['b', 'a']) {
-      holds[name].after.release()
-      await ticks[name]
-    }
-
-    expect(JSON.parse(syncText()).machineName).toBe('MACHINE-b')
-    expect(existsSync(lockFile())).toBe(false)
-
-    const [aLog, bLog] = [await logOf(a), await logOf(b)]
-    expect(aLog).toMatch(/stale lock of MACHINE-gone taken over/)
-    expect(aLog).toMatch(/lock lost to another keeper; not writing/)
-    // Only its first write, before the stale lock
-    expect(aLog.match(/wrote sync file/g)).toHaveLength(1)
-    expect(bLog).toMatch(/stale lock of MACHINE-gone taken over/)
-    expect(bLog).not.toMatch(/lock lost/)
-
-    // a merges b's write, and b a's union of the two
-    await a.keeper.tick()
-    await b.keeper.tick()
-    for (const m of [a, b]) {
-      expect(m.keeper.status()).toMatchObject({ pause: null, failure: null })
-      expect(await watched(m)).toEqual(['a2', 'b2', 'h1'])
-    }
-    expect(a.keeper.status().mergedFrom).toMatchObject({ machineName: 'MACHINE-b' })
-  })
-
-  it('a stale lock taken over after the other keeper has read it back: both write, the last rename wins, and the other merges it as a union, its lost write kept', async () => {
-    // The read back cannot catch this order; the merge after a lost write
-    // keeps it, as the winner's lineage does not name it
-    const { a, b } = await both()
-    writeFileSync(lockFile(), JSON.stringify({ token: 'gone', installationId: 'installation-gone', machineName: 'MACHINE-gone', time: new Date().toISOString() }))
-    age(lockFile(), 3 * MINUTE)
-
-    const aStale = a.hold('before', at.lockOverwritten)
-    const bStale = b.hold('before', at.lockOverwritten)
-    const aTick = a.keeper.tick()
-    await aStale.reached
-    const bTick = b.keeper.tick()
-    await bStale.reached
-
-    const aRename = a.hold('before', at.syncRenamed)
-    aStale.release()
-    await aRename.reached
-
-    const bUnlock = b.hold('before', at.lockRemoved)
-    bStale.release()
-    await bUnlock.reached
-
-    aRename.release()
-    await aTick
-    bUnlock.release()
-    await bTick
-
-    expect(JSON.parse(syncText()).machineName).toBe('MACHINE-a')
-    expect(existsSync(lockFile())).toBe(false)
-    expect(await logOf(a)).toMatch(/lock now held by MACHINE-b; left in place/)
-
-    await a.keeper.tick()
-    await b.keeper.tick()
-    expect(b.keeper.status()).toMatchObject({ pause: null, failure: null, mergedFrom: { machineName: 'MACHINE-a' } })
-    expect(await watched(b)).toEqual(['a2', 'b2', 'h1'])
-    expect(await logOf(b)).toMatch(/by MACHINE-a with the shared state unknown, as a union/)
-
-    await a.keeper.tick()
-    expect(a.keeper.status()).toMatchObject({ pause: null, failure: null })
-    expect(await watched(a)).toEqual(['a2', 'b2', 'h1'])
-  })
-
-  it.each([2, 3])('one keeper\'s files copied over the others\', as a sync tool would, with %i keepers: each losing side merges the winner as a union, its lost write kept, and the winner carries on', async (count) => {
-    const a = await machine('a', { folder: 'kept-a', history: OLD })
-    await a.keeper.start()
-    await a.keeper.tick()
-
-    const others = []
-    for (const name of ['b', 'c'].slice(0, count - 1)) {
-      syncTool('kept-a', `kept-${name}`)
-      const m = await machine(name, { folder: `kept-${name}` })
-      await m.keeper.start()
-      expect(await watched(m)).toEqual(OLD)
-      others.push(m)
-    }
-
-    for (const m of [a, ...others]) {
-      await m.datastores.history.insertAsync(historyEntry(`${m.name}2`))
-      await m.keeper.tick()
-      expect(m.keeper.status()).toMatchObject({ pause: null, failure: null })
-    }
-
-    for (const m of others) {
-      syncTool('kept-a', `kept-${m.name}`)
-      await m.keeper.tick()
-      expect(m.keeper.status()).toMatchObject({ pause: null, failure: null, mergedFrom: { machineName: 'MACHINE-a' } })
-      expect(await watched(m)).toEqual(['a2', `${m.name}2`, 'h1'])
-      expect(await logOf(m)).toMatch(/by MACHINE-a with the shared state unknown, as a union/)
-      expect(JSON.parse(syncText(`kept-${m.name}`)).machineName).toBe(`MACHINE-${m.name}`)
-    }
-
-    const before = syncText('kept-a')
-    await a.datastores.history.insertAsync(historyEntry('a3'))
-    await a.keeper.tick()
-    expect(a.keeper.status()).toMatchObject({ pause: null, failure: null })
-    expect(syncText('kept-a')).not.toBe(before)
-
-    // Carried back, each losing side's write reaches the winner too
-    for (const m of others) {
-      syncTool(`kept-${m.name}`, 'kept-a')
-      await a.keeper.tick()
-      expect(a.keeper.status()).toMatchObject({ pause: null, failure: null })
-    }
-    expect(await watched(a)).toEqual(['a2', 'a3', ...others.map(m => `${m.name}2`), 'h1'])
-  })
-})
-
-describe('crashed writes', SLOW, () => {
-  /**
-   * a writes h1, then crashes at a step of writing h2
-   * @returns {Promise<string[]>} the folder's files before the crash
-   */
-  async function crashedWrite(when, match, { rebase = false } = {}) {
-    const a = await written()
-    await a.datastores.history.insertAsync(historyEntry('h2'))
-    a.rebase = rebase
-
-    const before = files()
-    const held = a.hold(when, match)
-    a.keeper.tick()
-    await held.reached
-    return before
-  }
-
-  for (const { after, when, match, rebase, left, takenIn, restart } of [
-    { after: 'taking the lock', when: 'after', match: at.lockMade, left: ['lock'], takenIn: OLD, restart: /is last seen/ },
-    { after: 'writing a temporary file', when: 'after', match: at.tempWritten('sync'), left: ['lock', 'temp'], takenIn: OLD, restart: /removed leftover temporary file \.fjernsyn-tmp-installation-a-/ },
-    { after: 'writing a new base, before the sync file', when: 'after', match: at.baseRenamed, rebase: true, left: ['base', 'lock'], takenIn: OLD, restart: /is last seen/ },
-    { after: 'recording the pending hash, before the rename', when: 'after', match: at.stateSaved(state => state.pending !== null), left: ['lock'], takenIn: OLD, restart: /is last seen/ },
-    { after: 'the rename, before last seen is saved', when: 'after', match: at.syncRenamed, left: ['lock'], takenIn: NEW, restart: /is the pending one: now last seen/ },
-    { after: 'the rename, before the lock is removed', when: 'before', match: at.lockRemoved, left: ['lock'], takenIn: NEW, restart: /is last seen/ },
-  ]) {
-    it(`crashed after ${after}: another keeper's start takes in the ${takenIn === OLD ? 'old' : 'new'} state, the lock holds off both ticks for two minutes, then neither pauses`, async () => {
-      const before = await crashedWrite(when, match, { rebase })
-      expect(files().filter(name => !before.includes(name)).map(kindOf).sort()).toEqual(left)
-      const afterCrash = syncText()
-
-      // Another keeper's start, within the two minutes
-      const b = await machine('b')
-      await b.keeper.start()
-      expect(b.keeper.status()).toMatchObject({ ready: true, arriving: null, pause: null })
-      expect(await watched(b)).toEqual(takenIn)
-
-      // The same keeper's restart
-      const a = await machine('a')
       await a.keeper.start()
-      expect(a.keeper.status()).toMatchObject({ ready: true, arriving: null, pause: null })
-      expect(await watched(a)).toEqual(NEW)
-      expect(files().map(kindOf)).not.toContain('temp')
+      await b.keeper.start()
 
-      for (const m of [b, a]) {
-        await m.keeper.tick()
+      await addLater(a, 'aaaaaaaaaaa', T)
+      await ticks([a, b], carrier, 1)
+
+      await addLater(b, 'bbbbbbbbbbb', T + 1000)
+      await ticks([a, b], carrier, 1)
+
+      await addLater(a, 'ccccccccccc', T + 2000)
+      await ticks([a, b], carrier, 1)
+
+      await removeLater(b, 'bbbbbbbbbbb', T + 3000)
+      await ticks([a, b], carrier, 8)
+
+      return { a: await laterOrder(a), b: await laterOrder(b) }
+    }
+
+    it('reaches the same records on both machines however long each file is held back', SLOW, async () => {
+      const segments = { a: segmentName(idOf('a'), 0), b: segmentName(idOf('b'), 0) }
+      const states = { a: `state-${idOf('a')}.json`, b: `state-${idOf('b')}.json` }
+
+      const deliveries = {
+        prompt: {},
+        aLast: { [segments.a]: 5, [states.a]: 4, [segments.b]: 1, [states.b]: 0 },
+        bLast: { [segments.b]: 5, [states.b]: 3, [segments.a]: 2, [states.a]: 1 },
       }
-      expect(syncText()).toBe(afterCrash)
 
-      age(lockFile(), STALE)
+      const outcomes = {}
 
-      for (const m of [b, a]) {
-        await m.keeper.tick()
-        expect(m.keeper.status()).toMatchObject({ pause: null, failure: null })
+      for (const [name, delays] of Object.entries(deliveries)) {
+        outcomes[name] = await bothMachines(path.join(root, name), delays)
       }
 
-      expect(await readerSees()).toEqual(NEW)
-
-      const [aLog, bLog] = [await logOf(a), await logOf(b)]
-      expect(bLog).toMatch(/startup: a fresh lock by MACHINE-a/)
-      expect(bLog).toMatch(/lock held by MACHINE-a; skipping this tick/)
-      expect(aLog).toMatch(restart)
-      expect(aLog).toMatch(/lock held by MACHINE-a; skipping this tick/)
+      expect(outcomes.prompt).toEqual({ a: ['ccccccccccc', 'aaaaaaaaaaa'], b: ['ccccccccccc', 'aaaaaaaaaaa'] })
+      expect(outcomes.aLast).toEqual(outcomes.prompt)
+      expect(outcomes.bLast).toEqual(outcomes.prompt)
     })
-  }
 
-  it('crashed after taking the lock: the next write after two minutes takes the stale lock over', async () => {
-    await crashedWrite('after', at.lockMade)
-    age(lockFile(), STALE)
+    it('reaches the same records when a newer file arrives before an older one', SLOW, async () => {
+      const a = await machine('a')
+      const b = await machine('b')
+      const carrier = sync(a, b)
 
-    const a = await machine('a')
-    await a.keeper.start()
-    await a.keeper.tick()
+      await settled([a, b], carrier)
 
-    expect(await logOf(a)).toMatch(/stale lock of MACHINE-a taken over/)
-    expect(existsSync(lockFile())).toBe(false)
-    expect(await readerSees()).toEqual(NEW)
+      await addLater(a, 'aaaaaaaaaaa', T)
+      await addLater(a, 'ccccccccccc', T + 1000)
+      await a.keeper.tick()
+
+      await archiveNow(a, 'roll')
+
+      await addLater(a, 'ddddddddddd', T + 2000)
+      await a.keeper.tick()
+
+      expect(readSegment(readFileSync(segmentIn(a, 'a', 2), 'utf8')).events.map(event => event.key)).toEqual(['later/ddddddddddd'])
+
+      // The sync tool gets to the second segment first, and the first one is
+      // still on its way
+      carrier.hold(segmentName(idOf('a'), 1), 3)
+      carrier.carry()
+      await b.keeper.tick()
+
+      expect(existsSync(segmentIn(b, 'a', 2))).toBe(true)
+      expect(existsSync(segmentIn(b, 'a', 1))).toBe(false)
+      expect(await laterOrder(b)).toEqual([])
+
+      await ticks([a, b], carrier, 5)
+
+      expect(await laterOrder(b)).toEqual(['ddddddddddd', 'ccccccccccc', 'aaaaaaaaaaa'])
+      expect(await laterOrder(b)).toEqual(await laterOrder(a))
+    })
+
+    it('matches a machine on today\'s archive from a machine on last week\'s', SLOW, async () => {
+      const a = await machine('a')
+      const b = await machine('b')
+      const carrier = sync(a, b)
+
+      await a.keeper.start()
+      await addLater(a, 'aaaaaaaaaaa', T)
+      await archiveNow(a, 'week1')
+
+      const lastWeek = stateOf(a).archive
+
+      // b meets the folder on the only archive there is, and never receives
+      // the one a writes next
+      carrier.carry()
+      await b.keeper.start()
+      await b.keeper.tick()
+
+      await addLater(a, 'ccccccccccc', T + 1000)
+      await archiveNow(a, 'week2')
+      await addLater(a, 'ddddddddddd', T + 2000)
+
+      const today = stateOf(a).archive
+      expect(today).not.toBe(lastWeek)
+
+      carrier.hold(`base-${today.slice(0, 16)}.json.gz`, 99)
+      await ticks([a, b], carrier, 4)
+
+      expect(stateOf(b).archive).toBe(lastWeek)
+      expect(stateOf(a).archive).toBe(today)
+      expect(await laterOrder(b)).toEqual(['ddddddddddd', 'ccccccccccc', 'aaaaaaaaaaa'])
+      expect(await laterOrder(b)).toEqual(await laterOrder(a))
+    })
+
+    // The keeper cannot do this yet, and the test stays as it is. A machine
+    // reads another machine's archive once, when it first meets the folder.
+    // A state field folded into an archive while this machine's delivery was
+    // down reaches it no other way, so it keeps last week's value for good.
+    // Mending it wants either a change time on state records that survives
+    // being applied elsewhere, or a take in of an archive that folded more
+    // than this machine's. Neither is decided. Recorded in
+    // `.scratch/evented-sync/run/decision-later-ordering.md`.
+    it.skip('turns staleness into the current value when an archive arrives after the state file naming it', SLOW, async () => {
+      const a = await machine('a')
+      const b = await machine('b')
+      const carrier = sync(a, b)
+
+      await settled([a, b], carrier)
+
+      await a.datastores.history.insertAsync(historyEntry('aaaaaaaaaaa', { watchProgress: 30 }))
+      await ticks([a, b], carrier, 2)
+
+      expect((await b.datastores.history.findOneAsync({ _id: 'aaaaaaaaaaa' })).watchProgress).toBe(30)
+
+      // b hears nothing while a watches on and folds what it watched into an
+      // archive, so the value b has is last week's
+      await a.datastores.history.updateAsync({ _id: 'aaaaaaaaaaa' }, { $set: { watchProgress: 90 } }, {})
+      await a.keeper.tick()
+      await archiveNow(a, 'fold')
+
+      const today = `base-${stateOf(a).archive.slice(0, 16)}.json.gz`
+
+      carrier.hold(today, 2)
+      await ticks([a, b], carrier, 2)
+
+      expect(existsSync(path.join(b.folder, today))).toBe(false)
+      expect((await b.datastores.history.findOneAsync({ _id: 'aaaaaaaaaaa' })).watchProgress).toBe(30)
+
+      await ticks([a, b], carrier, 3)
+
+      expect(existsSync(path.join(b.folder, today))).toBe(true)
+      expect((await b.datastores.history.findOneAsync({ _id: 'aaaaaaaaaaa' })).watchProgress).toBe(90)
+    })
+
+    it('lets the machine that changed a state field win over one that writes the same value again', SLOW, async () => {
+      const a = await machine('a')
+      const b = await machine('b')
+      const carrier = sync(a, b)
+
+      await settled([a, b], carrier)
+
+      await a.datastores.history.insertAsync(historyEntry('aaaaaaaaaaa', { watchProgress: 30 }))
+      await ticks([a, b], carrier, 2)
+
+      expect((await b.datastores.history.findOneAsync({ _id: 'aaaaaaaaaaa' })).watchProgress).toBe(30)
+
+      // The video is watched further on b. a knows nothing of it yet and
+      // writes its own state file again for a reason of its own. It still has
+      // 30, and saying so now must not beat the 90 b wrote a moment ago
+      await b.datastores.history.updateAsync({ _id: 'aaaaaaaaaaa' }, { $set: { watchProgress: 90 } }, {})
+      await b.keeper.tick()
+
+      // Restarted, so the times it published come back from its own state
+      // file and not from a memory that would have gone with the app
+      a.restart()
+      await a.keeper.start()
+
+      await addLater(a, 'ccccccccccc', T)
+      await a.keeper.tick()
+
+      await ticks([a, b], carrier, 3)
+
+      expect((await a.datastores.history.findOneAsync({ _id: 'aaaaaaaaaaa' })).watchProgress).toBe(90)
+      expect((await b.datastores.history.findOneAsync({ _id: 'aaaaaaaaaaa' })).watchProgress).toBe(90)
+    })
+
+    it('loses nothing when one machine\'s delivery stops for a day and then resumes', SLOW, async () => {
+      const a = await machine('a')
+      const b = await machine('b')
+      const carrier = sync(a, b)
+
+      await a.keeper.start()
+      await b.keeper.start()
+
+      await addLater(a, 'aaaaaaaaaaa', T)
+      await addLater(b, 'bbbbbbbbbbb', T + 1000)
+      await ticks([a, b], carrier, 2)
+
+      expect(await laterOrder(b)).toEqual(['bbbbbbbbbbb', 'aaaaaaaaaaa'])
+
+      // A day of a's, with an archive in it, that nothing carries
+      await addLater(a, 'ccccccccccc', T + 2000)
+      await a.keeper.tick()
+      await archiveNow(a, 'day')
+      await addLater(a, 'ddddddddddd', T + 3000)
+      await removeLater(a, 'aaaaaaaaaaa', T + 4000)
+      await a.keeper.tick()
+
+      expect(await laterOrder(b)).toEqual(['bbbbbbbbbbb', 'aaaaaaaaaaa'])
+
+      await ticks([a, b], carrier, 4)
+
+      expect(await laterOrder(b)).toEqual(['ddddddddddd', 'ccccccccccc', 'bbbbbbbbbbb'])
+      expect(await laterOrder(b)).toEqual(await laterOrder(a))
+    })
+
+    it('takes a segment whose last line is half written on the tick after it is finished', SLOW, async () => {
+      const a = await machine('a')
+      const b = await machine('b')
+      const carrier = sync(a, b)
+
+      await settled([a, b], carrier)
+
+      await addLater(a, 'aaaaaaaaaaa', T)
+      await addLater(a, 'ccccccccccc', T + 1000)
+      await a.keeper.tick()
+
+      const whole = readFileSync(segmentIn(a, 'a', 1), 'utf8')
+
+      // The sync tool copies the segment while a is still appending to it
+      carrier.half(segmentName(idOf('a'), 1), whole.length - 20)
+      carrier.carry()
+      await b.keeper.tick()
+
+      expect(readFileSync(segmentIn(b, 'a', 1), 'utf8')).not.toBe(whole)
+      expect(await laterOrder(b)).toEqual(['aaaaaaaaaaa'])
+
+      carrier.carry()
+      await b.keeper.tick()
+
+      expect(readFileSync(segmentIn(b, 'a', 1), 'utf8')).toBe(whole)
+      expect(await laterOrder(b)).toEqual(['ccccccccccc', 'aaaaaaaaaaa'])
+    })
   })
 
-  it('a start within two minutes of a crash, the folder not reading cleanly: no take in, and ready without asking', async () => {
-    await crashedWrite('after', at.lockMade)
+  describe('machines writing at once', () => {
+    it('lets two machines archive in the same tick, and keeps both archives', SLOW, async () => {
+      const a = await machine('a')
+      const b = await machine('b')
+      const carrier = sync(a, b)
 
-    // The sync tool carries in another machine's sync file ahead of its base
-    const c = await machine('c', { folder: 'kept-c', history: ['c1'] })
-    await c.keeper.start()
-    await c.keeper.tick()
-    cpSync(path.join(folderPath('kept-c'), SYNC_FILE_NAME), path.join(folderPath(), SYNC_FILE_NAME))
+      await a.keeper.start()
+      await b.keeper.start()
 
-    const b = await machine('b')
-    await b.keeper.start()
+      await addLater(a, 'aaaaaaaaaaa', T)
+      await addLater(b, 'bbbbbbbbbbb', T + 1000)
 
-    expect(b.keeper.status()).toMatchObject({ ready: true, arriving: null, pause: null, tookIn: null })
-    expect(await watched(b)).toEqual([])
-    expect(await logOf(b)).toMatch(/a fresh lock, and the folder does not read cleanly \(baseMissing\): nothing taken in/)
+      // Each sees a folder of its own, so each writes an archive of its own
+      await archiveNow(a, 'both')
+      await archiveNow(b, 'both')
+
+      const theirs = { a: archivesIn(a), b: archivesIn(b) }
+      expect(theirs.a).toHaveLength(1)
+      expect(theirs.b).toHaveLength(1)
+      expect(theirs.a).not.toEqual(theirs.b)
+
+      await ticks([a, b], carrier, 3)
+
+      for (const m of [a, b]) {
+        expect(archivesIn(m)).toEqual(expect.arrayContaining([...theirs.a, ...theirs.b]))
+      }
+
+      expect(await laterOrder(a)).toEqual(['bbbbbbbbbbb', 'aaaaaaaaaaa'])
+      expect(await laterOrder(b)).toEqual(['bbbbbbbbbbb', 'aaaaaaaaaaa'])
+    })
+
+    it('reaches one list with three machines adding to it at once', SLOW, async () => {
+      const a = await machine('a')
+      const b = await machine('b')
+      const c = await machine('c')
+      const carrier = sync(a, b, c)
+
+      for (const m of [a, b, c]) {
+        await m.keeper.start()
+      }
+
+      await addLater(a, 'aaaaaaaaaaa', T)
+      await addLater(b, 'bbbbbbbbbbb', T + 1000)
+      await addLater(c, 'ccccccccccc', T + 2000)
+
+      carrier.hold(segmentName(idOf('a'), 0), 2)
+      carrier.hold(segmentName(idOf('c'), 0), 4)
+
+      await ticks([a, b, c], carrier, 8)
+
+      const wanted = ['ccccccccccc', 'bbbbbbbbbbb', 'aaaaaaaaaaa']
+      expect(await laterOrder(a)).toEqual(wanted)
+      expect(await laterOrder(b)).toEqual(wanted)
+      expect(await laterOrder(c)).toEqual(wanted)
+    })
   })
 
-  it('crashed after writing a temporary file: another keeper leaves it until it is a day old, then removes it at its start', async () => {
-    await crashedWrite('after', at.tempWritten('sync'))
-    const [temp] = files().filter(name => name.startsWith(TEMP_PREFIX))
+  describe('losing the keeper\'s state', () => {
+    it('rebuilds the index from an archive and the segments when the keeper\'s state is lost, with the data folder untouched', SLOW, async () => {
+      const a = await machine('a')
+      const b = await machine('b')
+      const carrier = sync(a, b)
 
-    const b = await machine('b')
-    await b.keeper.start()
-    expect(files()).toContain(temp)
+      // The archives are written before any of this, so neither has the
+      // record, and what b works out again has to come from the segments
+      await settled([a, b], carrier)
 
-    age(path.join(folderPath(), temp), 2 * DAY)
+      await addLater(a, 'aaaaaaaaaaa', T)
+      await ticks([a, b], carrier, 2)
 
-    const restarted = await machine('b')
-    await restarted.keeper.start()
-    expect(files()).not.toContain(temp)
-    expect(await logOf(restarted)).toMatch(`removed leftover temporary file ${temp}`)
-  })
+      expect(await laterOrder(b)).toEqual(['aaaaaaaaaaa'])
 
-  it('crashed after writing a new base: the orphaned base is kept for seven days, then removed by a rebase', async () => {
-    const before = await crashedWrite('after', at.baseRenamed, { rebase: true })
-    const [oldBase] = before.filter(isBaseFileName)
-    const [orphan] = files().filter(name => isBaseFileName(name) && name !== oldBase)
-    age(lockFile(), STALE)
+      // It comes out again on b, which is the newer intent on that key
+      await removeLater(b, 'aaaaaaaaaaa', T + 1000)
+      await addLater(b, 'bbbbbbbbbbb', T + 2000)
+      await ticks([a, b], carrier, 2)
 
-    const a = await machine('a')
-    a.rebase = true
-    await a.keeper.start()
-    await a.datastores.history.insertAsync(historyEntry('h3'))
-    await a.keeper.tick()
+      expect(await laterOrder(a)).toEqual(['bbbbbbbbbbb'])
+      expect(await laterOrder(b)).toEqual(['bbbbbbbbbbb'])
 
-    // The base the sync file pointed to goes at once; the orphan, too young, stays
-    expect(files()).not.toContain(oldBase)
-    expect(files()).toContain(orphan)
-    expect(files().filter(isBaseFileName)).toHaveLength(2)
+      const before = await laterOrder(b)
+      rmSync(path.join(backupsOf(b), 'keeper-state.json'))
+      rmSync(path.join(backupsOf(b), 'intent-index.json'))
 
-    age(path.join(folderPath(), orphan), 8 * DAY)
-    await a.datastores.history.insertAsync(historyEntry('h4'))
-    await a.keeper.tick()
+      b.restart()
+      await b.keeper.start()
+      await ticks([a, b], carrier, 2)
 
-    expect(files().filter(isBaseFileName)).toHaveLength(1)
-    expect(files()).not.toContain(orphan)
-    expect(await readerSees()).toEqual(['h1', 'h2', 'h3', 'h4'])
-  })
-
-  it('crashed while a merge puts records one by one: the next start merges again, and the first safety copy stays', async () => {
-    const a = await written('a', NEW)
-    const b = await machine('b', { history: ['b1'] })
-
-    // The first put goes through; the second never returns
-    const original = b.datastores.history.updateAsync
-    let puts = 0
-    let crashed
-    const reached = new Promise((resolve) => { crashed = resolve })
-    b.datastores.history.updateAsync = function (...args) {
-      if (++puts === 1) { return original.apply(this, args) }
-      crashed()
-      return new Promise(() => {})
-    }
-    b.keeper.start()
-    await reached
-    // The put before it is on disk
-    await b.datastores.history.countAsync({})
-
-    const backups = path.join(b.dataFolder, 'backups')
-    const copies = () => readdirSync(backups).filter(name => name.startsWith('before-restore-')).sort()
-    const [first] = copies()
-    const firstText = readFileSync(path.join(backups, first), 'utf8')
-    expect(JSON.parse(firstText).sections.history.map(entry => entry.videoId)).toEqual(['b1'])
-
-    // A second later, as a safety copy is named by the second
-    const restarted = await machine('b', { clockOffset: 2000 })
-    expect(await watched(restarted)).toHaveLength(2)
-    await restarted.keeper.start()
-
-    expect(restarted.keeper.status()).toMatchObject({ ready: true, pause: null, tookIn: { machineName: 'MACHINE-a' } })
-    expect(await watched(restarted)).toEqual(['b1', 'h1', 'h2'])
-    expect(copies()).toHaveLength(2)
-    expect(copies()[0]).toBe(first)
-    expect(readFileSync(path.join(backups, first), 'utf8')).toBe(firstText)
-
-    const other = await machine('a')
-    await other.keeper.start()
-    for (const m of [restarted, other]) {
-      await m.keeper.tick()
-      expect(m.keeper.status()).toMatchObject({ pause: null, failure: null })
-    }
-    expect(await watched(other)).toEqual(['b1', 'h1', 'h2'])
-    expect(a.keeper.status().pause).toBeNull()
+      expect(await laterOrder(b)).toEqual(before)
+      expect(indexOf(b)['later/aaaaaaaaaaa']).toMatchObject({ at: T + 1000, by: idOf('b') })
+      expect(await laterOrder(a)).toEqual(['bbbbbbbbbbb'])
+    })
   })
 })

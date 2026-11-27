@@ -179,7 +179,7 @@ const actions = {
 
   /**
    * Moves a queued item to a place among the others: writes its one position,
-   * or every queued position once when the gaps have closed.
+   * and every queued position in one further write when the gaps have closed.
    * @param {any} context
    * @param {{ id: string, toIndex: number }} payload
    */
@@ -194,10 +194,13 @@ const actions = {
       await DBLaterHandlers.updatePosition(id, position)
 
       if (needsRenumbering(Object.values(state.laterItems))) {
-        for (const { _id, position: whole } of renumbered(Object.values(state.laterItems))) {
+        const positions = renumbered(Object.values(state.laterItems))
+
+        for (const { _id, position: whole } of positions) {
           commit('setLaterPosition', { _id, position: whole })
-          await DBLaterHandlers.updatePosition(_id, whole)
         }
+
+        await DBLaterHandlers.updatePositions(positions)
       }
     } catch (errMessage) {
       console.error(errMessage)

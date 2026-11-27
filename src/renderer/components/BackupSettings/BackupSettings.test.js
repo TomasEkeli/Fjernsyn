@@ -99,7 +99,7 @@ const MACHINE_NAME = 'synthetic-desktop'
 const KEPT_FOLDER = '/home/me/Sync/fjernsyn'
 
 /** @type {import('../../../main/backup/keeper').KeeperStatus} */
-const NOT_KEEPING = { folder: null, ready: true, writtenAt: null, failure: null, pause: null, arriving: null, tookIn: null, mergedFrom: null }
+const NOT_KEEPING = { folder: null, ready: true, writtenAt: null, failure: null, mergedFrom: null }
 
 /** The keeper keeping KEPT_FOLDER, with what the test gives it */
 const keeping = (fields = {}) => ({ ...NOT_KEEPING, folder: KEPT_FOLDER, ...fields })
@@ -142,7 +142,6 @@ beforeEach(() => {
     handleKeeperStatus: vi.fn(),
     chooseKeeperFolder: vi.fn(async () => NOT_KEEPING),
     stopKeeping: vi.fn(async () => NOT_KEEPING),
-    answerKeeper: vi.fn(async () => NOT_KEEPING),
   }
 })
 
@@ -293,7 +292,6 @@ describe('the Backup group', () => {
       const refusals = [
         ['not json', 'This file is not a backup: it is not JSON'],
         ['{"_id":"maxVolume","value":1}', 'This file is not a Fjernsyn backup'],
-        [backupFile({}, { formatVersion: 7 }), 'This backup was written by a newer version of Fjernsyn (backup format 7), which this version cannot read'],
         [backupFile({ profiles: {} }), 'This backup cannot be read: its section "profiles" is not a list'],
         [backupFile({ bookmarks: [] }), 'This backup holds nothing this version of Fjernsyn can restore'],
         [backupFile({ profiles: [{ ...MAIN_PROFILE, _id: 'art' }] }), 'This backup cannot be restored, as its profiles do not include All Channels, which holds every subscription'],
@@ -308,6 +306,14 @@ describe('the Backup group', () => {
         wrapper.unmount()
       }
 
+      expect(window.ftElectron.restoreBackup).not.toHaveBeenCalled()
+    })
+
+    it('still says a file from a newer Fjernsyn is left alone', async () => {
+      await chooseBackup(backupFile({}, { formatVersion: 7 }))
+
+      expect(toasts()).toEqual(['This backup was written by a newer version of Fjernsyn (backup format 7), which this version cannot read'])
+      expect(confirmation()).toBeNull()
       expect(window.ftElectron.restoreBackup).not.toHaveBeenCalled()
     })
 
@@ -575,49 +581,26 @@ describe('the Backup group', () => {
       expect(statusLine(wrapper)).toEqual({ text: 'Written 2026-10-06 09:05', buttons: [] })
     })
 
-    it('shows every state with its buttons', async () => {
-      const pause = { key: 'k', machineName: 'synthetic-laptop', writtenAt: AT_1402, detail: null, formatVersion: null }
-      const arriving = { machineName: 'synthetic-laptop', writtenAt: AT_1402, since: AT_1402 }
-      const states = [
-        [{ failure: { message: 'ENOSPC: no space left on device', since: AT_1402 } }, 'Couldn\'t write: ENOSPC: no space left on device', []],
-        [{ pause: { ...pause, reason: 'refused', detail: 'baseMismatch' } }, 'Paused: the backup in the folder can\'t be read (its base file does not match it).', ['Overwrite with this machine\'s data']],
-        [{ pause: { ...pause, reason: 'refused' } }, 'Paused: the backup in the folder can\'t be read.', ['Overwrite with this machine\'s data']],
-        [{ pause: { ...pause, reason: 'newer', formatVersion: 2 } }, 'Paused: the backup was written by a newer Fjernsyn. Update Fjernsyn to keep it.', []],
-        [{ arriving }, 'Waiting for the backup synthetic-laptop wrote at 14:02 to arrive; nothing is written until it does.', ['Overwrite with this machine\'s data']],
-        [{ arriving: { ...arriving, machineName: null } }, 'Waiting for the backup another machine wrote at 14:02 to arrive; nothing is written until it does.', ['Overwrite with this machine\'s data']],
-      ]
+    it('says the folder could not be written, with the reason', async () => {
+      const wrapper = await mountKeeping(keeping({ writtenAt: AT_1402 }))
 
-      const wrapper = await mountKeeping(keeping())
+      await push(keeping({ writtenAt: AT_1402, failure: { message: 'ENOSPC: no space left on device', since: AT_1402 } }))
 
-      for (const [fields, text, buttons] of states) {
-        await push(keeping({ writtenAt: AT_1402, ...fields }))
-        expect(statusLine(wrapper)).toEqual({ text, buttons })
-        expect(wrapper.find('.keeperMerged').exists()).toBe(false)
-      }
+      expect(statusLine(wrapper)).toEqual({ text: 'Couldn\'t write: ENOSPC: no space left on device', buttons: [] })
+      expect(wrapper.find('.keeperMerged').exists()).toBe(false)
     })
 
-    it('says when another machine\'s changes were last taken in, under the written line', async () => {
+    it('says when the folder was last written and what it last took in, with the machine\'s name', async () => {
       const wrapper = await mountKeeping(keeping({ writtenAt: AT_1402, mergedFrom: { machineName: 'synthetic-laptop', at: AT_1402 - 60_000 } }))
 
       expect(statusLine(wrapper)).toEqual({ text: 'Written 14:02', buttons: [] })
       expect(wrapper.find('.keeperMerged').text()).toBe('Took in changes from synthetic-laptop at 14:01')
 
+      await push(keeping({ writtenAt: AT_1402, mergedFrom: { machineName: null, at: AT_1402 - 60_000 } }))
+      expect(wrapper.find('.keeperMerged').text()).toBe('Took in changes from another machine at 14:01')
+
       await push(keeping({ writtenAt: AT_1402 }))
       expect(wrapper.find('.keeperMerged').exists()).toBe(false)
-    })
-
-    it('sends Overwrite from a pause and while a base is awaited', async () => {
-      const pause = { reason: 'refused', key: 'k', machineName: 'synthetic-laptop', writtenAt: AT_1402, detail: 'notJson', formatVersion: null }
-      const wrapper = await mountKeeping(keeping({ pause }))
-
-      await button(wrapper, 'Overwrite with this machine\'s data').trigger('click')
-      await flushPromises()
-
-      await push(keeping({ arriving: { machineName: 'synthetic-laptop', writtenAt: AT_1402, since: AT_1402 } }))
-      await button(wrapper, 'Overwrite with this machine\'s data').trigger('click')
-      await flushPromises()
-
-      expect(window.ftElectron.answerKeeper.mock.calls).toEqual([['overwrite'], ['overwrite']])
     })
   })
 })

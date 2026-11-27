@@ -6,9 +6,9 @@ import { showToast } from '../../helpers/utils'
 import { mountWithApp } from '../../testing/mount'
 import BackupKeeperNotices from './BackupKeeperNotices.vue'
 
-// The keeper's notices, with main stubbed: what each prompt says and the
-// answer it sends, the toasts, each once, and the load of what the keeper
-// changed in every window (its own tests are useKeeperRefresh's)
+// The keeper's notices, with main stubbed: the toasts, each told once, and
+// the load of what the keeper changed in every window (its own tests are
+// useKeeperRefresh's)
 
 vi.mock('../../store/index', async () => {
   const { createFakeStore } = await import('../../testing/store')
@@ -32,7 +32,7 @@ const NOW = new Date(2026, 9, 7, 16, 30)
 const AT_1402 = new Date(2026, 9, 7, 14, 2).getTime()
 
 /** @type {import('../../../main/backup/keeper').KeeperStatus} */
-const KEEPING = { folder: '/home/me/Sync/fjernsyn', ready: true, writtenAt: AT_1402, failure: null, pause: null, arriving: null, tookIn: null, mergedFrom: null }
+const KEEPING = { folder: '/home/me/Sync/fjernsyn', ready: true, writtenAt: AT_1402, failure: null, mergedFrom: null }
 
 const pause = (fields) => ({ key: 'pause-1', machineName: 'synthetic-laptop', writtenAt: AT_1402, detail: null, formatVersion: null, ...fields })
 
@@ -50,7 +50,6 @@ beforeEach(() => {
     handleMainWindowChanged: vi.fn(),
     getKeeperStatus: vi.fn(async () => KEEPING),
     handleKeeperStatus: vi.fn(),
-    answerKeeper: vi.fn(async () => KEEPING),
     handleKeeperDataChanged: vi.fn(),
   }
 })
@@ -97,109 +96,23 @@ function shownPrompt() {
     : { text: found.querySelector('h2').textContent.trim(), buttons: [...found.querySelectorAll('button')].map(button => button.textContent.trim()) }
 }
 
-async function choose(label) {
-  const found = [...document.querySelectorAll('.prompt button')].find(button => button.textContent.trim() === label)
-  if (!found) {
-    throw new Error(`no button "${label}"`)
-  }
-  found.click()
-  await flushPromises()
-}
-
-async function closePrompt() {
-  document.querySelector('.prompt').click()
-  await flushPromises()
-}
-
-const answers = () => window.ftElectron.answerKeeper.mock.calls.map(([answer]) => answer)
 const toasts = () => vi.mocked(showToast).mock.calls.map(([message]) => message)
 
-describe('a pause', () => {
-  const refused = (fields = {}) => ({ ...KEEPING, pause: pause({ reason: 'refused', detail: 'notJson', ...fields }) })
-
-  it('asks nothing over the start screen, and asks once the page is up', async () => {
-    await mountNotices(refused(), { windowUp: false })
-
-    expect(shownPrompt()).toBeNull()
-
-    showPage()
-    await wrapper.setProps({ windowUp: true })
-    await flushPromises()
-
-    expect(shownPrompt()).toEqual({
-      text: 'The backup in the folder can\'t be read (it is not JSON). Overwrite it with this machine\'s data?',
-      buttons: ['Overwrite with this machine\'s data', 'Not now'],
-    })
-  })
-
-  it('sends each answer', async () => {
-    const choices = [['Overwrite with this machine\'s data', 'overwrite'], ['Not now', 'notNow']]
-
-    for (const [index, [label, answer]] of choices.entries()) {
-      await mountNotices(refused({ key: `pause-${index}` }), { windowUp: true })
-
-      await choose(label)
-
-      expect(answers().at(-1)).toBe(answer)
-      expect(shownPrompt()).toBeNull()
-      wrapper.unmount()
-      wrapper = null
-    }
-  })
-
-  it('takes closing the prompt as Not now', async () => {
-    await mountNotices(refused({ detail: 'somethingNew' }), { windowUp: true })
-
-    expect(shownPrompt().text).toBe('The backup in the folder can\'t be read. Overwrite it with this machine\'s data?')
-
-    await closePrompt()
-
-    expect(answers()).toEqual(['notNow'])
-    expect(shownPrompt()).toBeNull()
-  })
-
-  it('asks once per pause, a reload of the window included', async () => {
-    await mountNotices(refused(), { windowUp: true })
-    await choose('Not now')
-
-    await push(refused())
-    expect(shownPrompt()).toBeNull()
-
-    wrapper.unmount()
-    await mountNotices(refused(), { windowUp: true })
-    expect(shownPrompt()).toBeNull()
-
-    await push(refused({ key: 'pause-2' }))
-    expect(shownPrompt()).not.toBeNull()
-  })
-
-  it('offers only Not now for a backup from a newer Fjernsyn', async () => {
-    await mountNotices({ ...KEEPING, pause: pause({ reason: 'newer', formatVersion: 2 }) }, { windowUp: true })
-
-    expect(shownPrompt()).toEqual({
-      text: 'The backup in the folder was written by a newer Fjernsyn, which this version can\'t read. Update Fjernsyn to keep it.',
-      buttons: ['Not now'],
-    })
-  })
-
-  it('asks nothing in a window that is not the main one', async () => {
-    window.ftElectron.isMainWindow.mockResolvedValue(false)
-    await mountNotices(refused(), { windowUp: true })
-
-    expect(shownPrompt()).toBeNull()
-  })
-})
-
 describe('another machine\'s changes', () => {
-  it('asks nothing while a base is awaited, over the start screen or the page', async () => {
-    const arriving = { ...KEEPING, arriving: { machineName: 'synthetic-laptop', writtenAt: AT_1402, since: AT_1402 } }
+  it('offers no restore or overwrite prompt, as there is nothing left to answer', async () => {
+    // The pause and the base awaited are what the prompts asked about, and
+    // both went with the lock. A status still naming one asks nothing.
+    const stale = { ...KEEPING, pause: pause({ reason: 'refused', detail: 'notJson' }), arriving: { machineName: 'synthetic-laptop', writtenAt: AT_1402, since: AT_1402 } }
 
-    await mountNotices(arriving, { windowUp: false })
-    expect(document.body.textContent.trim()).toBe('')
+    // With the page up from the start, so that a prompt would have its hold
+    // to teleport into: one mounted over the start screen goes nowhere and
+    // would look the same as none at all
+    await mountNotices(stale, { windowUp: true })
 
-    showPage()
-    await wrapper.setProps({ windowUp: true })
-    await flushPromises()
+    expect(shownPrompt()).toBeNull()
+    expect(document.querySelector('.app').textContent.trim()).toBe('')
+
+    await push(stale)
     expect(shownPrompt()).toBeNull()
   })
 
@@ -217,8 +130,8 @@ describe('another machine\'s changes', () => {
 })
 
 describe('the toasts', () => {
-  it('tells of a take in once, when the page is up', async () => {
-    const status = { ...KEEPING, tookIn: { key: 'took-1', machineName: 'synthetic-laptop', writtenAt: AT_1402 } }
+  it('waits for the page, and tells the same run no second time after a reload', async () => {
+    const status = { ...KEEPING, failure: { message: 'EACCES: permission denied', since: AT_1402 } }
     await mountNotices(status, { windowUp: false })
 
     expect(toasts()).toEqual([])
@@ -226,7 +139,7 @@ describe('the toasts', () => {
     showPage()
     await wrapper.setProps({ windowUp: true })
     await flushPromises()
-    expect(toasts()).toEqual(['Took in the changes synthetic-laptop wrote at 14:02'])
+    expect(toasts()).toEqual(['Couldn\'t write the kept backup: EACCES: permission denied'])
 
     await push({ ...status })
     wrapper.unmount()

@@ -42,12 +42,6 @@
       <p class="keeperStatus">
         {{ keeperLine.text }}
       </p>
-      <FtButton
-        v-for="action in keeperLine.actions"
-        :key="action.answer"
-        :label="action.label"
-        @click="answerKeeper(action.answer)"
-      />
     </FtFlexBox>
     <FtFlexBox
       v-if="keeperLine?.merged"
@@ -140,14 +134,14 @@ import { communitiesBackupSections } from '../../helpers/communities/backup'
 import { listAllDownloads } from '../../helpers/downloads'
 import { isRunning } from '../../helpers/ytdlpDownloads'
 import { getTodayDateStrLocalTimezone, showToast, writeFileWithPicker } from '../../helpers/utils'
-import { answerKeeper, chooseKeeperFolder, stopKeeping, useKeeperStatus, useKeeperWords } from '../../composables/useKeeperStatus'
+import { chooseKeeperFolder, stopKeeping, useKeeperStatus, useKeeperWords } from '../../composables/useKeeperStatus'
 
 /**
  * The Backup group at the top of Data settings: everything in one file, and a
  * restore that replaces each section the file holds, then relaunches. The
  * format is helpers/backup.js; the restore itself is main's (main/backup).
  * Below them the kept backup: the folder main's keeper keeps it in, and what
- * the keeper last did, with the choices a pause leaves open.
+ * the keeper last did.
  */
 
 const USING_ELECTRON = process.env.IS_ELECTRON
@@ -530,17 +524,12 @@ const keeperFolder = computed(() => keeperStatus.value?.folder ?? null)
 /**
  * @typedef KeeperLine
  * @property {string} text
- * @property {{ label: string, answer: import('../../../main/backup/keeper').KeeperAnswer }[]} actions
  * @property {string | null} merged when another machine's changes were last taken in, shown under the written line
  */
 
-/** @type {import('vue').ComputedRef<KeeperLine['actions'][number]>} */
-const overwriteAction = computed(() => ({ label: t('Settings.Data Settings.Backup.Keeper.Overwrite with this data'), answer: 'overwrite' }))
-
 /**
- * What the keeper last did, or why it stopped or waits, while it keeps a
- * folder. A pause keeps its choices here, so one put off with Not now can be
- * made later.
+ * What the keeper last did, or why it could not, while it keeps a folder.
+ * Nothing here asks anything: every machine follows the folder by merging.
  * @type {import('vue').ComputedRef<KeeperLine | null>}
  */
 const keeperLine = computed(() => {
@@ -550,31 +539,14 @@ const keeperLine = computed(() => {
     return null
   }
 
-  if (status.pause !== null) {
-    return pauseLine(status.pause)
-  }
-
-  if (status.arriving !== null) {
-    // Overwrite, as a base that never comes would otherwise leave no way out
-    return {
-      text: t('Settings.Data Settings.Backup.Keeper.Arriving', {
-        machine: keeperWords.machine(status.arriving.machineName),
-        time: keeperWords.time(status.arriving.writtenAt),
-      }),
-      actions: [overwriteAction.value],
-      merged: null,
-    }
-  }
-
   if (status.failure !== null) {
-    return { text: t('Settings.Data Settings.Backup.Keeper.Could not write', { message: status.failure.message }), actions: [], merged: null }
+    return { text: t('Settings.Data Settings.Backup.Keeper.Could not write', { message: status.failure.message }), merged: null }
   }
 
   return {
     text: status.writtenAt === null
       ? t('Settings.Data Settings.Backup.Keeper.Not written yet')
       : t('Settings.Data Settings.Backup.Keeper.Written', { time: keeperWords.time(status.writtenAt) }),
-    actions: [],
     merged: status.mergedFrom == null
       ? null
       : t('Settings.Data Settings.Backup.Keeper.Took in', {
@@ -583,30 +555,6 @@ const keeperLine = computed(() => {
         }),
   }
 })
-
-/**
- * @param {NonNullable<import('../../../main/backup/keeper').KeeperStatus['pause']>} pause
- * @returns {KeeperLine | null}
- */
-function pauseLine(pause) {
-  switch (pause.reason) {
-    case 'refused': {
-      const reason = keeperWords.refusedReason(pause.detail)
-
-      return {
-        text: reason === null
-          ? t('Settings.Data Settings.Backup.Keeper.Paused.Refused without reason')
-          : t('Settings.Data Settings.Backup.Keeper.Paused.Refused', { reason }),
-        actions: [overwriteAction.value],
-        merged: null,
-      }
-    }
-    case 'newer':
-      return { text: t('Settings.Data Settings.Backup.Keeper.Paused.Newer'), actions: [], merged: null }
-    default:
-      return null
-  }
-}
 
 // #endregion kept backup
 </script>

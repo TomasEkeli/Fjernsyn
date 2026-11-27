@@ -49,8 +49,8 @@ const IpcChannels = {
   KEEPER_STATUS_CHANGED: 'keeper-status-changed',
   KEEPER_CHOOSE_FOLDER: 'keeper-choose-folder',
   KEEPER_STOP: 'keeper-stop',
-  KEEPER_ANSWER: 'keeper-answer',
   KEEPER_DATA_CHANGED: 'keeper-data-changed',
+  KEEPER_FIRST_LOAD_DONE: 'keeper-first-load-done',
 
   SYNC_SETTINGS: 'sync-settings',
   SYNC_HISTORY: 'sync-history',
@@ -169,6 +169,7 @@ const DBActions = {
     UPDATE_POSITION: 20,
     UPDATE_ALARM: 21,
     UPDATE_VIEW_COUNT: 22,
+    UPDATE_POSITIONS: 23,
   },
 
   COMMUNITIES: {
@@ -235,6 +236,7 @@ const SyncEvents = {
     UPDATE_POSITION: 20,
     UPDATE_ALARM: 21,
     UPDATE_VIEW_COUNT: 22,
+    UPDATE_POSITIONS: 23,
   },
 
   COMMUNITIES: {
