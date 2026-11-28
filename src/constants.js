@@ -430,7 +430,9 @@ const UI_SCALE = {
 const WALL_TILE_ZOOM = {
   MIN: 50,
   MAX: 200,
-  STEP: 10,
+  // A per cent at a time, so the handle slides rather than snaps. The wall
+  // redraws on each step, and a step is a few pixels of column.
+  STEP: 1,
 }
 
 export {

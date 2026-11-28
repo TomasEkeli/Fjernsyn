@@ -37,7 +37,6 @@
         </p>
       </div>
       <div class="pageControls">
-        <WallZoomChip />
         <FtToggleChip
           :label="$t('Watched Chip.Watched')"
           :icon="['fas', 'history']"
@@ -112,6 +111,7 @@
             </optgroup>
           </select>
         </div>
+        <WallZoomChip />
       </div>
     </div>
     <FtLoader

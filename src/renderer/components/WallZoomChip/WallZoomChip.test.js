@@ -48,15 +48,17 @@ describe('WallZoomChip', () => {
     document.body.style.removeProperty('--ft-wall-zoom')
   })
 
-  it('reads out the size it is set to', async () => {
+  // Nothing but an icon, so the size it is set to is what it is called.
+  it('is named for the size it is set to', async () => {
     const wrapper = mountChip()
 
-    expect(wrapper.get('.chip').text()).toContain('Zoom 100%')
+    expect(wrapper.get('.chip').text()).toBe('')
+    expect(wrapper.get('.chip').attributes('aria-label')).toBe('Zoom 100%')
 
     store.setGetter('getWallTileZoom', 70)
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.get('.chip').text()).toContain('Zoom 70%')
+    expect(wrapper.get('.chip').attributes('aria-label')).toBe('Zoom 70%')
   })
 
   it('opens and closes the panel, and says which it is', async () => {
@@ -105,7 +107,7 @@ describe('WallZoomChip', () => {
     await dragTo(wrapper, 60, { release: false })
 
     expect(document.body.style.getPropertyValue('--ft-wall-zoom')).toBe('0.6')
-    expect(wrapper.get('.chip').text()).toContain('Zoom 60%')
+    expect(wrapper.get('.chip').attributes('aria-label')).toBe('Zoom 60%')
     expect(store.dispatched).toEqual([])
   })
 
@@ -131,6 +133,6 @@ describe('WallZoomChip', () => {
     store.setGetter('getWallTileZoom', 150)
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.get('.chip').text()).toContain('Zoom 150%')
+    expect(wrapper.get('.chip').attributes('aria-label')).toBe('Zoom 150%')
   })
 })

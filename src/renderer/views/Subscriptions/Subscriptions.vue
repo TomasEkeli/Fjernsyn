@@ -30,7 +30,6 @@
           @stop-activity="stopActivity"
         />
         <div class="pageControls">
-          <WallZoomChip />
           <FtToggleChip
             :label="$t('Watched Chip.Watched')"
             :icon="['fas', 'history']"
@@ -39,6 +38,7 @@
             @toggle="toggleWatched"
           />
           <AiChip />
+          <WallZoomChip />
         </div>
       </div>
       <SubscriptionsUpcomingShelf

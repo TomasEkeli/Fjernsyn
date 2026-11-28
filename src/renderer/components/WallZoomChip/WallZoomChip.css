@@ -9,20 +9,45 @@
 }
 
 /*
- * Hung under the pill, aligned to its start edge, and wide enough for a
- * slider to be worth dragging. It escapes the control row, which is sticky
- * and sets a stacking context at z-index 3, so the panel only has to clear
- * what is inside that row and the wall below it.
+ * Nothing but the icon, so the pill loses the width its label used to need
+ * and becomes round. The inline padding is what the icon needs either side
+ * to sit in the middle of a circle the same height as its lettered
+ * neighbours.
+ */
+.chipIconOnly {
+  padding-inline: 10px;
+}
+
+/*
+ * Hung under the pill and wide enough for a slider to be worth dragging.
+ * Aligned to the pill's end edge, not its start: the pill is the last thing
+ * in the control row, so a panel growing rightwards would leave the window.
+ *
+ * It escapes the control row, which is sticky and sets a stacking context at
+ * z-index 3, so the panel only has to clear what is inside that row and the
+ * wall below it.
  */
 .panel {
   background-color: var(--card-bg-color);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgb(0 0 0 / 40%);
-  inline-size: 220px;
+  inline-size: 200px;
   inset-block-start: calc(100% + 6px);
-  inset-inline-start: 0;
-  padding-block: 12px;
-  padding-inline: 16px;
+  inset-inline-end: 0;
+  padding-block: 10px;
+  padding-inline: 14px;
   position: absolute;
   z-index: 1;
+}
+
+/*
+ * The slider is 380px wide and carries the margins that space it out in the
+ * settings pane, where it is one row among many. Here it is the only thing
+ * in the box, and the box is its size.
+ */
+.panel .pure-material-slider {
+  display: block;
+  inline-size: 100%;
+  margin: 0;
+  padding: 0;
 }

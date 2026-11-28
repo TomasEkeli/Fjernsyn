@@ -13,10 +13,14 @@
       :min="minValue"
       :max="maxValue"
       :step="step"
+      :aria-label="labelHidden ? label : null"
       @change="change"
       @input="input"
     >
-    <span class="label">
+    <span
+      v-if="!labelHidden"
+      class="label"
+    >
       {{ $t('Display Label', {label: label, value: displayLabel}) }}
     </span>
   </label>
@@ -51,6 +55,14 @@ const props = defineProps({
     default: null
   },
   disabled: {
+    type: Boolean,
+    default: false
+  },
+  // For a caller whose surroundings already say what the slider is and what
+  // it reads. The label becomes the input's accessible name rather than
+  // going away, and the track takes the whole control: the stylesheet
+  // already lays the input out that way when no span follows it.
+  labelHidden: {
     type: Boolean,
     default: false
   }

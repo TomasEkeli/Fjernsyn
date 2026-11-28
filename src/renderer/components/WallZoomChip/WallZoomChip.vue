@@ -22,20 +22,20 @@
   >
     <button
       ref="trigger"
-      class="chip"
+      class="chip chipIconOnly"
       :class="{ chipPressed: open }"
       type="button"
       aria-haspopup="dialog"
       :aria-expanded="open"
+      :aria-label="t('Zoom Chip.Zoom', { value: shown })"
       :title="t('Zoom Chip.Hint')"
       @click="toggle"
     >
       <FontAwesomeIcon
         class="chipIcon"
-        :icon="['fas', 'expand']"
+        :icon="['fas', 'border-all']"
         aria-hidden="true"
       />
-      {{ t('Zoom Chip.Zoom', { value: shown }) }}
     </button>
     <div
       v-if="open"
@@ -43,7 +43,7 @@
       class="panel"
       tabindex="-1"
       role="dialog"
-      :aria-label="t('Zoom Chip.Zoom', { value: shown })"
+      :aria-label="t('Zoom Chip.Tile Size')"
       @keydown.esc.stop="close"
     >
       <FtSlider
@@ -52,7 +52,7 @@
         :min-value="WALL_TILE_ZOOM.MIN"
         :max-value="WALL_TILE_ZOOM.MAX"
         :step="WALL_TILE_ZOOM.STEP"
-        value-extension="%"
+        label-hidden
         @input="preview"
         @change="save"
       />
