@@ -72,6 +72,8 @@ Global:
     Like Count: 1 like | {count} likes
     Comment Count: 1 comment | {count} comments
     Watching Count: 1 watching | {count} watching
+    # The fork's own: upstream dropped this with #10152, but a reply thread
+    # here shows three replies at a time, so the rest are worth counting
     Replies Remaining: "{' '}(1 remaining) | {' '}({count} remaining)"
 
 # Search Bar
@@ -1843,6 +1845,7 @@ Comments:
   Newest first: Newest First
   View {replyCount} replies: View 1 reply | View {replyCount} replies
   Hide Replies: Hide reply | Hide replies
+  Show Replies: Show replies
   Loading replies: Loading replies...
   View 1 reply from {channelName}: View 1 reply from {channelName}
   View {replyCount} replies from {channelName} and others: View {replyCount} replies from {channelName} and others

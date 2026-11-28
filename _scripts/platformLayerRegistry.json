@@ -127,7 +127,7 @@
     },
     {
       "path": "static/locales/en-US.yaml",
-      "reason": "the fork-only PeerTube, Layer Search and Layer Surfaces strings; the Communities and Sources strings, and the names of their two backup sections"
+      "reason": "the fork-only PeerTube and Layer Search strings; `Global.Counts.Replies Remaining`, kept where upstream dropped it with #10152; the Communities and Sources strings, and the names of their two backup sections"
     }
   ],
   "shadowed": {

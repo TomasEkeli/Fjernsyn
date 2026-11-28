@@ -38,7 +38,6 @@ Global:
     Watching Count: 1 Zuschauer | {count} Zuschauende
     Comment Count: 1 Kommentar | {count} Kommentare
     Like Count: 1 Gefällt mir | {count} Gefällt mir
-    Replies Remaining: "{' '}(1 verbleibend) | {' '}({count} verbleibend)"
 Search / Go to URL: Suchen / URL öffnen
   # In Filter Button
 Search Filters:
@@ -935,6 +934,7 @@ Comments:
   View {replyCount} replies from {channelName} and others: '{replyCount} Antworten von {channelName} und anderen ansehen'
   Loading replies: Antworten laden...
   Comments are turned off: Kommentare sind deaktiviert
+  Show Replies: Antworten anzeigen
 Up Next: Nächster Titel
 
 # Toast Messages
