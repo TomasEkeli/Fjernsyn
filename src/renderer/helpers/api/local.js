@@ -3057,7 +3057,7 @@ export function mapLocalLegacyFormat(format) {
  * @property {(YTNodes.CommentThread | Misc.CommentsContinuation)?} replyToken
  * @property {number} replyLevel
  * @property {string} memberIconUrl
- * @property {number} numReplies
+ * @property {number | null} numReplies
  */
 /**
  * @param {import('youtubei.js').YTNodes.CommentView} comment
@@ -3076,6 +3076,11 @@ export function parseLocalComment(comment, commentThread = undefined) {
     // YouTube's own approximate "View N replies" text where the thread has it,
     // the exact count where it does not (a reply's thread need not have one)
     numReplies = parseLocalSubscriberCount(commentThread.comment_replies_data?.view_replies?.text || comment.reply_count_a11y || '0')
+
+    if (Number.isNaN(numReplies)) {
+      // There are replies, but neither text says how many: YouTube only offers "View replies"
+      numReplies = null
+    }
   }
 
   const commentTextRuns = comment.voice_reply_container?.transcript_text?.runs ?? comment.content?.runs ?? []
@@ -3185,7 +3190,7 @@ function parseLocalCommunityPost(post) {
   })
 
   return {
-    postText: post.content.isEmpty() ? '' : Autolinker.link(parseLocalTextRuns(post.content.runs, 16)),
+    postText: post.content.isEmpty() ? '' : Autolinker.link(parseLocalTextRuns(post.content.runs, 16, { looseChannelNameDetection: true })),
     postId: post.id,
     authorThumbnails,
     publishedTime: calculatePublishedDate(post.published.text),

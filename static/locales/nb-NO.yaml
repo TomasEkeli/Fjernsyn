@@ -41,7 +41,6 @@ Global:
     Video Count: 1 video | {count} videoer
     View Count: 1 visning | {count} visninger
     Like Count: 1 liker | {count} liker
-    Replies Remaining: "{' '}(1 gjenstår) | {' '}({count} gjenstående)"
 Search / Go to URL: 'Søk / gå til nettadresse'
   # In Filter Button
 Search Filters:
@@ -936,6 +935,7 @@ Comments:
   View {replyCount} replies from {channelName} and others: Vis {replyCount} svar fra {channelName} og andre
   Loading replies: Laster inn svar...
   Comments are turned off: Kommentarer er skrudd av
+  Show Replies: Vis svar
 Up Next: 'Neste'
 
 # Toast Messages
