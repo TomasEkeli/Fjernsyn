@@ -13,6 +13,7 @@
   overflow-wrap: anywhere;
 }
 
+.htmlDescription,
 .plainDescription {
   margin: 0;
   white-space: pre-wrap;
