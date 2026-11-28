@@ -337,6 +337,19 @@ describe('a YouTube video\'s details from Local', () => {
     expect((await layer.getVideo('dQw4w9WgXcQ')).description).toBe('Tom &amp; &lt;Jerry&gt;')
   })
 
+  it('makes the bare URLs in a description links, as the old description does', async () => {
+    const { layer } = setUp({
+      answers: {
+        getLocalVideoInfo: localInstance(localWith(localOrdinary, (info) => {
+          info.secondary_info.description.runs = [{ text: 'More: https://example.org/watch?v=1', bold: false }]
+        }))
+      }
+    })
+
+    expect((await layer.getVideo('dQw4w9WgXcQ')).description)
+      .toBe('More: <a href="https://example.org/watch?v=1" target="_blank" rel="noopener noreferrer">example.org/watch?v=1</a>')
+  })
+
   it('reads the title, published date and view count from the page where the player response lacks them', async () => {
     const { layer } = setUp({
       answers: {

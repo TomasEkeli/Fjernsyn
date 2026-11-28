@@ -283,7 +283,7 @@
  * | isUpcoming       | `basic_info.is_upcoming`                               | `isUpcoming`                         |
  * | premiereDate     | `basic_info.start_timestamp` (a Date), when upcoming   | `premiereTimestamp` s → Date, when upcoming |
  * | nsfw             | — (YouTube's rating is `isFamilyFriendly`, Q6)          | —                                    |
- * | description      | `parseLocalTextRuns(secondary_info.description.runs)`, else `basic_info.short_description` escaped | `descriptionHtml` cleaned as `WatchVideoDescription.vue` cleans it (`cleanInvidiousDescriptionHtml`), else `description` escaped |
+ * | description      | `parseLocalTextRuns(secondary_info.description.runs)`, else `basic_info.short_description` escaped, either way autolinked as `WatchVideoDescription.vue` autolinks it | `descriptionHtml` cleaned as `WatchVideoDescription.vue` cleans it (`cleanInvidiousDescriptionHtml`), else `description` escaped |
  * | descriptionKind  | `'html'`: the runs parser emits escaped markup with links | `'html'`                          |
  * | likeCount        | `basic_info.like_count`, `null` when unknown           | `likeCount`, `null` when unknown     |
  * | dislikeCount     | `null`: YouTube no longer gives it (the old view shows 0) | `dislikeCount`, as the instance reports it, else `null` |
