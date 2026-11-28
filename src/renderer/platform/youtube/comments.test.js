@@ -162,10 +162,17 @@ describe('YouTube comments on Local, in the reply shape youtubei.js cannot read'
     const instance = structuredClone(localNewReplyShape.answer)
 
     for (const thread of instance.contents) {
-      // What a `YTNodes.CommentThread` offers, and what it does in this shape
+      const inlined = thread.comment_replies_data?.sub_threads ?? []
+
+      // What a `YTNodes.CommentThread` offers, and what it does in this shape:
+      // the replies YouTube inlined and no more, or a throw where it inlined none
       Object.assign(thread, {
-        is_prepopulated: false,
-        getReplies: vi.fn(() => Promise.reject(new Error('Replies continuation item not found'))),
+        is_prepopulated: inlined.length > 0,
+        replies: inlined.length ? inlined : undefined,
+        has_continuation: false,
+        getReplies: vi.fn(() => (inlined.length
+          ? Promise.resolve(thread)
+          : Promise.reject(new Error('Replies continuation item not found')))),
         getContinuation: vi.fn(() => Promise.reject(new Error('No continuation item found'))),
       })
     }
@@ -221,6 +228,19 @@ describe('YouTube comments on Local, in the reply shape youtubei.js cannot read'
 
     expect(second).toEqual({ items: [], cursor: null })
     expect(fake.callsOf('getLocalCommentReplies').map(([item]) => item.token)).toEqual(['REPLIES-TWO', 'REPLIES-TWO-2'])
+  })
+
+  it('prefers that continuation to the replies YouTube inlines, which are only some of them', async () => {
+    const { layer, instance } = setUpNewShape()
+    const partly = (await layer.getComments(VIDEO)).items[2]
+
+    expect(partly.replyCount).toBe(2)
+    expect(instance.contents[2].replies).toHaveLength(1)
+
+    const page = await layer.getCommentReplies(VIDEO, partly)
+
+    expect(instance.contents[2].getReplies).not.toHaveBeenCalled()
+    expect(page.items.map(reply => reply.author)).toEqual(['@answerer', '@asker'])
   })
 
   it('is an empty page, not a failure, where YouTube counts a reply it does not send', async () => {

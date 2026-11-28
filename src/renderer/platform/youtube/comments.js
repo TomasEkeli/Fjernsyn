@@ -91,19 +91,14 @@ function isUsableRepliesCursor(cursor) {
 
 /**
  * The continuation `getReplies()` does not look at: it reads `subThreads`
- * alone, and YouTube describes the replies in `contents`. `null` for a
- * thread in the old shape, which `getReplies()` still handles.
+ * alone, where YouTube inlines some of the replies at best. This item
+ * answers the whole list, so it wins wherever it is there. `null` for a
+ * thread in the old shape.
  *
  * @param {any} thread a `YTNodes.CommentThread`
  */
 function newRepliesContinuation(thread) {
-  const data = thread?.comment_replies_data
-
-  if (!data || data.sub_threads?.length) {
-    return null
-  }
-
-  return (data.contents ?? []).find(isContinuationItem) ?? null
+  return (thread?.comment_replies_data?.contents ?? []).find(isContinuationItem) ?? null
 }
 
 /**
