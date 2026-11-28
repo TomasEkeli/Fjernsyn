@@ -78,6 +78,7 @@
         :comment="reply"
         :video-ref="videoRef"
         :base-url="baseUrl"
+        :auto-expand-depth="childExpandDepth"
       />
       <p
         v-if="!replies.length && !repliesLoading"
@@ -117,7 +118,7 @@
 </template>
 
 <script setup>
-import { computed, ref, shallowRef, watch } from 'vue'
+import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import FtButton from '../FtButton/FtButton.vue'
@@ -150,7 +151,15 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  /** Levels of replies to open unasked, counted from this comment; `0` waits to be asked */
+  autoExpandDepth: {
+    type: Number,
+    default: 0
+  },
 })
+
+/** Levels one click opens: the exchange, not the first hop */
+const AUTO_EXPAND_LEVELS = 3
 
 const { locale, t } = useI18n()
 const layer = usePlatformLayer()
@@ -195,6 +204,8 @@ const replies = shallowRef([])
 const repliesLoaded = ref(false)
 /** Where the next page of replies starts; `null` once they are all here */
 const repliesCursor = shallowRef(null)
+/** What each reply is handed as its own `autoExpandDepth` */
+const childExpandDepth = ref(0)
 
 /** The count is not enough: a nested thread is offered as "View reply", which reads as `null` */
 const hasReplies = computed(() => props.comment.repliesCursor != null || props.comment.replyCount > 0)
@@ -216,9 +227,26 @@ function toggleReplies() {
   if (repliesLoaded.value) {
     showReplies.value = !showReplies.value
   } else {
-    loadReplies()
+    expandReplies(AUTO_EXPAND_LEVELS)
   }
 }
+
+/**
+ * The replies, and `levels - 1` more levels under each. The depth stays for
+ * the pages after this one.
+ *
+ * @param {number} levels
+ */
+function expandReplies(levels) {
+  childExpandDepth.value = Math.max(levels - 1, 0)
+  loadReplies()
+}
+
+onMounted(() => {
+  if (props.autoExpandDepth > 0 && hasReplies.value) {
+    expandReplies(props.autoExpandDepth)
+  }
+})
 
 /** The first page of replies, or the next one */
 async function loadReplies() {

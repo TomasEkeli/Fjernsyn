@@ -473,7 +473,7 @@ describe('LayerComments, replies', () => {
     expect(wrapper.text()).not.toContain('Show more replies')
   })
 
-  it('loads a reply\'s own replies on demand, the same way', async () => {
+  it('loads a reply\'s own replies the same way, asked for by the comment above it', async () => {
     const thread = comment({ replyCount: 2 })
     const reply = comment({ text: 'Reply A', replyCount: 1 })
     layer.getComments.mockResolvedValue({ items: [thread], cursor: null })
@@ -482,9 +482,9 @@ describe('LayerComments, replies', () => {
       .mockResolvedValueOnce({ items: [comment({ text: 'Reply to A' })], cursor: null })
     const wrapper = await mountComments()
     await showComments(wrapper)
-    await clickText(wrapper, 'View 2 replies')
 
-    await clickText(wrapper, 'View 1 reply')
+    await clickText(wrapper, 'View 2 replies')
+    await flushPromises()
 
     expect(layer.getCommentReplies).toHaveBeenLastCalledWith(VIDEO_REF, reply, { cursor: null })
     expect(commentTexts(wrapper)).toEqual(['Comment 1', 'Reply A', 'Reply to A'])
@@ -514,6 +514,92 @@ describe('LayerComments, replies', () => {
     await clickText(wrapper, 'View 1 reply')
 
     expect(commentTexts(wrapper)).toEqual(['This comment has been deleted', 'Reply A'])
+  })
+
+  /** A comment with replies to open, so that its expander is offered */
+  function repliable(overrides = {}) {
+    return comment({ replyCount: 1, repliesCursor: { backend: 'local', continuation: {} }, ...overrides })
+  }
+
+  /** Each level is a mount and a fetch of its own; more rounds than levels, so an uncapped one would show */
+  async function settle() {
+    for (let level = 0; level < 10; level++) {
+      await flushPromises()
+    }
+  }
+
+  it('opens three levels below the comment asked for, and no further', async () => {
+    layer.getComments.mockResolvedValue({ items: [repliable({ text: 'Thread' })], cursor: null })
+    layer.getCommentReplies.mockImplementation((videoRef, forComment) => Promise.resolve({
+      items: [repliable({ text: `Under ${forComment.text}` })],
+      cursor: null,
+    }))
+    const wrapper = await mountComments()
+    await showComments(wrapper)
+
+    await clickText(wrapper, 'View 1 reply')
+    await settle()
+
+    expect(commentTexts(wrapper)).toEqual([
+      'Thread',
+      'Under Thread',
+      'Under Under Thread',
+      'Under Under Under Thread',
+    ])
+    expect(layer.getCommentReplies).toHaveBeenCalledTimes(3)
+  })
+
+  it('opens three more from an expander at the bottom of what it opened', async () => {
+    layer.getComments.mockResolvedValue({ items: [repliable({ text: 'Thread' })], cursor: null })
+    layer.getCommentReplies.mockImplementation((videoRef, forComment) => Promise.resolve({
+      items: [repliable({ text: `Under ${forComment.text}` })],
+      cursor: null,
+    }))
+    const wrapper = await mountComments()
+    await showComments(wrapper)
+    await clickText(wrapper, 'View 1 reply')
+    await settle()
+
+    await clickText(wrapper, 'View 1 reply')
+    await settle()
+
+    expect(commentTexts(wrapper)).toHaveLength(7)
+    expect(layer.getCommentReplies).toHaveBeenCalledTimes(6)
+  })
+
+  it('asks for nothing under a reply that has no replies', async () => {
+    layer.getComments.mockResolvedValue({ items: [repliable({ text: 'Thread' })], cursor: null })
+    layer.getCommentReplies.mockResolvedValue({ items: [comment({ text: 'Leaf' })], cursor: null })
+    const wrapper = await mountComments()
+    await showComments(wrapper)
+
+    await clickText(wrapper, 'View 1 reply')
+    await settle()
+
+    expect(commentTexts(wrapper)).toEqual(['Thread', 'Leaf'])
+    expect(layer.getCommentReplies).toHaveBeenCalledTimes(1)
+  })
+
+  it('opens the replies of a later page as deeply as the first', async () => {
+    layer.getComments.mockResolvedValue({ items: [repliable({ text: 'Thread', replyCount: 2 })], cursor: null })
+    layer.getCommentReplies.mockImplementation((videoRef, forComment, { cursor }) => {
+      if (forComment.text === 'Thread') {
+        return Promise.resolve(cursor === null
+          ? { items: [comment({ text: 'First page' })], cursor: 'PAGE-2' }
+          : { items: [repliable({ text: 'Second page' })], cursor: null })
+      }
+
+      return Promise.resolve({ items: [comment({ text: `Under ${forComment.text}` })], cursor: null })
+    })
+    const wrapper = await mountComments()
+    await showComments(wrapper)
+    await clickText(wrapper, 'View 2 replies')
+    await settle()
+
+    await clickText(wrapper, 'Show more replies')
+    await settle()
+
+    expect(commentTexts(wrapper)).toEqual(['Thread', 'First page', 'Second page', 'Under Second page'])
   })
 
   it('opens a thread whose reply count YouTube never stated', async () => {
