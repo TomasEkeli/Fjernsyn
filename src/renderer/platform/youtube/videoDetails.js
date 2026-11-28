@@ -21,6 +21,8 @@
 // `./playback.js`, which needs the live status read here and, for the
 // manifests, asynchronous calls: `./videos.js` puts the two together.
 
+import autolinker from 'autolinker'
+
 import { getLocalVideoTitle } from '../../helpers/player/watchMetadata'
 
 /**
@@ -192,7 +194,12 @@ function subscriberCountOf(youtube, text) {
 // ---------------------------------------------------------------------------
 
 /**
- * The text runs as markup, else the short description, escaped.
+ * The text runs as markup, else the short description, escaped; either way
+ * with the bare URLs in it made links, as the old description component does
+ * (`WatchVideoDescription.vue`, `autolinker.link`). The runs parser writes a
+ * plain URL for every link YouTube does not name (a watch, playlist, shorts
+ * or external link), so without this the body of a description is text that
+ * cannot be clicked.
  *
  * @param {import('./deps').YouTubeDeps} youtube
  * @param {any} info
@@ -202,13 +209,13 @@ function localDescription(youtube, info) {
   const plain = escapeHtml(info.basic_info?.short_description ?? '')
 
   if (!runs) {
-    return plain
+    return autolinker.link(plain)
   }
 
   try {
-    return youtube.parseLocalTextRuns(runs)
+    return autolinker.link(youtube.parseLocalTextRuns(runs))
   } catch {
-    return plain
+    return autolinker.link(plain)
   }
 }
 
