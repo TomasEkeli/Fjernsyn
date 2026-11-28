@@ -21,7 +21,11 @@
 //   as any cursor does, and page on from the cursor each page answers. Both
 //   go through `policy.later`: replies never fall back. Local: the thread's
 //   `getReplies()` unless it came with its replies, then `getContinuation()`
-//   on what answered last. Invidious: the reply token through
+//   on what answered last, except where the thread's
+//   `comment_replies_data.contents` has a continuation item, which goes to
+//   `getLocalCommentReplies` and pages on from its own. Replies answered
+//   that way are bare `CommentView` nodes, with no reply count and nothing
+//   further to open. Invidious: the reply token through
 //   `invidiousGetComments` rather than `invidiousGetCommentReplies`, since
 //   only the former hands back the raw entries with their `published` time.
 //   It is the same request: the endpoint ignores `sort_by` for a reply token,
@@ -64,6 +68,42 @@ function isUsableCursor(cursor) {
   return backend === 'local'
     ? typeof continuation?.getContinuation === 'function'
     : backend === 'invidious' && typeof continuation === 'string' && continuation !== ''
+}
+
+/** The layer does not import youtubei.js, so a node is known by its type */
+function isContinuationItem(node) {
+  return /** @type {any} */ (node)?.type === 'ContinuationItem'
+}
+
+/**
+ * On Local a replies cursor is a thread or a continuation item of its own.
+ *
+ * @param {unknown} cursor
+ * @returns {boolean}
+ */
+function isUsableRepliesCursor(cursor) {
+  const { backend, continuation } = /** @type {any} */ (cursor) ?? {}
+
+  return backend === 'local'
+    ? isContinuationItem(continuation) || typeof continuation?.getContinuation === 'function'
+    : isUsableCursor(cursor)
+}
+
+/**
+ * The continuation `getReplies()` does not look at: it reads `subThreads`
+ * alone, and YouTube describes the replies in `contents`. `null` for a
+ * thread in the old shape, which `getReplies()` still handles.
+ *
+ * @param {any} thread a `YTNodes.CommentThread`
+ */
+function newRepliesContinuation(thread) {
+  const data = thread?.comment_replies_data
+
+  if (!data || data.sub_threads?.length) {
+    return null
+  }
+
+  return (data.contents ?? []).find(isContinuationItem) ?? null
 }
 
 /**
@@ -120,16 +160,18 @@ export function createYouTubeCommentReader({ youtube, policy }) {
   }
 
   /**
-   * Local's threads as comments; a reply thread without a comment is skipped,
-   * as the old component skips it.
+   * Local's threads as comments; a thread without a comment is skipped, as
+   * the old component skips it. A bare `CommentView` is read as itself, with
+   * no thread, so it has no reply count and nothing of its own to open.
    *
-   * @param {any[] | undefined} threads
+   * @param {any[] | undefined} nodes `YTNodes.CommentThread` or `YTNodes.CommentView`
    * @param {string} [threadId] the thread's, for replies
    */
-  function localComments(threads, threadId) {
-    return (threads ?? [])
-      .filter(thread => thread?.comment)
-      .map(thread => localComment(thread.comment, thread, threadId))
+  function localComments(nodes, threadId) {
+    return (nodes ?? [])
+      .map(node => (node?.type === 'CommentView' ? { comment: node, thread: undefined } : { comment: node?.comment, thread: node }))
+      .filter(({ comment }) => comment)
+      .map(({ comment, thread }) => localComment(comment, thread, threadId))
   }
 
   /**
@@ -276,12 +318,23 @@ export function createYouTubeCommentReader({ youtube, policy }) {
       return { items: [], cursor: null }
     }
 
-    if (!isUsableCursor(from)) {
+    if (!isUsableRepliesCursor(from)) {
       throw new PlatformError('invalid', 'Not a YouTube replies cursor')
     }
 
     return policy.later(from, async (backend, { continuation }) => {
       if (backend === 'local') {
+        const item = isContinuationItem(continuation) ? continuation : newRepliesContinuation(continuation)
+
+        if (item) {
+          const page = await youtube.getLocalCommentReplies(item)
+
+          return {
+            items: localComments(page.items, comment.threadId),
+            cursor: page.continuation ? { backend, continuation: page.continuation } : null,
+          }
+        }
+
         let answered = continuation
 
         if (!start) {

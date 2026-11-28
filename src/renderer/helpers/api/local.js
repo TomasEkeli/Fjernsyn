@@ -1297,6 +1297,27 @@ export async function getLocalComments(id) {
   return innertube.getComments(id)
 }
 
+/**
+ * A page of a comment thread's replies. `CommentThread.getReplies()` reads
+ * only `subThreads`, and YouTube sends `CommentView` nodes in `contents`
+ * instead, so it throws rather than answering (youtubei.js 18.3.0).
+ *
+ * @param {import('youtubei.js').YTNodes.ContinuationItem} continuation
+ * @returns {Promise<{ items: import('youtubei.js').Helpers.YTNode[], continuation: import('youtubei.js').YTNodes.ContinuationItem | null }>}
+ */
+export async function getLocalCommentReplies(continuation) {
+  const innertube = await createInnertube({ generateSessionLocally: false })
+  const endpoint = continuation.button?.endpoint ?? continuation.endpoint
+  const response = await endpoint.call(innertube.actions, { parse: true })
+  const appended = response.on_response_received_endpoints?.firstOfType(YTNodes.AppendContinuationItemsAction)
+  const contents = appended ? [...appended.contents] : []
+
+  return {
+    items: contents.filter(item => !item.is(YTNodes.ContinuationItem)),
+    continuation: contents.find(item => item.is(YTNodes.ContinuationItem)) ?? null,
+  }
+}
+
 // I know `type & type` is typescript syntax and not valid jsdoc but I couldn't get @extends or @augments to work
 
 /**

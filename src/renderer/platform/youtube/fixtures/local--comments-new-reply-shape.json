@@ -1,0 +1,107 @@
+{
+  "recordedAt": "2026-11-28",
+  "source": "recorded",
+  "call": "getLocalComments('l8KEqUnOu98')",
+  "notes": "Two threads in the reply shape YouTube sends now: the commentRepliesRenderer carries no subThreads and a ContinuationItem in its contents, which youtubei.js 18.3.0's CommentThread.getReplies() does not read. Trimmed to the fields the adapter reads, and the authors' names and ids replaced. The second thread's continuation answers no replies at all, as YouTube's does for a thread whose count it has not caught up with.",
+  "answer": {
+    "header": {
+      "sort_menu": {
+        "sub_menu_items": [
+          {
+            "title": "Top",
+            "selected": true
+          },
+          {
+            "title": "Newest",
+            "selected": false
+          }
+        ]
+      }
+    },
+    "contents": [
+      {
+        "comment": {
+          "comment_id": "UgzTwoRepliesThread4AaABAg",
+          "author": {
+            "id": "UCtwoRepliesAuthor00000",
+            "name": "@asker",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/asker=s88-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "content": {
+            "runs": [
+              {
+                "text": "Does this work on the Linux build?"
+              }
+            ]
+          },
+          "published_time": "3 weeks ago",
+          "like_count": "12",
+          "reply_count_a11y": "2 replies",
+          "reply_level": 0,
+          "is_pinned": false,
+          "is_hearted": false,
+          "is_member": false,
+          "author_is_channel_owner": false
+        },
+        "has_replies": true,
+        "comment_replies_data": {
+          "has_channel_owner_replied": false,
+          "view_replies": {
+            "text": "2 replies"
+          },
+          "sub_threads": [],
+          "contents": [
+            {
+              "type": "ContinuationItem",
+              "token": "REPLIES-TWO"
+            }
+          ]
+        }
+      },
+      {
+        "comment": {
+          "comment_id": "UgzStaleCountThread44AaABAg",
+          "author": {
+            "id": "UCstaleCountAuthor00000",
+            "name": "@counted",
+            "best_thumbnail": {
+              "url": "https://yt3.ggpht.com/counted=s88-c-k-c0x00ffffff-no-rj"
+            }
+          },
+          "content": {
+            "runs": [
+              {
+                "text": "Same here."
+              }
+            ]
+          },
+          "published_time": "2 weeks ago",
+          "like_count": "3",
+          "reply_count_a11y": "1 reply",
+          "reply_level": 0,
+          "is_pinned": false,
+          "is_hearted": false,
+          "is_member": false,
+          "author_is_channel_owner": false
+        },
+        "has_replies": true,
+        "comment_replies_data": {
+          "has_channel_owner_replied": false,
+          "view_replies": {
+            "text": "1 reply"
+          },
+          "sub_threads": [],
+          "contents": [
+            {
+              "type": "ContinuationItem",
+              "token": "REPLIES-NONE"
+            }
+          ]
+        }
+      }
+    ],
+    "has_continuation": false
+  }
+}

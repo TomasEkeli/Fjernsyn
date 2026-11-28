@@ -79,6 +79,12 @@
         :video-ref="videoRef"
         :base-url="baseUrl"
       />
+      <p
+        v-if="!replies.length && !repliesLoading"
+        class="noReplies"
+      >
+        {{ t('Comments.No replies to show') }}
+      </p>
       <div
         v-if="repliesCursor !== null && !repliesLoading && !repliesFailed"
         class="showMoreReplies"

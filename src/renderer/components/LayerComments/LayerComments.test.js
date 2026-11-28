@@ -516,6 +516,18 @@ describe('LayerComments, replies', () => {
     expect(commentTexts(wrapper)).toEqual(['This comment has been deleted', 'Reply A'])
   })
 
+  it('says so rather than opening onto nothing when a counted thread answers no replies', async () => {
+    layer.getComments.mockResolvedValue({ items: [comment({ replyCount: 1 })], cursor: null })
+    layer.getCommentReplies.mockResolvedValue({ items: [], cursor: null })
+    const wrapper = await mountComments()
+    await showComments(wrapper)
+
+    await clickText(wrapper, 'View 1 reply')
+
+    expect(wrapper.text()).toContain('No replies to show')
+    expect(wrapper.text()).not.toContain('The replies could not be loaded.')
+  })
+
   it('says when the replies could not be loaded, and tries again', async () => {
     layer.getComments.mockResolvedValue({ items: [comment({ replyCount: 1 })], cursor: null })
     layer.getCommentReplies

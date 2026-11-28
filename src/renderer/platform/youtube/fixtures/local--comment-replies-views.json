@@ -1,0 +1,63 @@
+{
+  "recordedAt": "2026-11-28",
+  "source": "recorded",
+  "call": "getLocalCommentReplies(continuation)",
+  "notes": "The replies the 'REPLIES-TWO' continuation of local--comments-new-reply-shape.json answers: bare YTNodes.CommentView nodes rather than threads, and no further continuation. Trimmed to the fields the adapter reads, and the authors' names and ids replaced.",
+  "answer": {
+    "items": [
+      {
+        "type": "CommentView",
+        "comment_id": "UgzTwoRepliesThread4AaABAg.ReplyOne",
+        "author": {
+          "id": "UCfirstReplyAuthor00000",
+          "name": "@answerer",
+          "best_thumbnail": {
+            "url": "https://yt3.ggpht.com/answerer=s88-c-k-c0x00ffffff-no-rj"
+          }
+        },
+        "content": {
+          "runs": [
+            {
+              "text": "It does, I am on it right now."
+            }
+          ]
+        },
+        "published_time": "3 weeks ago",
+        "like_count": "4",
+        "reply_count_a11y": "",
+        "reply_level": 1,
+        "is_pinned": false,
+        "is_hearted": false,
+        "is_member": false,
+        "author_is_channel_owner": false
+      },
+      {
+        "type": "CommentView",
+        "comment_id": "UgzTwoRepliesThread4AaABAg.ReplyTwo",
+        "author": {
+          "id": "UCtwoRepliesAuthor00000",
+          "name": "@asker",
+          "best_thumbnail": {
+            "url": "https://yt3.ggpht.com/asker=s88-c-k-c0x00ffffff-no-rj"
+          }
+        },
+        "content": {
+          "runs": [
+            {
+              "text": "Thanks, that settles it."
+            }
+          ]
+        },
+        "published_time": "2 weeks ago",
+        "like_count": "1",
+        "reply_count_a11y": "",
+        "reply_level": 1,
+        "is_pinned": false,
+        "is_hearted": false,
+        "is_member": false,
+        "author_is_channel_owner": false
+      }
+    ],
+    "continuation": null
+  }
+}
