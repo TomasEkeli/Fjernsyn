@@ -647,6 +647,7 @@ function go(next) {
  */
 function changeScope(scope) {
   if (scope !== query.value.scope) {
+    store.dispatch('updateDefaultSearchScope', scope)
     go({ ...query.value, scope })
   }
 }
