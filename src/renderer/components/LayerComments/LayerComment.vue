@@ -52,7 +52,7 @@
       :base-url="baseUrl"
     />
     <p
-      v-if="comment.replyCount > 0"
+      v-if="hasReplies"
       class="commentActions"
     >
       <span
@@ -196,11 +196,19 @@ const repliesLoaded = ref(false)
 /** Where the next page of replies starts; `null` once they are all here */
 const repliesCursor = shallowRef(null)
 
+/** The count is not enough: a nested thread is offered as "View reply", which reads as `null` */
+const hasReplies = computed(() => props.comment.repliesCursor != null || props.comment.replyCount > 0)
+
 const toggleText = computed(() => {
   const replyCount = props.comment.replyCount
 
-  return showReplies.value
-    ? t('Comments.Hide Replies', replyCount)
+  if (showReplies.value) {
+    // An unstated count reads as more than one
+    return t('Comments.Hide Replies', replyCount ?? Number.MAX_VALUE)
+  }
+
+  return replyCount == null
+    ? t('Comments.Show Replies')
     : t('Comments.View {replyCount} replies', { replyCount }, replyCount)
 })
 

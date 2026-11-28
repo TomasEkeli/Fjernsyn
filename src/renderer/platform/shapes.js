@@ -580,7 +580,10 @@
  *   escaped.
  * - `replyCount`: for a thread (from `getComments`), every reply in it; for a
  *   reply (from `getCommentReplies`), its direct replies, which the next
- *   `getCommentReplies` for it returns.
+ *   `getCommentReplies` for it returns. `null` where the platform says there
+ *   are replies without saying how many, which YouTube does for a nested
+ *   thread ("View reply"), so `repliesCursor` and not the count says whether
+ *   there is anything to open.
  * - A deleted comment is kept, since it may have replies, with its text and
  *   author empty.
  * - YouTube's (both backends) add what the comment component shows and
@@ -606,7 +609,7 @@
  * @property {string} authorThumbnail an absolute URL, `''` when none
  * @property {number} createdAt ms since the epoch
  * @property {boolean} isDeleted
- * @property {number} replyCount
+ * @property {number | null} replyCount `null` when the platform does not say
  * @property {string} [authorId] YouTube: the author's channel ref
  * @property {number} [likes] YouTube
  * @property {boolean} [isPinned] YouTube

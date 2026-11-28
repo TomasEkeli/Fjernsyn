@@ -516,6 +516,28 @@ describe('LayerComments, replies', () => {
     expect(commentTexts(wrapper)).toEqual(['This comment has been deleted', 'Reply A'])
   })
 
+  it('opens a thread whose reply count YouTube never stated', async () => {
+    const thread = comment({ replyCount: null, repliesCursor: { backend: 'local', continuation: {} } })
+    layer.getComments.mockResolvedValue({ items: [thread], cursor: null })
+    layer.getCommentReplies.mockResolvedValue({ items: [comment({ text: 'Reply A' })], cursor: null })
+    const wrapper = await mountComments()
+    await showComments(wrapper)
+
+    await clickText(wrapper, 'Show replies')
+
+    expect(layer.getCommentReplies).toHaveBeenCalledWith(VIDEO_REF, thread, { cursor: null })
+    expect(commentTexts(wrapper)).toEqual(['Comment 1', 'Reply A'])
+    expect(wrapper.text()).toContain('Hide replies')
+  })
+
+  it('offers nothing to open for a comment with neither a count nor a reply token', async () => {
+    layer.getComments.mockResolvedValue({ items: [comment({ replyCount: 0, repliesCursor: null })], cursor: null })
+    const wrapper = await mountComments()
+    await showComments(wrapper)
+
+    expect(wrapper.find('.commentActions').exists()).toBe(false)
+  })
+
   it('says so rather than opening onto nothing when a counted thread answers no replies', async () => {
     layer.getComments.mockResolvedValue({ items: [comment({ replyCount: 1 })], cursor: null })
     layer.getCommentReplies.mockResolvedValue({ items: [], cursor: null })
