@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
+import { createMemoryHistory, createRouter } from 'vue-router'
 
 import { mountWithApp } from '../../testing/mount'
 import LayerVideoDescription from './LayerVideoDescription.vue'
+
+function createWatchRouter() {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/watch/:id', name: 'watch', component: { render: () => null } }],
+  })
+  router.push('/watch/dQw4w9WgXcQ')
+  return router
+}
 
 const MADE_WITH_AI = {
   label: 'Made with AI',
@@ -21,10 +31,35 @@ const AUTO_DUBBED = {
 // jsdom lays nothing out, so every description measures as short and is shown
 // whole once mounted, which is when the section is shown
 async function mountDescription(props) {
-  const wrapper = mountWithApp(LayerVideoDescription, { props })
+  const router = createWatchRouter()
+  await router.isReady()
+  const wrapper = mountWithApp(LayerVideoDescription, { props, router })
   await nextTick()
   return wrapper
 }
+
+describe('LayerVideoDescription, the description itself', () => {
+  it('keeps the whitespace of YouTube\'s markup, so its lines stay lines', async () => {
+    const wrapper = await mountDescription({ description: 'First line\nSecond line', kind: 'html' })
+
+    const description = wrapper.find('.htmlDescription')
+    expect(description.exists()).toBe(true)
+    expect(description.element.innerHTML).toContain('\n')
+  })
+
+  it('keeps the whitespace of a plain description too', async () => {
+    const wrapper = await mountDescription({ description: 'First line\nSecond line', kind: 'plain' })
+
+    expect(wrapper.find('.plainDescription').text()).toContain('\n')
+  })
+
+  it('renders Markdown as elements', async () => {
+    const wrapper = await mountDescription({ description: 'First line\n\nSecond line', kind: 'markdown' })
+
+    expect(wrapper.find('.htmlDescription').exists()).toBe(false)
+    expect(wrapper.findAll('.layerMarkdown p')).toHaveLength(2)
+  })
+})
 
 describe('LayerVideoDescription, the "How this was made" section', () => {
   it('shows each disclosure in YouTube\'s words, under the description', async () => {

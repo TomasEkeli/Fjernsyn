@@ -29,6 +29,7 @@
       <!-- YouTube's markup, sanitised, its timestamps seeking, as WatchVideoDescription shows it -->
       <FtTimestampCatcher
         v-else-if="kind === 'html'"
+        class="htmlDescription"
         :input-html="description"
         :link-tab-index="showFullDescription ? '0' : '-1'"
         @timestamp-event="emit('timestamp-event', $event)"
