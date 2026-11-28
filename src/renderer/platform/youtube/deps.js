@@ -25,7 +25,8 @@
 //   `parseChannelHomeTab` for the featured channels on its home tab,
 //   and `getLocalChannelId(url)` for a channel link by name (a `UC` id, or
 //   `null` for any failure)
-// - comments: `getLocalComments(id)` (a `YT.Comments`), `parseLocalComment`
+// - comments: `getLocalComments(id)` (a `YT.Comments`), `parseLocalComment`,
+//   and `getLocalCommentReplies(continuation)`, a page of a thread's replies
 // - search: `getLocalSearchResults`, `getLocalSearchContinuation`
 // - shorts: `getLocalShortsSequence(id, safetyMode)` and
 //   `getLocalShortsSequenceContinuation(sequence)`, YouTube's feed of shorts
@@ -81,6 +82,7 @@ export const YOUTUBE_DEP_NAMES = Object.freeze({
     'parseChannelHomeTab',
     'getLocalChannelId',
     'getLocalComments',
+    'getLocalCommentReplies',
     'parseLocalComment',
     'getLocalSearchResults',
     'getLocalSearchContinuation',

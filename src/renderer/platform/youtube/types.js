@@ -192,7 +192,10 @@
  *   fall back.
  *   - L: the thread's `YTNodes.CommentThread` (`getReplies()` unless
  *     `is_prepopulated`), then `getContinuation()` on what answered last.
- *     End: no replies or `!has_continuation`.
+ *     End: no replies or `!has_continuation`. A `ContinuationItem` in the
+ *     thread's `comment_replies_data.contents`, which `getReplies()` does
+ *     not read, wins over it and goes to `getLocalCommentReplies`; the item
+ *     its answer carries is the next cursor. End: no further item.
  *   - I: the comment's reply token, then each answer's `continuation`, both
  *     through `invidiousGetComments` (see the comments section). `{ backend,
  *     continuation }`, no sort.

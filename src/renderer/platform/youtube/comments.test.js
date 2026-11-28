@@ -11,6 +11,8 @@ import localCommentsContinuation from './fixtures/local--comments-continuation.j
 import localCommentsNewest from './fixtures/local--comments-newest.json'
 import localReplies from './fixtures/local--comment-replies.json'
 import localRepliesContinuation from './fixtures/local--comment-replies-continuation.json'
+import localNewReplyShape from './fixtures/local--comments-new-reply-shape.json'
+import localReplyViews from './fixtures/local--comment-replies-views.json'
 import invidiousComments from './fixtures/invidious--comments.json'
 import invidiousCommentsContinuation from './fixtures/invidious--comments-continuation.json'
 import invidiousReplies from './fixtures/invidious--comment-replies.json'
@@ -152,6 +154,101 @@ describe('YouTube comments on Local', () => {
     expect(thread.getContinuation).toHaveBeenCalledTimes(1)
     expect(second.items.map(reply => reply.id)).toEqual(localRepliesContinuation.answer.replies.map(reply => reply.comment.comment_id))
     expect(second.cursor).toBeNull()
+  })
+})
+
+describe('YouTube comments on Local, in the reply shape youtubei.js cannot read', () => {
+  function setUpNewShape() {
+    const instance = structuredClone(localNewReplyShape.answer)
+
+    for (const thread of instance.contents) {
+      const inlined = thread.comment_replies_data?.sub_threads ?? []
+
+      // What a `YTNodes.CommentThread` offers, and what it does in this shape:
+      // the replies YouTube inlined and no more, or a throw where it inlined none
+      Object.assign(thread, {
+        is_prepopulated: inlined.length > 0,
+        replies: inlined.length ? inlined : undefined,
+        has_continuation: false,
+        getReplies: vi.fn(() => (inlined.length
+          ? Promise.resolve(thread)
+          : Promise.reject(new Error('Replies continuation item not found')))),
+        getContinuation: vi.fn(() => Promise.reject(new Error('No continuation item found'))),
+      })
+    }
+
+    const fake = createFakeYouTube({
+      getLocalComments: async () => instance,
+      getLocalCommentReplies: async ({ token }) => (
+        token === 'REPLIES-TWO' ? structuredClone(localReplyViews.answer) : { items: [], continuation: null }
+      ),
+      parseLocalComment,
+      calculatePublishedDate,
+    })
+    const layer = createPlatformLayer({
+      fetch: () => Promise.reject(new TypeError('no network in tests')),
+      youtube: fake.youtube,
+      config: { backendPreference: 'local', backendFallback: false },
+    })
+
+    return { layer, fake, instance }
+  }
+
+  it('calls the continuation out of the thread\'s contents, and reads bare CommentView replies', async () => {
+    const { layer, fake, instance } = setUpNewShape()
+    const [asked] = (await layer.getComments(VIDEO)).items
+
+    expect(asked.replyCount).toBe(2)
+
+    const page = await layer.getCommentReplies(VIDEO, asked)
+
+    expect(instance.contents[0].getReplies).not.toHaveBeenCalled()
+    expect(fake.callsOf('getLocalCommentReplies')).toEqual([[instance.contents[0].comment_replies_data.contents[0]]])
+    expect(page.items.map(reply => reply.author)).toEqual(['@answerer', '@asker'])
+    expect(page.items.every(reply => reply.threadId === asked.id)).toBe(true)
+    expect(page.items[0]).toMatchObject({ text: 'It does, I am on it right now.', likes: 4, replyCount: 0, repliesCursor: null })
+    expect(page.cursor).toBeNull()
+  })
+
+  it('pages on from the continuation its answer carries', async () => {
+    const { layer, fake } = setUpNewShape()
+    const next = { type: 'ContinuationItem', token: 'REPLIES-TWO-2' }
+    fake.respond('getLocalCommentReplies', async ({ token }) => (
+      token === 'REPLIES-TWO'
+        ? { ...structuredClone(localReplyViews.answer), continuation: next }
+        : { items: [], continuation: null }
+    ))
+    const [asked] = (await layer.getComments(VIDEO)).items
+
+    const first = await layer.getCommentReplies(VIDEO, asked)
+
+    expect(first.cursor).toEqual({ backend: 'local', continuation: next })
+
+    const second = await layer.getCommentReplies(VIDEO, asked, { cursor: first.cursor })
+
+    expect(second).toEqual({ items: [], cursor: null })
+    expect(fake.callsOf('getLocalCommentReplies').map(([item]) => item.token)).toEqual(['REPLIES-TWO', 'REPLIES-TWO-2'])
+  })
+
+  it('prefers that continuation to the replies YouTube inlines, which are only some of them', async () => {
+    const { layer, instance } = setUpNewShape()
+    const partly = (await layer.getComments(VIDEO)).items[2]
+
+    expect(partly.replyCount).toBe(2)
+    expect(instance.contents[2].replies).toHaveLength(1)
+
+    const page = await layer.getCommentReplies(VIDEO, partly)
+
+    expect(instance.contents[2].getReplies).not.toHaveBeenCalled()
+    expect(page.items.map(reply => reply.author)).toEqual(['@answerer', '@asker'])
+  })
+
+  it('is an empty page, not a failure, where YouTube counts a reply it does not send', async () => {
+    const { layer } = setUpNewShape()
+    const counted = (await layer.getComments(VIDEO)).items[1]
+
+    expect(counted.replyCount).toBe(1)
+    await expect(layer.getCommentReplies(VIDEO, counted)).resolves.toEqual({ items: [], cursor: null })
   })
 })
 

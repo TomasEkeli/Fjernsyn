@@ -1847,6 +1847,8 @@ Comments:
   Hide Replies: Hide reply | Hide replies
   Show Replies: Show replies
   Loading replies: Loading replies...
+  # Shown when a thread counted for replies answers none
+  No replies to show: No replies to show
   View 1 reply from {channelName}: View 1 reply from {channelName}
   View {replyCount} replies from {channelName} and others: View {replyCount} replies from {channelName} and others
   Show More Replies: Show more replies
