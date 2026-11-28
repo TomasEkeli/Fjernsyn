@@ -57,3 +57,52 @@ describe('the settings the backup keeper changed', () => {
     expect(dispatch.mock.calls).toEqual([['triggerMaxVolumeSideEffects', 300]])
   })
 })
+
+describe('the wall\'s tile zoom', () => {
+  afterEach(() => {
+    document.body.style.removeProperty('--ft-wall-zoom')
+  })
+
+  it('writes the wall\'s property as a factor, not a percentage', () => {
+    settings.actions.triggerWallTileZoomSideEffects({}, 70)
+
+    expect(document.body.style.getPropertyValue('--ft-wall-zoom')).toBe('0.7')
+  })
+
+  // Boot, with only this setting's side effect actually run: the others
+  // reach for Electron, and none of them is what is under test here.
+  async function boot(stored) {
+    if (stored !== undefined) {
+      DBSettingHandlers.find.mockResolvedValueOnce([{ _id: 'wallTileZoom', value: stored }])
+    }
+
+    const state = { ...settings.state }
+    const commit = (type, value) => settings.mutations[type](state, value)
+    const dispatch = vi.fn((type, value) => {
+      if (type === 'triggerWallTileZoomSideEffects') {
+        settings.actions[type]({}, value)
+      }
+    })
+
+    await settings.actions.grabUserSettings({ commit, dispatch, state })
+
+    return state
+  }
+
+  // The wall must be the stored size on the first paint, not resized into it
+  // after one, so the side effect has to run for a stored value at boot.
+  it('is applied at boot from what was stored', async () => {
+    const state = await boot(150)
+
+    expect(state.wallTileZoom).toBe(150)
+    expect(document.body.style.getPropertyValue('--ft-wall-zoom')).toBe('1.5')
+  })
+
+  // And a reader who has never touched it gets the wall as it was, rather
+  // than a property that is simply missing.
+  it('is applied at boot from the default when nothing was stored', async () => {
+    await boot()
+
+    expect(document.body.style.getPropertyValue('--ft-wall-zoom')).toBe('1')
+  })
+})

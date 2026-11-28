@@ -1,0 +1,28 @@
+/*
+ * The pill and the panel it opens. Only the panel is here; the pill's own
+ * look comes from FtToggleChip's stylesheet, which this component imports
+ * alongside this one so that it sits in a row of chips as one of them.
+ */
+
+.wallZoom {
+  position: relative;
+}
+
+/*
+ * Hung under the pill, aligned to its start edge, and wide enough for a
+ * slider to be worth dragging. It escapes the control row, which is sticky
+ * and sets a stacking context at z-index 3, so the panel only has to clear
+ * what is inside that row and the wall below it.
+ */
+.panel {
+  background-color: var(--card-bg-color);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 40%);
+  inline-size: 220px;
+  inset-block-start: calc(100% + 6px);
+  inset-inline-start: 0;
+  padding-block: 12px;
+  padding-inline: 16px;
+  position: absolute;
+  z-index: 1;
+}

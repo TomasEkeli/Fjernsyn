@@ -14,6 +14,7 @@
       :max="maxValue"
       :step="step"
       @change="change"
+      @input="input"
     >
     <span class="label">
       {{ $t('Display Label', {label: label, value: displayLabel}) }}
@@ -55,7 +56,10 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['change'])
+// `change` is the value to keep, fired when the handle is let go. `input` is
+// the value under the handle while it is being dragged, for a caller that can
+// show the result as it moves; it is far too frequent to save.
+const emit = defineEmits(['change', 'input'])
 
 const id = useId()
 const currentValue = ref(props.defaultValue)
@@ -76,6 +80,10 @@ const displayLabel = computed(() => {
 
 function change() {
   emit('change', currentValue.value)
+}
+
+function input() {
+  emit('input', currentValue.value)
 }
 
 </script>
