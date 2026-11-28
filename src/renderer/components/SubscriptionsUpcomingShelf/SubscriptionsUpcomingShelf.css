@@ -50,10 +50,59 @@
   flex-grow: 1;
 }
 
+/* Turns rather than swaps: the same arrow, pointing where the click will take it */
 .shelfChevron {
   block-size: 1em;
+  transition: transform 140ms ease-out;
+}
+
+.shelfChevron.pointingUp {
+  transform: rotate(180deg);
+}
+
+/*
+ * The fold itself. A row of `0fr` to `1fr` is the one way to animate to a
+ * height nobody knows in advance — the cards decide how tall they are, and the
+ * grid interpolates to whatever that turns out to be — with the inner element
+ * clipping what has not been let out yet.
+ *
+ * It costs a relayout per frame, and the thing being laid out is a grid of
+ * cards, so the containment is not decoration: it tells the engine that
+ * nothing inside the fold can affect anything outside it, which keeps the
+ * per-frame work to the shelf instead of the whole page. Short, too — the
+ * fewer frames spent relaying out, the less there is to stutter.
+ */
+.shelfFold {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+.shelfFoldInner {
+  contain: layout paint;
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.shelfFold-enter-active,
+.shelfFold-leave-active {
+  transition: grid-template-rows 140ms ease-out, opacity 140ms ease-out;
+  will-change: grid-template-rows;
+}
+
+.shelfFold-enter-from,
+.shelfFold-leave-to {
+  grid-template-rows: 0fr;
+  opacity: 0;
 }
 
 .shelfList {
   padding-block-end: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelfChevron,
+  .shelfFold-enter-active,
+  .shelfFold-leave-active {
+    transition-duration: 1ms;
+  }
 }
