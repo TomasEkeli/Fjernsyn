@@ -214,13 +214,32 @@ describe('the scope tabs', () => {
     expect(layer.searchQuery).toHaveBeenLastCalledWith({ ...defaults('all'), text: 'blender', time: 'week' })
   })
 
-  it('write nothing for a plain search', async () => {
+  it('write no filters for a plain search', async () => {
     const { wrapper } = await openSearchPage('/search/blender?scope=youtube')
 
     await wrapper.find('#peertubeScopeTab').trigger('click')
     await flushPromises()
 
-    expect(store.dispatched.filter(action => action.type !== 'updateSearchHistoryEntry')).toEqual([])
+    const other = ['updateSearchHistoryEntry', 'updateDefaultSearchScope']
+    expect(store.dispatched.filter(action => !other.includes(action.type))).toEqual([])
+  })
+
+  it('remember the scope chosen as the default for the next search', async () => {
+    const { wrapper } = await openSearchPage('/search/blender?scope=youtube')
+
+    await wrapper.find('#peertubeScopeTab').trigger('click')
+    await flushPromises()
+
+    expect(dispatched('updateDefaultSearchScope')).toEqual(['peertube'])
+  })
+
+  it('remember nothing when the scope already selected is clicked again', async () => {
+    const { wrapper } = await openSearchPage('/search/blender?scope=youtube')
+
+    await wrapper.find('#youtubeScopeTab').trigger('click')
+    await flushPromises()
+
+    expect(dispatched('updateDefaultSearchScope')).toEqual([])
   })
 })
 
