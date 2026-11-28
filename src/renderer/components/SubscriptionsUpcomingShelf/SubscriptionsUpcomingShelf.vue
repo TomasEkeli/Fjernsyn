@@ -20,7 +20,9 @@
   Folded away it is one line with a count on it, which is the whole shelf for a
   reader who does not care — and the count is still there, so caring again costs
   one click. Whether it is folded is remembered, because it is a standing
-  preference and not a mood.
+  preference and not a mood. It folds rather than vanishes: the cards slide out
+  from under the header and back under it, so the page below is seen to move
+  instead of appearing to have been replaced.
 -->
 <template>
   <section
@@ -43,17 +45,26 @@
       </span>
       <FontAwesomeIcon
         class="shelfChevron"
-        :icon="expanded ? ['fas', 'angle-up'] : ['fas', 'angle-down']"
+        :class="{ pointingUp: expanded }"
+        :icon="['fas', 'angle-down']"
         aria-hidden="true"
       />
     </button>
-    <FtElementList
-      v-if="expanded"
-      class="shelfList"
-      :data="entries"
-      :use-channels-hidden-preference="false"
-      ai-wall
-    />
+    <Transition name="shelfFold">
+      <div
+        v-if="expanded"
+        class="shelfFold"
+      >
+        <div class="shelfFoldInner">
+          <FtElementList
+            class="shelfList"
+            :data="entries"
+            :use-channels-hidden-preference="false"
+            ai-wall
+          />
+        </div>
+      </div>
+    </Transition>
   </section>
 </template>
 
