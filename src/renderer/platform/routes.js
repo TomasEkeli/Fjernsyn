@@ -10,8 +10,7 @@
  * `.scratch/platform-layer/design.md`):
  *
  * - `/peertube/watch/:host/:uuid`, name `peertubeWatch`, query `timestamp`
- *   as for YouTube: the layer's watch view, whatever the surface switch, as
- *   `WatchSurface` (below)
+ *   as for YouTube: the layer's watch view
  * - `/peertube/channel/:handle/:currentTab?`, name `peertubeChannel`, the
  *   handle `name@host`, the tab `videos` (the default) or `playlists`: the
  *   layer's channel view
@@ -19,21 +18,15 @@
  *   (the default) or `channel`: a redirect to `/search/:query` in scope
  *   `peertube`, with its type, so links to it keep working
  *
- * And upstream's `/search/:query` renders `LayerSearchPage`, the layer's
- * search page, directly: search has left its surface switch (ADR-0018), and
- * upstream's search page stays in the tree, unrouted.
+ * And upstream's `/search/:query`, `/channel/:id/:currentTab?` and
+ * `/watch/:id` render the layer's search page, channel view and watch view
+ * directly: every YouTube surface has left the surface switch, which is gone
+ * with `enableLayerSurfaces` (ADR-0018). Upstream's views stay in the tree,
+ * unrouted, and stay listed as shadowed in the registry.
  *
- * A YouTube surface that moves onto the layer joins the one surface switch
- * (`enableLayerSurfaces`, ADR-0018) as its last ticket: its upstream route
- * then renders `layerSurface(...)` in place of the old view. On it so far:
- *
- * - `/channel/:id/:currentTab?` renders `ChannelSurface`: upstream's Channel
- *   view while the switch is off, the layer's channel view while it is on
- * - `/watch/:id` renders `WatchSurface`: upstream's Watch view while the
- *   switch is off, the layer's watch view while it is on. The PeerTube watch
- *   route renders the same component, always on the layer's view, so that the
- *   router keeps the one view, its player and its playlist panel, as a
- *   playlist crosses between the two routes while the switch is on
+ * The PeerTube watch route renders the same `LayerWatch` the YouTube one does,
+ * so that the router keeps the one view, its player and its playlist panel, as
+ * a playlist crosses between the two routes.
  *
  * The views are imported statically, as `router/index.js` imports upstream's.
  * A view reaches the router again through `helpers/utils`, which is the same
@@ -41,42 +34,9 @@
  * on it reads the router while the modules are still being evaluated.
  */
 
-import { surfaceSwitch } from '../components/LayerSurfaceSwitch/surfaceSwitch'
-import Channel from '../views/Channel/Channel.vue'
 import LayerChannel from '../views/LayerChannel/LayerChannel.vue'
 import LayerSearch from '../views/LayerSearch/LayerSearch.vue'
 import LayerWatch from '../views/LayerWatch/LayerWatch.vue'
-import Watch from '../views/Watch/Watch.vue'
-
-/**
- * The component a surface's route renders while the surface is on the surface
- * switch: the old view while `enableLayerSurfaces` is off, the layer's while
- * it is on, swapping in place when the setting changes.
- *
- *   component: layerSurface('ChannelSurface', Channel, LayerChannel)
- *
- * @param {string} name the component's name, for devtools and tests
- * @param {import('vue').Component} OldView upstream's view, unedited
- * @param {import('vue').Component} LayerView the layer's view
- * @param {object} [options]
- * @param {(location: import('vue-router').RouteLocationNormalized) => boolean} [options.layerOnly]
- *   whether a route rendering the component is one only the layer's view
- *   serves, which renders it whatever the setting
- */
-export function layerSurface(name, OldView, LayerView, { layerOnly } = {}) {
-  return surfaceSwitch({ name, getter: 'getEnableLayerSurfaces', off: OldView, on: LayerView, layerOnly })
-}
-
-/** What upstream's `/channel/:id/:currentTab?` renders: the channel, on the surface switch */
-export const ChannelSurface = layerSurface('ChannelSurface', Channel, LayerChannel)
-
-/**
- * What upstream's `/watch/:id` and the PeerTube watch route render: the watch
- * view, on the surface switch, and always the layer's on the PeerTube route
- */
-export const WatchSurface = layerSurface('WatchSurface', Watch, LayerWatch, {
-  layerOnly: location => location.name === 'peertubeWatch',
-})
 
 /**
  * `beforeEnter` for every PeerTube route.
@@ -135,9 +95,8 @@ export const peerTubeRoutes = [
       title: 'Watch'
     },
     beforeEnter: peerTubeRouteGuard,
-    // The layer's watch view, rendered through the switch that renders it on
-    // `/watch/:id`, so that the router keeps it between the two
-    component: WatchSurface
+    // The same view `/watch/:id` renders, so that the router keeps it between the two
+    component: LayerWatch
   },
   {
     path: '/peertube/channel/:handle/:currentTab?',

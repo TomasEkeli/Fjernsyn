@@ -1,5 +1,5 @@
 {
-  "about": "Every upstream file the platform layer work edits (touched) or no longer runs while a surface switch is on (shadowed), see ADR-0014. Shadowed files are grouped by the setting of the switch that shadows them; a surface that has left its switch keeps its old files shadowed, unrouted, under `unrouted<Surface>` (ADR-0018). A change that touches or shadows an upstream file adds it here in the same commit; `pnpm run report-platform-layer-upstream` lists what upstream changed in them.",
+  "about": "Every upstream file the platform layer work edits (touched) or no longer runs because the platform layer has taken over its surface (shadowed), see ADR-0014. Every surface has left the surface switch (ADR-0018), so shadowed files are grouped per surface as `unrouted<Surface>`: they stay in the tree, unrouted, and upstream keeps changing them. A change that touches or shadows an upstream file adds it here in the same commit; `pnpm run report-platform-layer-upstream` lists what upstream changed in them.",
   "touched": [
     {
       "path": "package.json",
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/renderer/components/ExperimentalSettings/ExperimentalSettings.vue",
-      "reason": "the experimental PeerTube toggle, and the surface switch's (enableLayerSurfaces)"
+      "reason": "the experimental PeerTube toggle"
     },
     {
       "path": "src/renderer/components/FtListChannel/FtListChannel.vue",
@@ -111,7 +111,7 @@
     },
     {
       "path": "src/renderer/router/index.js",
-      "reason": "the PeerTube routes (the layer's watch, channel and search views) spread in from src/renderer/platform/routes.js; `/search/:query` renders the layer's search page (src/renderer/views/LayerSearchPage), imported in place of SearchPage, which stays in the tree unrouted (shadowed); `/channel/:id/:currentTab?` renders `ChannelSurface` from src/renderer/platform/routes.js, upstream's Channel while the surface switch (enableLayerSurfaces) is off and the layer's channel view while it is on, imported in place of Channel; `/watch/:id` likewise renders `WatchSurface`, upstream's Watch or the layer's watch view, imported in place of Watch; the `/communities` route (src/renderer/views/Communities/), `/sources` (src/renderer/views/Sources/) and a source's own page, `/sources/:sourceId` (src/renderer/views/CommunitySource/)"
+      "reason": "the PeerTube routes (the layer's watch, channel and search views) spread in from src/renderer/platform/routes.js; `/search/:query` renders the layer's search page (src/renderer/views/LayerSearchPage), imported in place of SearchPage, which stays in the tree unrouted (shadowed); `/channel/:id/:currentTab?` renders the layer's channel view (src/renderer/views/LayerChannel), imported in place of Channel, and `/watch/:id` the layer's watch view (src/renderer/views/LayerWatch), in place of Watch, both since the surface switch went (ADR-0018); the `/communities` route (src/renderer/views/Communities/), `/sources` (src/renderer/views/Sources/) and a source's own page, `/sources/:sourceId` (src/renderer/views/CommunitySource/)"
     },
     {
       "path": "src/renderer/store/index.js",
@@ -119,7 +119,7 @@
     },
     {
       "path": "src/renderer/store/modules/settings.js",
-      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw; the layer search page's: defaultSearchScope, searchRememberedParameters, searchLatched; the surface switch: enableLayerSurfaces; Communities' communitiesStarterSourcesOffered, the starter sources offered once already; communitiesStarterSetDone, the old mark for the original six, read but no longer written; communitiesSourcesHidden, the sources whose chips are off on Communities; communitiesSort, the order of the communities walls; communitiesSortDescending, whether that order is reversed"
+      "reason": "the PeerTube settings: enablePeerTube, peerTubeSearchSource, peerTubeShowNsfw; the layer search page's: defaultSearchScope, searchRememberedParameters, searchLatched; Communities' communitiesStarterSourcesOffered, the starter sources offered once already; communitiesStarterSetDone, the old mark for the original six, read but no longer written; communitiesSourcesHidden, the sources whose chips are off on Communities; communitiesSort, the order of the communities walls; communitiesSortDescending, whether that order is reversed"
     },
     {
       "path": "src/renderer/views/Settings/Settings.vue",
@@ -131,10 +131,24 @@
     }
   ],
   "shadowed": {
-    "enableLayerSurfaces": [
+    "unroutedSearch": [
+      {
+        "path": "src/renderer/views/SearchPage/SearchPage.vue",
+        "reason": "upstream's search page, unrouted: `/search/:query` renders the layer's (src/renderer/views/LayerSearchPage); its backend fallback, paging and search history are ported to the layer's YouTube search (src/renderer/platform/youtube/search.js) and the new page. Also touched: a \"Search PeerTube\" link in the heading row, to the layer's PeerTube search view for the same query, shown only while PeerTube is on (isPeerTubeEnabled)"
+      },
+      {
+        "path": "src/renderer/components/FtSearchFilters/FtSearchFilters.vue",
+        "reason": "the search filters modal, never opened: its button in the top bar gives way to the pill (src/renderer/components/LayerSearchPill), and the filters are the chip bar (src/renderer/components/LayerSearchChips)"
+      },
+      {
+        "path": "src/renderer/store/modules/utils.js",
+        "reason": "its `searchSettings` state and mutations only (the filters the modal writes and the top bar read), no longer read by the search box or the search page; the search query lives in the route (src/renderer/platform/search/query.js). The rest of the module is used as before"
+      }
+    ],
+    "unroutedChannel": [
       {
         "path": "src/renderer/views/Channel/Channel.vue",
-        "reason": "upstream's channel view, rendered by `/channel/:id/:currentTab?` only while the surface switch is off (src/renderer/platform/routes.js `ChannelSurface`); while it is on the layer's channel view (src/renderer/views/LayerChannel) renders, its fetching, `?url=` resolving, tabs, channel search and subscription cache writes ported to the layer's YouTube channel adapter (src/renderer/platform/youtube/channels.js, channelUrls.js) and the new view"
+        "reason": "upstream's channel view, unrouted: `/channel/:id/:currentTab?` renders the layer's channel view (src/renderer/views/LayerChannel), its fetching, `?url=` resolving, tabs, channel search and subscription cache writes ported to the layer's YouTube channel adapter (src/renderer/platform/youtube/channels.js, channelUrls.js) and the new view"
       },
       {
         "path": "src/renderer/views/Channel/Channel.css",
@@ -159,14 +173,16 @@
       {
         "path": "src/renderer/components/ChannelHome/ChannelHome.css",
         "reason": "the old home tab's styles, with ChannelHome.vue"
-      },
+      }
+    ],
+    "unroutedWatch": [
       {
         "path": "src/renderer/views/Watch/Watch.vue",
-        "reason": "upstream's watch view, rendered by `/watch/:id` only while the surface switch is off (src/renderer/platform/routes.js `WatchSurface`); while it is on the layer's watch view (src/renderer/views/LayerWatch) renders, the fetching and format choice ported to the layer's YouTube adapter (src/renderer/platform/youtube/videoDetails.js, playback.js, sabr.js). Also edited by the fork (the SABR recovery ladder); reverted to upstream's once the surface leaves the switch (ADR-0018's amendment)"
+        "reason": "upstream's watch view, unrouted: `/watch/:id` renders the layer's watch view (src/renderer/views/LayerWatch), the fetching and format choice ported to the layer's YouTube adapter (src/renderer/platform/youtube/videoDetails.js, playback.js, sabr.js). The fork's own edits here (the SABR recovery ladder) were reverted to upstream's when the surface left the switch (ADR-0018's amendment), so the file merges cleanly at a sync"
       },
       {
         "path": "src/renderer/views/Watch/Watch.js",
-        "reason": "the old watch view's script: its fetching, playback, history, playlist, recommendations and autoplay, re-implemented by src/renderer/views/LayerWatch/LayerWatch.vue and its regulator hosting (useSabrHosting.js). Also edited by the fork (the SABR recovery ladder, 818 lines added); reverted to upstream's once the surface leaves the switch (ADR-0018's amendment)"
+        "reason": "the old watch view's script: its fetching, playback, history, playlist, recommendations and autoplay, re-implemented by src/renderer/views/LayerWatch/LayerWatch.vue and its regulator hosting (useSabrHosting.js). The fork's own edits here (the SABR recovery ladder, 818 lines) were reverted to upstream's when the surface left the switch (ADR-0018's amendment), so the file merges cleanly at a sync"
       },
       {
         "path": "src/renderer/views/Watch/Watch.scss",
@@ -187,20 +203,6 @@
       {
         "path": "src/renderer/components/WatchVideoDescription/WatchVideoDescription.css",
         "reason": "the old description's styles, which src/renderer/components/LayerVideoDescription/LayerVideoDescription.css mirrors for the layer's"
-      }
-    ],
-    "unroutedSearch": [
-      {
-        "path": "src/renderer/views/SearchPage/SearchPage.vue",
-        "reason": "upstream's search page, unrouted: `/search/:query` renders the layer's (src/renderer/views/LayerSearchPage); its backend fallback, paging and search history are ported to the layer's YouTube search (src/renderer/platform/youtube/search.js) and the new page. Also touched: a \"Search PeerTube\" link in the heading row, to the layer's PeerTube search view for the same query, shown only while PeerTube is on (isPeerTubeEnabled)"
-      },
-      {
-        "path": "src/renderer/components/FtSearchFilters/FtSearchFilters.vue",
-        "reason": "the search filters modal, never opened: its button in the top bar gives way to the pill (src/renderer/components/LayerSearchPill), and the filters are the chip bar (src/renderer/components/LayerSearchChips)"
-      },
-      {
-        "path": "src/renderer/store/modules/utils.js",
-        "reason": "its `searchSettings` state and mutations only (the filters the modal writes and the top bar read), no longer read by the search box or the search page; the search query lives in the route (src/renderer/platform/search/query.js). The rest of the module is used as before"
       }
     ]
   }

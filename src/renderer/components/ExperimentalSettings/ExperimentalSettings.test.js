@@ -8,7 +8,7 @@ vi.mock('../../store/index', async () => {
   const { createFakeStore } = await import('../../testing/store')
   return {
     default: createFakeStore({
-      getters: { getEnableRegulatedStreaming: false, getEnablePeerTube: false, getEnableLayerSurfaces: false },
+      getters: { getEnableRegulatedStreaming: false, getEnablePeerTube: false },
     }),
   }
 })
@@ -64,23 +64,12 @@ describe('the experimental PeerTube setting', () => {
   })
 })
 
-describe('the experimental surface switch', () => {
-  it('defaults to off in the settings', () => {
-    expect(settingsModule.state.enableLayerSurfaces).toBe(false)
+describe('the surface switch, which is gone (ADR-0018)', () => {
+  it('is no longer a setting', () => {
+    expect(settingsModule.state).not.toHaveProperty('enableLayerSurfaces')
   })
 
-  it('is offered, off by default, and switches the layer\'s views on and off', async () => {
-    const toggle = toggleLabelled(await mountSettings(), 'New YouTube pages (experimental)')
-
-    expect(toggle).toBeDefined()
-    expect(toggle.find('input').element.checked).toBe(false)
-
-    await toggle.find('input').setValue(true)
-    await toggle.find('input').setValue(false)
-
-    expect(store.dispatched).toEqual([
-      { type: 'updateEnableLayerSurfaces', payload: true },
-      { type: 'updateEnableLayerSurfaces', payload: false },
-    ])
+  it('is no longer offered: the layer\'s views are what every installation gets', async () => {
+    expect(toggleLabelled(await mountSettings(), 'New YouTube pages (experimental)')).toBeUndefined()
   })
 })

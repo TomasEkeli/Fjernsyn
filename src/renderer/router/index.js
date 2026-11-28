@@ -16,7 +16,9 @@ import LayerSearchPage from '../views/LayerSearchPage/LayerSearchPage.vue'
 import Playlist from '../views/Playlist/Playlist.vue'
 import Hashtag from '../views/Hashtag/Hashtag.vue'
 import Post from '../views/Post.vue'
-import { ChannelSurface, WatchSurface, peerTubeRoutes } from '../platform/routes'
+import LayerChannel from '../views/LayerChannel/LayerChannel.vue'
+import LayerWatch from '../views/LayerWatch/LayerWatch.vue'
+import { peerTubeRoutes } from '../platform/routes'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -160,16 +162,16 @@ const router = createRouter({
       meta: {
         title: 'Channel'
       },
-      // Fjernsyn: upstream's Channel while enableLayerSurfaces is off, the layer's channel view while it is on
-      component: ChannelSurface
+      // Fjernsyn: the layer's channel view, in place of upstream's (ADR-0018)
+      component: LayerChannel
     },
     {
       path: '/watch/:id',
       meta: {
         title: 'Watch'
       },
-      // Fjernsyn: upstream's Watch while enableLayerSurfaces is off, the layer's watch view while it is on
-      component: WatchSurface
+      // Fjernsyn: the layer's watch view, in place of upstream's (ADR-0018)
+      component: LayerWatch
     },
     {
       path: '/hashtag/:hashtag',

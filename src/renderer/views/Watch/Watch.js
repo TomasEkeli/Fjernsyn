@@ -1,4 +1,4 @@
-import { defineComponent, markRaw, shallowRef } from 'vue'
+import { defineComponent, shallowRef } from 'vue'
 import { isNavigationFailure, NavigationFailureType } from 'vue-router'
 import { mapActions, mapMutations } from 'vuex'
 import shaka from 'shaka-player'
@@ -13,7 +13,6 @@ import WatchVideoLiveChat from '../../components/WatchVideoLiveChat/WatchVideoLi
 import WatchVideoPlaylist from '../../components/WatchVideoPlaylist/WatchVideoPlaylist.vue'
 import WatchVideoRecommendations from '../../components/WatchVideoRecommendations/WatchVideoRecommendations.vue'
 import FtAgeRestricted from '../../components/FtAgeRestricted/FtAgeRestricted.vue'
-import FtButton from '../../components/FtButton/FtButton.vue'
 import { calculateColorLuminance } from '../../helpers/colors'
 import {
   buildChaptersVttFile,
@@ -43,19 +42,12 @@ import {
   youtubeImageUrlToInvidious
 } from '../../helpers/api/invidious'
 import { sortCaptions } from '../../helpers/player/utils'
-import { selectLiveManifest } from '../../helpers/player/liveManifest'
-import { classifyPlayabilityError, getPlayabilityExplanation } from '../../helpers/player/playability'
-import { getLocalVideoTitle } from '../../helpers/player/watchMetadata'
-import { traceWatch } from '../../helpers/watchTrace'
-import { VERDICT_AI, VERDICT_NOT_AI } from '../../helpers/aiMarker/label'
-import { buildFormatId, MANIFEST_TYPE_SABR } from '../../helpers/player/SabrManifestParser'
-import { createSabrRegulator, SabrGiveUpError } from '../../helpers/player/SabrRegulator'
+import { MANIFEST_TYPE_SABR } from '../../helpers/player/SabrManifestParser'
 import { useI18n } from 'vue-i18n'
 
 /**
  * @typedef {{
  *   url: string,
- *   videoId: string,
  *   poToken: string,
  *   ustreamerConfig: string,
  *   clientInfo: {
@@ -69,12 +61,6 @@ import { useI18n } from 'vue-i18n'
 
 const MANIFEST_TYPE_DASH = 'application/dash+xml'
 const MANIFEST_TYPE_HLS = 'application/x-mpegurl'
-class NoPlayableLiveStreamError extends Error {
-  constructor(videoId) {
-    super(`No playable livestream source for ${videoId}`)
-    this.name = 'NoPlayableLiveStreamError'
-  }
-}
 const UNAVAILABLE_VIDEO_THUMBNAILS = {
   light: 'https://www.youtube.com/img/desktop/unavailable/unavailable_video.png',
   dark: 'https://www.youtube.com/img/desktop/unavailable/unavailable_video_dark_theme.png'
@@ -92,8 +78,7 @@ export default defineComponent({
     'watch-video-live-chat': WatchVideoLiveChat,
     'watch-video-playlist': WatchVideoPlaylist,
     'watch-video-recommendations': WatchVideoRecommendations,
-    'ft-age-restricted': FtAgeRestricted,
-    FtButton
+    'ft-age-restricted': FtAgeRestricted
   },
   beforeRouteLeave: async function (to, from, next) {
     this.handleRouteChange()
@@ -160,27 +145,10 @@ export default defineComponent({
       manifestMimeType: MANIFEST_TYPE_DASH,
       /** @type {SabrData | null} */
       sabrData: null,
-      /**
-       * The storyboards the SABR manifest carries. Kept because a session
-       * rebuild builds a fresh manifest from a fresh player response, and
-       * storyboards come from the `/next` half, which the rebuild does not
-       * re-read.
-       * @type {import('../../helpers/player/SabrManifestParser').SabrManifest['storyboards']}
-       */
-      sabrStoryboards: [],
-      /**
-       * Owns the SABR transport and the recovery ladder for this view.
-       * @type {?import('../../helpers/player/SabrRegulator').SabrRegulator}
-       */
-      sabrRegulator: null,
       legacyFormats: [],
-      /**
-       * Formats the automatic fallback has already tried and seen fail for
-       * this load, so it cannot offer them again and ring the changes forever.
-       * @type {('dash'|'audio'|'legacy')[]}
-       */
-      attemptedFormats: [],
       captions: [],
+      /** @type {import('youtubei.js').Misc.Format[]} */
+      hlsAudioMetadata: [],
       /** @type {'EQUIRECTANGULAR' | 'EQUIRECTANGULAR_THREED_TOP_BOTTOM' | 'MESH'| null} */
       vrProjection: null,
       autoplayNextRecommendedVideo: false,
@@ -202,12 +170,6 @@ export default defineComponent({
       playabilityStatus: '',
       totalAdTimeSeconds: 0,
       adEndTimeUnixMs: 0,
-      /**
-       * How much louder this video is than YouTube's reference loudness, in dB.
-       * Only the local API reports it, Invidious never does, so `null` means unknown.
-       * @type {number|null}
-       */
-      loudnessDb: null,
 
       onMountedRun: false,
 
@@ -216,31 +178,8 @@ export default defineComponent({
       errorMessage: null,
       /** @type {string[]|null} */
       customErrorIcon: null,
-      /** Whether reopening the video is worth offering for this error */
-      errorIsRetryable: false,
-      /**
-       * Where playback had reached when the error hit. Captured then, because
-       * the player is unmounted the moment an error is shown and cannot be
-       * asked afterwards.
-       * @type {number}
-       */
-      errorRetryTimestamp: 0,
       videoGenreIsMusic: false,
-      /**
-       * The video's YouTube category, as the backend names it, kept on its
-       * history entry so the Channels page can tell what a channel makes.
-       * Empty when the backend gave none.
-       */
-      videoCategory: '',
-      /**
-       * YouTube's "How this was made" disclosures, shown as YouTube words them
-       * in the description. Display only: whether the video was made with AI
-       * is `madeWithAi`, from the AI label, never from these words.
-       * @type {import('../../platform/shapes').ContentDisclosure[] | null}
-       */
       contentDisclosures: null,
-      /** Whether YouTube labels the video "Made with AI" (helpers/aiMarker/label.js) */
-      madeWithAi: false,
       /** @type {Date|null} */
       streamingDataExpiryDate: null,
       currentPlaybackRate: null,
@@ -290,9 +229,6 @@ export default defineComponent({
     },
     defaultVideoFormat: function () {
       return this.$store.getters.getDefaultVideoFormat
-    },
-    enableRegulatedStreaming: function () {
-      return this.$store.getters.getEnableRegulatedStreaming
     },
     autoplayEnabled: function () {
       return this.watchingPlaylist ? this.autoplayNextPlaylistVideo : this.autoplayNextRecommendedVideo
@@ -409,25 +345,6 @@ export default defineComponent({
     },
   },
   created: function () {
-    if (process.env.SUPPORTS_LOCAL_API) {
-      // The regulator owns the SABR transport and every recovery decision for
-      // as long as this view lives. It belongs here rather than to the player
-      // because its own ladder reloads the player, and a budget destroyed by
-      // the remedy it bounds bounds nothing. `markRaw` because it holds a live
-      // session and event handlers, none of which want a reactive proxy.
-      //
-      // The policy is passed as a reader rather than a value because this
-      // hook runs once per view instance, not once per video: the router
-      // reuses the watch view across a param change, which is the same
-      // property that lets the regulator outlive every rung. Passing the
-      // value here fixed the policy for as long as the viewer stayed on watch
-      // pages, so the setting's promise that it takes effect on the next
-      // video was false. The regulator re-reads it when the video changes.
-      this.sabrRegulator = markRaw(createSabrRegulator({
-        isRegulated: () => this.enableRegulatedStreaming,
-      }))
-    }
-
     this.videoId = this.$route.params.id
     this.activeFormat = this.defaultVideoFormat
     // So that the value for this session remains unchanged even if setting changed
@@ -495,7 +412,6 @@ export default defineComponent({
       this.videoDescriptionHtml = ''
       this.license = ''
       this.contentDisclosures = null
-      this.madeWithAi = false
       this.videoViewCount = 0
       this.videoLikeCount = 0
       this.videoDislikeCount = 0
@@ -513,21 +429,15 @@ export default defineComponent({
       this.manifestSrc = null
       this.manifestMimeType = MANIFEST_TYPE_DASH
       this.sabrData = null
-      this.sabrStoryboards = []
       this.legacyFormats = []
-      this.attemptedFormats = []
       this.captions = []
       this.vrProjection = null
       this.recommendedVideos = []
       this.playabilityStatus = ''
       this.adEndTimeUnixMs = 0
-      this.loudnessDb = null
       this.errorMessage = null
       this.customErrorIcon = null
-      this.errorIsRetryable = false
-      this.errorRetryTimestamp = 0
       this.videoGenreIsMusic = false
-      this.videoCategory = ''
       this.streamingDataExpiryDate = null
       this.updateTitle()
     },
@@ -598,24 +508,14 @@ export default defineComponent({
     },
 
     getVideoInformationLocal: async function () {
-      let watchInfoStage = 'request'
-
       if (this.firstLoad) {
         this.isLoading = true
       }
 
       try {
         const videoInfo = await getLocalVideoInfo(this.videoId)
-        const { info: result, poToken, clientInfo, adEndTimeUnixMs, aiVerdict, contentDisclosures } = videoInfo
+        const { info: result, poToken, clientInfo, adEndTimeUnixMs, contentDisclosures } = videoInfo
         this.contentDisclosures = contentDisclosures || null
-        this.madeWithAi = aiVerdict === VERDICT_AI
-
-        // Fjernsyn: kept, as LayerWatch keeps it, so that this video's tile on
-        // any list is marked without asking again (helpers/aiMarker). `null`
-        // is a response with no description to read it from, and is not kept
-        if (aiVerdict === VERDICT_AI || aiVerdict === VERDICT_NOT_AI) {
-          this.recordAiVerdict({ videoId: this.videoId, verdict: aiVerdict })
-        }
 
         const playabilityStatus = result.playability_status
         this.playabilityStatus = playabilityStatus.status
@@ -633,23 +533,8 @@ export default defineComponent({
 
         this.adEndTimeUnixMs = adEndTimeUnixMs
 
-        // Copied out here because `result` is local to this function, so it is gone
-        // by the time the player needs the loudness.
-        // `0` is a legitimate loudness, so this must not be a truthiness check.
-        this.loudnessDb = result.player_config?.audio_config?.loudness_db ?? null
-
         this.isFamilyFriendly = result.basic_info.is_family_safe
 
-        // Read before the presentational metadata below, because the playback
-        // branches further down depend on them and that section is allowed to
-        // fail.
-        this.isLive = !!result.basic_info.is_live
-        this.isUpcoming = !!result.basic_info.is_upcoming
-        this.isLiveContent = !!result.basic_info.is_live_content
-        this.isPostLiveDvr = !!result.basic_info.is_post_live_dvr
-        this.isUnlisted = !!result.basic_info.is_unlisted
-
-        watchInfoStage = 'recommendations'
         this.recommendedVideos = result.watch_next_feed
           ?.filter((item) => {
             return item.type === 'CompactVideo' || item.type === 'CompactMovie' ||
@@ -665,198 +550,147 @@ export default defineComponent({
           return
         }
 
-        // Everything in here describes the video rather than plays it, and
-        // YouTube reshapes these fields without warning. A single one of them
-        // turning up null used to throw out of this whole function, so a
-        // perfectly playable video would not play at all. Losing a subtitle
-        // line is a much smaller loss than losing the video, so this section
-        // says what it could not read and carries on.
-        try {
-          watchInfoStage = 'metadata-shape'
-          traceWatch(watchInfoStage, {
-            videoId: this.videoId,
-            playabilityStatus: playabilityStatus.status,
-            hasBasicInfo: !!result.basic_info,
-            hasPrimaryInfo: !!result.primary_info,
-            hasPrimaryTitle: !!result.primary_info?.title,
-            hasSecondaryInfo: !!result.secondary_info,
-            hasSecondaryOwner: !!result.secondary_info?.owner,
-            hasSubscriberCount: !!result.secondary_info?.owner?.subscriber_count,
-            hasDescription: !!result.secondary_info?.description
-          })
+        // extract localised title first and fall back to the not localised one
+        this.videoTitle = result.primary_info?.title.text?.trim() ?? result.basic_info.title?.trim()
+        this.videoViewCount = result.basic_info.view_count ?? (result.primary_info.view_count ? extractNumberFromString(result.primary_info.view_count.text) : null)
+        this.license = result.secondary_info.metadata.rows.find(element => element.title?.text === 'License')?.contents[0]?.text
 
-          watchInfoStage = 'title'
-          // extract localised title first and fall back to the not localised one
-          this.videoTitle = getLocalVideoTitle(result)
+        this.channelId = result.basic_info.channel_id ?? result.secondary_info.owner?.author.id
+        this.channelName = result.basic_info.author ?? result.secondary_info.owner?.author.name
 
-          watchInfoStage = 'view-count'
-          this.videoViewCount = result.basic_info.view_count ?? (result.primary_info?.view_count ? extractNumberFromString(result.primary_info.view_count.text) : null)
-
-          watchInfoStage = 'licence'
-          this.license = result.secondary_info?.metadata?.rows?.find(element => element.title?.text === 'License')?.contents?.[0]?.text
-
-          watchInfoStage = 'channel'
-          this.channelId = result.basic_info.channel_id ?? result.secondary_info?.owner?.author?.id
-          this.channelName = result.basic_info.author ?? result.secondary_info?.owner?.author?.name
-
-          if (result.secondary_info?.owner?.author) {
-            this.channelThumbnail = result.secondary_info.owner.author.best_thumbnail?.url ?? ''
-          } else {
-            this.channelThumbnail = ''
-          }
-
-          this.videoGenreIsMusic = result.basic_info.category === 'Music'
-          this.videoCategory = typeof result.basic_info.category === 'string' ? result.basic_info.category.trim() : ''
-
-          this.updateSubscriptionDetails({
-            channelThumbnailUrl: this.channelThumbnail.length === 0 ? null : this.channelThumbnail,
-            channelName: this.channelName,
-            channelId: this.channelId
-          })
-
-          watchInfoStage = 'published-date'
-          if (result.page[0]?.microformat?.publish_date) {
-            // `result.page[0].microformat.publish_date` example value: `2023-08-12T08:59:59-07:00`
-            this.videoPublished = Date.parse(result.page[0].microformat.publish_date)
-          } else if (result.primary_info?.published) {
-            // text date Jan 1, 2000, not as accurate but better than nothing
-            this.videoPublished = Date.parse(result.primary_info.published)
-          }
-
-          watchInfoStage = 'description'
-          if (result.secondary_info?.description?.runs) {
-            try {
-              this.videoDescription = parseLocalTextRuns(result.secondary_info.description.runs)
-            } catch (error) {
-              console.error('Failed to extract the localised description, falling back to the standard one.', error, JSON.stringify(result.secondary_info.description.runs))
-              this.videoDescription = result.basic_info.short_description
-            }
-          } else {
-            this.videoDescription = result.basic_info.short_description
-          }
-
-          watchInfoStage = 'thumbnail'
-          switch (this.thumbnailPreference) {
-            case 'start':
-              this.thumbnail = `https://i.ytimg.com/vi/${this.videoId}/maxres1.jpg`
-              break
-            case 'middle':
-              this.thumbnail = `https://i.ytimg.com/vi/${this.videoId}/maxres2.jpg`
-              break
-            case 'end':
-              this.thumbnail = `https://i.ytimg.com/vi/${this.videoId}/maxres3.jpg`
-              break
-            default:
-              this.thumbnail = result.basic_info.thumbnail?.[0]?.url ?? `https://i.ytimg.com/vi/${this.videoId}/maxresdefault.jpg`
-              break
-          }
-
-          watchInfoStage = 'like-count'
-          if (this.hideVideoLikesAndDislikes) {
-            this.videoLikeCount = null
-            this.videoDislikeCount = null
-          } else {
-            this.videoLikeCount = isNaN(result.basic_info.like_count) ? 0 : result.basic_info.like_count
-
-            // YouTube doesn't return dislikes anymore
-            this.videoDislikeCount = 0
-          }
-
-          watchInfoStage = 'subscriber-count'
-          const subscriberCount = result.secondary_info?.owner?.subscriber_count
-          const subCount = subscriberCount && !subscriberCount.isEmpty() ? parseLocalSubscriberCount(subscriberCount.text) : NaN
-
-          if (!isNaN(subCount)) {
-            this.channelSubscriptionCountText = subCount >= 10000 ? formatNumber(subCount, { notation: 'compact' }) : formatSubscriberCount(subCount)
-          } else {
-            this.channelSubscriptionCountText = ''
-          }
-
-          watchInfoStage = 'chapters'
-          let chapters = []
-          let chaptersKind = 'chapters'
-          if (!this.hideChapters) {
-            const rawChapters = result.player_overlays?.decorated_player_bar?.player_bar?.markers_map
-              ?.find(marker => marker.marker_key === 'DESCRIPTION_CHAPTERS')?.value?.chapters
-
-            if (rawChapters) {
-              for (const chapter of rawChapters) {
-                const start = chapter.time_range_start_millis / 1000
-
-                chapters.push({
-                  title: chapter.title?.text ?? '',
-                  timestamp: formatDurationAsTimestamp(start),
-                  startSeconds: start,
-                  endSeconds: 0,
-                  thumbnail: chapter.thumbnail?.[0]
-                })
-              }
-            } else {
-              /** @type {import('youtubei.js').YTNodes.MacroMarkersList | null | undefined} */
-              const macroMarkersList = result.page[1]?.engagement_panels
-                ?.find(pannel => pannel.panel_identifier === 'engagement-panel-macro-markers-auto-chapters')?.content
-
-              if (macroMarkersList) {
-                for (const item of macroMarkersList.contents) {
-                  if (item instanceof YTNodes.MacroMarkersListItem) {
-                    chapters.push({
-                      title: item.title?.text ?? '',
-                      timestamp: item.time_description?.text ?? '',
-                      startSeconds: Utils.timeToSeconds(item.time_description?.text ?? ''),
-                      endSeconds: 0,
-                      thumbnail: item.thumbnail?.[0]
-                    })
-                  }
-                }
-                chaptersKind = 'keyMoments'
-              } else {
-                chapters = this.extractChaptersFromDescription(result.basic_info.short_description ?? result.secondary_info?.description?.text ?? '')
-              }
-            }
-
-            if (chapters.length > 0) {
-              this.addChaptersEndSeconds(chapters, result.basic_info.duration)
-
-              // prevent vue from adding reactivity which isn't needed
-              // as the chapter objects are read-only after this anyway
-              // the chapters are checked for every timeupdate event that the player emits
-              // this should lessen the performance and memory impact of the chapters
-              chapters.forEach(Object.freeze)
-            }
-          }
-
-          this.videoChapters = chapters
-          this.videoChaptersKind = chaptersKind
-        } catch (error) {
-          // `resetVideoState` has already blanked every one of these fields,
-          // so whatever this section did not reach is simply absent rather
-          // than left over from the previous video.
-          console.error(
-            `Could not read all of the watch page metadata for ${this.videoId}, stopped at "${watchInfoStage}". Playing the video without it.`,
-            error
-          )
-          traceWatch('metadata-failed', {
-            stage: watchInfoStage,
-            videoId: this.videoId,
-            error: error.toString(),
-            stack: error.stack
-          })
-
-          if (!this.videoTitle) {
-            this.videoTitle = result.basic_info.title ?? ''
-          }
-          if (!this.videoDescription) {
-            this.videoDescription = result.basic_info.short_description ?? ''
-          }
-          if (!this.thumbnail) {
-            this.thumbnail = `https://i.ytimg.com/vi/${this.videoId}/maxresdefault.jpg`
-          }
-          this.videoChapters = []
+        if (result.secondary_info.owner?.author) {
+          this.channelThumbnail = result.secondary_info.owner.author.best_thumbnail?.url ?? ''
+        } else {
+          this.channelThumbnail = ''
         }
 
-        const isDrmProtected = result.streaming_data?.adaptive_formats?.some(format => format.drm_families || format.drm_track_type)
+        this.videoGenreIsMusic = result.basic_info.category === 'Music'
 
-        watchInfoStage = 'playability'
+        this.updateSubscriptionDetails({
+          channelThumbnailUrl: this.channelThumbnail.length === 0 ? null : this.channelThumbnail,
+          channelName: this.channelName,
+          channelId: this.channelId
+        })
+
+        if (result.page[0].microformat?.publish_date) {
+          // `result.page[0].microformat.publish_date` example value: `2023-08-12T08:59:59-07:00`
+          this.videoPublished = Date.parse(result.page[0].microformat.publish_date)
+        } else {
+          // text date Jan 1, 2000, not as accurate but better than nothing
+          this.videoPublished = Date.parse(result.primary_info.published)
+        }
+
+        if (result.secondary_info?.description.runs) {
+          try {
+            this.videoDescription = parseLocalTextRuns(result.secondary_info.description.runs)
+          } catch (error) {
+            console.error('Failed to extract the localised description, falling back to the standard one.', error, JSON.stringify(result.secondary_info.description.runs))
+            this.videoDescription = result.basic_info.short_description
+          }
+        } else {
+          this.videoDescription = result.basic_info.short_description
+        }
+
+        switch (this.thumbnailPreference) {
+          case 'start':
+            this.thumbnail = `https://i.ytimg.com/vi/${this.videoId}/maxres1.jpg`
+            break
+          case 'middle':
+            this.thumbnail = `https://i.ytimg.com/vi/${this.videoId}/maxres2.jpg`
+            break
+          case 'end':
+            this.thumbnail = `https://i.ytimg.com/vi/${this.videoId}/maxres3.jpg`
+            break
+          default:
+            this.thumbnail = result.basic_info.thumbnail?.[0].url ?? `https://i.ytimg.com/vi/${this.videoId}/maxresdefault.jpg`
+            break
+        }
+
+        if (this.hideVideoLikesAndDislikes) {
+          this.videoLikeCount = null
+          this.videoDislikeCount = null
+        } else {
+          this.videoLikeCount = isNaN(result.basic_info.like_count) ? 0 : result.basic_info.like_count
+
+          // YouTube doesn't return dislikes anymore
+          this.videoDislikeCount = 0
+        }
+
+        this.isLive = !!result.basic_info.is_live
+        this.isUpcoming = !!result.basic_info.is_upcoming
+        this.isLiveContent = !!result.basic_info.is_live_content
+        this.isPostLiveDvr = !!result.basic_info.is_post_live_dvr
+        this.isUnlisted = !!result.basic_info.is_unlisted
+
+        const subCount = !result.secondary_info.owner.subscriber_count.isEmpty() ? parseLocalSubscriberCount(result.secondary_info.owner.subscriber_count.text) : NaN
+
+        if (!isNaN(subCount)) {
+          this.channelSubscriptionCountText = subCount >= 10000 ? formatNumber(subCount, { notation: 'compact' }) : formatSubscriberCount(subCount)
+        } else {
+          this.channelSubscriptionCountText = ''
+        }
+
+        let chapters = []
+        let chaptersKind = 'chapters'
+        if (!this.hideChapters) {
+          const rawChapters = result.player_overlays?.decorated_player_bar?.player_bar?.markers_map
+            ?.find(marker => marker.marker_key === 'DESCRIPTION_CHAPTERS')?.value.chapters
+
+          if (rawChapters) {
+            for (const chapter of rawChapters) {
+              const start = chapter.time_range_start_millis / 1000
+
+              chapters.push({
+                title: chapter.title.text,
+                timestamp: formatDurationAsTimestamp(start),
+                startSeconds: start,
+                endSeconds: 0,
+                thumbnail: chapter.thumbnail[0]
+              })
+            }
+          } else {
+            /** @type {import('youtubei.js').YTNodes.MacroMarkersList | null | undefined} */
+            const macroMarkersList = result.page[1]?.engagement_panels
+              ?.find(pannel => pannel.panel_identifier === 'engagement-panel-macro-markers-auto-chapters')?.content
+
+            if (macroMarkersList) {
+              for (const item of macroMarkersList.contents) {
+                if (item instanceof YTNodes.MacroMarkersListItem) {
+                  chapters.push({
+                    title: item.title.text,
+                    timestamp: item.time_description.text,
+                    startSeconds: Utils.timeToSeconds(item.time_description.text),
+                    endSeconds: 0,
+                    thumbnail: item.thumbnail[0]
+                  })
+                }
+              }
+              chaptersKind = 'keyMoments'
+            } else {
+              chapters = this.extractChaptersFromDescription(result.basic_info.short_description ?? result.secondary_info.description.text)
+            }
+          }
+
+          if (chapters.length > 0) {
+            this.addChaptersEndSeconds(chapters, result.basic_info.duration)
+
+            // prevent vue from adding reactivity which isn't needed
+            // as the chapter objects are read-only after this anyway
+            // the chapters are checked for every timeupdate event that the player emits
+            // this should lessen the performance and memory impact of the chapters
+            chapters.forEach(Object.freeze)
+          }
+        }
+
+        this.videoChapters = chapters
+        this.videoChaptersKind = chaptersKind
+        this.hlsAudioMetadata = []
+
+        // The apostrophe is intentionally that one (char code 8217), because that is the one YouTube uses
+        const BOT_MESSAGE = 'Sign in to confirm you’re not a bot'
+
+        const isDrmProtected = result.streaming_data?.adaptive_formats.some(format => format.drm_families || format.drm_track_type)
+
         if (playabilityStatus.status === 'UNPLAYABLE' || playabilityStatus.status === 'LOGIN_REQUIRED' || isDrmProtected) {
           if (playabilityStatus.error_screen?.offer_id === 'sponsors_only_video') {
             // Members-only videos can only be watched while logged into a Google account that is a paid channel member
@@ -883,18 +717,15 @@ export default defineComponent({
           }
 
           let errorText
-          const errorKind = classifyPlayabilityError(playabilityStatus)
 
-          if (errorKind === 'ip-block') {
+          if (playabilityStatus.reason === BOT_MESSAGE || playabilityStatus.reason === 'Please sign in') {
             errorText = this.t('Video.IP block')
-          } else if (errorKind === 'unexplained-refusal') {
-            errorText = this.t('Video.Unexplained playback refusal')
           } else {
             errorText = `[${playabilityStatus.status}] ${playabilityStatus.reason}`
-            const explanation = getPlayabilityExplanation(playabilityStatus)
 
-            if (explanation && explanation !== playabilityStatus.reason) {
-              errorText += `: ${explanation}`
+            const subreason = playabilityStatus.error_screen?.subreason?.text
+            if (subreason) {
+              errorText += `: ${subreason}`
             }
           }
 
@@ -915,35 +746,15 @@ export default defineComponent({
         }
 
         if ((this.isLive || this.isPostLiveDvr) && !this.isUpcoming) {
-          let useRemoteManifest = true
+          if (result.streaming_data.dash_manifest_url) {
+            this.manifestSrc = result.streaming_data.dash_manifest_url
+            this.manifestMimeType = MANIFEST_TYPE_DASH
+          } else {
+            this.manifestSrc = result.streaming_data.hls_manifest_url
+            this.manifestMimeType = MANIFEST_TYPE_HLS
 
-          if (this.isPostLiveDvr) {
-            // I wasn't able to get SABR working with Post-Live-DVR yet, so for the moment we'll use YouTube's provided DASH manifest instead.
-            // It only contains the last 4 hours of the stream, instead of starting from the beginning but that is better than nothing.
-            if (
-              result.streaming_data.adaptive_formats[0]?.url ||
-              result.streaming_data.adaptive_formats[0]?.signature_cipher ||
-              result.streaming_data.adaptive_formats[0]?.cipher
-            ) {
-              try {
-                this.manifestSrc = await this.createLocalDashManifest(result, true)
-                this.manifestMimeType = MANIFEST_TYPE_DASH
-                useRemoteManifest = false
-              } catch (error) {
-                console.error(`Failed to generate DASH manifest for this Post Live DVR video ${this.videoId}, falling back to using YouTube's provided one...`, error)
-              }
-            }
-          }
-
-          if (useRemoteManifest) {
-            const liveManifest = selectLiveManifest(result.streaming_data)
-
-            if (!liveManifest) {
-              throw new NoPlayableLiveStreamError(this.videoId)
-            }
-
-            this.manifestSrc = liveManifest.src
-            this.manifestMimeType = liveManifest.mimeType
+            this.hlsAudioMetadata = result.streaming_data.adaptive_formats
+              .filter((format) => format.mime_type.startsWith('audio/mp4'))
           }
 
           this.streamingDataExpiryDate = result.streaming_data.expires
@@ -1009,7 +820,6 @@ export default defineComponent({
           }
         }
 
-        watchInfoStage = 'formats'
         if ((!this.isUpcoming && !this.isLive && !this.isPostLiveDvr) || (this.isUpcoming && this.playabilityStatus === 'OK')) {
           this.videoLengthSeconds = result.basic_info.duration
           if (result.streaming_data) {
@@ -1027,7 +837,7 @@ export default defineComponent({
                 return {
                   id: caption.vss_id,
                   url: url.toString(),
-                  label: caption.name?.text ?? caption.language_code,
+                  label: caption.name.text,
                   language: caption.language_code,
                   mimeType: 'text/vtt'
                 }
@@ -1085,7 +895,7 @@ export default defineComponent({
             this.videoStoryboardSrc = this.createLocalStoryboardUrls(storyboard)
           }
 
-          if (result.streaming_data?.adaptive_formats?.length > 0) {
+          if (result.streaming_data?.adaptive_formats.length > 0) {
             this.vrProjection = result.streaming_data.adaptive_formats
               .find(format => {
                 return format.has_video &&
@@ -1095,9 +905,6 @@ export default defineComponent({
               ?.projection_type ?? null
 
             if (
-              // Without a PO token a SABR session is walled from the first
-              // request, so fall through to DASH instead
-              poToken &&
               videoInfo.info.streaming_data?.server_abr_streaming_url &&
               videoInfo.info.player_config.media_common_config.media_ustreamer_request_config
             ) {
@@ -1140,20 +947,10 @@ export default defineComponent({
           this.handleActiveFormatUnavailable()
         }
 
-        if (!this.isUpcoming && this.activeFormat !== 'legacy' && !this.manifestSrc) {
-          this.showRetryableError(this.t('Video.No playable video source'))
-        }
-
         this.isLoading = false
         this.updateTitle()
       } catch (err) {
         console.error(err)
-        traceWatch('local-video-information-failed', {
-          stage: watchInfoStage,
-          videoId: this.videoId,
-          error: err.toString(),
-          stack: err.stack
-        })
         if (this.backendPreference === 'local' && this.backendFallback && !err.toString().includes('private') && !err.toString().includes('unavailable')) {
           const errorMessage = this.t('Local API Error (Click to copy)')
           showToast(`${errorMessage}: ${err}`, 10000, () => {
@@ -1167,11 +964,7 @@ export default defineComponent({
           if (!this.thumbnail) {
             this.thumbnail = this.getUnavailableVideoThumbnail()
           }
-          if (err instanceof NoPlayableLiveStreamError) {
-            this.showRetryableError(this.t('Video.No playable livestream source'))
-          } else {
-            this.errorMessage = err.message || err.toString()
-          }
+          this.errorMessage = err.message || err.toString()
         }
       }
     },
@@ -1206,7 +999,6 @@ export default defineComponent({
           }
 
           this.videoGenreIsMusic = result.genre === 'Music'
-          this.videoCategory = typeof result.genre === 'string' ? result.genre.trim() : ''
 
           this.channelId = result.authorId
           this.channelName = result.author
@@ -1238,7 +1030,6 @@ export default defineComponent({
           this.isPostLiveDvr = !!result.isPostLiveDvr
           this.isUnlisted = !result.isListed
           this.contentDisclosures = null
-          this.madeWithAi = false
 
           this.captions = sortCaptions(result.captions.map(caption => {
             return {
@@ -1284,6 +1075,7 @@ export default defineComponent({
           }
           this.videoChapters = chapters
           this.videoChaptersKind = 'chapters'
+          this.hlsAudioMetadata = []
 
           if (this.isLive || this.isPostLiveDvr) {
             // The live DASH manifest is currently unusable as it returns 403s after 1 minute of playback
@@ -1295,13 +1087,9 @@ export default defineComponent({
             // // https://github.com/iv-org/invidious/pull/4589
             // if (this.proxyVideos) {
 
+            this.streamingDataExpiryDate = this.extractExpiryDateFromStreamingUrl(result.adaptiveFormats[0].url)
+
             let hlsManifestUrl = result.hlsUrl
-
-            if (!hlsManifestUrl) {
-              throw new NoPlayableLiveStreamError(this.videoId)
-            }
-
-            this.streamingDataExpiryDate = this.extractExpiryDateFromStreamingUrl(result.adaptiveFormats[0]?.url ?? hlsManifestUrl)
 
             if (this.proxyVideos) {
               const url = new URL(hlsManifestUrl)
@@ -1369,11 +1157,7 @@ export default defineComponent({
             if (!this.thumbnail) {
               this.thumbnail = this.getUnavailableVideoThumbnail()
             }
-            if (err instanceof NoPlayableLiveStreamError) {
-              this.showRetryableError(this.t('Video.No playable livestream source'))
-            } else {
-              this.errorMessage = err.message || err.toString()
-            }
+            this.errorMessage = err.message || err.toString()
           }
         })
     },
@@ -1478,10 +1262,6 @@ export default defineComponent({
         timeWatched: Date.now(),
         isLive: false,
         type: 'video',
-      }
-
-      if (this.videoCategory !== '') {
-        videoData.category = this.videoCategory
       }
 
       this.updateHistory(videoData)
@@ -1651,74 +1431,47 @@ export default defineComponent({
       }
     },
 
-    /**
-     * Whether this video can be played in the given format at all. One place
-     * to ask, so the automatic fallback can look before it leaps rather than
-     * finding out by way of a toast meant for someone who chose the format
-     * from the menu.
-     * @param {'dash'|'audio'|'legacy'} format
-     * @returns {boolean}
-     */
-    canUseFormat: function (format) {
-      switch (format) {
-        case 'dash':
-          return this.manifestSrc !== null
-        case 'legacy':
-          // YouTube serves no progressive formats for most videos now, so this
-          // is usually false, which is why it can no longer be the only rung
-          // the fallback tries
-          return !this.isLive && !this.isPostLiveDvr && this.legacyFormats.length > 0
-        case 'audio':
-          return this.manifestSrc !== null &&
-            !((this.isLive || this.isPostLiveDvr) &&
-              // The WEB HLS manifests only contain combined audio and video files, so we can't do audio only
-              // The IOS HLS manifests have audio-only streams
-              this.manifestMimeType === MANIFEST_TYPE_HLS && !this.manifestSrc.includes('/demuxed/1'))
-        default:
-          return false
-      }
-    },
-
     enableDashFormat: function () {
       if (this.activeFormat === 'dash') {
-        return false
+        return
       }
 
-      if (!this.canUseFormat('dash')) {
+      if (this.manifestSrc === null) {
         showToast(this.t('Change Format.Dash formats are not available for this video'))
-        return false
+        return
       }
 
       this.activeFormat = 'dash'
-      return true
     },
 
     enableLegacyFormat: function () {
       if (this.activeFormat === 'legacy') {
-        return false
+        return
       }
 
-      if (!this.canUseFormat('legacy')) {
+      if (this.isLive || this.isPostLiveDvr || this.legacyFormats.length === 0) {
         showToast(this.t('Change Format.Legacy formats are not available for this video'))
-        return false
+        return
       }
 
       this.activeFormat = 'legacy'
-      return true
     },
 
     enableAudioFormat: function () {
       if (this.activeFormat === 'audio') {
-        return false
+        return
       }
 
-      if (!this.canUseFormat('audio')) {
+      if (this.manifestSrc === null ||
+        ((this.isLive || this.isPostLiveDvr) &&
+        // The WEB HLS manifests only contain combined audio and video files, so we can't do audio only
+        // The IOS HLS manifests have audio-only streams
+          this.manifestMimeType === MANIFEST_TYPE_HLS && !this.manifestSrc.includes('/demuxed/1'))) {
         showToast(this.t('Change Format.Audio formats are not available for this video'))
-        return false
+        return
       }
 
       this.activeFormat = 'audio'
-      return true
     },
 
     handleVideoEnded: function () {
@@ -1818,57 +1571,6 @@ export default defineComponent({
     },
 
     /**
-     * Shows an error the viewer can do something about, and remembers where
-     * playback was so the retry can resume there. The player is unmounted as
-     * soon as `errorMessage` is set, so the position has to be taken now.
-     * @param {string} message
-     * @param {string[]|null} icon
-     */
-    showRetryableError: function (message, icon = null) {
-      this.handleWatchProgressAutoSaveWhenProgressEnabled()
-
-      this.errorRetryTimestamp = this.getTimestamp()
-      this.errorIsRetryable = true
-      this.errorMessage = message
-      this.customErrorIcon = icon
-    },
-
-    /**
-     * Reopens the video from scratch at the position it stopped, which is what
-     * the viewer would otherwise do by navigating away and back.
-     *
-     * Asking for it explicitly resets the regulator to how it started: a full
-     * recovery budget, no session, and no claim on the SABR transport. Its
-     * counters are meant to outlive a player reload, since reloading is one of
-     * the things they bound, so this is the one way back for a viewer who has
-     * decided that whatever it is holding onto is the problem.
-     */
-    async retryVideo() {
-      this.sabrRegulator?.reset(this.videoId)
-
-      const timestamp = this.errorRetryTimestamp
-
-      // The error stays on screen until reloadView clears it. Clearing it here
-      // would remount the player against the credentials that just failed, for
-      // the moment it takes to get to the reload.
-
-      if (timestamp > 0) {
-        try {
-          await this.$router.replace({
-            path: this.$route.path,
-            query: { ...this.$route.query, oneTimeTimestamp: timestamp },
-          })
-        } catch (failure) {
-          if (!isNavigationFailure(failure, NavigationFailureType.duplicated)) {
-            throw failure
-          }
-        }
-      }
-
-      await this.reloadView()
-    },
-
-    /**
      * @param {import('shaka-player/dist/shaka-player.ui').default.util.Error} error
      */
     handlePlayerError: function (error) {
@@ -1877,17 +1579,6 @@ export default defineComponent({
       const { Code } = shaka.util.Error
 
       if (error.code === Code.HTTP_ERROR) {
-        if (error.data[1] instanceof SabrGiveUpError) {
-          // Every automatic recovery is spent. The format fallback below
-          // cannot help here (the legacy URLs answer to the same distrusted
-          // session), so show an honest error instead of stalling silently.
-          this.showRetryableError(
-            'YouTube is not serving this video to the current session (PO token rejected). Trying again sometimes works, otherwise wait a while or switch networks.',
-            ['fas', 'shield']
-          )
-          return
-        }
-
         if (error.data[1]?.message === 'Failed to fetch' && !navigator.onLine) {
           // Internet connection was lost, do nothing on our side as
           // shaka-player will keep trying until the internet connection returns and resume playback automatically when it does
@@ -1896,18 +1587,18 @@ export default defineComponent({
       } else if (error.code === Code.BAD_HTTP_STATUS) {
         switch (error.data[1]) {
           case 429:
-            this.showRetryableError('[BAD_HTTP_STATUS: 429] Ratelimited')
+            this.handleWatchProgressAutoSaveWhenProgressEnabled()
+
+            this.errorMessage = '[BAD_HTTP_STATUS: 429] Ratelimited'
             return
           case 403:
+            this.handleWatchProgressAutoSaveWhenProgressEnabled()
+
             if (new Date() > this.streamingDataExpiryDate) {
-              this.showRetryableError(
-                '[BAD_HTTP_STATUS: 403] YouTube watch session expired.',
-                ['fas', 'clock']
-              )
+              this.errorMessage = '[BAD_HTTP_STATUS: 403] YouTube watch session expired. Please reopen this video.'
+              this.customErrorIcon = ['fas', 'clock']
               return
             }
-
-            this.handleWatchProgressAutoSaveWhenProgressEnabled()
 
             if (this.videoGenreIsMusic) {
               this.errorMessage = '[BAD_HTTP_STATUS: 403] Potential causes: IP block, streaming URL deciphering failed or music video geo-block'
@@ -1919,88 +1610,47 @@ export default defineComponent({
       } else if (error.code === Code.VIDEO_ERROR) {
         if (this.activeFormat === 'legacy') {
           if (new Date() > this.streamingDataExpiryDate) {
-            this.showRetryableError(
-              '[VIDEO_ERROR] YouTube watch session expired.',
-              ['fas', 'clock']
-            )
+            this.handleWatchProgressAutoSaveWhenProgressEnabled()
+
+            this.errorMessage = '[VIDEO_ERROR] YouTube watch session expired. Please reopen this video.'
+            this.customErrorIcon = ['fas', 'clock']
             return
           }
         }
       }
 
-      // A failure of the SABR transport is not a failure of the formats, and
-      // the regulator has already spent everything it has on it by the time
-      // one reaches us. DASH and audio are the same session in different
-      // clothes, so offering them is offering the thing that just refused us;
-      // only legacy is fetched over its own URLs and can genuinely differ.
-      // This is what the evidence says too: a video that died this way played
-      // again on reopening, in the very formats that had just failed.
-      const failedTransport = error.category === shaka.util.Error.Category.NETWORK &&
-        typeof error.data?.[0] === 'string' &&
-        error.data[0].startsWith('sabr:')
-
-      this.handleActiveFormatUnavailable(failedTransport)
+      this.handleActiveFormatUnavailable()
     },
 
-    /**
-     * Leave the active format behind, because it has either just failed or
-     * turned out not to exist for this video, and pick the best remaining one.
-     *
-     * Two ways in: a player error, which is the common one, and loading a
-     * video with legacy chosen as the default when the video has no
-     * progressive formats. The second never reaches the player at all, so
-     * without its own way in it used to leave the viewer on a format that
-     * could not play.
-     *
-     * @param {boolean} failedTransport whether what failed was the SABR
-     *   transport rather than the format, which narrows what is worth trying
-     */
-    handleActiveFormatUnavailable: function (failedTransport = false) {
-      // What to try instead, best first. Live streams have no legacy formats,
-      // so they only move between DASH and audio.
-      //
-      // Upstream cycles DASH -> legacy -> audio -> DASH, which is a rotation
-      // and says nothing about which alternative is better. Read as an order of
-      // preference it gives the wrong answer for a video with no progressive
-      // formats: someone whose default is legacy asked for video, and audio
-      // throws the picture away when DASH is right there carrying the same
-      // stream. Video formats come first here, and audio is the last resort it
-      // ought to be.
-      const alternatives = this.isLive || this.isPostLiveDvr
-        ? { dash: ['audio'], legacy: ['dash'], audio: ['dash'] }
-        : { dash: ['legacy', 'audio'], legacy: ['dash', 'audio'], audio: ['dash', 'legacy'] }
+    handleActiveFormatUnavailable: function() {
+      if (this.isLive || this.isPostLiveDvr) {
+        // live streams don't have legacy formats, so only switch between dash and audio
 
-      if (!this.attemptedFormats.includes(this.activeFormat)) {
-        this.attemptedFormats.push(this.activeFormat)
+        if (this.activeFormat === 'dash') {
+          console.error('Unable to play DASH formats. Reverting to audio formats...')
+          this.enableAudioFormat()
+        } else {
+          console.error('Unable to play audio formats. Reverting to DASH formats...')
+          this.enableDashFormat()
+        }
+      } else {
+        // loop through formats DASH -> legacy -> audio -> DASH
+
+        switch (this.activeFormat) {
+          case 'dash':
+            console.error('Unable to play DASH formats. Reverting to legacy formats...')
+            this.enableLegacyFormat()
+            break
+          case 'legacy':
+            console.error('Unable to play legacy formats. Reverting to audio formats...')
+            this.enableAudioFormat()
+            break
+          case 'audio':
+            console.error('Unable to play audio formats. Reverting to DASH formats...')
+            this.enableDashFormat()
+            break
+        }
       }
-
-      const ring = failedTransport
-        ? ['legacy']
-        : (alternatives[this.activeFormat] ?? [])
-
-      // Take the first one this video actually has and has not already failed.
-      // Trying only the next one in the ring and stopping if it was missing is
-      // what left a dead player behind: for most videos YouTube now serves no
-      // progressive formats, so `legacy` is absent and it was the first thing
-      // a failed DASH stream reached for. The viewer got a toast about legacy
-      // formats, which named neither what had gone wrong nor anything they
-      // could act on, and since the format never changed the player was never
-      // reloaded and every further error was ignored.
-      const nextFormat = ring
-        .find(format => !this.attemptedFormats.includes(format) && this.canUseFormat(format))
-
-      if (nextFormat) {
-        console.error(`Unable to play ${this.activeFormat} formats. Reverting to ${nextFormat} formats...`)
-        this.handleFormatChange(nextFormat)
-        return
-      }
-
-      // Nothing left to switch to. Say so, and offer the one thing that is
-      // known to work: reopening the video, which builds a new session and
-      // usually plays the very formats that just failed.
-      console.error(`Unable to play ${this.activeFormat} formats, and this video has no other format to fall back to.`)
-
-      this.showRetryableError(this.t('Video.This video stopped playing and there is no other format to try'))
     },
 
     /**
@@ -2018,37 +1668,22 @@ export default defineComponent({
     },
 
     /**
-     * Builds just the credential half of the SABR setup. Split out of
-     * createLocalSabrManifest so a credential refresh can reuse it without
-     * rebuilding the manifest.
-     * @param {import('youtubei.js').IParsedResponse} videoInfo
-     * @param {string} poToken
-     * @param {SabrData['clientInfo']} clientInfo
-     * @returns {SabrData}
-     */
-    buildSabrData: function (videoInfo, poToken, clientInfo) {
-      const url = new URL(videoInfo.streaming_data.server_abr_streaming_url)
-      url.searchParams.set('alr', 'yes')
-      url.searchParams.set('cpn', videoInfo.cpn)
-
-      return {
-        url: url.toString(),
-        videoId: this.videoId,
-        poToken,
-        ustreamerConfig: videoInfo.player_config.media_common_config.media_ustreamer_request_config.video_playback_ustreamer_config,
-        clientInfo
-      }
-    },
-
-    /**
      * @param {import('youtubei.js').IParsedResponse} videoInfo
      * @param {string} poToken
      * @param {SabrData['clientInfo']} clientInfo
      * @param {import('../../helpers/player/SabrManifestParser').SabrManifest['storyboards']} storyboards
      */
     createLocalSabrManifest: function (videoInfo, poToken, clientInfo, storyboards) {
-      this.sabrData = this.buildSabrData(videoInfo, poToken, clientInfo)
-      this.sabrStoryboards = storyboards
+      const url = new URL(videoInfo.streaming_data.server_abr_streaming_url)
+      url.searchParams.set('alr', 'yes')
+      url.searchParams.set('cpn', videoInfo.cpn)
+
+      this.sabrData = {
+        url: url.toString(),
+        poToken,
+        ustreamerConfig: videoInfo.player_config.media_common_config.media_ustreamer_request_config.video_playback_ustreamer_config,
+        clientInfo
+      }
 
       /** @type {import('../../helpers/player/SabrManifestParser').SabrManifest} */
       const sabrManifest = {
@@ -2226,7 +1861,7 @@ export default defineComponent({
         translationName = this.t('Locale Name')
         translationCode = userLanguages.values().next().value
       } else {
-        translationName = translationLanguage.language_name?.text ?? translationLanguage.language_code
+        translationName = translationLanguage.language_name.text
         translationCode = translationLanguage.language_code
       }
 
@@ -2251,7 +1886,7 @@ export default defineComponent({
 
       const label = this.t('Video.Player.TranslatedCaptionTemplate', {
         language: translationName,
-        originalLanguage: trackToTranslate.name?.text ?? trackToTranslate.language_code
+        originalLanguage: trackToTranslate.name.text
       })
 
       return {
@@ -2339,119 +1974,6 @@ export default defineComponent({
       this.startNextVideoInPip = uiState.startNextVideoInPip
     },
 
-    /**
-     * Fetches fresh SABR credentials (a new player response and PO token)
-     * without touching the rest of the view. Calls back with null if that is
-     * impossible, in which case the player falls back to a full reload.
-     *
-     * Also reports the format identifiers the refreshed session serves. The
-     * player cannot derive these itself: its own cache only records what the
-     * old session served, and reusing a buffer across a format change
-     * corrupts playback.
-     *
-     * A rebuild asks for a manifest as well, and gets one built from this very
-     * response. It throws its media source away anyway, so nothing it keeps
-     * refers to the old formats, and a manifest that agrees with the fresh
-     * session is what makes changed format identifiers stop being a failure.
-     * A refresh must not have one: it keeps the buffer, so its formats have to
-     * be the ones already playing.
-     *
-     * @param {{
-     *   onResult: (result: {
-     *     sabrData: SabrData,
-     *     formatIds: string[],
-     *     manifestSrc?: string,
-     *     manifestMimeType?: string
-     *   } | null) => void,
-     *   reloadPlaybackContext?: object,
-     *   rebuilding?: boolean
-     * }} payload `reloadPlaybackContext` is the server's own reload token, set
-     * only when a `RELOAD_PLAYER_RESPONSE` part asked for this. It has to ride
-     * on the `/player` call, or the response describes the same finished
-     * playback context we were told to leave.
-     */
-    async onSabrRefreshRequested({ onResult, reloadPlaybackContext, rebuilding = false }) {
-      if (this.backendPreference !== 'local') {
-        onResult(null)
-        return
-      }
-
-      try {
-        const { info, poToken, clientInfo } = await getLocalVideoInfo(this.videoId, { reloadPlaybackContext })
-
-        // No token means getLocalVideoInfo could not mint one even with
-        // retries; a refresh with it would just install a walled session
-        if (!poToken ||
-          !info.streaming_data?.server_abr_streaming_url ||
-          !info.player_config?.media_common_config?.media_ustreamer_request_config) {
-          onResult(null)
-          return
-        }
-
-        this.streamingDataExpiryDate = info.streaming_data.expires
-
-        // Reuses the manifest parser's own identifier builder so the two can
-        // never drift
-        const formatIds = info.streaming_data.adaptive_formats.map(format => buildFormatId({
-          itag: format.itag,
-          lastModified: format.last_modified_ms,
-          xtags: format.xtags,
-        }))
-
-        if (!rebuilding) {
-          const sabrData = this.buildSabrData(info, poToken, clientInfo)
-          this.sabrData = sabrData
-
-          onResult({ sabrData, formatIds })
-          return
-        }
-
-        // Sets `sabrData` and `sabrStoryboards` as the first load does, so the
-        // view's own copy describes what the player is about to load rather
-        // than what it was playing
-        const manifestSrc = this.createLocalSabrManifest(info, poToken, clientInfo, this.sabrStoryboards)
-
-        this.manifestSrc = manifestSrc
-        this.manifestMimeType = MANIFEST_TYPE_SABR
-
-        onResult({
-          sabrData: this.sabrData,
-          formatIds,
-          manifestSrc,
-          manifestMimeType: MANIFEST_TYPE_SABR,
-        })
-      } catch (error) {
-        console.error('SABR credential refresh failed', error)
-        onResult(null)
-      }
-    },
-
-    /**
-     * Reloads the watch page, the most expensive remedy in the ladder: the
-     * buffer, the player and the page all go. Several unrelated causes end
-     * here, and every one of them used to show the same message, so the
-     * reason now travels with the request and is shown.
-     *
-     * @param {string} [reason] what asked for the reload. Optional because the
-     * view binds this straight to the event, so an emitter that sends no
-     * payload must still reload.
-     */
-    async onPlayerReloadRequested(reason) {
-      const cause = reason ?? 'a SABR request'
-
-      console.warn(`[SABR recovery] reloading the page: ${cause}`)
-      showToast(`Reloading player: ${cause}`)
-
-      await this.saveWatchProgressForReload()
-      await this.reloadView()
-    },
-
-    /** The info bar's reload button, for when the player has crashed */
-    onManualReloadRequested: throttle(async function () {
-      await this.saveWatchProgressForReload()
-      await this.reloadView()
-    }, 1000),
-
     async saveWatchProgressForReload() {
       const timestamp = this.getTimestamp()
       if (timestamp > 0) {
@@ -2471,13 +1993,23 @@ export default defineComponent({
       }
     },
 
+    onManualReloadRequested: throttle(async function () {
+      await this.saveWatchProgressForReload()
+      await this.reloadView()
+    }, 1000),
+
+    async onSabrReloadRequested() {
+      showToast('Reloading player according to SABR request')
+      await this.saveWatchProgressForReload()
+      await this.reloadView()
+    },
+
     ...mapActions([
       'updateHistory',
       'updateWatchProgress',
       'updateLastViewedPlaylist',
       'updatePlaylistLastPlayedAt',
       'updateSubscriptionDetails',
-      'recordAiVerdict',
     ]),
 
     ...mapMutations([
