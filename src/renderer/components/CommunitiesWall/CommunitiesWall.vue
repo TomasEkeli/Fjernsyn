@@ -111,6 +111,7 @@
             </optgroup>
           </select>
         </div>
+        <WallZoomChip />
       </div>
     </div>
     <FtLoader
@@ -167,6 +168,7 @@ import { useI18n } from 'vue-i18n'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 import AiChip from '../AiChip/AiChip.vue'
+import WallZoomChip from '../WallZoomChip/WallZoomChip.vue'
 import CommunitiesVoteBadge from '../CommunitiesVoteBadge/CommunitiesVoteBadge.vue'
 import FtAutoLoadNextPageWrapper from '../FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../FtButton/FtButton.vue'

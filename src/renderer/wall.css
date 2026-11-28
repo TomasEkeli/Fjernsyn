@@ -39,11 +39,20 @@
  * window's frame on a full bleed page: headings, searches, control rows,
  * messages. One number, so that every page's header lines up with every
  * other's.
+ *
+ * The zoom multiplies the column and the reserve that follows from it, and
+ * nothing else: a wider tile is a wider tile, not a bigger interface, which
+ * is what UI Scale is for. The settings module writes it on the body from
+ * `wallTileZoom`, and the 1 here is what every wall has when it has never
+ * been set, so the numbers above remain the wall as it was. The reserve is
+ * scaled rather than computed from the column because it is 9/16 of it
+ * rounded up, and the rounding is not worth a second calc.
  */
 body {
-  --ft-grid-min-column: 610px;
+  --ft-wall-zoom: 1;
+  --ft-grid-min-column: calc(610px * var(--ft-wall-zoom));
   --ft-grid-gap: 0;
-  --ft-grid-item-min-block-size: 344px;
+  --ft-grid-item-min-block-size: calc(344px * var(--ft-wall-zoom));
   --ft-card-description-lines: 3;
   --ft-card-description-gap: 6px;
   --ft-wall-edge: 24px;
@@ -63,6 +72,7 @@ body {
  */
 :root body .ft-list-item.grid {
   block-size: auto;
+  container-type: inline-size;
   min-block-size: 0;
   padding: 0;
   position: relative;
@@ -92,10 +102,21 @@ body {
   background-color: rgb(0 0 0 / 50%);
   inset-block-end: 0;
   inset-inline: 0;
-  padding-block: 6px 8px;
-  padding-inline: 10px;
+  padding-block: 0.98cqw 1.31cqw;
+  padding-inline: 1.64cqw;
   position: absolute;
   z-index: 1;
+
+  /*
+   * The backstop. Nothing clamps a card's title, so a long one grows the
+   * overlay as far as it likes and the scrim climbs off the thumbnail, which
+   * is the one thing the overlay must never do. A thumbnail is 56.25cqw tall
+   * (9/16 of the tile), so this holds the overlay to a little under half of
+   * it whatever the text does. It is a limit and not a layout: in the
+   * ordinary case the type rules below keep the overlay well inside it.
+   */
+  max-block-size: 26cqw;
+  overflow: hidden;
 }
 
 /*
@@ -129,6 +150,85 @@ body {
  */
 :root body .ft-list-item.grid .info .description {
   block-size: auto;
+
+  /* The same share of the tile as the info line; see the type rules below. */
+  font-size: clamp(11px, 2.13cqw, 20px);
+}
+
+/*
+ * The overlay's type, as a share of the tile it sits on. The card is a
+ * container, so `cqw` is a per cent of the tile's drawn width, which is not
+ * the zoom's number: the grid asks for columns of at least that width and
+ * then stretches them to fill the row, so a tile is anywhere from the
+ * column's width to nearly twice it. Scaling by what was asked for would
+ * size the text for a tile nobody drew.
+ *
+ * The ratios are the old fixed sizes over the 610px column they were chosen
+ * for, so a tile at the default zoom on a 610px column looks as it always
+ * did, and every other tile is the same picture at a different size. 2.95cqw
+ * was 18px, 2.13cqw was 13px, 1.64cqw 10px, 1.31cqw 8px, 0.98cqw 6px.
+ *
+ * The floors are where readability beats proportion: below them the text
+ * stops shrinking, which is the whole reason the description sheds lines
+ * further down. The ceilings are not proportional either, they only stop a
+ * tile zoomed to 200 per cent on a wide screen from setting headline type.
+ */
+:root body .ft-list-item.grid .info .title {
+  font-size: clamp(13px, 2.95cqw, 28px);
+}
+
+/* A post's snippet was 15px where a video's title was 18px. */
+:root body .ft-list-post.grid:not(.noThumbnail) .postSnippet {
+  font-size: clamp(13px, 2.46cqw, 24px);
+}
+
+/*
+ * The card's info block is a flex child in the shared layout, and it carries
+ * a 10em floor so that a list row's text never collapses to a column of
+ * single words. Here it is out of the flow and pinned to both edges of the
+ * card, so the floor is not a floor but a width: it holds the overlay at 10em
+ * after the card has gone narrower than that, and the scrim hangs off the
+ * tile into its neighbour. The pinning already says how wide it is.
+ */
+:root body .ft-list-item.grid .info {
+  min-inline-size: 0;
+}
+
+:root body .ft-list-item.grid .info .infoLine,
+:root body .ft-list-post.grid:not(.noThumbnail) .postHeader,
+:root body .ft-list-post.grid:not(.noThumbnail) .counts {
+  font-size: clamp(11px, 2.13cqw, 20px);
+  margin-block-start: 1.31cqw;
+}
+
+/*
+ * Shedding lines. Once the type has hit its floors the overlay stops
+ * shrinking with the tile, so a narrow tile would hand more and more of its
+ * thumbnail to the scrim. The description goes first, a line at a time, and
+ * then altogether: it is the least of what the card says, and a line
+ * disappearing is far quieter during a drag than the type resizing that is
+ * already happening.
+ *
+ * The widths are the tile's, not the window's, which is why these are
+ * container queries. They are the points where the floors have cost enough
+ * to matter, found by looking at the wall rather than derived.
+ */
+@container (width < 520px) {
+  :root body .ft-list-item.grid .info {
+    --ft-card-description-lines: 2;
+  }
+}
+
+@container (width < 430px) {
+  :root body .ft-list-item.grid .info {
+    --ft-card-description-lines: 1;
+  }
+}
+
+@container (width < 350px) {
+  :root body .ft-list-item.grid .info .description {
+    display: none;
+  }
 }
 
 /*

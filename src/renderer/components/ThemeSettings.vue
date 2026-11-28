@@ -62,6 +62,18 @@
       <br>
     </template>
     <FtFlexBox>
+      <FtSlider
+        :label="$t('Settings.Theme Settings.Wall Tile Size')"
+        :default-value="wallTileZoom"
+        :min-value="WALL_TILE_ZOOM.MIN"
+        :max-value="WALL_TILE_ZOOM.MAX"
+        :step="WALL_TILE_ZOOM.STEP"
+        value-extension="%"
+        @change="updateWallTileZoom"
+      />
+    </FtFlexBox>
+    <br>
+    <FtFlexBox>
       <FtSelect
         :placeholder="$t('Settings.Theme Settings.Base Theme.Base Theme')"
         :value="baseTheme"
@@ -113,7 +125,7 @@ import FtFlexBox from './ft-flex-box/ft-flex-box.vue'
 import FtPrompt from './FtPrompt/FtPrompt.vue'
 
 import store from '../store/index'
-import { UI_SCALE } from '../../constants.js'
+import { UI_SCALE, WALL_TILE_ZOOM } from '../../constants.js'
 
 import { colors } from '../helpers/colors'
 import { useColorTranslations } from '../composables/colors'
@@ -279,12 +291,17 @@ function updateHideHeaderLogo(value) {
 
 /** @type {import('vue').ComputedRef<number>} */
 const uiScale = computed(() => store.getters.getUiScale)
+const wallTileZoom = computed(() => store.getters.getWallTileZoom)
 
 /**
  * @param {number} value
  */
 function updateUiScale(value) {
   store.dispatch('updateUiScale', value)
+}
+
+function updateWallTileZoom(value) {
+  store.dispatch('updateWallTileZoom', value)
 }
 
 /** @type {boolean} */

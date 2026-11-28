@@ -448,6 +448,14 @@ AI Chip:
   Hint: Show videos made with AI. Only those whose creator told YouTube so, and those from channels you marked as AI, are known; the rest are not caught. The same as Hide Videos Made with AI in the Distraction Free settings, the other way round.
   # Instead of the list, when every video in it is hidden as made with AI
   All Hidden: Everything here is made with AI, and those videos are hidden. Switch on AI to see them.
+# The pill that sets how big a tile on the wall is. One setting behind every
+# wall, and the same one the Wall Tile Size slider in the Theme settings sets.
+Zoom Chip:
+  # The pill's own label, reading out the size it is set to
+  Zoom: 'Zoom {value}%'
+  Hint: How wide a video is on the wall. Smaller fits more of them across the window, without making the rest of the interface smaller as UI Scale does. The same setting everywhere, and on every wall.
+  # The slider inside the pill
+  Tile Size: Tile Size
 Most Popular: Most Popular
 Feed:
   Feed Last Updated: '{feedName} feed last updated: {date}'
@@ -672,6 +680,9 @@ Settings:
     Frameless Window Tooltip: Hides the system title bar. To move the window, press and hold anywhere
       that does not already drag, then move the mouse. The window borders still resize it.
     UI Scale: UI Scale
+    # How wide a video is on the wall, as a per cent of the usual width. Only
+    # the tiles, where UI Scale above is the whole interface.
+    Wall Tile Size: Wall Tile Size
     Hide Side Bar Labels: Hide Side Bar Labels
     Hide FreeTube Header Logo: Hide Fjernsyn Header Logo
     Base Theme:

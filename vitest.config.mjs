@@ -63,6 +63,38 @@ const RENDERER_CONSTANTS = {
 const CONSTANT_PATTERN = new RegExp(`\\bprocess\\.env\\.(${Object.keys(RENDERER_CONSTANTS).join('|')})\\b`, 'g')
 const SRC_DIR = fromRoot('./src/')
 
+/**
+ * Style blocks that name a file (`<style src="./wall.css" />`) resolve to
+ * nothing, before the single file component plugin can look at them.
+ *
+ * `css: false` below already throws away what they compile to, so nothing is
+ * lost. What is gained is that they stop crashing. The plugin finds the
+ * importing component's descriptor by the stylesheet's own path, and when
+ * that lookup misses it falls back to a stand-in carrying exactly one style
+ * block, so the second such stylesheet in a component asks the stand-in for
+ * `styles[1]` and reads a property of `undefined`. App.vue has five, and any
+ * edit to the second, third or fourth (`wall.css`, `layout.css`,
+ * `windowMove.css`) brings App.test.js down with a message naming neither
+ * the component nor the edit.
+ *
+ * Only the ones with a `src` are taken: an inline `<style>` is read from the
+ * component's own descriptor, which is never missing.
+ *
+ * @returns {import('vite').Plugin}
+ */
+function emptyLinkedStyleBlocks() {
+  const LINKED_STYLE = /\?vue&type=style&.*&src=/
+
+  return {
+    name: 'fjernsyn:empty-linked-style-blocks',
+    enforce: 'pre',
+
+    load(id) {
+      return LINKED_STYLE.test(id) ? 'export default undefined' : null
+    },
+  }
+}
+
 /** @returns {import('vite').Plugin} */
 function rendererConstants() {
   return {
@@ -91,6 +123,7 @@ export default defineConfig({
       },
       {
         plugins: [
+          emptyLinkedStyleBlocks(),
           vue({
             template: {
               compilerOptions: {

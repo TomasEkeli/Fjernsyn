@@ -473,6 +473,8 @@ const state = {
   defaultInvidiousInstance: '',
   defaultVolume: 1,
   uiScale: 100,
+  // Per cent of the wall's base tile width. Fjernsyn's own; see wall.css.
+  wallTileZoom: 100,
   userPlaylistsSortBy: 'latest_played_first',
   userHistorySortBy: 'latest_played_first',
 }
@@ -564,6 +566,15 @@ const sideEffectHandlers = {
     if (process.env.IS_ELECTRON) {
       window.ftElectron.setZoomFactor(value / 100)
     }
+  },
+
+  // Fjernsyn: the wall reads its tile width from this one property, which
+  // wall.css multiplies into every size that follows from it. Written here
+  // rather than bound in a component because the wall is every page's grid,
+  // and because `grabUserSettings` fires this before the first wall renders,
+  // so a stored zoom is in place for the first paint instead of reflowing it.
+  wallTileZoom: (_, value) => {
+    document.body.style.setProperty('--ft-wall-zoom', value / 100)
   },
 
   maxVideoPlaybackRate: ({ dispatch, state }, value) => {

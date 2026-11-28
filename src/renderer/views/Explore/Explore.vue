@@ -76,6 +76,7 @@
               />
             </div>
           </div>
+          <WallZoomChip />
         </div>
       </div>
       <FtLoader
@@ -126,6 +127,7 @@ import { computed, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import AiChip from '../../components/AiChip/AiChip.vue'
+import WallZoomChip from '../../components/WallZoomChip/WallZoomChip.vue'
 import FtAutoLoadNextPageWrapper from '../../components/FtAutoLoadNextPageWrapper.vue'
 import FtButton from '../../components/FtButton/FtButton.vue'
 import FtCard from '../../components/ft-card/ft-card.vue'

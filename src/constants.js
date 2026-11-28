@@ -424,6 +424,17 @@ const UI_SCALE = {
   STEP: 5,
 }
 
+// Fjernsyn: per cent of the wall's base tile width, which is 610px. Half of
+// that is six columns on a 1920px screen, which is the narrow screen this
+// exists for; twice it is for whoever wants the wall the other way.
+const WALL_TILE_ZOOM = {
+  MIN: 50,
+  MAX: 200,
+  // A per cent at a time, so the handle slides rather than snaps. The wall
+  // redraws on each step, and a step is a few pixels of column.
+  STEP: 1,
+}
+
 export {
   IpcChannels,
   DBActions,
@@ -441,4 +452,5 @@ export {
   LIGHT_BASE_THEMES,
   DARK_BASE_THEMES,
   UI_SCALE,
+  WALL_TILE_ZOOM,
 }

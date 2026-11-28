@@ -38,6 +38,7 @@
             @toggle="toggleWatched"
           />
           <AiChip />
+          <WallZoomChip />
         </div>
       </div>
       <SubscriptionsUpcomingShelf
@@ -69,6 +70,7 @@ import FtCard from '../../components/ft-card/ft-card.vue'
 import FtRefreshWidget from '../../components/FtRefreshWidget/FtRefreshWidget.vue'
 import FtToggleChip from '../../components/FtToggleChip/FtToggleChip.vue'
 import AiChip from '../../components/AiChip/AiChip.vue'
+import WallZoomChip from '../../components/WallZoomChip/WallZoomChip.vue'
 import SubscriptionsTabUi from '../../components/SubscriptionsTabUi/SubscriptionsTabUi.vue'
 import SubscriptionsUpcomingShelf from '../../components/SubscriptionsUpcomingShelf/SubscriptionsUpcomingShelf.vue'
 

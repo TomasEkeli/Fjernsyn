@@ -13,9 +13,14 @@
       :min="minValue"
       :max="maxValue"
       :step="step"
+      :aria-label="labelHidden ? label : null"
       @change="change"
+      @input="input"
     >
-    <span class="label">
+    <span
+      v-if="!labelHidden"
+      class="label"
+    >
       {{ $t('Display Label', {label: label, value: displayLabel}) }}
     </span>
   </label>
@@ -52,10 +57,21 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  // For a caller whose surroundings already say what the slider is and what
+  // it reads. The label becomes the input's accessible name rather than
+  // going away, and the track takes the whole control: the stylesheet
+  // already lays the input out that way when no span follows it.
+  labelHidden: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['change'])
+// `change` is the value to keep, fired when the handle is let go. `input` is
+// the value under the handle while it is being dragged, for a caller that can
+// show the result as it moves; it is far too frequent to save.
+const emit = defineEmits(['change', 'input'])
 
 const id = useId()
 const currentValue = ref(props.defaultValue)
@@ -76,6 +92,10 @@ const displayLabel = computed(() => {
 
 function change() {
   emit('change', currentValue.value)
+}
+
+function input() {
+  emit('input', currentValue.value)
 }
 
 </script>
