@@ -55,7 +55,7 @@ describe('the Later scheduler', () => {
   })
 
   describe('how a live one fires', () => {
-    const base = { shown: true, watchingVideoId: null, ownPageReloads: true, playerMounted: false }
+    const base = { shown: true, watchingVideoId: null, playerMounted: false }
 
     it('notifies when the window is not seen, wherever it is', () => {
       expect(fireDecision({ ...base, shown: false }, 'v')).toBe('notify')
@@ -66,10 +66,6 @@ describe('the Later scheduler', () => {
     it('reloads its own watch page', () => {
       expect(fireDecision({ ...base, watchingVideoId: 'v' }, 'v')).toBe('reload')
       expect(fireDecision({ ...base, watchingVideoId: 'v', playerMounted: true }, 'v')).toBe('reload')
-    })
-
-    it('counts down on its own page where that page does not reload (upstream\'s watch view)', () => {
-      expect(fireDecision({ ...base, watchingVideoId: 'v', ownPageReloads: false }, 'v')).toBe('countdown')
     })
 
     it('puts a notice on the player while another video is watched', () => {

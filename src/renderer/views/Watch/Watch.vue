@@ -17,21 +17,20 @@
     >
       <div class="videoAreaMargin">
         <ft-shaka-video-player
-          v-if="!isLoading && (!isUpcoming || playabilityStatus === 'OK') && !errorMessage && (activeFormat === 'legacy' || manifestSrc)"
+          v-if="!isLoading && (!isUpcoming || playabilityStatus === 'OK') && !errorMessage"
           ref="player"
           :manifest-src="manifestSrc"
           :manifest-mime-type="manifestMimeType"
           :sabr-data="sabrData"
-          :sabr-regulator="sabrRegulator"
           :legacy-formats="legacyFormats"
           :start-time="startTimeSeconds"
           :captions="captions"
+          :hls-audio-metadata="hlsAudioMetadata"
           :storyboard-src="videoStoryboardSrc"
           :format="activeFormat"
           :thumbnail="thumbnail"
           :video-id="videoId"
           :channel-id="channelId"
-          :channel-name="channelName"
           :chapters="videoChapters"
           :current-chapter-index="videoCurrentChapterIndex"
           :chapters-src="chaptersSrc"
@@ -47,7 +46,6 @@
           :start-in-pip="startNextVideoInPip"
           :current-playback-rate="currentPlaybackRate"
           :delay-load-until-unix="adEndTimeUnixMs"
-          :loudness-db="loudnessDb"
           class="videoPlayer"
           @error="handlePlayerError"
           @loaded="handleVideoLoaded"
@@ -58,8 +56,7 @@
           @playback-rate-updated="updatePlaybackRate"
           @skip-to-next="handleSkipToNext"
           @skip-to-prev="handleSkipToPrev"
-          @player-reload-requested="onPlayerReloadRequested"
-          @sabr-refresh-requested="onSabrRefreshRequested"
+          @player-reload-requested="onSabrReloadRequested"
         />
         <div
           v-if="!isLoading && (isUpcoming || errorMessage)"
@@ -115,20 +112,11 @@
                 aria-hidden="true"
                 class="errorIcon"
               />
-              <div class="errorText">
-                <p
-                  class="errorMessage"
-                >
-                  {{ errorMessage }}
-                </p>
-                <FtButton
-                  v-if="errorIsRetryable"
-                  :label="$t('Video.Try Again')"
-                  :icon="['fas', 'sync']"
-                  class="errorRetryButton"
-                  @click="retryVideo"
-                />
-              </div>
+              <p
+                class="errorMessage"
+              >
+                {{ errorMessage }}
+              </p>
             </div>
           </div>
         </div>
@@ -165,7 +153,7 @@
         :video-thumbnail="thumbnail"
         :in-user-playlist="!!selectedUserPlaylist"
         :is-unlisted="isUnlisted"
-        :made-with-ai="madeWithAi"
+        :content-disclosures="contentDisclosures"
         :can-save-watched-progress="canSaveWatchProgress"
         class="watchVideo"
         :class="{ theatreWatchVideo: useTheatreMode }"

@@ -10,7 +10,6 @@ import { SabrGiveUpError } from '../../helpers/player/SabrRegulator'
 import { copyToClipboard, formatScheduledTime, openExternalLink, showToast } from '../../helpers/utils'
 import { describe as describeEntity } from '../../platform/describe'
 import { PlatformError } from '../../platform/errors'
-import { WatchSurface } from '../../platform/routes'
 import { PLATFORM_LAYER_KEY, isPeerTubeEnabled } from '../../platform/vue'
 import store from '../../store/index'
 import { createTestI18n } from '../../testing/i18n'
@@ -160,8 +159,6 @@ const SETTINGS = vi.hoisted(() => ({
   getBackendPreference: 'local',
   getBackendFallback: false,
   getCurrentInvidiousInstanceUrl: 'https://inv.example',
-  // The surface switch's, which both watch routes render in the app (WatchSurface)
-  getEnableLayerSurfaces: false,
   // The Later list's
   getIsInLater: () => false,
   getIsArmed: () => false,
@@ -355,12 +352,10 @@ afterEach(() => {
  * @param {object | Error | ((ref: object) => object)} answer the details, or an error to reject with
  * @param {string} [path]
  * @param {object} [options]
- * @param {import('vue').Component} [options.watchView] what both watch routes
- *   render: this view, or as the app routes them, the surface switch
  * @param {import('vue-router').RouterHistory} [options.history] the router's
  *   history, in memory unless a test hands in the app's
  */
-async function openWatchPage(answer, path = WATCH_PATH, { watchView = LayerWatch, history } = {}) {
+async function openWatchPage(answer, path = WATCH_PATH, { history } = {}) {
   layer.getVideo.mockImplementation(async (ref) => {
     const value = typeof answer === 'function' ? answer(ref) : answer
     if (value instanceof Error) {
@@ -370,9 +365,9 @@ async function openWatchPage(answer, path = WATCH_PATH, { watchView = LayerWatch
   })
 
   const router = createTestRouter([
-    { path: '/peertube/watch/:host/:uuid', name: 'peertubeWatch', component: watchView },
+    { path: '/peertube/watch/:host/:uuid', name: 'peertubeWatch', component: LayerWatch },
     // As upstream's watch route, which has no name
-    { path: '/watch/:id', component: watchView },
+    { path: '/watch/:id', component: LayerWatch },
     { path: '/peertube/channel/:handle/:currentTab?', name: 'peertubeChannel' },
     { path: '/elsewhere', name: 'elsewhere' },
     // Routes whose own guard refuses the navigation, as the PeerTube routes'
@@ -2592,9 +2587,8 @@ describe('a playlist', () => {
       expectOnYouTube(router, YT_ID, 0)
     })
 
-    it('autoplays across the platforms on the surface switch, as the app routes them, the one view and its loop kept', async () => {
-      store.setGetter('getEnableLayerSurfaces', true)
-      const { wrapper, router } = await openWatchPage(anyVideo, KINDS.user.path(YT_ID, 0), { watchView: WatchSurface })
+    it('autoplays across the platforms, as the app routes them, the one view and its loop kept', async () => {
+      const { wrapper, router } = await openWatchPage(anyVideo, KINDS.user.path(YT_ID, 0))
       const view = viewInstance(wrapper)
       await toggle(wrapper, 'Loop Playlist')
 
@@ -2771,20 +2765,11 @@ describe('a waiting YouTube premiere', () => {
   })
 })
 
-describe('on the surface switch, as the app routes both watch routes (WatchSurface)', () => {
+describe('as the app routes both watch routes at this view', () => {
   const OTHER_YT_ID = 'pCJ9JGG0GQI'
 
-  /** @param {import('@vue/test-utils').VueWrapper} wrapper */
-  function renders(wrapper) {
-    return [
-      ...(wrapper.findComponent({ name: 'Watch' }).exists() ? ['Watch'] : []),
-      ...(wrapper.findComponent(LayerWatch).exists() ? ['LayerWatch'] : []),
-    ]
-  }
-
-  it('takes another YouTube video for this view while the switch is on: the one left saved and its player destroyed, the next loaded', async () => {
-    store.setGetter('getEnableLayerSurfaces', true)
-    const { wrapper, router } = await openWatchPage(ref => youtubeVideo({ videoId: ref }), YT_PATH, { watchView: WatchSurface })
+  it('takes another YouTube video for this view: the one left saved and its player destroyed, the next loaded', async () => {
+    const { wrapper, router } = await openWatchPage(ref => youtubeVideo({ videoId: ref }), YT_PATH)
     const view = viewInstance(wrapper)
     Object.assign(player, { hasLoaded: true, currentTime: 55 })
 
@@ -2798,9 +2783,8 @@ describe('on the surface switch, as the app routes both watch routes (WatchSurfa
     expect(findPlayer(wrapper).props()).toMatchObject({ videoId: OTHER_YT_ID, startTime: 30 })
   })
 
-  it('crosses to the PeerTube route as the same view while the switch is on', async () => {
-    store.setGetter('getEnableLayerSurfaces', true)
-    const { wrapper, router } = await openWatchPage(ref => (typeof ref === 'string' ? youtubeVideo({ videoId: ref }) : playableVideo()), YT_PATH, { watchView: WatchSurface })
+  it('crosses to the PeerTube route as the same view', async () => {
+    const { wrapper, router } = await openWatchPage(ref => (typeof ref === 'string' ? youtubeVideo({ videoId: ref }) : playableVideo()), YT_PATH)
     const view = viewInstance(wrapper)
 
     await router.push(WATCH_PATH)
@@ -2809,32 +2793,6 @@ describe('on the surface switch, as the app routes both watch routes (WatchSurfa
     expect(viewInstance(wrapper)).toBe(view)
     expect(layer.getVideo).toHaveBeenLastCalledWith({ platform: 'peertube', host: HOST, videoId: UUID })
     expect(findPlayer(wrapper).props('videoId')).toBe(UUID)
-  })
-
-  it('renders upstream\'s view on a YouTube route while the switch is off, and this one on a PeerTube route', async () => {
-    const { wrapper, router } = await openWatchPage(playableVideo(), YT_PATH, { watchView: WatchSurface })
-
-    expect(renders(wrapper)).toEqual(['Watch'])
-    expect(layer.getVideo).not.toHaveBeenCalled()
-
-    await router.push(WATCH_PATH)
-    await flushPromises()
-
-    expect(renders(wrapper)).toEqual(['LayerWatch'])
-    expect(layer.getVideo).toHaveBeenLastCalledWith({ platform: 'peertube', host: HOST, videoId: UUID })
-  })
-
-  it('leaves for upstream\'s view on a YouTube route while the switch is off, saving the position and destroying the player', async () => {
-    const { wrapper, router } = await openWatchPage(playableVideo(), WATCH_PATH, { watchView: WatchSurface })
-    Object.assign(player, { hasLoaded: true, currentTime: 55 })
-
-    await router.push(YT_PATH)
-    await flushPromises()
-
-    expect(renders(wrapper)).toEqual(['Watch'])
-    expect(dispatched('updateWatchProgress')).toEqual([{ videoId: UUID, watchProgress: 55 }])
-    expect(player.events).toEqual(['position read', 'destroyed', 'unmounted'])
-    expect(layer.getVideo).toHaveBeenCalledTimes(1)
   })
 })
 

@@ -1828,15 +1828,6 @@ Layer Search:
     Unlit: 'Next search is without filters. Click to use: {filters}'
     Edit: Change the remembered filters
 
-# The fork's own, for the same reason as above: the surface switch, which
-# moves YouTube pages onto the platform layer's views
-Layer Surfaces:
-  Settings:
-    Enable layer surfaces: New YouTube pages (experimental)
-    Enable layer surfaces Tooltip: Shows the new versions of the YouTube pages that have moved to Fjernsyn's platform
-      layer, in place of the old ones. So far those are the channel page and the watch page. Pages that have not moved
-      yet are unchanged. Switch it off to go back to the old pages.
-
 # The fork's own, for the same reason as above: the channel page on the
 # platform layer, whose empty videos tab upstream no longer has a key for
 Layer Channel:

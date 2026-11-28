@@ -62,9 +62,9 @@ check('the committed registry is well formed', () => {
     'src/renderer/store/modules/utils.js',
   ], 'the search page, the filter modal and the search settings state are shadowed as unroutedSearch')
 
-  // The surfaces on the one surface switch (ADR-0018): the old views and the children only they run
-  const surfaces = shadowed.find(({ group }) => group === 'enableLayerSurfaces')
-  assert.deepEqual(surfaces?.files.map(file => file.path), [
+  // The channel has left the switch (ADR-0018): the old view and the children only it runs
+  const channel = shadowed.find(({ group }) => group === 'unroutedChannel')
+  assert.deepEqual(channel?.files.map(file => file.path), [
     'src/renderer/views/Channel/Channel.vue',
     'src/renderer/views/Channel/Channel.css',
     'src/renderer/components/ChannelDetails/ChannelDetails.vue',
@@ -72,6 +72,11 @@ check('the committed registry is well formed', () => {
     'src/renderer/components/ChannelAbout/ChannelAbout.vue',
     'src/renderer/components/ChannelHome/ChannelHome.vue',
     'src/renderer/components/ChannelHome/ChannelHome.css',
+  ], 'the old channel view and its children are shadowed as unroutedChannel')
+
+  // And so has watch, whose old view is upstream's own file again (ADR-0018's amendment)
+  const watch = shadowed.find(({ group }) => group === 'unroutedWatch')
+  assert.deepEqual(watch?.files.map(file => file.path), [
     'src/renderer/views/Watch/Watch.vue',
     'src/renderer/views/Watch/Watch.js',
     'src/renderer/views/Watch/Watch.scss',
@@ -79,7 +84,12 @@ check('the committed registry is well formed', () => {
     'src/renderer/components/WatchVideoInfo/WatchVideoInfo.css',
     'src/renderer/components/WatchVideoDescription/WatchVideoDescription.vue',
     'src/renderer/components/WatchVideoDescription/WatchVideoDescription.css',
-  ], 'the old channel and watch views and their children are shadowed as enableLayerSurfaces')
+  ], 'the old watch view and its children are shadowed as unroutedWatch')
+
+  assert.ok(
+    !shadowed.some(({ group }) => group === 'enableLayerSurfaces'),
+    'no group is named after the surface switch, which is gone',
+  )
 })
 
 // Validating a registry

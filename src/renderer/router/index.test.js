@@ -1,9 +1,8 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 import { RouterView } from 'vue-router'
 
-import store from '../store/index'
 import router from './index'
 
 // Every view the router imports, as a stub that says which it is
@@ -19,8 +18,6 @@ vi.mock('../views/History/History.vue', () => view('History'))
 vi.mock('../views/Settings/Settings.vue', () => view('Settings'))
 vi.mock('../views/About/About.vue', () => view('About'))
 vi.mock('../views/Playlist/Playlist.vue', () => view('Playlist'))
-vi.mock('../views/Channel/Channel.vue', () => view('Channel'))
-vi.mock('../views/Watch/Watch.vue', () => view('Watch'))
 vi.mock('../views/Hashtag/Hashtag.vue', () => view('Hashtag'))
 vi.mock('../views/Post.vue', () => view('Post'))
 vi.mock('../views/LayerChannel/LayerChannel.vue', () => view('LayerChannel'))
@@ -30,14 +27,9 @@ vi.mock('../views/LayerSearchPage/LayerSearchPage.vue', () => ({
   default: { name: 'LayerSearchPage', render: () => h('p', { class: 'layerSearchPage' }) },
 }))
 
-// The surface switch (ADR-0018) reads its setting from the store module
 vi.mock('../store/index', async () => {
   const { createFakeStore } = await import('../testing/store')
-  return { default: createFakeStore({ getters: { getEnableLayerSurfaces: false } }) }
-})
-
-beforeEach(() => {
-  store.setGetter('getEnableLayerSurfaces', false)
+  return { default: createFakeStore() }
 })
 
 /**
@@ -74,9 +66,7 @@ describe('the search route', () => {
   })
 })
 
-describe('the channel route, on the surface switch', () => {
-  const CHANNEL_VIEWS = ['Channel', 'LayerChannel']
-
+describe('the channel route', () => {
   const paths = [
     ['without a tab', '/channel/UCX6OQ3DkcsbYNE6H8uQQuVA', { id: 'UCX6OQ3DkcsbYNE6H8uQQuVA' }, {}],
     ['with a tab', '/channel/UCX6OQ3DkcsbYNE6H8uQQuVA/playlists', { id: 'UCX6OQ3DkcsbYNE6H8uQQuVA', currentTab: 'playlists' }, {}],
@@ -94,29 +84,17 @@ describe('the channel route, on the surface switch', () => {
     ],
   ]
 
-  it.each(paths)('renders upstream\'s channel view while the switch is off, %s', async (_what, path, params, query) => {
+  it.each(paths)('renders the layer\'s channel view, with no setting involved, %s', async (_what, path, params, query) => {
     const wrapper = await open(path)
 
     expect(router.currentRoute.value.params).toEqual(params)
     expect(router.currentRoute.value.query).toEqual(query)
     expect(router.currentRoute.value.matched[0].meta.title).toBe('Channel')
-    expect(rendered(wrapper, CHANNEL_VIEWS)).toEqual(['Channel'])
-  })
-
-  it.each(paths)('renders the layer\'s channel view while the switch is on, %s', async (_what, path, params, query) => {
-    store.setGetter('getEnableLayerSurfaces', true)
-    const wrapper = await open(path)
-
-    expect(router.currentRoute.value.params).toEqual(params)
-    expect(router.currentRoute.value.query).toEqual(query)
-    expect(router.currentRoute.value.matched[0].meta.title).toBe('Channel')
-    expect(rendered(wrapper, CHANNEL_VIEWS)).toEqual(['LayerChannel'])
+    expect(rendered(wrapper, ['Channel', 'LayerChannel'])).toEqual(['LayerChannel'])
   })
 })
 
-describe('the watch route, on the surface switch', () => {
-  const WATCH_VIEWS = ['Watch', 'LayerWatch']
-
+describe('the watch route', () => {
   const paths = [
     ['a video', '/watch/dQw4w9WgXcQ', {}],
     ['a video from a timestamp', '/watch/dQw4w9WgXcQ?timestamp=42', { timestamp: '42' }],
@@ -132,22 +110,12 @@ describe('the watch route, on the surface switch', () => {
     ],
   ]
 
-  it.each(paths)('renders upstream\'s watch view while the switch is off, for %s', async (_what, path, query) => {
+  it.each(paths)('renders the layer\'s watch view, with no setting involved, for %s', async (_what, path, query) => {
     const wrapper = await open(path)
 
     expect(router.currentRoute.value.params).toEqual({ id: 'dQw4w9WgXcQ' })
     expect(router.currentRoute.value.query).toEqual(query)
     expect(router.currentRoute.value.matched[0].meta.title).toBe('Watch')
-    expect(rendered(wrapper, WATCH_VIEWS)).toEqual(['Watch'])
-  })
-
-  it.each(paths)('renders the layer\'s watch view while the switch is on, for %s', async (_what, path, query) => {
-    store.setGetter('getEnableLayerSurfaces', true)
-    const wrapper = await open(path)
-
-    expect(router.currentRoute.value.params).toEqual({ id: 'dQw4w9WgXcQ' })
-    expect(router.currentRoute.value.query).toEqual(query)
-    expect(router.currentRoute.value.matched[0].meta.title).toBe('Watch')
-    expect(rendered(wrapper, WATCH_VIEWS)).toEqual(['LayerWatch'])
+    expect(rendered(wrapper, ['Watch', 'LayerWatch'])).toEqual(['LayerWatch'])
   })
 })

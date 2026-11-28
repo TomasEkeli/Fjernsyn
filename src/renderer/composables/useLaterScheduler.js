@@ -194,8 +194,6 @@ export function useLaterScheduler(store, router, isMainWindow) {
       const decision = fireDecision({
         shown,
         watchingVideoId,
-        // Only the layer's watch view reloads on its own (ADR-0018)
-        ownPageReloads: store.getters.getEnableLayerSurfaces === true,
         playerMounted: store.getters.getLaterPlayerMounted,
       }, item.videoId)
 

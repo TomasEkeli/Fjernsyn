@@ -73,8 +73,8 @@ export function effectOfAnswer(answer, at) {
  * How an item found live is fired.
  *
  * - The window is not seen (hidden or minimised): a desktop notification.
- * - It is on the item's own watch page, and that page reloads into the
- *   stream (the layer's watch view): the reload.
+ * - It is on the item's own watch page, which reloads into the stream: the
+ *   reload.
  * - The player is up, showing another video: a notice on the player.
  * - Anything else, a watch page with no player among it: the countdown.
  *
@@ -82,16 +82,14 @@ export function effectOfAnswer(answer, at) {
  * @param {boolean} situation.shown the window is visible and not minimised
  * @param {string | null} situation.watchingVideoId the video id the route's
  *   watch page is for, or null off a watch page
- * @param {boolean} situation.ownPageReloads the watch page shown reloads when
- *   its own event goes live, which only the layer's watch view does
  * @param {boolean} situation.playerMounted
  * @param {string} videoId the item's
  * @returns {'notify' | 'reload' | 'playerNotice' | 'countdown'}
  */
-export function fireDecision({ shown, watchingVideoId, ownPageReloads, playerMounted }, videoId) {
+export function fireDecision({ shown, watchingVideoId, playerMounted }, videoId) {
   if (!shown) { return 'notify' }
 
-  if (watchingVideoId === videoId && ownPageReloads) { return 'reload' }
+  if (watchingVideoId === videoId) { return 'reload' }
 
   if (watchingVideoId !== null && watchingVideoId !== videoId && playerMounted) { return 'playerNotice' }
 
